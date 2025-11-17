@@ -63,7 +63,7 @@ export default function TeamDashboard() {
   const getSpecificCardStyle = (cardName: SpecificCard): { bg: string; border: string; glow: string; text: string; accent: string } => {
     if (mode === 'chaos') {
       const chaosCardStyles: Record<SpecificCard, { bg: string; border: string; glow: string; text: string; accent: string }> = {
-        'hero-large': { bg: 'bg-gradient-to-r from-[#FFC700] via-[#FF7A00] to-[#FF3D00]', border: 'border-0', glow: '', text: 'text-black', accent: '#000000' },
+        'hero-large': { bg: 'bg-gradient-to-br from-[#FFE500] via-[#FF8C00] to-[#FF6B6B]', border: 'border-0', glow: '', text: 'text-black', accent: '#FFE500' },
         'launch-pad': { bg: 'bg-gradient-to-br from-[#9D4EFF] to-[#6B2C91]', border: 'border-0', glow: '', text: 'text-white', accent: '#C4F500' },
         'horoscope': { bg: 'bg-[#6B2C91]', border: 'border-0', glow: '', text: 'text-white', accent: '#FFE500' },
         'weather': { bg: 'bg-gradient-to-br from-[#00B8D4] to-[#0066CC]', border: 'border-0', glow: '', text: 'text-white', accent: '#00D4FF' },
@@ -256,38 +256,39 @@ export default function TeamDashboard() {
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('hero-large') : getCardStyle('hero')
             return (
-              <Card className={`${style.bg} ${style.border} p-0 ${mode === 'chaos' ? 'rounded-tl-[2.5rem] rounded-bl-[2.5rem]' : getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden group`}
+              <Card className={`${style.bg} ${style.border} p-0 ${mode === 'chaos' ? getRoundedClass('rounded-[2.5rem]') : getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden group min-h-[500px] flex flex-col justify-between`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                {/* Black masked section on the right with skewed/angled cut-off - more pronounced skew */}
-                <div className={`absolute top-0 right-0 w-[60%] h-full ${getBgClass()}`} 
-                     style={{ clipPath: 'polygon(12% 0, 100% 0, 100% 100%, 0% 100%)' }} 
-                />
+                {/* Black masked section on the right with transform/rotation */}
+                {mode === 'chaos' && (
+                  <div className={`absolute top-0 right-0 w-1/2 h-full ${getBgClass()} ${getRoundedClass('rounded-[2.5rem]')} transform translate-x-1/4 -rotate-12`}></div>
+                )}
+                {mode !== 'chaos' && (
+                  <div className={`absolute top-0 right-0 w-[60%] h-full ${getBgClass()}`} 
+                       style={{ clipPath: 'polygon(12% 0, 100% 0, 100% 100%, 0% 100%)' }} 
+                  />
+                )}
                 <div className="relative z-10 p-8 md:p-12 h-full flex flex-col justify-between">
                   <div>
-                    <Badge className={`${mode === 'chaos' ? 'bg-black text-white' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00]' : 'bg-white text-black'} hover:opacity-90 ${mode === 'code' ? 'border-0' : 'border-0'} ${getRoundedClass('rounded-full')} font-black mb-4 text-xs uppercase tracking-wider ${mode === 'code' ? 'font-mono' : ''}`}>
+                    <Badge className={`${mode === 'chaos' ? 'bg-black text-[#FFE500]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00]' : 'bg-white text-black'} hover:opacity-90 ${mode === 'code' ? 'border-0' : 'border-0'} ${getRoundedClass('rounded-full')} font-black mb-4 md:mb-6 text-xs md:text-sm uppercase tracking-[0.2em] ${mode === 'code' ? 'font-mono' : ''} px-4 md:px-6 py-2 md:py-3`}>
                       {mode === 'code' ? '[AI CHAOS AGENT]' : mode === 'chaos' ? 'QUICK ACTIONS' : 'AI Chaos Agent'}
                     </Badge>
-                    <h1 className={`text-7xl md:text-9xl lg:text-[12rem] font-black mb-4 leading-[0.85] tracking-tight uppercase text-black ${mode === 'code' ? 'font-mono' : ''}`}>
+                    <h1 className={`text-[clamp(3rem,8vw+1rem,10rem)] font-black mb-4 md:mb-6 leading-[0.85] tracking-tight uppercase text-black ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? '> READY!' : 'READY!'}
                     </h1>
-                    <p className={`text-xl md:text-2xl font-semibold max-w-md text-white ${mode === 'code' ? 'font-mono' : ''}`}>
+                    <p className={`text-[clamp(1.25rem,3vw+0.5rem,2.5rem)] font-bold max-w-2xl leading-tight text-black ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? ':: Let\'s ship something amazing today' : 'Let\'s ship something amazing today'}
                     </p>
-                    <p className={`text-sm md:text-base font-medium mt-3 text-white ${mode === 'code' ? 'font-mono' : ''}`}>
+                    <p className={`text-base md:text-lg lg:text-xl font-bold mt-4 text-black/70 ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? 'C:\\> date: Friday, November 14' : 'Friday, November 14'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 mt-6 flex-wrap">
-                    <Button className={`${mode === 'chaos' ? 'bg-black text-white hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
-                      {mode === 'code' ? '[GIVE SNAP]' : 'Give Snap'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
-                    </Button>
-                    <Button className={`${mode === 'chaos' ? 'bg-black text-white hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-transparent text-[#00FF00] border border-[#00FF00] hover:bg-[#00FF00]/10' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
-                      {mode === 'code' ? '[NEED HELP]' : 'Need Help'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
-                    </Button>
-                    <Button className={`${mode === 'chaos' ? 'bg-black text-white hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-transparent text-[#00FF00] border border-[#00FF00] hover:bg-[#00FF00]/10' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
-                      {mode === 'code' ? '[ADD WIN]' : 'Add Win'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
-                    </Button>
+                  <div className="relative z-10 flex items-center gap-3 md:gap-4 flex-wrap">
+                    {['Give Snap', 'Need Help', 'Add Win'].map((label) => (
+                      <Button key={label} className={`${mode === 'chaos' ? 'bg-black text-[#FFE500] hover:bg-[#0F0F0F] hover:scale-105' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} py-3 md:py-4 px-6 md:px-8 text-base md:text-lg uppercase tracking-wider transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}>
+                        {mode === 'code' ? `[${label.toUpperCase().replace(' ', ' ')}]` : label} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
+                      </Button>
+                    ))}
                   </div>
                 </div>
               </Card>
