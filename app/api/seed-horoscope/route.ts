@@ -3,16 +3,12 @@ import { createClient } from '@supabase/supabase-js'
 
 // Shared seeding logic
 async function seedHoroscopeConfig() {
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json(
-        { error: 'Missing Supabase environment variables' },
-        { status: 500 }
-      )
-    }
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing Supabase environment variables: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set')
+  }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -32,10 +28,7 @@ async function seedHoroscopeConfig() {
 
     if (rulesetError || !ruleset) {
       console.error('Error creating/fetching default ruleset:', rulesetError)
-      return NextResponse.json(
-        { error: 'Failed to create ruleset: ' + (rulesetError?.message || 'Unknown error') },
-        { status: 500 }
-      )
+      throw new Error('Failed to create ruleset: ' + (rulesetError?.message || 'Unknown error'))
     }
     const defaultRulesetId = ruleset.id
     console.log('Default ruleset created/fetched:', ruleset.name, ruleset.id)
@@ -71,10 +64,7 @@ async function seedHoroscopeConfig() {
 
     if (stylesError) {
       console.error('Error creating styles:', stylesError)
-      return NextResponse.json(
-        { error: 'Failed to create styles: ' + stylesError.message },
-        { status: 500 }
-      )
+      throw new Error('Failed to create styles: ' + stylesError.message)
     }
     console.log(`Created/updated ${createdStyles?.length || 0} styles.`)
     const styleMap = new Map(createdStyles?.map(s => [s.key, s.id]) || [])
@@ -135,10 +125,7 @@ async function seedHoroscopeConfig() {
 
     if (segmentsError) {
       console.error('Error creating segments:', segmentsError)
-      return NextResponse.json(
-        { error: 'Failed to create segments: ' + segmentsError.message },
-        { status: 500 }
-      )
+      throw new Error('Failed to create segments: ' + segmentsError.message)
     }
     console.log(`Created/updated ${createdSegments?.length || 0} segments.`)
     const segmentMap = new Map(createdSegments?.map(s => [`${s.type}_${s.value}`, s.id]) || [])
@@ -223,10 +210,7 @@ async function seedHoroscopeConfig() {
 
     if (rulesError) {
       console.error('Error creating rules:', rulesError)
-      return NextResponse.json(
-        { error: 'Failed to create rules: ' + rulesError.message },
-        { status: 500 }
-      )
+      throw new Error('Failed to create rules: ' + rulesError.message)
     }
     console.log(`Created ${createdRules?.length || 0} rules.`)
 
@@ -250,11 +234,17 @@ async function seedHoroscopeConfig() {
 // Call this once to populate the database with initial data
 export async function POST(request: NextRequest) {
   try {
+    console.log('Starting horoscope seed via POST...')
     const result = await seedHoroscopeConfig()
+    console.log('Seed completed successfully:', result)
     return NextResponse.json(result)
   } catch (error: any) {
+    console.error('Seed error in POST handler:', error)
     return NextResponse.json(
-      { error: 'Failed to seed configuration: ' + (error.message || 'Unknown error') },
+      { 
+        error: 'Failed to seed configuration: ' + (error.message || 'Unknown error'),
+        details: error.stack
+      },
       { status: 500 }
     )
   }
@@ -263,11 +253,17 @@ export async function POST(request: NextRequest) {
 // Also support GET for easy browser access
 export async function GET(request: NextRequest) {
   try {
+    console.log('Starting horoscope seed via GET...')
     const result = await seedHoroscopeConfig()
+    console.log('Seed completed successfully:', result)
     return NextResponse.json(result)
   } catch (error: any) {
+    console.error('Seed error in GET handler:', error)
     return NextResponse.json(
-      { error: 'Failed to seed configuration: ' + (error.message || 'Unknown error') },
+      { 
+        error: 'Failed to seed configuration: ' + (error.message || 'Unknown error'),
+        details: error.stack
+      },
       { status: 500 }
     )
   }
