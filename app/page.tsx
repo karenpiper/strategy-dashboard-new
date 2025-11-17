@@ -333,11 +333,11 @@ export default function TeamDashboard() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {/* Horoscope */}
+          {/* Horoscope - Double Width */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('horoscope') : getCardStyle('vibes')
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} md:col-span-2`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
                 <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
@@ -355,8 +355,8 @@ export default function TeamDashboard() {
                     <p className={`text-sm ${style.text}`}>{horoscopeError}</p>
                   </div>
                 ) : horoscope ? (
-                  <div className="space-y-4">
-                    {/* Portrait Image */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Portrait Image - Left Half */}
                     {horoscope.image_url && (
                       <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-3 border-2 overflow-hidden`} style={{ borderColor: `${style.accent}40` }}>
                         <div className="aspect-square relative overflow-hidden" style={{ borderColor: style.accent, borderWidth: '2px' }}>
@@ -369,8 +369,8 @@ export default function TeamDashboard() {
                       </div>
                     )}
                     
-                    {/* Horoscope Text */}
-                    <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-4 border-2`} style={{ borderColor: `${style.accent}40` }}>
+                    {/* Horoscope Text and Do's/Don'ts - Right Half */}
+                    <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-4 border-2 flex flex-col`} style={{ borderColor: `${style.accent}40` }}>
                       <p className="text-sm font-black mb-2 flex items-center gap-2" style={{ color: style.accent }}>
                         <span>{getStarSignEmoji(horoscope.star_sign)}</span>
                         <span>{horoscope.star_sign.toUpperCase()}</span>
@@ -379,7 +379,7 @@ export default function TeamDashboard() {
                       
                       {/* Do's and Don'ts */}
                       {(horoscope.horoscope_dos?.length || horoscope.horoscope_donts?.length) && (
-                        <div className="space-y-3 mt-4 pt-4 border-t-2" style={{ borderColor: `${style.accent}30` }}>
+                        <div className="space-y-3 mt-auto pt-4 border-t-2" style={{ borderColor: `${style.accent}30` }}>
                           {horoscope.horoscope_dos && horoscope.horoscope_dos.length > 0 && (
                             <div>
                               <p className="text-xs font-black mb-2 uppercase tracking-wider" style={{ color: style.accent }}>Do</p>
@@ -420,38 +420,40 @@ export default function TeamDashboard() {
             )
           })()}
 
-          {/* Weather */}
-          {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('weather') : getCardStyle('team')
-            return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-              >
-                <div className={`flex items-center gap-2 text-sm mb-3 relative z-10 ${style.text}/90`}>
-                  <span className="uppercase tracking-wider font-black text-xs">Right Now</span>
-            </div>
-                <h2 className={`text-4xl font-black mb-4 relative z-10 uppercase ${style.text}`}>WEATHER</h2>
-            <div className="mb-6 relative z-10">
-                  <p className={`text-7xl font-black mb-2 ${style.text}`}>72°</p>
-                  <p className={`${style.text} text-lg font-bold`}>Partly Cloudy</p>
-                  <p className={`text-sm ${style.text}/80 font-medium`}>Your Location</p>
-            </div>
-                <div className={`absolute bottom-20 right-8 text-9xl ${style.text}/20`}>☁️</div>
-            <div className="grid grid-cols-2 gap-3 relative z-10">
-                  <div className={`${mode === 'chaos' ? 'bg-white/20 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-white/20'} rounded-xl p-3 border`} style={{ borderColor: `${style.accent}30` }}>
-                    <p className={`text-xs ${style.text}/90 font-bold uppercase tracking-wide`}>Humidity</p>
-                    <p className={`text-2xl font-black ${style.text}`}>65%</p>
-              </div>
-                  <div className={`${mode === 'chaos' ? 'bg-white/20 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-white/20'} rounded-xl p-3 border`} style={{ borderColor: `${style.accent}30` }}>
-                    <p className={`text-xs ${style.text}/90 font-bold uppercase tracking-wide`}>Wind</p>
-                    <p className={`text-2xl font-black ${style.text}`}>8 mph</p>
-              </div>
-            </div>
-          </Card>
-            )
-          })()}
+          {/* Right Column: Weather and Time Zones */}
+          <div className="flex flex-col gap-6">
+            {/* Weather - Small Card */}
+            {(() => {
+              const style = mode === 'chaos' ? getSpecificCardStyle('weather') : getCardStyle('team')
+              return (
+                <Card className={`${style.bg} ${style.border} p-4 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden`}
+                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+                >
+                  <div className={`flex items-center gap-2 text-xs mb-2 relative z-10 ${style.text}/90`}>
+                    <span className="uppercase tracking-wider font-black text-xs">Right Now</span>
+                  </div>
+                  <h2 className={`text-2xl font-black mb-3 relative z-10 uppercase ${style.text}`}>WEATHER</h2>
+                  <div className="mb-4 relative z-10">
+                    <p className={`text-5xl font-black mb-1 ${style.text}`}>72°</p>
+                    <p className={`${style.text} text-base font-bold`}>Partly Cloudy</p>
+                    <p className={`text-xs ${style.text}/80 font-medium`}>Your Location</p>
+                  </div>
+                  <div className={`absolute bottom-4 right-4 text-6xl ${style.text}/20`}>☁️</div>
+                  <div className="grid grid-cols-2 gap-2 relative z-10">
+                    <div className={`${mode === 'chaos' ? 'bg-white/20 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-white/20'} ${getRoundedClass('rounded-xl')} p-2 border`} style={{ borderColor: `${style.accent}30` }}>
+                      <p className={`text-xs ${style.text}/90 font-bold uppercase tracking-wide`}>Humidity</p>
+                      <p className={`text-xl font-black ${style.text}`}>65%</p>
+                    </div>
+                    <div className={`${mode === 'chaos' ? 'bg-white/20 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-white/20'} ${getRoundedClass('rounded-xl')} p-2 border`} style={{ borderColor: `${style.accent}30` }}>
+                      <p className={`text-xs ${style.text}/90 font-bold uppercase tracking-wide`}>Wind</p>
+                      <p className={`text-xl font-black ${style.text}`}>8 mph</p>
+                    </div>
+                  </div>
+                </Card>
+              )
+            })()}
 
-          {/* Time Zones */}
+            {/* Time Zones */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('timezones') : getCardStyle('team')
             const timeZoneColors = mode === 'chaos' 
@@ -494,6 +496,7 @@ export default function TeamDashboard() {
           </Card>
             )
           })()}
+          </div>
         </div>
 
         <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
