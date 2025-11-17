@@ -14,14 +14,32 @@ export const dynamic = 'force-dynamic'
 export default function TeamDashboard() {
   const { mode } = useMode()
 
+  // Chaos mode card color helpers based on brand guidelines
+  const getChaosCardStyle = (section: 'hero' | 'recognition' | 'work' | 'team' | 'vibes' | 'community' | 'default'): { bg: string; border: string; glow: string } => {
+    if (mode !== 'chaos') {
+      return { bg: '', border: '', glow: '' }
+    }
+    
+    const colors: Record<string, { bg: string; border: string; glow: string }> = {
+      hero: { bg: 'bg-gradient-to-br from-[#C4F500] via-[#FFE500] to-[#00FF87]', border: 'border-4 border-[#C4F500]', glow: 'rgba(196, 245, 0, 0.4)' },
+      recognition: { bg: 'bg-[#2A2A2A]', border: 'border-4 border-[#00FF87]', glow: 'rgba(0, 255, 135, 0.4)' },
+      work: { bg: 'bg-[#2A2A2A]', border: 'border-4 border-[#FF6B00]', glow: 'rgba(255, 107, 0, 0.4)' },
+      team: { bg: 'bg-[#2A2A2A]', border: 'border-4 border-[#00D4FF]', glow: 'rgba(0, 212, 255, 0.4)' },
+      vibes: { bg: 'bg-[#2A2A2A]', border: 'border-4 border-[#FF00FF]', glow: 'rgba(255, 0, 255, 0.4)' },
+      community: { bg: 'bg-[#2A2A2A]', border: 'border-4 border-[#9D4EFF]', glow: 'rgba(157, 78, 255, 0.4)' },
+      default: { bg: 'bg-[#2A2A2A]', border: 'border-4 border-[#C4F500]', glow: 'rgba(196, 245, 0, 0.4)' },
+    }
+    return colors[section] || colors.default
+  }
+
   // Mode-aware class helpers
   const getBgClass = () => {
     switch (mode) {
-      case 'chaos': return 'bg-black'
+      case 'chaos': return 'bg-[#1A1A1A]' // Charcoal
       case 'chill': return 'bg-[#F5E6D3]'
       case 'dark-grey': return 'bg-black'
       case 'light-grey': return 'bg-white'
-      default: return 'bg-black'
+      default: return 'bg-[#1A1A1A]'
     }
   }
 
@@ -37,42 +55,42 @@ export default function TeamDashboard() {
 
   const getBorderClass = () => {
     switch (mode) {
-      case 'chaos': return 'border-zinc-800/50'
+      case 'chaos': return 'border-[#333333]'
       case 'chill': return 'border-[#4A1818]/20'
       case 'dark-grey': return 'border-[#333333]'
       case 'light-grey': return 'border-[#e0e0e0]'
-      default: return 'border-zinc-800/50'
+      default: return 'border-[#333333]'
     }
   }
 
   const getNavLinkClass = (isActive = false) => {
-    const base = 'transition-colors text-sm font-bold'
+    const base = 'transition-colors text-sm font-black uppercase'
     if (isActive) {
       switch (mode) {
-        case 'chaos': return `${base} text-white hover:text-[#E8FF00]`
+        case 'chaos': return `${base} text-white hover:text-[#C4F500]`
         case 'chill': return `${base} text-[#4A1818] hover:text-[#FFC043]`
         case 'dark-grey': return `${base} text-white hover:text-[#cccccc]`
         case 'light-grey': return `${base} text-black hover:text-[#666666]`
-        default: return `${base} text-white hover:text-[#E8FF00]`
+        default: return `${base} text-white hover:text-[#C4F500]`
       }
     } else {
       switch (mode) {
-        case 'chaos': return `${base} text-zinc-500 hover:text-white`
+        case 'chaos': return `${base} text-[#666666] hover:text-white`
         case 'chill': return `${base} text-[#8B4444] hover:text-[#4A1818]`
         case 'dark-grey': return `${base} text-[#808080] hover:text-white`
         case 'light-grey': return `${base} text-[#808080] hover:text-black`
-        default: return `${base} text-zinc-500 hover:text-white`
+        default: return `${base} text-[#666666] hover:text-white`
       }
     }
   }
 
   const getLogoBg = () => {
     switch (mode) {
-      case 'chaos': return 'bg-[#E8FF00]'
+      case 'chaos': return 'bg-[#C4F500]' // Neon Lime
       case 'chill': return 'bg-[#FFC043]'
       case 'dark-grey': return 'bg-white'
       case 'light-grey': return 'bg-black'
-      default: return 'bg-[#E8FF00]'
+      default: return 'bg-[#C4F500]'
     }
   }
 
@@ -119,30 +137,40 @@ export default function TeamDashboard() {
         {/* Hero Section */}
         <section className="mb-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Large Hero Card */}
-            <Card className="bg-gradient-to-br from-[#FFB84D] via-[#FF8A5C] to-[#FF6B9D] text-black p-0 rounded-3xl border-0 relative overflow-hidden group col-span-1 lg:col-span-2">
-            <div className="absolute top-0 right-0 w-[55%] h-full bg-black" 
-                 style={{
-                   clipPath: 'polygon(25% 0, 100% 0, 100% 100%, 0 100%)'
-                 }} 
-            />
+            {/* Large Hero Card - Chaos Mode Brand Guidelines */}
+            <Card className={`${mode === 'chaos' ? 'bg-gradient-to-br from-[#C4F500] via-[#FFE500] to-[#00FF87] text-black border-4 border-[#C4F500]' : 'bg-gradient-to-br from-[#FFB84D] via-[#FF8A5C] to-[#FF6B9D] text-black border-0'} p-0 rounded-[2.5rem] relative overflow-hidden group col-span-1 lg:col-span-2`}
+                  style={mode === 'chaos' ? { boxShadow: '0 0 40px rgba(196, 245, 0, 0.4)' } : {}}
+            >
+            {mode === 'chaos' ? (
+              <div className="absolute top-0 right-0 w-[55%] h-full bg-[#1A1A1A]" 
+                   style={{
+                     clipPath: 'polygon(25% 0, 100% 0, 100% 100%, 0 100%)'
+                   }} 
+              />
+            ) : (
+              <div className="absolute top-0 right-0 w-[55%] h-full bg-black" 
+                   style={{
+                     clipPath: 'polygon(25% 0, 100% 0, 100% 100%, 0 100%)'
+                   }} 
+              />
+            )}
             <div className="relative z-10 p-8 h-full flex flex-col justify-between">
               <div>
-                <Badge className="bg-black text-white hover:bg-black border-0 font-bold mb-4 text-xs uppercase tracking-wide">Quick Actions</Badge>
-                <h1 className="text-7xl md:text-8xl font-black mb-4 leading-none tracking-tight">READY!</h1>
-                <p className="text-xl font-semibold max-w-md text-black">
+                <Badge className={`${mode === 'chaos' ? 'bg-black text-[#C4F500]' : 'bg-black text-white'} hover:bg-black border-0 font-black mb-4 text-xs uppercase tracking-wider`}>Quick Actions</Badge>
+                <h1 className="text-7xl md:text-8xl font-black mb-4 leading-[0.85] tracking-tight uppercase">READY!</h1>
+                <p className={`text-xl font-semibold max-w-md ${mode === 'chaos' ? 'text-black' : 'text-black'}`}>
                   Let's ship something amazing today
                 </p>
-                <p className="text-sm font-medium text-black/70 mt-3">Friday, November 14</p>
+                <p className={`text-sm font-medium mt-3 ${mode === 'chaos' ? 'text-black/70' : 'text-black/70'}`}>Friday, November 14</p>
               </div>
               <div className="flex items-center gap-3 mt-6 flex-wrap">
-                <Button className="bg-black hover:bg-zinc-900 text-white font-bold rounded-2xl h-12 px-6">
+                <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : 'bg-black text-white hover:bg-zinc-900'} font-black rounded-full h-12 px-8 uppercase`}>
                   Give Snap <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-                <Button className="bg-black hover:bg-zinc-900 text-white font-bold rounded-2xl h-12 px-6">
+                <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : 'bg-black text-white hover:bg-zinc-900'} font-black rounded-full h-12 px-8 uppercase`}>
                   Need Help <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-                <Button className="bg-black hover:bg-zinc-900 text-white font-bold rounded-2xl h-12 px-6">
+                <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : 'bg-black text-white hover:bg-zinc-900'} font-black rounded-full h-12 px-8 uppercase`}>
                   Add Win <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -150,41 +178,47 @@ export default function TeamDashboard() {
           </Card>
 
             {/* Small Launch Pad */}
-            <Card className="bg-zinc-900 border border-zinc-700 p-8 rounded-3xl flex flex-col justify-center">
-            <div className="w-12 h-12 bg-[#E8FF00] rounded-2xl flex items-center justify-center mb-4">
-              <Zap className="w-6 h-6 text-black" />
+            <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A] border-4 border-[#C4F500]' : 'bg-zinc-900 border border-zinc-700'} p-8 rounded-[2.5rem] flex flex-col justify-center`}
+                  style={mode === 'chaos' ? { boxShadow: '0 0 40px rgba(196, 245, 0, 0.4)' } : {}}
+            >
+            <div className={`w-12 h-12 ${mode === 'chaos' ? 'bg-[#C4F500]' : 'bg-[#E8FF00]'} rounded-2xl flex items-center justify-center mb-4`}>
+              <Zap className={`w-6 h-6 ${mode === 'chaos' ? 'text-black' : 'text-black'}`} />
             </div>
-            <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold mb-2">Launch Pad</p>
-            <h2 className="text-4xl font-black text-white leading-tight">Quick Actions</h2>
+            <p className={`text-xs uppercase tracking-wider font-black mb-2 ${mode === 'chaos' ? 'text-[#C4F500]' : 'text-zinc-500'}`}>Launch Pad</p>
+            <h2 className={`text-4xl font-black leading-tight uppercase ${mode === 'chaos' ? 'text-white' : 'text-white'}`}>Quick Actions</h2>
           </Card>
         </div>
         </section>
 
-        <p className="text-xs text-zinc-600 uppercase tracking-widest font-bold mb-6 flex items-center gap-2">
-          <span className="w-8 h-px bg-zinc-800"></span>
+        <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : 'text-zinc-600'}`}>
+          <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : 'bg-zinc-800'}`}></span>
           Personalized Information
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {/* Horoscope */}
-          <Card className="bg-gradient-to-br from-purple-600 to-purple-700 border-0 p-6 rounded-3xl">
-            <div className="flex items-center gap-2 text-sm mb-3 text-[#E8FF00]">
+          <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('vibes').bg} ${getChaosCardStyle('vibes').border} p-6 rounded-[2.5rem]` : 'bg-gradient-to-br from-purple-600 to-purple-700 border-0 p-6 rounded-3xl'}`}
+                style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('vibes').glow}` } : {}}
+          >
+            <div className={`flex items-center gap-2 text-sm mb-3 ${mode === 'chaos' ? 'text-[#FF00FF]' : 'text-[#E8FF00]'}`}>
               <Sparkles className="w-4 h-4" />
-              <span className="uppercase tracking-wide font-bold text-xs">Totally Real</span>
+              <span className="uppercase tracking-wider font-black text-xs">Totally Real</span>
             </div>
-            <h2 className="text-4xl font-black mb-6 text-[#E8FF00]">YOUR<br/>HOROSCOPE</h2>
-            <div className="bg-purple-800/50 backdrop-blur-sm rounded-2xl p-4 border border-purple-500/30">
-              <p className="text-sm font-bold text-[#E8FF00] mb-2">CANCER</p>
+            <h2 className={`text-4xl font-black mb-6 uppercase ${mode === 'chaos' ? 'text-[#FF00FF]' : 'text-[#E8FF00]'}`}>YOUR<br/>HOROSCOPE</h2>
+            <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm rounded-2xl p-4 border-2 border-[#FF00FF]/40' : 'bg-purple-800/50 backdrop-blur-sm rounded-2xl p-4 border border-purple-500/30'}`}>
+              <p className={`text-sm font-black mb-2 ${mode === 'chaos' ? 'text-[#FF00FF]' : 'text-[#E8FF00]'}`}>CANCER</p>
               <p className="text-white text-sm leading-relaxed">Mars aligns with your keyboard. Expect typos. So many typos. Idk stars have speelin.</p>
             </div>
           </Card>
 
           {/* Weather */}
-          <Card className="bg-gradient-to-br from-sky-400 to-blue-500 border-0 p-6 rounded-3xl relative overflow-hidden">
+          <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('team').bg} ${getChaosCardStyle('team').border} p-6 rounded-[2.5rem]` : 'bg-gradient-to-br from-sky-400 to-blue-500 border-0 p-6 rounded-3xl'} relative overflow-hidden`}
+                style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('team').glow}` } : {}}
+          >
             <div className="flex items-center gap-2 text-sm mb-3 text-white/90 relative z-10">
-              <span className="uppercase tracking-wide font-bold text-xs">Right Now</span>
+              <span className="uppercase tracking-wider font-black text-xs">Right Now</span>
             </div>
-            <h2 className="text-4xl font-black text-white mb-4 relative z-10">WEATHER</h2>
+            <h2 className="text-4xl font-black text-white mb-4 relative z-10 uppercase">WEATHER</h2>
             <div className="mb-6 relative z-10">
               <p className="text-7xl font-black text-white mb-2">72°</p>
               <p className="text-white text-lg font-bold">Partly Cloudy</p>
@@ -204,48 +238,50 @@ export default function TeamDashboard() {
           </Card>
 
           {/* Time Zones */}
-          <Card className="bg-zinc-900 border border-sky-500 p-6 rounded-3xl">
-            <div className="flex items-center gap-2 text-sm mb-3 text-sky-400">
+          <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('team').bg} ${getChaosCardStyle('team').border} p-6 rounded-[2.5rem]` : 'bg-zinc-900 border border-sky-500 p-6 rounded-3xl'}`}
+                style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('team').glow}` } : {}}
+          >
+            <div className={`flex items-center gap-2 text-sm mb-3 ${mode === 'chaos' ? 'text-[#00D4FF]' : 'text-sky-400'}`}>
               <Clock className="w-4 h-4" />
-              <span className="uppercase tracking-wide font-bold text-xs">Global Team</span>
+              <span className="uppercase tracking-wider font-black text-xs">Global Team</span>
             </div>
-            <h2 className="text-4xl font-black text-white mb-6">TIME<br/>ZONES</h2>
+            <h2 className="text-4xl font-black text-white mb-6 uppercase">TIME<br/>ZONES</h2>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-blue-500 rounded-xl hover:bg-blue-600 transition-colors">
+              <div className={`flex items-center justify-between p-3 rounded-xl transition-colors ${mode === 'chaos' ? 'bg-[#00D4FF]/20 border-2 border-[#00D4FF]/40 hover:bg-[#00D4FF]/30' : 'bg-blue-500 hover:bg-blue-600'}`}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-base">🌉</div>
                   <div>
-                    <p className="text-white font-bold text-sm">San Francisco</p>
+                    <p className="text-white font-black text-sm">San Francisco</p>
                     <p className="text-xs text-white/70 font-medium">2 people</p>
                   </div>
                 </div>
                 <span className="text-white font-black text-sm">12:50 AM</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-green-600 rounded-xl hover:bg-green-700 transition-colors">
+              <div className={`flex items-center justify-between p-3 rounded-xl transition-colors ${mode === 'chaos' ? 'bg-[#00FF87]/20 border-2 border-[#00FF87]/40 hover:bg-[#00FF87]/30' : 'bg-green-600 hover:bg-green-700'}`}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-base">🗽</div>
                   <div>
-                    <p className="text-white font-bold text-sm">New York</p>
+                    <p className="text-white font-black text-sm">New York</p>
                     <p className="text-xs text-white/70 font-medium">5 people</p>
                   </div>
                 </div>
                 <span className="text-white font-black text-sm">03:50 AM</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-purple-600 rounded-xl hover:bg-purple-700 transition-colors">
+              <div className={`flex items-center justify-between p-3 rounded-xl transition-colors ${mode === 'chaos' ? 'bg-[#9D4EFF]/20 border-2 border-[#9D4EFF]/40 hover:bg-[#9D4EFF]/30' : 'bg-purple-600 hover:bg-purple-700'}`}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-base">🏰</div>
                   <div>
-                    <p className="text-white font-bold text-sm">London</p>
+                    <p className="text-white font-black text-sm">London</p>
                     <p className="text-xs text-white/70 font-medium">3 people</p>
                   </div>
                 </div>
                 <span className="text-white font-black text-sm">08:50 AM</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-pink-600 rounded-xl hover:bg-pink-700 transition-colors">
+              <div className={`flex items-center justify-between p-3 rounded-xl transition-colors ${mode === 'chaos' ? 'bg-[#FF00FF]/20 border-2 border-[#FF00FF]/40 hover:bg-[#FF00FF]/30' : 'bg-pink-600 hover:bg-pink-700'}`}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-base">🗼</div>
                   <div>
-                    <p className="text-white font-bold text-sm">Tokyo</p>
+                    <p className="text-white font-black text-sm">Tokyo</p>
                     <p className="text-xs text-white/70 font-medium">1 person</p>
                   </div>
                 </div>
@@ -255,38 +291,42 @@ export default function TeamDashboard() {
           </Card>
         </div>
 
-        <p className="text-xs text-zinc-600 uppercase tracking-widest font-bold mb-6 flex items-center gap-2">
-          <span className="w-8 h-px bg-zinc-800"></span>
+        <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : 'text-zinc-600'}`}>
+          <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : 'bg-zinc-800'}`}></span>
           Work Updates
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {/* Playlist */}
-          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0 p-6 rounded-3xl">
-            <div className="flex items-center gap-2 text-sm mb-3 text-black">
+          <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('vibes').bg} ${getChaosCardStyle('vibes').border} p-6 rounded-[2.5rem]` : 'bg-gradient-to-br from-orange-500 to-orange-600 border-0 p-6 rounded-3xl'}`}
+                style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('vibes').glow}` } : {}}
+          >
+            <div className={`flex items-center gap-2 text-sm mb-3 ${mode === 'chaos' ? 'text-[#FF00FF]' : 'text-black'}`}>
               <Music className="w-4 h-4" />
-              <span className="uppercase tracking-wide font-bold text-xs">Weekly</span>
+              <span className="uppercase tracking-wider font-black text-xs">Weekly</span>
             </div>
-            <h2 className="text-3xl font-black text-black mb-4">PLAYLIST</h2>
+            <h2 className={`text-3xl font-black mb-4 uppercase ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>PLAYLIST</h2>
             <div className="flex items-center justify-center mb-4">
-              <div className="w-20 h-20 bg-black rounded-2xl flex items-center justify-center">
-                <Music className="w-10 h-10 text-orange-500" />
+              <div className={`w-20 h-20 ${mode === 'chaos' ? 'bg-[#FF00FF]' : 'bg-black'} rounded-2xl flex items-center justify-center`}>
+                <Music className={`w-10 h-10 ${mode === 'chaos' ? 'text-black' : 'text-orange-500'}`} />
               </div>
             </div>
-            <p className="text-black font-bold text-sm mb-1">Coding Vibes</p>
-            <p className="text-black/70 text-xs mb-4">Curated by Alex</p>
-            <Button className="w-full bg-black hover:bg-zinc-900 text-white font-bold rounded-xl h-10 text-sm">
+            <p className={`font-black text-sm mb-1 ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>Coding Vibes</p>
+            <p className={`text-xs mb-4 ${mode === 'chaos' ? 'text-white/70' : 'text-black/70'}`}>Curated by Alex</p>
+            <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#FF00FF] hover:bg-[#0F0F0F]' : 'bg-black hover:bg-zinc-900 text-white'} font-black rounded-full h-10 text-sm uppercase`}>
               <Play className="w-4 h-4 mr-2" /> Play on Spotify
             </Button>
           </Card>
 
           {/* Friday Drop */}
-          <Card className="bg-gradient-to-br from-teal-500 to-cyan-600 border-0 p-6 rounded-3xl">
-            <div className="flex items-center gap-2 text-sm mb-3 text-black">
+          <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('work').bg} ${getChaosCardStyle('work').border} p-6 rounded-[2.5rem]` : 'bg-gradient-to-br from-teal-500 to-cyan-600 border-0 p-6 rounded-3xl'}`}
+                style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('work').glow}` } : {}}
+          >
+            <div className={`flex items-center gap-2 text-sm mb-3 ${mode === 'chaos' ? 'text-[#FF6B00]' : 'text-black'}`}>
               <FileText className="w-4 h-4" />
-              <span className="uppercase tracking-wide font-bold text-xs">Weekly Report</span>
+              <span className="uppercase tracking-wider font-black text-xs">Weekly Report</span>
             </div>
-            <h2 className="text-3xl font-black text-black mb-6">THE<br/>FRIDAY<br/>DROP</h2>
+            <h2 className={`text-3xl font-black mb-6 uppercase ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>THE<br/>FRIDAY<br/>DROP</h2>
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-black/10 backdrop-blur-sm rounded-xl p-3 border border-black/10 text-center">
                 <p className="text-3xl font-black text-black">5</p>
@@ -304,230 +344,246 @@ export default function TeamDashboard() {
           </Card>
 
           {/* Brand Redesign */}
-          <Card className="bg-gradient-to-br from-pink-400 to-pink-500 border-0 p-6 rounded-3xl relative overflow-hidden">
-            <Badge className="bg-black text-white border-0 font-bold mb-3 text-xs uppercase tracking-wide">Featured</Badge>
+          <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('vibes').bg} ${getChaosCardStyle('vibes').border} p-6 rounded-[2.5rem]` : 'bg-gradient-to-br from-pink-400 to-pink-500 border-0 p-6 rounded-3xl'} relative overflow-hidden`}
+                style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('vibes').glow}` } : {}}
+          >
+            <Badge className={`${mode === 'chaos' ? 'bg-black text-[#FF00FF]' : 'bg-black text-white'} border-0 font-black mb-3 text-xs uppercase tracking-wider`}>Featured</Badge>
             <div className="mb-4">
-              <p className="text-sm text-black/70 font-medium mb-1">Active Drop</p>
-              <h3 className="text-2xl font-black text-black">Brand Redesign</h3>
-              <Badge className="bg-black/20 text-black border-0 font-bold mt-2 text-xs">Branding</Badge>
+              <p className={`text-sm font-medium mb-1 ${mode === 'chaos' ? 'text-white/70' : 'text-black/70'}`}>Active Drop</p>
+              <h3 className={`text-2xl font-black uppercase ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>Brand Redesign</h3>
+              <Badge className={`${mode === 'chaos' ? 'bg-black/40 text-[#FF00FF]' : 'bg-black/20 text-black'} border-0 font-black mt-2 text-xs`}>Branding</Badge>
             </div>
-            <div className="absolute bottom-4 right-4 text-8xl opacity-20">🎨</div>
-            <ChevronRight className="absolute bottom-4 right-4 w-6 h-6 text-black" />
+            <div className={`absolute bottom-4 right-4 text-8xl ${mode === 'chaos' ? 'opacity-10' : 'opacity-20'}`}>🎨</div>
+            <ChevronRight className={`absolute bottom-4 right-4 w-6 h-6 ${mode === 'chaos' ? 'text-white' : 'text-black'}`} />
           </Card>
 
           {/* Stats */}
-          <Card className="bg-white border-0 p-6 rounded-3xl">
-            <p className="text-xs uppercase tracking-wide text-zinc-600 mb-2 font-bold">This Month</p>
-            <h2 className="text-3xl font-black text-black mb-6">STATS</h2>
+          <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('team').bg} ${getChaosCardStyle('team').border} p-6 rounded-[2.5rem]` : 'bg-white border-0 p-6 rounded-3xl'}`}
+                style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('team').glow}` } : {}}
+          >
+            <p className={`text-xs uppercase tracking-wider mb-2 font-black ${mode === 'chaos' ? 'text-[#00D4FF]' : 'text-zinc-600'}`}>This Month</p>
+            <h2 className={`text-3xl font-black mb-6 uppercase ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>STATS</h2>
             <div className="space-y-4">
               <div>
-                <p className="text-5xl font-black text-black">24</p>
-                <p className="text-sm text-zinc-600 font-bold">Team</p>
+                <p className={`text-5xl font-black ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>24</p>
+                <p className={`text-sm font-black ${mode === 'chaos' ? 'text-white/70' : 'text-zinc-600'}`}>Team</p>
               </div>
               <div>
-                <p className="text-5xl font-black text-black">247</p>
-                <p className="text-sm text-zinc-600 font-bold">Snaps</p>
+                <p className={`text-5xl font-black ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>247</p>
+                <p className={`text-sm font-black ${mode === 'chaos' ? 'text-white/70' : 'text-zinc-600'}`}>Snaps</p>
               </div>
               <div>
-                <p className="text-5xl font-black text-emerald-500">+15%</p>
-                <p className="text-sm text-zinc-600 font-bold">Growth</p>
+                <p className={`text-5xl font-black ${mode === 'chaos' ? 'text-[#00FF87]' : 'text-emerald-500'}`}>+15%</p>
+                <p className={`text-sm font-black ${mode === 'chaos' ? 'text-white/70' : 'text-zinc-600'}`}>Growth</p>
               </div>
             </div>
           </Card>
         </div>
 
-        <p className="text-xs text-zinc-600 uppercase tracking-widest font-bold mb-6 flex items-center gap-2">
-          <span className="w-8 h-px bg-zinc-800"></span>
+        <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : 'text-zinc-600'}`}>
+          <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : 'bg-zinc-800'}`}></span>
           Work Updates Continued
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {/* Events */}
-          <Card className="bg-zinc-900 border border-teal-500 p-6 rounded-3xl">
-            <div className="flex items-center gap-2 text-sm mb-3 text-teal-400">
+          <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('work').bg} ${getChaosCardStyle('work').border} p-6 rounded-[2.5rem]` : 'bg-zinc-900 border border-teal-500 p-6 rounded-3xl'}`}
+                style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('work').glow}` } : {}}
+          >
+            <div className={`flex items-center gap-2 text-sm mb-3 ${mode === 'chaos' ? 'text-[#FF6B00]' : 'text-teal-400'}`}>
               <Calendar className="w-4 h-4" />
-              <span className="uppercase tracking-wide font-bold text-xs">Today</span>
+              <span className="uppercase tracking-wider font-black text-xs">Today</span>
             </div>
-            <h2 className="text-4xl font-black text-white mb-6">EVENTS</h2>
+            <h2 className="text-4xl font-black text-white mb-6 uppercase">EVENTS</h2>
             <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-teal-900/30 border border-teal-700/50 rounded-xl">
-                <Clock className="w-4 h-4 text-teal-400" />
+              <div className={`flex items-center gap-3 p-3 rounded-xl ${mode === 'chaos' ? 'bg-[#FF6B00]/20 border-2 border-[#FF6B00]/40' : 'bg-teal-900/30 border border-teal-700/50'}`}>
+                <Clock className={`w-4 h-4 ${mode === 'chaos' ? 'text-[#FF6B00]' : 'text-teal-400'}`} />
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-white">10:30 Team Standup</p>
+                  <p className="text-sm font-black text-white">10:30 Team Standup</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 bg-teal-900/30 border border-teal-700/50 rounded-xl">
-                <Clock className="w-4 h-4 text-teal-400" />
+              <div className={`flex items-center gap-3 p-3 rounded-xl ${mode === 'chaos' ? 'bg-[#FF6B00]/20 border-2 border-[#FF6B00]/40' : 'bg-teal-900/30 border border-teal-700/50'}`}>
+                <Clock className={`w-4 h-4 ${mode === 'chaos' ? 'text-[#FF6B00]' : 'text-teal-400'}`} />
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-white">14:00 Design Review</p>
+                  <p className="text-sm font-black text-white">14:00 Design Review</p>
                 </div>
               </div>
             </div>
           </Card>
 
           {/* Pipeline */}
-          <Card className="bg-[#6FD89C] border-0 p-6 rounded-3xl">
-            <p className="text-xs uppercase tracking-wide text-black/70 mb-2 font-bold">Work</p>
-            <h2 className="text-4xl font-black text-black mb-6">PIPELINE</h2>
+          <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('work').bg} ${getChaosCardStyle('work').border} p-6 rounded-[2.5rem]` : 'bg-[#6FD89C] border-0 p-6 rounded-3xl'}`}
+                style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('work').glow}` } : {}}
+          >
+            <p className={`text-xs uppercase tracking-wider mb-2 font-black ${mode === 'chaos' ? 'text-[#FF6B00]' : 'text-black/70'}`}>Work</p>
+            <h2 className={`text-4xl font-black mb-6 uppercase ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>PIPELINE</h2>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-4 bg-black/80 border border-black rounded-xl">
+              <div className={`flex items-center justify-between p-4 rounded-xl ${mode === 'chaos' ? 'bg-black/40 border-2 border-[#FF6B00]/40' : 'bg-black/80 border border-black'}`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-[#E8FF00] rounded-lg flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-black" />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${mode === 'chaos' ? 'bg-[#FFE500]' : 'bg-[#E8FF00]'}`}>
+                    <FileText className={`w-4 h-4 ${mode === 'chaos' ? 'text-black' : 'text-black'}`} />
                   </div>
-                  <span className="text-white font-bold text-sm">New Business</span>
+                  <span className="text-white font-black text-sm">New Business</span>
                 </div>
-                <span className="text-2xl font-black text-[#E8FF00]">12</span>
+                <span className={`text-2xl font-black ${mode === 'chaos' ? 'text-[#FFE500]' : 'text-[#E8FF00]'}`}>12</span>
               </div>
-              <div className="flex items-center justify-between p-4 bg-black/80 border border-black rounded-xl">
+              <div className={`flex items-center justify-between p-4 rounded-xl ${mode === 'chaos' ? 'bg-black/40 border-2 border-[#9D4EFF]/40' : 'bg-black/80 border border-black'}`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${mode === 'chaos' ? 'bg-[#9D4EFF]' : 'bg-purple-500'}`}>
                     <TrendingUp className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-white font-bold text-sm">In Progress</span>
+                  <span className="text-white font-black text-sm">In Progress</span>
                 </div>
-                <span className="text-2xl font-black text-purple-300">8</span>
+                <span className={`text-2xl font-black ${mode === 'chaos' ? 'text-[#9D4EFF]' : 'text-purple-300'}`}>8</span>
               </div>
-              <div className="flex items-center justify-between p-4 bg-black/80 border border-black rounded-xl">
+              <div className={`flex items-center justify-between p-4 rounded-xl ${mode === 'chaos' ? 'bg-black/40 border-2 border-[#00FF87]/40' : 'bg-black/80 border border-black'}`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-[#6FD89C] rounded-lg flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-black" />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${mode === 'chaos' ? 'bg-[#00FF87]' : 'bg-[#6FD89C]'}`}>
+                    <CheckCircle className={`w-4 h-4 ${mode === 'chaos' ? 'text-black' : 'text-black'}`} />
                   </div>
-                  <span className="text-white font-bold text-sm">Completed</span>
+                  <span className="text-white font-black text-sm">Completed</span>
                 </div>
-                <span className="text-2xl font-black text-[#6FD89C]">24</span>
+                <span className={`text-2xl font-black ${mode === 'chaos' ? 'text-[#00FF87]' : 'text-[#6FD89C]'}`}>24</span>
               </div>
             </div>
           </Card>
 
           {/* Who Needs What */}
-          <Card className="bg-[#E8FF00] border-0 p-6 rounded-3xl">
-            <Badge className="bg-black text-[#E8FF00] border-0 font-bold mb-3 text-xs uppercase tracking-wide">Recent Requests</Badge>
-            <h2 className="text-4xl font-black text-black mb-6">WHO<br/>NEEDS<br/>WHAT</h2>
+          <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('work').bg} ${getChaosCardStyle('work').border} p-6 rounded-[2.5rem]` : 'bg-[#E8FF00] border-0 p-6 rounded-3xl'}`}
+                style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('work').glow}` } : {}}
+          >
+            <Badge className={`${mode === 'chaos' ? 'bg-black text-[#FF6B00]' : 'bg-black text-[#E8FF00]'} border-0 font-black mb-3 text-xs uppercase tracking-wider`}>Recent Requests</Badge>
+            <h2 className={`text-4xl font-black mb-6 uppercase ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>WHO<br/>NEEDS<br/>WHAT</h2>
             <div className="space-y-3 mb-4">
-              <div className="flex items-center justify-between p-3 bg-black rounded-xl">
+              <div className={`flex items-center justify-between p-3 rounded-xl ${mode === 'chaos' ? 'bg-black/40 border-2 border-[#FF6B00]/40' : 'bg-black'}`}>
                 <div>
                   <p className="text-sm font-black text-white">Alex</p>
-                  <p className="text-xs text-zinc-400">Design Review</p>
+                  <p className={`text-xs ${mode === 'chaos' ? 'text-white/60' : 'text-zinc-400'}`}>Design Review</p>
                 </div>
-                <div className="w-8 h-8 bg-[#E8FF00] rounded-full flex items-center justify-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${mode === 'chaos' ? 'bg-[#FF6B00]' : 'bg-[#E8FF00]'}`}>
                   <span className="text-lg">👀</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between p-3 bg-black rounded-xl">
+              <div className={`flex items-center justify-between p-3 rounded-xl ${mode === 'chaos' ? 'bg-black/40 border-2 border-[#FF6B00]/40' : 'bg-black'}`}>
                 <div>
                   <p className="text-sm font-black text-white">Sarah</p>
-                  <p className="text-xs text-zinc-400">Code Help</p>
+                  <p className={`text-xs ${mode === 'chaos' ? 'text-white/60' : 'text-zinc-400'}`}>Code Help</p>
                 </div>
-                <div className="w-8 h-8 bg-[#E8FF00] rounded-full flex items-center justify-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${mode === 'chaos' ? 'bg-[#FF6B00]' : 'bg-[#E8FF00]'}`}>
                   <span className="text-lg">💻</span>
                 </div>
               </div>
             </div>
-            <Button className="w-full bg-black hover:bg-zinc-900 text-white font-bold rounded-xl h-12">
+            <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#FF6B00] hover:bg-[#0F0F0F]' : 'bg-black hover:bg-zinc-900 text-white'} font-black rounded-full h-12 uppercase`}>
               CLAIM REQUEST
             </Button>
           </Card>
         </div>
 
-        <p className="text-xs text-zinc-600 uppercase tracking-widest font-bold mb-6 flex items-center gap-2">
-          <span className="w-8 h-px bg-zinc-800"></span>
+        <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : 'text-zinc-600'}`}>
+          <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : 'bg-zinc-800'}`}></span>
           Recognition & Culture
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
           {/* Snaps */}
-          <Card className="lg:col-span-2 bg-zinc-900 border border-purple-500 p-8 rounded-3xl">
-            <div className="flex items-center gap-2 text-sm mb-3 text-purple-400">
+          <Card className={`lg:col-span-2 ${mode === 'chaos' ? `${getChaosCardStyle('recognition').bg} ${getChaosCardStyle('recognition').border} p-8 rounded-[2.5rem]` : 'bg-zinc-900 border border-purple-500 p-8 rounded-3xl'}`}
+                style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('recognition').glow}` } : {}}
+          >
+            <div className={`flex items-center gap-2 text-sm mb-3 ${mode === 'chaos' ? 'text-[#00FF87]' : 'text-purple-400'}`}>
               <Sparkles className="w-4 h-4" />
-              <span className="uppercase tracking-wide font-bold text-xs">Recent Recognition</span>
+              <span className="uppercase tracking-wider font-black text-xs">Recent Recognition</span>
             </div>
-            <h2 className="text-6xl font-black text-[#E8FF00] mb-8">SNAPS</h2>
+            <h2 className={`text-6xl font-black mb-8 uppercase ${mode === 'chaos' ? 'text-[#00FF87]' : 'text-[#E8FF00]'}`}>SNAPS</h2>
             <div className="space-y-3 mb-6">
-              <div className="bg-zinc-800/50 backdrop-blur-sm rounded-xl p-5 border border-zinc-700/50 hover:border-[#E8FF00]/50 transition-all">
+              <div className={`backdrop-blur-sm rounded-xl p-5 transition-all ${mode === 'chaos' ? 'bg-black/40 border-2 border-[#00FF87]/40 hover:border-[#00FF87]/60' : 'bg-zinc-800/50 border border-zinc-700/50 hover:border-[#E8FF00]/50'}`}>
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-lg flex-shrink-0">👍</div>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0 ${mode === 'chaos' ? 'bg-[#00D4FF]' : 'bg-blue-500'}`}>👍</div>
                   <div className="flex-1">
-                    <p className="font-bold text-white text-sm mb-1">
-                      <span className="font-black">Alex</span> <span className="text-zinc-500">→</span> <span className="font-black">Jamie</span>
+                    <p className="font-black text-white text-sm mb-1">
+                      <span className="font-black">Alex</span> <span className={mode === 'chaos' ? 'text-white/50' : 'text-zinc-500'}>→</span> <span className="font-black">Jamie</span>
                     </p>
-                    <p className="text-zinc-300 text-sm leading-relaxed">Amazing presentation! The client loved it</p>
+                    <p className={`text-sm leading-relaxed ${mode === 'chaos' ? 'text-white/80' : 'text-zinc-300'}`}>Amazing presentation! The client loved it</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-zinc-800/50 backdrop-blur-sm rounded-xl p-5 border border-zinc-700/50 hover:border-[#E8FF00]/50 transition-all">
+              <div className={`backdrop-blur-sm rounded-xl p-5 transition-all ${mode === 'chaos' ? 'bg-black/40 border-2 border-[#00FF87]/40 hover:border-[#00FF87]/60' : 'bg-zinc-800/50 border border-zinc-700/50 hover:border-[#E8FF00]/50'}`}>
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center text-lg flex-shrink-0">🙌</div>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0 ${mode === 'chaos' ? 'bg-[#9D4EFF]' : 'bg-purple-500'}`}>🙌</div>
                   <div className="flex-1">
-                    <p className="font-bold text-white text-sm mb-1">
-                      <span className="font-black">Sarah</span> <span className="text-zinc-500">→</span> <span className="font-black">Mike</span>
+                    <p className="font-black text-white text-sm mb-1">
+                      <span className="font-black">Sarah</span> <span className={mode === 'chaos' ? 'text-white/50' : 'text-zinc-500'}>→</span> <span className="font-black">Mike</span>
                     </p>
-                    <p className="text-zinc-300 text-sm leading-relaxed">Thanks for the code review help today</p>
+                    <p className={`text-sm leading-relaxed ${mode === 'chaos' ? 'text-white/80' : 'text-zinc-300'}`}>Thanks for the code review help today</p>
                   </div>
                 </div>
               </div>
-              <div className="bg-zinc-800/50 backdrop-blur-sm rounded-xl p-5 border border-zinc-700/50 hover:border-[#E8FF00]/50 transition-all">
+              <div className={`backdrop-blur-sm rounded-xl p-5 transition-all ${mode === 'chaos' ? 'bg-black/40 border-2 border-[#00FF87]/40 hover:border-[#00FF87]/60' : 'bg-zinc-800/50 border border-zinc-700/50 hover:border-[#E8FF00]/50'}`}>
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-pink-500 rounded-lg flex items-center justify-center text-lg flex-shrink-0">⭐</div>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0 ${mode === 'chaos' ? 'bg-[#FF00FF]' : 'bg-pink-500'}`}>⭐</div>
                   <div className="flex-1">
-                    <p className="font-bold text-white text-sm mb-1">
-                      <span className="font-black">Chris</span> <span className="text-zinc-500">→</span> <span className="font-black">Taylor</span>
+                    <p className="font-black text-white text-sm mb-1">
+                      <span className="font-black">Chris</span> <span className={mode === 'chaos' ? 'text-white/50' : 'text-zinc-500'}>→</span> <span className="font-black">Taylor</span>
                     </p>
-                    <p className="text-zinc-300 text-sm leading-relaxed">Great design work on the new landing page</p>
+                    <p className={`text-sm leading-relaxed ${mode === 'chaos' ? 'text-white/80' : 'text-zinc-300'}`}>Great design work on the new landing page</p>
                   </div>
                 </div>
               </div>
             </div>
-            <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-black rounded-xl h-14 text-base">
+            <Button className={`w-full ${mode === 'chaos' ? 'bg-gradient-to-r from-[#00FF87] to-[#00E676] hover:from-[#00FF87] hover:to-[#00FF87] text-black' : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white'} font-black rounded-full h-14 text-base uppercase`}>
               + GIVE A SNAP
             </Button>
           </Card>
 
           <div className="space-y-6">
             {/* Beast Babe */}
-            <Card className="bg-gradient-to-br from-red-500 to-pink-600 border-0 p-6 rounded-3xl">
-            <p className="text-xs uppercase tracking-wide text-white/80 mb-2 font-bold">This Week's</p>
-            <h2 className="text-4xl font-black text-white mb-6">BEAST<br/>BABE</h2>
+            <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('recognition').bg} ${getChaosCardStyle('recognition').border} p-6 rounded-[2.5rem]` : 'bg-gradient-to-br from-red-500 to-pink-600 border-0 p-6 rounded-3xl'}`}
+                  style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('recognition').glow}` } : {}}
+            >
+            <p className={`text-xs uppercase tracking-wider mb-2 font-black ${mode === 'chaos' ? 'text-[#00FF87]' : 'text-white/80'}`}>This Week's</p>
+            <h2 className={`text-4xl font-black text-white mb-6 uppercase ${mode === 'chaos' ? 'text-white' : 'text-white'}`}>BEAST<br/>BABE</h2>
             <div className="flex items-center justify-center mb-4">
-              <div className="w-20 h-20 bg-[#E8FF00] rounded-full flex items-center justify-center">
+              <div className={`w-20 h-20 ${mode === 'chaos' ? 'bg-[#00FF87]' : 'bg-[#E8FF00]'} rounded-full flex items-center justify-center`}>
                 <Trophy className="w-10 h-10 text-black" />
               </div>
             </div>
             <p className="text-2xl font-black text-white text-center">Sarah J.</p>
-            <p className="text-sm text-white/90 text-center font-medium">42 Snaps Received</p>
+            <p className={`text-sm text-center font-medium ${mode === 'chaos' ? 'text-white/80' : 'text-white/90'}`}>42 Snaps Received</p>
           </Card>
 
             {/* Wins Wall */}
-            <Card className="bg-white border-0 p-6 rounded-3xl">
-            <div className="flex items-center gap-2 text-sm mb-2 text-black">
+            <Card className={`${mode === 'chaos' ? `${getChaosCardStyle('recognition').bg} ${getChaosCardStyle('recognition').border} p-6 rounded-[2.5rem]` : 'bg-white border-0 p-6 rounded-3xl'}`}
+                  style={mode === 'chaos' ? { boxShadow: `0 0 40px ${getChaosCardStyle('recognition').glow}` } : {}}
+            >
+            <div className={`flex items-center gap-2 text-sm mb-2 ${mode === 'chaos' ? 'text-[#00FF87]' : 'text-black'}`}>
               <Trophy className="w-4 h-4" />
-              <span className="uppercase tracking-wide font-bold text-xs">Celebrate</span>
+              <span className="uppercase tracking-wider font-black text-xs">Celebrate</span>
             </div>
-            <h2 className="text-4xl font-black text-black mb-4">WINS<br/>WALL</h2>
+            <h2 className={`text-4xl font-black mb-4 uppercase ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>WINS<br/>WALL</h2>
             <div className="space-y-2 mb-4">
-              <div className="flex items-center justify-between p-3 bg-orange-50 rounded-xl border border-orange-200">
+              <div className={`flex items-center justify-between p-3 rounded-xl ${mode === 'chaos' ? 'bg-black/40 border-2 border-[#00FF87]/40' : 'bg-orange-50 border border-orange-200'}`}>
                 <div>
-                  <p className="text-sm font-black text-black">Alex Chen</p>
-                  <p className="text-xs text-zinc-700 font-medium">Closed $50k deal!</p>
+                  <p className={`text-sm font-black ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>Alex Chen</p>
+                  <p className={`text-xs font-medium ${mode === 'chaos' ? 'text-white/70' : 'text-zinc-700'}`}>Closed $50k deal!</p>
                 </div>
                 <span className="text-2xl">🎉</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-orange-50 rounded-xl border border-orange-200">
+              <div className={`flex items-center justify-between p-3 rounded-xl ${mode === 'chaos' ? 'bg-black/40 border-2 border-[#00FF87]/40' : 'bg-orange-50 border border-orange-200'}`}>
                 <div>
-                  <p className="text-sm font-black text-black">Jamie Park</p>
-                  <p className="text-xs text-zinc-700 font-medium">Shipped v2.0!</p>
+                  <p className={`text-sm font-black ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>Jamie Park</p>
+                  <p className={`text-xs font-medium ${mode === 'chaos' ? 'text-white/70' : 'text-zinc-700'}`}>Shipped v2.0!</p>
                 </div>
                 <span className="text-2xl">🚀</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-orange-50 rounded-xl border border-orange-200">
+              <div className={`flex items-center justify-between p-3 rounded-xl ${mode === 'chaos' ? 'bg-black/40 border-2 border-[#00FF87]/40' : 'bg-orange-50 border border-orange-200'}`}>
                 <div>
-                  <p className="text-sm font-black text-black">Alex Chen</p>
-                  <p className="text-xs text-zinc-700 font-medium">Closed $50k deal!</p>
+                  <p className={`text-sm font-black ${mode === 'chaos' ? 'text-white' : 'text-black'}`}>Alex Chen</p>
+                  <p className={`text-xs font-medium ${mode === 'chaos' ? 'text-white/70' : 'text-zinc-700'}`}>Closed $50k deal!</p>
                 </div>
                 <span className="text-2xl">⭐</span>
               </div>
             </div>
-            <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl h-12">
+            <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#00FF87] hover:bg-[#0F0F0F]' : 'bg-orange-500 hover:bg-orange-600 text-white'} font-black rounded-full h-12 uppercase`}>
               Share Win
             </Button>
           </Card>

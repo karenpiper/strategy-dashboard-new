@@ -142,21 +142,42 @@ body {
 }
 
 /* Mode-specific CSS Variables */
-/* CHAOS MODE (default - current dark design) */
+/* CHAOS MODE - Brand Guidelines */
 [data-mode="chaos"] {
-  --mode-bg: #000000;
-  --mode-text: #ffffff;
-  --mode-card-bg: #18181b;
-  --mode-card-border: #3f3f46;
-  --mode-primary: #E8FF00;
-  --mode-primary-text: #000000;
-  --mode-accent-1: #FFB84D;
-  --mode-accent-2: #FF8A5C;
-  --mode-accent-3: #FF6B9D;
-  --mode-accent-4: #4A9BFF;
-  --mode-accent-5: #C8D961;
-  --mode-muted: #71717a;
-  --mode-border: #3f3f46;
+  /* Foundation Colors */
+  --mode-bg: #1A1A1A; /* Charcoal - Primary background */
+  --mode-text: #FFFFFF; /* White - Primary text */
+  --mode-card-bg: #2A2A2A; /* Charcoal Light - Elevated surfaces */
+  --mode-card-border: #333333; /* Charcoal border */
+  
+  /* Neon Accent Colors */
+  --mode-primary: #C4F500; /* Neon Lime - Primary brand color */
+  --mode-primary-text: #000000; /* Black text on neon */
+  --mode-neon-yellow: #FFE500; /* Neon Yellow - Secondary accent */
+  
+  /* Electric Colors */
+  --mode-electric-green: #00FF87; /* Success, positive actions */
+  --mode-electric-pink: #FF00FF; /* Creative, playful */
+  --mode-electric-blue: #00D4FF; /* Information, professional */
+  --mode-electric-red: #FF0055; /* Alerts, destructive */
+  --mode-electric-purple: #9D4EFF; /* Premium, special */
+  --mode-electric-orange: #FF6B00; /* Action items, urgency */
+  
+  /* Bright Colors */
+  --mode-bright-green: #00E676;
+  --mode-bright-pink: #FF4081;
+  --mode-bright-blue: #2979FF;
+  --mode-bright-purple: #D500F9;
+  
+  /* Section-specific accents */
+  --mode-accent-1: #C4F500; /* Neon Lime - Hero/Launch */
+  --mode-accent-2: #00FF87; /* Electric Green - Recognition/Snaps */
+  --mode-accent-3: #FF6B00; /* Electric Orange - Work/Pipeline */
+  --mode-accent-4: #00D4FF; /* Electric Blue - Team Stats */
+  --mode-accent-5: #FF00FF; /* Electric Pink - Vibes/Culture */
+  
+  --mode-muted: #666666;
+  --mode-border: #333333;
 }
 
 /* CHILL MODE (brand guidelines) */
