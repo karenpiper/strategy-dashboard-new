@@ -450,11 +450,18 @@ export default function TeamDashboard() {
                       {mode === 'code' ? '[AI CHAOS AGENT]' : mode === 'chaos' ? 'QUICK ACTIONS' : 'AI Chaos Agent'}
                     </Badge>
                     <h1 className={`text-[clamp(3rem,8vw+1rem,10rem)] font-black mb-4 md:mb-6 leading-[0.85] tracking-tight uppercase text-black ${mode === 'code' ? 'font-mono' : ''}`}>
-                      {mode === 'code' ? '> READY!' : 'READY!'}
+                      {mode === 'code' ? `> Hello, ${userName}` : `Hello, ${userName}`}
                     </h1>
-                    <p className={`text-[clamp(1.25rem,3vw+0.5rem,2.5rem)] font-bold max-w-2xl leading-tight text-black ${mode === 'code' ? 'font-mono' : ''}`}>
-                      {mode === 'code' ? ':: Let\'s ship something amazing today' : 'Let\'s ship something amazing today'}
-                    </p>
+                    {characterName && (
+                      <p className={`text-[clamp(1.25rem,3vw+0.5rem,2.5rem)] font-bold max-w-2xl leading-tight text-black ${mode === 'code' ? 'font-mono' : ''}`}>
+                        {mode === 'code' ? `:: Today you're giving '${characterName}'` : `Today you're giving '${characterName}'`}
+                      </p>
+                    )}
+                    {!characterName && (
+                      <p className={`text-[clamp(1.25rem,3vw+0.5rem,2.5rem)] font-bold max-w-2xl leading-tight text-black ${mode === 'code' ? 'font-mono' : ''}`}>
+                        {mode === 'code' ? ':: Let\'s ship something amazing today' : 'Let\'s ship something amazing today'}
+                      </p>
+                    )}
                     <p className={`text-base md:text-lg lg:text-xl font-bold mt-4 text-black/70 ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? 'C:\\> date: Friday, November 14' : 'Friday, November 14'}
                     </p>
