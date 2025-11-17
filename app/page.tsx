@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, Calendar, Music, FileText, MessageCircle, Trophy, TrendingUp, Users, Zap, Star, Heart, Coffee, Lightbulb, ChevronRight, Play, CheckCircle, Clock, ArrowRight, Video, Sparkles, Loader2, Download } from 'lucide-react'
+import { Search, Calendar, Music, FileText, MessageCircle, Trophy, TrendingUp, Users, Zap, Star, Heart, Coffee, Lightbulb, ChevronRight, Play, CheckCircle, Clock, ArrowRight, Video, Sparkles, Loader2, Download, Bot } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -251,70 +251,47 @@ export default function TeamDashboard() {
       </header>
 
       <main className="max-w-[1600px] mx-auto px-6 py-10">
-        {/* Hero Section */}
+        {/* Hero Section - Full Width */}
         <section className="mb-12">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Large Hero Card */}
-            {(() => {
-              const style = mode === 'chaos' ? getSpecificCardStyle('hero-large') : getCardStyle('hero')
-              return (
-                <Card className={`${style.bg} ${style.border} p-0 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden group col-span-1 lg:col-span-2`}
-                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-                >
-                  <div className={`absolute top-0 right-0 w-[55%] h-full ${getBgClass()}`} 
-                       style={{ clipPath: 'polygon(25% 0, 100% 0, 100% 100%, 0 100%)' }} 
-                  />
-                  <div className="relative z-10 p-8 h-full flex flex-col justify-between">
-                    <div>
-                      <Badge className={`${mode === 'chaos' ? 'bg-black text-[#C4F500]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00]' : 'bg-white text-black'} hover:opacity-90 ${mode === 'code' ? 'border-0' : 'border-0'} ${getRoundedClass('')} font-black mb-4 text-xs uppercase tracking-wider ${mode === 'code' ? 'font-mono' : ''}`}>
-                        {mode === 'code' ? '[QUICK ACTIONS]' : 'Quick Actions'}
-                      </Badge>
-                      <h1 className={`text-7xl md:text-8xl font-black mb-4 leading-[0.85] tracking-tight uppercase ${style.text} ${mode === 'code' ? 'font-mono' : ''}`}>
-                        {mode === 'code' ? '> READY!' : 'READY!'}
-                      </h1>
-                      <p className={`text-xl font-semibold max-w-md ${style.text} ${mode === 'code' ? 'font-mono text-white/70' : ''}`}>
-                        {mode === 'code' ? ':: Let\'s ship something amazing today' : 'Let\'s ship something amazing today'}
-                      </p>
-                      <p className={`text-sm font-medium mt-3 ${mode === 'code' ? 'text-white/60 font-mono' : `${style.text}/70`}`}>
-                        {mode === 'code' ? 'C:\\> date: Friday, November 14' : 'Friday, November 14'}
-                      </p>
-                    </div>
-                <div className="flex items-center gap-3 mt-6 flex-wrap">
-                      <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 px-8 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
-                        {mode === 'code' ? '[GIVE SNAP]' : 'Give Snap'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
-                  </Button>
-                      <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-transparent text-[#00FF00] border border-[#00FF00] hover:bg-[#00FF00]/10' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 px-8 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
-                        {mode === 'code' ? '[NEED HELP]' : 'Need Help'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
-                  </Button>
-                      <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-transparent text-[#00FF00] border border-[#00FF00] hover:bg-[#00FF00]/10' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 px-8 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
-                        {mode === 'code' ? '[ADD WIN]' : 'Add Win'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
-                  </Button>
+          {(() => {
+            const style = mode === 'chaos' ? getSpecificCardStyle('hero-large') : getCardStyle('hero')
+            return (
+              <Card className={`${style.bg} ${style.border} p-0 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden group`}
+                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+              >
+                <div className={`absolute top-0 right-0 w-[55%] h-full ${getBgClass()}`} 
+                     style={{ clipPath: 'polygon(25% 0, 100% 0, 100% 100%, 0 100%)' }} 
+                />
+                <div className="relative z-10 p-8 md:p-12 h-full flex flex-col justify-between">
+                  <div>
+                    <Badge className={`${mode === 'chaos' ? 'bg-black text-[#C4F500]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00]' : 'bg-white text-black'} hover:opacity-90 ${mode === 'code' ? 'border-0' : 'border-0'} ${getRoundedClass('')} font-black mb-4 text-xs uppercase tracking-wider ${mode === 'code' ? 'font-mono' : ''}`}>
+                      {mode === 'code' ? '[AI CHAOS AGENT]' : 'AI Chaos Agent'}
+                    </Badge>
+                    <h1 className={`text-7xl md:text-9xl lg:text-[12rem] font-black mb-4 leading-[0.85] tracking-tight uppercase ${style.text} ${mode === 'code' ? 'font-mono' : ''}`}>
+                      {mode === 'code' ? '> READY!' : 'READY!'}
+                    </h1>
+                    <p className={`text-xl md:text-2xl font-semibold max-w-md ${style.text} ${mode === 'code' ? 'font-mono text-white/70' : ''}`}>
+                      {mode === 'code' ? ':: Let\'s ship something amazing today' : 'Let\'s ship something amazing today'}
+                    </p>
+                    <p className={`text-sm md:text-base font-medium mt-3 ${mode === 'code' ? 'text-white/60 font-mono' : `${style.text}/70`}`}>
+                      {mode === 'code' ? 'C:\\> date: Friday, November 14' : 'Friday, November 14'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 mt-6 flex-wrap">
+                    <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
+                      {mode === 'code' ? '[GIVE SNAP]' : 'Give Snap'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
+                    </Button>
+                    <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-transparent text-[#00FF00] border border-[#00FF00] hover:bg-[#00FF00]/10' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
+                      {mode === 'code' ? '[NEED HELP]' : 'Need Help'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
+                    </Button>
+                    <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-transparent text-[#00FF00] border border-[#00FF00] hover:bg-[#00FF00]/10' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
+                      {mode === 'code' ? '[ADD WIN]' : 'Add Win'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </Card>
-              )
-            })()}
-
-            {/* Small Launch Pad */}
-            {(() => {
-              const style = mode === 'chaos' ? getSpecificCardStyle('launch-pad') : getCardStyle('hero')
-              return (
-                <Card className={`${style.bg} ${style.border} p-8 ${getRoundedClass('rounded-[2.5rem]')} flex flex-col justify-center`}
-                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-                >
-                  <div className={`w-12 h-12 ${getRoundedClass('rounded-2xl')} flex items-center justify-center mb-4`} style={{ backgroundColor: style.accent }}>
-                    <Zap className={`w-6 h-6 ${mode === 'chaos' || mode === 'code' ? 'text-black' : 'text-[#4A1818]'}`} />
-              </div>
-                  <p className={`text-xs uppercase tracking-wider font-black mb-2 ${mode === 'code' ? 'font-mono' : ''}`} style={{ color: style.accent }}>
-                    {mode === 'code' ? '[LAUNCH PAD]' : 'Launch Pad'}
-                  </p>
-                  <h2 className={`text-4xl font-black leading-tight uppercase ${style.text} ${mode === 'code' ? 'font-mono' : ''}`}>
-                    {mode === 'code' ? '> QUICK ACTIONS' : 'Quick Actions'}
-                  </h2>
-            </Card>
-              )
-            })()}
-          </div>
+              </Card>
+            )
+          })()}
         </section>
 
         <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
@@ -358,61 +335,62 @@ export default function TeamDashboard() {
                   <div className="space-y-6">
                     {/* Combined Image and Horoscope Text Container */}
                     <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-6 border-2`} style={{ borderColor: `${style.accent}40` }}>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Portrait Image - Left Half */}
-                        {horoscope.image_url && (
-                          <div className="relative">
-                            <div className="aspect-square relative overflow-hidden" style={{ borderColor: style.accent, borderWidth: '2px' }}>
-                              <img 
-                                src={horoscope.image_url} 
-                                alt={`${horoscope.star_sign} horoscope portrait`}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            {/* Download Button */}
-                            <button
-                              onClick={async () => {
-                                try {
-                                  const response = await fetch(horoscope.image_url)
-                                  const blob = await response.blob()
-                                  const url = window.URL.createObjectURL(blob)
-                                  const a = document.createElement('a')
-                                  a.href = url
-                                  a.download = `${horoscope.star_sign}-horoscope-${new Date().toISOString().split('T')[0]}.png`
-                                  document.body.appendChild(a)
-                                  a.click()
-                                  window.URL.revokeObjectURL(url)
-                                  document.body.removeChild(a)
-                                } catch (error) {
-                                  console.error('Error downloading image:', error)
-                                }
-                              }}
-                              className={`mt-3 flex items-center gap-2 px-4 py-2 ${getRoundedClass('rounded-lg')} border-2 transition-opacity hover:opacity-80`}
-                              style={{ 
-                                borderColor: style.accent,
-                                backgroundColor: `${style.accent}20`,
-                                color: style.accent
-                              }}
-                            >
-                              <Download className="w-4 h-4" />
-                              <span className="text-xs font-black uppercase tracking-wider">Download</span>
-                            </button>
+                      {/* Portrait Image - Floating Left */}
+                      {horoscope.image_url && (
+                        <div className="float-left mr-6 mb-4 relative">
+                          <div className="w-48 md:w-64 aspect-square relative overflow-hidden" style={{ borderColor: style.accent, borderWidth: '2px' }}>
+                            <img 
+                              src={horoscope.image_url} 
+                              alt={`${horoscope.star_sign} horoscope portrait`}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
-                        )}
-                        
-                        {/* Horoscope Text - Right Half */}
-                        <div className="flex flex-col">
-                          <p className="text-base font-black mb-3 flex items-center gap-2" style={{ color: style.accent }}>
-                            <span>{getStarSignEmoji(horoscope.star_sign)}</span>
-                            <span>{horoscope.star_sign.toUpperCase()}</span>
-                          </p>
-                          <div className={`text-base leading-relaxed ${style.text} flex-1 space-y-3`}>
-                            {horoscope.horoscope_text.split('\n\n').map((paragraph, idx) => (
-                              <p key={idx}>{paragraph}</p>
-                            ))}
-                          </div>
+                          {/* Download Button */}
+                          <button
+                            onClick={async () => {
+                              try {
+                                const response = await fetch(horoscope.image_url)
+                                const blob = await response.blob()
+                                const url = window.URL.createObjectURL(blob)
+                                const a = document.createElement('a')
+                                a.href = url
+                                a.download = `${horoscope.star_sign}-horoscope-${new Date().toISOString().split('T')[0]}.png`
+                                document.body.appendChild(a)
+                                a.click()
+                                window.URL.revokeObjectURL(url)
+                                document.body.removeChild(a)
+                              } catch (error) {
+                                console.error('Error downloading image:', error)
+                              }
+                            }}
+                            className={`mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 ${getRoundedClass('rounded-lg')} border-2 transition-opacity hover:opacity-80`}
+                            style={{ 
+                              borderColor: style.accent,
+                              backgroundColor: `${style.accent}20`,
+                              color: style.accent
+                            }}
+                          >
+                            <Download className="w-4 h-4" />
+                            <span className="text-xs font-black uppercase tracking-wider">Download</span>
+                          </button>
+                        </div>
+                      )}
+                      
+                      {/* Horoscope Text - Flowing Around Image */}
+                      <div className="overflow-hidden">
+                        <p className="text-base font-black mb-3 flex items-center gap-2" style={{ color: style.accent }}>
+                          <span>{getStarSignEmoji(horoscope.star_sign)}</span>
+                          <span>{horoscope.star_sign.toUpperCase()}</span>
+                        </p>
+                        <div className={`text-base leading-relaxed ${style.text} space-y-3`}>
+                          {horoscope.horoscope_text.split('\n\n').map((paragraph, idx) => (
+                            <p key={idx}>{paragraph}</p>
+                          ))}
                         </div>
                       </div>
+                      
+                      {/* Clear float */}
+                      <div className="clear-both"></div>
                     </div>
                     
                     {/* Bottom Row: Do's and Don'ts - Half Width Each */}
@@ -420,12 +398,12 @@ export default function TeamDashboard() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Do's - Left Half */}
                         {horoscope.horoscope_dos && horoscope.horoscope_dos.length > 0 && (
-                          <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-4 border-2`} style={{ borderColor: `${style.accent}40` }}>
-                            <p className="text-xs font-black mb-3 uppercase tracking-wider" style={{ color: style.accent }}>Do</p>
+                          <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-4 border-2`} style={{ borderColor: '#22c55e40' }}>
+                            <p className="text-xs font-black mb-3 uppercase tracking-wider" style={{ color: '#22c55e' }}>Do</p>
                             <ul className="space-y-2">
                               {horoscope.horoscope_dos.map((item, idx) => (
                                 <li key={idx} className={`text-xs ${style.text} flex items-start gap-2`}>
-                                  <span style={{ color: style.accent }}>✓</span>
+                                  <span style={{ color: '#22c55e' }}>✓</span>
                                   <span>{item}</span>
                                 </li>
                               ))}
@@ -435,12 +413,12 @@ export default function TeamDashboard() {
                         
                         {/* Don'ts - Right Half */}
                         {horoscope.horoscope_donts && horoscope.horoscope_donts.length > 0 && (
-                          <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-4 border-2`} style={{ borderColor: `${style.accent}40` }}>
-                            <p className="text-xs font-black mb-3 uppercase tracking-wider" style={{ color: style.accent }}>Don't</p>
+                          <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-4 border-2`} style={{ borderColor: '#ef444440' }}>
+                            <p className="text-xs font-black mb-3 uppercase tracking-wider" style={{ color: '#ef4444' }}>Don't</p>
                             <ul className="space-y-2">
                               {horoscope.horoscope_donts.map((item, idx) => (
                                 <li key={idx} className={`text-xs ${style.text} flex items-start gap-2`}>
-                                  <span style={{ color: style.accent }}>✗</span>
+                                  <span style={{ color: '#ef4444' }}>✗</span>
                                   <span>{item}</span>
                                 </li>
                               ))}
@@ -459,8 +437,28 @@ export default function TeamDashboard() {
             )
           })()}
 
-          {/* Right Column: Weather and Time Zones */}
+          {/* Right Column: AI Chaos Agent, Weather and Time Zones */}
           <div className="flex flex-col gap-6">
+            {/* AI Chaos Agent */}
+            {(() => {
+              const style = mode === 'chaos' ? getSpecificCardStyle('launch-pad') : getCardStyle('hero')
+              return (
+                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} flex flex-col justify-center`}
+                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+                >
+                  <div className={`w-12 h-12 ${getRoundedClass('rounded-2xl')} flex items-center justify-center mb-4`} style={{ backgroundColor: style.accent }}>
+                    <Bot className={`w-6 h-6 ${mode === 'chaos' || mode === 'code' ? 'text-black' : 'text-[#4A1818]'}`} />
+                  </div>
+                  <p className={`text-xs uppercase tracking-wider font-black mb-2 ${mode === 'code' ? 'font-mono' : ''}`} style={{ color: style.accent }}>
+                    {mode === 'code' ? '[AI CHAOS AGENT]' : 'AI Chaos Agent'}
+                  </p>
+                  <h2 className={`text-3xl font-black leading-tight uppercase ${style.text} ${mode === 'code' ? 'font-mono' : ''}`}>
+                    {mode === 'code' ? '> READY!' : 'Ready!'}
+                  </h2>
+                </Card>
+              )
+            })()}
+
             {/* Weather - Small Card */}
             {(() => {
               const style = mode === 'chaos' ? getSpecificCardStyle('weather') : getCardStyle('team')
