@@ -86,3 +86,45 @@ export function getStarSignDates(starSign: string): { start: { month: number; da
   return dates[starSign] || dates['Aries']
 }
 
+/**
+ * Get element for a star sign
+ */
+export function getStarSignElement(starSign: string): string {
+  const elements: Record<string, string> = {
+    'Aries': 'fire',
+    'Taurus': 'earth',
+    'Gemini': 'air',
+    'Cancer': 'water',
+    'Leo': 'fire',
+    'Virgo': 'earth',
+    'Libra': 'air',
+    'Scorpio': 'water',
+    'Sagittarius': 'fire',
+    'Capricorn': 'earth',
+    'Aquarius': 'air',
+    'Pisces': 'water',
+  }
+  return elements[starSign] || 'fire'
+}
+
+/**
+ * Get modality for a star sign
+ */
+export function getStarSignModality(starSign: string): string {
+  const modalities: Record<string, string> = {
+    'Aries': 'cardinal',
+    'Taurus': 'fixed',
+    'Gemini': 'mutable',
+    'Cancer': 'cardinal',
+    'Leo': 'fixed',
+    'Virgo': 'mutable',
+    'Libra': 'cardinal',
+    'Scorpio': 'fixed',
+    'Sagittarius': 'mutable',
+    'Capricorn': 'cardinal',
+    'Aquarius': 'fixed',
+    'Pisces': 'mutable',
+  }
+  return modalities[starSign] || 'cardinal'
+}
+

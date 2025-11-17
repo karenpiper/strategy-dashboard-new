@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { calculateStarSign } from '@/lib/horoscope-utils'
 import { transformHoroscopeToCoStarStyle, generateHoroscopeImage } from '@/lib/openai'
 import { fetchCafeAstrologyHoroscope } from '@/lib/cafe-astrology'
+import {
+  buildUserProfile,
+  resolveChoices,
+} from '@/lib/horoscope-engine-simple'
 
 // Supabase client setup - uses service role for database operations
 // This bypasses RLS so the API can insert/update horoscopes
@@ -197,15 +200,22 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Calculate star sign from birthday
-    const starSign = calculateStarSign(birthdayMonth, birthdayDay)
+    // Build user profile (logic in code)
+    const userProfile = buildUserProfile(
+      birthdayMonth,
+      birthdayDay,
+      profile.discipline,
+      profile.role
+    )
     
-    // Use discipline as department and role as title
-    const department = profile.discipline || null
-    const title = profile.role || null
+    const starSign = userProfile.sign
+    
+    // Resolve choices using decision trees (logic in code)
+    const resolvedChoices = resolveChoices(userProfile)
+    console.log('Resolved choices:', resolvedChoices)
     
     // Fetch from Cafe Astrology and transform to Co-Star style
-    console.log('Generating horoscope for:', { starSign, department, title })
+    console.log('Generating horoscope for:', { starSign, profile: userProfile })
     let horoscopeText: string
     let horoscopeDos: string[]
     let horoscopeDonts: string[]
@@ -215,14 +225,14 @@ export async function GET(request: NextRequest) {
       console.log('Fetching horoscope from Cafe Astrology...')
       const startTime = Date.now()
       
-      // Step 1: Fetch from Cafe Astrology
+      // Fetch from Cafe Astrology
       const cafeAstrologyText = await fetchCafeAstrologyHoroscope(starSign)
       console.log('Fetched horoscope from Cafe Astrology')
       
-      // Step 2: Transform to Co-Star style and generate image in parallel
+      // Transform to Co-Star style and generate image in parallel
       const [transformResult, imageResult] = await Promise.allSettled([
         transformHoroscopeToCoStarStyle(cafeAstrologyText, starSign),
-        generateHoroscopeImage(starSign, department, title),
+        generateHoroscopeImage(starSign, resolvedChoices),
       ])
       
       const elapsedTime = Date.now() - startTime
@@ -274,6 +284,11 @@ export async function GET(request: NextRequest) {
           horoscope_dos: horoscopeDos,
           horoscope_donts: horoscopeDonts,
           image_url: imageUrl,
+          style_family: resolvedChoices.styleFamily,
+          style_key: resolvedChoices.styleKey,
+          style_label: resolvedChoices.styleLabel,
+          character_type: resolvedChoices.characterType,
+          setting_hint: resolvedChoices.settingHint || null,
           date: todayDate,
           generated_at: new Date().toISOString(),
         }, {

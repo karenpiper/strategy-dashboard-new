@@ -7,6 +7,11 @@ CREATE TABLE IF NOT EXISTS public.horoscopes (
   horoscope_dos JSONB NOT NULL DEFAULT '[]'::jsonb,
   horoscope_donts JSONB NOT NULL DEFAULT '[]'::jsonb,
   image_url TEXT NOT NULL,
+  style_family TEXT,
+  style_key TEXT,
+  style_label TEXT,
+  character_type TEXT, -- 'human', 'animal', 'object', 'hybrid'
+  setting_hint TEXT,
   generated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,

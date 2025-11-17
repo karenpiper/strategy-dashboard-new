@@ -29,7 +29,7 @@ ${cafeAstrologyText}
 
 Return a JSON object with this exact structure:
 {
-  "horoscope": "An irreverent, expanded version of the horoscope in Co-Star's style. Make it approximately 350 words. Keep it witty, casual, and entertaining while expanding on the themes from the original. Break it into multiple paragraphs for readability.",
+  "horoscope": "An irreverent, expanded version of the horoscope in Co-Star's style. Make it approximately 150 words. Keep it witty, casual, and entertaining while expanding on the themes from the original. Break it into multiple paragraphs for readability.",
   "dos": ["Do thing 1", "Do thing 2", "Do thing 3"],
   "donts": ["Don't thing 1", "Don't thing 2", "Don't thing 3"]
 }
@@ -49,7 +49,7 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
         },
       ],
       response_format: { type: 'json_object' },
-      max_tokens: 1200,
+      max_tokens: 600,
       temperature: 0.9,
     })
 
@@ -80,45 +80,46 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
 }
 
 /**
- * Get illustration style for zodiac sign
- */
-function getZodiacStyle(starSign: string): string {
-  const styles: Record<string, string> = {
-    'Aries': 'bold, energetic, dynamic illustration with fiery reds and oranges, action-oriented, confident character with ram symbolism',
-    'Taurus': 'grounded, earthy illustration with rich greens and browns, serene and stable, bull symbolism with natural elements',
-    'Gemini': 'playful, dual-natured illustration with bright yellows and blues, twin figures, communicative and curious, airy and light',
-    'Cancer': 'emotional, nurturing illustration with soft blues and silvers, moon symbolism, water elements, cozy and protective',
-    'Leo': 'dramatic, regal illustration with golds and warm oranges, lion symbolism, confident and theatrical, sun motifs',
-    'Virgo': 'detailed, refined illustration with earth tones and greens, organized and precise, harvest symbolism, clean lines',
-    'Libra': 'balanced, harmonious illustration with pastels and soft pinks, scales symbolism, elegant and diplomatic, aesthetic beauty',
-    'Scorpio': 'intense, mysterious illustration with deep purples and reds, scorpion symbolism, transformative and powerful, water elements',
-    'Sagittarius': 'adventurous, free-spirited illustration with vibrant purples and blues, archer symbolism, travel and exploration themes',
-    'Capricorn': 'ambitious, structured illustration with dark greens and browns, mountain goat symbolism, disciplined and goal-oriented',
-    'Aquarius': 'innovative, unique illustration with electric blues and silvers, water bearer symbolism, futuristic and humanitarian',
-    'Pisces': 'dreamy, flowing illustration with sea greens and purples, fish symbolism, mystical and intuitive, water and cosmic elements',
-  }
-  return styles[starSign] || 'mystical, colorful illustration with cosmic elements'
-}
-
-/**
- * Generate a fun, illustrative portrait for the horoscope
+ * Generate a fun, illustrative portrait for the horoscope using resolved choices
  */
 export async function generateHoroscopeImage(
   starSign: string,
-  department: string | null,
-  title: string | null
+  resolvedChoices: {
+    characterType: 'human' | 'animal' | 'object' | 'hybrid'
+    styleLabel: string
+    settingHint?: string
+  }
 ): Promise<string> {
-  const styleDescription = getZodiacStyle(starSign)
-  const departmentText = department ? `, incorporating subtle ${department.toLowerCase()} design elements` : ''
-  const titleText = title ? `, reflecting a ${title.toLowerCase()} aesthetic` : ''
+  const { characterType, styleLabel, settingHint } = resolvedChoices
   
-  const prompt = `A fun, vibrant, and whimsical illustration portrait representing ${starSign} energy. ${styleDescription}${departmentText}${titleText}. 
+  // Build character description based on type
+  let characterDescription = ''
+  switch (characterType) {
+    case 'human':
+      characterDescription = 'a human character or figure'
+      break
+    case 'animal':
+      characterDescription = 'an animal character (realistic or anthropomorphic)'
+      break
+    case 'object':
+      characterDescription = 'an object or inanimate thing personified'
+      break
+    case 'hybrid':
+      characterDescription = 'a hybrid or fantastical creature combining human, animal, or object elements'
+      break
+  }
+  
+  // Build setting hint text
+  const settingText = settingHint ? ` Setting context: ${settingHint}.` : ''
+  
+  const prompt = `A fun, vibrant, and whimsical illustration portrait representing ${starSign} energy, featuring ${characterDescription}.
+
+Illustration style: ${styleLabel}.${settingText}
 
 Style requirements:
-- Playful, illustrative art style (like modern digital illustration, whimsical character art, or stylized fantasy illustration)
 - Absolutely NO text, NO words, NO letters, NO numbers anywhere in the image
 - No borders, clean background or subtle abstract background
-- Full body or three-quarter portrait of a character or figure
+- Full body or three-quarter portrait
 - Vibrant, saturated colors
 - Fun, expressive, and engaging
 - Square format, portrait orientation
