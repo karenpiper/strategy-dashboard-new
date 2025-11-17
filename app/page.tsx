@@ -63,7 +63,7 @@ export default function TeamDashboard() {
   const getSpecificCardStyle = (cardName: SpecificCard): { bg: string; border: string; glow: string; text: string; accent: string } => {
     if (mode === 'chaos') {
       const chaosCardStyles: Record<SpecificCard, { bg: string; border: string; glow: string; text: string; accent: string }> = {
-        'hero-large': { bg: 'bg-gradient-to-br from-[#FFB84D] via-[#FFE500] to-[#FFE500]', border: 'border-0', glow: '', text: 'text-black', accent: '#C4F500' },
+        'hero-large': { bg: 'bg-gradient-to-r from-[#FFE500] via-[#FFB84D] to-[#FF6B35]', border: 'border-0', glow: '', text: 'text-black', accent: '#000000' },
         'launch-pad': { bg: 'bg-gradient-to-br from-[#9D4EFF] to-[#6B2C91]', border: 'border-0', glow: '', text: 'text-white', accent: '#C4F500' },
         'horoscope': { bg: 'bg-[#6B2C91]', border: 'border-0', glow: '', text: 'text-white', accent: '#FFE500' },
         'weather': { bg: 'bg-gradient-to-br from-[#00B8D4] to-[#0066CC]', border: 'border-0', glow: '', text: 'text-white', accent: '#00D4FF' },
@@ -256,35 +256,36 @@ export default function TeamDashboard() {
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('hero-large') : getCardStyle('hero')
             return (
-              <Card className={`${style.bg} ${style.border} p-0 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden group`}
+              <Card className={`${style.bg} ${style.border} p-0 ${mode === 'chaos' ? 'rounded-tl-[2.5rem] rounded-bl-[2.5rem]' : getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden group`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                <div className={`absolute top-0 right-0 w-[55%] h-full ${getBgClass()}`} 
-                     style={{ clipPath: 'polygon(25% 0, 100% 0, 100% 100%, 0 100%)' }} 
+                {/* Black masked section on the right with angular cut-off */}
+                <div className={`absolute top-0 right-0 w-[50%] h-full ${getBgClass()}`} 
+                     style={{ clipPath: 'polygon(20% 0, 100% 0, 100% 100%, 0 100%)' }} 
                 />
                 <div className="relative z-10 p-8 md:p-12 h-full flex flex-col justify-between">
                   <div>
-                    <Badge className={`${mode === 'chaos' ? 'bg-black text-[#C4F500]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00]' : 'bg-white text-black'} hover:opacity-90 ${mode === 'code' ? 'border-0' : 'border-0'} ${getRoundedClass('')} font-black mb-4 text-xs uppercase tracking-wider ${mode === 'code' ? 'font-mono' : ''}`}>
-                      {mode === 'code' ? '[AI CHAOS AGENT]' : 'AI Chaos Agent'}
+                    <Badge className={`${mode === 'chaos' ? 'bg-black text-white' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00]' : 'bg-white text-black'} hover:opacity-90 ${mode === 'code' ? 'border-0' : 'border-0'} ${getRoundedClass('rounded-full')} font-black mb-4 text-xs uppercase tracking-wider ${mode === 'code' ? 'font-mono' : ''}`}>
+                      {mode === 'code' ? '[AI CHAOS AGENT]' : mode === 'chaos' ? 'QUICK ACTIONS' : 'AI Chaos Agent'}
                     </Badge>
-                    <h1 className={`text-7xl md:text-9xl lg:text-[12rem] font-black mb-4 leading-[0.85] tracking-tight uppercase ${style.text} ${mode === 'code' ? 'font-mono' : ''}`}>
+                    <h1 className={`text-7xl md:text-9xl lg:text-[12rem] font-black mb-4 leading-[0.85] tracking-tight uppercase text-black ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? '> READY!' : 'READY!'}
                     </h1>
-                    <p className={`text-xl md:text-2xl font-semibold max-w-md ${style.text} ${mode === 'code' ? 'font-mono text-white/70' : ''}`}>
+                    <p className={`text-xl md:text-2xl font-semibold max-w-md text-white ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? ':: Let\'s ship something amazing today' : 'Let\'s ship something amazing today'}
                     </p>
-                    <p className={`text-sm md:text-base font-medium mt-3 ${mode === 'code' ? 'text-white/60 font-mono' : `${style.text}/70`}`}>
+                    <p className={`text-sm md:text-base font-medium mt-3 text-white ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? 'C:\\> date: Friday, November 14' : 'Friday, November 14'}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 mt-6 flex-wrap">
-                    <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
+                    <Button className={`${mode === 'chaos' ? 'bg-black text-white hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? '[GIVE SNAP]' : 'Give Snap'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
                     </Button>
-                    <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-transparent text-[#00FF00] border border-[#00FF00] hover:bg-[#00FF00]/10' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
+                    <Button className={`${mode === 'chaos' ? 'bg-black text-white hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-transparent text-[#00FF00] border border-[#00FF00] hover:bg-[#00FF00]/10' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? '[NEED HELP]' : 'Need Help'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
                     </Button>
-                    <Button className={`${mode === 'chaos' ? 'bg-black text-[#C4F500] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-transparent text-[#00FF00] border border-[#00FF00] hover:bg-[#00FF00]/10' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
+                    <Button className={`${mode === 'chaos' ? 'bg-black text-white hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-transparent text-[#00FF00] border border-[#00FF00] hover:bg-[#00FF00]/10' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-12 md:h-14 px-8 md:px-10 uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? '[ADD WIN]' : 'Add Win'} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
                     </Button>
                   </div>
@@ -459,38 +460,37 @@ export default function TeamDashboard() {
               )
             })()}
 
-            {/* Weather - Small Card */}
+            {/* Weather - Compact Card */}
             {(() => {
               const style = mode === 'chaos' ? getSpecificCardStyle('weather') : getCardStyle('team')
               return (
-                <Card className={`${style.bg} ${style.border} p-4 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden`}
+                <Card className={`${style.bg} ${style.border} p-3 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden`}
                       style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
                 >
-                  <div className={`flex items-center gap-2 text-xs mb-2 relative z-10 ${style.text}/90`}>
-                    <span className="uppercase tracking-wider font-black text-xs">Right Now</span>
+                  <div className="flex items-center justify-between mb-2 relative z-10">
+                    <span className={`text-xs uppercase tracking-wider font-black ${style.text}/90`}>Right Now</span>
+                    <span className="text-2xl">☁️</span>
                   </div>
-                  <h2 className={`text-2xl font-black mb-3 relative z-10 uppercase ${style.text}`}>WEATHER</h2>
-                  <div className="mb-4 relative z-10">
-                    <p className={`text-5xl font-black mb-1 ${style.text}`}>72°</p>
-                    <p className={`${style.text} text-base font-bold`}>Partly Cloudy</p>
-                    <p className={`text-xs ${style.text}/80 font-medium`}>Your Location</p>
+                  <h2 className={`text-lg font-black mb-2 relative z-10 uppercase ${style.text}`}>WEATHER</h2>
+                  <div className="mb-2 relative z-10">
+                    <p className={`text-3xl font-black mb-0.5 ${style.text}`}>72°</p>
+                    <p className={`${style.text} text-sm font-bold`}>Partly Cloudy</p>
                   </div>
-                  <div className={`absolute bottom-4 right-4 text-6xl ${style.text}/20`}>☁️</div>
-                  <div className="grid grid-cols-2 gap-2 relative z-10">
-                    <div className={`${mode === 'chaos' ? 'bg-white/20 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-white/20'} ${getRoundedClass('rounded-xl')} p-2 border`} style={{ borderColor: `${style.accent}30` }}>
-                      <p className={`text-xs ${style.text}/90 font-bold uppercase tracking-wide`}>Humidity</p>
-                      <p className={`text-xl font-black ${style.text}`}>65%</p>
+                  <div className="grid grid-cols-2 gap-1.5 relative z-10">
+                    <div className={`${mode === 'chaos' ? 'bg-white/20 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-white/20'} ${getRoundedClass('rounded-lg')} p-1.5 border`} style={{ borderColor: `${style.accent}30` }}>
+                      <p className={`text-[10px] ${style.text}/90 font-bold uppercase tracking-wide`}>Humidity</p>
+                      <p className={`text-base font-black ${style.text}`}>65%</p>
                     </div>
-                    <div className={`${mode === 'chaos' ? 'bg-white/20 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-white/20'} ${getRoundedClass('rounded-xl')} p-2 border`} style={{ borderColor: `${style.accent}30` }}>
-                      <p className={`text-xs ${style.text}/90 font-bold uppercase tracking-wide`}>Wind</p>
-                      <p className={`text-xl font-black ${style.text}`}>8 mph</p>
+                    <div className={`${mode === 'chaos' ? 'bg-white/20 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-white/20'} ${getRoundedClass('rounded-lg')} p-1.5 border`} style={{ borderColor: `${style.accent}30` }}>
+                      <p className={`text-[10px] ${style.text}/90 font-bold uppercase tracking-wide`}>Wind</p>
+                      <p className={`text-base font-black ${style.text}`}>8 mph</p>
                     </div>
                   </div>
                 </Card>
               )
             })()}
 
-            {/* Time Zones */}
+            {/* Time Zones - Compact */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('timezones') : getCardStyle('team')
             const timeZoneColors = mode === 'chaos' 
@@ -499,38 +499,38 @@ export default function TeamDashboard() {
               ? ['#4A9BFF', '#C8D961', '#8B4444', '#FFB5D8']
               : ['#cccccc', '#e5e5e5', '#999999', '#cccccc']
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+              <Card className={`${style.bg} ${style.border} p-3 ${getRoundedClass('rounded-[2.5rem]')}`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
-              <Clock className="w-4 h-4" />
-                  <span className="uppercase tracking-wider font-black text-xs">Global Team</span>
-            </div>
-                <h2 className={`text-4xl font-black mb-6 uppercase ${style.text}`}>TIME<br/>ZONES</h2>
-            <div className="space-y-3">
+                <div className="flex items-center gap-1.5 text-xs mb-2" style={{ color: style.accent }}>
+                  <Clock className="w-3 h-3" />
+                  <span className="uppercase tracking-wider font-black text-[10px]">Global Team</span>
+                </div>
+                <h2 className={`text-xl font-black mb-3 uppercase ${style.text}`}>TIME<br/>ZONES</h2>
+                <div className="space-y-1.5">
                   {[
-                    { city: 'San Francisco', time: '12:50 AM', people: '2 people', emoji: '🌉' },
-                    { city: 'New York', time: '03:50 AM', people: '5 people', emoji: '🗽' },
-                    { city: 'London', time: '08:50 AM', people: '3 people', emoji: '🏰' },
-                    { city: 'Tokyo', time: '05:50 PM', people: '1 person', emoji: '🗼' },
+                    { city: 'San Francisco', time: '12:50 AM', people: '2', emoji: '🌉' },
+                    { city: 'New York', time: '03:50 AM', people: '5', emoji: '🗽' },
+                    { city: 'London', time: '08:50 AM', people: '3', emoji: '🏰' },
+                    { city: 'Tokyo', time: '05:50 PM', people: '1', emoji: '🗼' },
                   ].map((tz, idx) => (
-                    <div key={tz.city} className="flex items-center justify-between p-3 rounded-xl transition-colors hover:opacity-80" 
+                    <div key={tz.city} className="flex items-center justify-between p-2 rounded-lg transition-colors hover:opacity-80" 
                          style={{ 
                            backgroundColor: `${timeZoneColors[idx]}${mode === 'chaos' ? '33' : mode === 'chill' ? '20' : '33'}`,
-                           border: `2px solid ${timeZoneColors[idx]}${mode === 'chaos' ? '66' : mode === 'chill' ? '40' : '66'}`
+                           border: `1px solid ${timeZoneColors[idx]}${mode === 'chaos' ? '66' : mode === 'chill' ? '40' : '66'}`
                          }}>
-                <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-base ${mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-white/20'}`}>{tz.emoji}</div>
-                  <div>
-                          <p className={`font-black text-sm ${style.text}`}>{tz.city}</p>
-                          <p className={`text-xs font-medium ${style.text}/70`}>{tz.people}</p>
-                  </div>
-                </div>
-                      <span className={`font-black text-sm ${style.text}`}>{tz.time}</span>
-              </div>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-md flex items-center justify-center text-sm ${mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-white/20'}`}>{tz.emoji}</div>
+                        <div>
+                          <p className={`font-black text-xs ${style.text}`}>{tz.city}</p>
+                          <p className={`text-[10px] font-medium ${style.text}/70`}>{tz.people} people</p>
+                        </div>
+                      </div>
+                      <span className={`font-black text-xs ${style.text}`}>{tz.time}</span>
+                    </div>
                   ))}
-            </div>
-          </Card>
+                </div>
+              </Card>
             )
           })()}
           </div>
