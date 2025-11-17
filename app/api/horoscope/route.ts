@@ -18,7 +18,8 @@ async function getSupabaseAdminClient() {
   const { createClient } = await import('@supabase/supabase-js')
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  // Check both possible names for the service role key
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE
   
   // Check if environment variables are set and not empty
   if (!supabaseUrl || supabaseUrl.trim() === '') {
@@ -27,8 +28,8 @@ async function getSupabaseAdminClient() {
   }
   
   if (!supabaseServiceKey || supabaseServiceKey.trim() === '') {
-    console.error('SUPABASE_SERVICE_ROLE_KEY is missing or empty')
-    throw new Error('Missing Supabase Service Role Key: SUPABASE_SERVICE_ROLE_KEY must be set in Vercel environment variables. Go to your Vercel project settings > Environment Variables and add SUPABASE_SERVICE_ROLE_KEY with your service role key from Supabase Dashboard > Settings > API')
+    console.error('Service role key is missing or empty')
+    throw new Error('Missing Supabase Service Role Key: SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_SERVICE_ROLE must be set in Vercel environment variables. Go to your Vercel project settings > Environment Variables and add the service role key from Supabase Dashboard > Settings > API')
   }
   
   return createClient(
