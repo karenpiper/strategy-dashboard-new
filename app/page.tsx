@@ -10,6 +10,7 @@ import { useMode } from "@/contexts/mode-context"
 import { useEffect, useState } from 'react'
 import { getStarSignEmoji } from '@/lib/horoscope-utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { generateSillyCharacterName } from '@/lib/silly-names'
 
 // Force dynamic rendering to avoid SSR issues with context
 export const dynamic = 'force-dynamic'
@@ -28,6 +29,8 @@ export default function TeamDashboard() {
   const [horoscopeImageLoading, setHoroscopeImageLoading] = useState(true)
   const [horoscopeError, setHoroscopeError] = useState<string | null>(null)
   const [horoscopeImageError, setHoroscopeImageError] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string>('Friend')
+  const [characterName, setCharacterName] = useState<string | null>(null)
 
   // Fetch horoscope text on mount
   useEffect(() => {
@@ -50,6 +53,10 @@ export default function TeamDashboard() {
         
         console.log('Horoscope data received:', data)
         setHoroscope(data)
+        // Generate silly character name based on star sign
+        if (data.star_sign) {
+          setCharacterName(generateSillyCharacterName(data.star_sign))
+        }
       } catch (error: any) {
         console.error('Error fetching horoscope:', error)
         setHoroscopeError('Failed to load horoscope: ' + (error.message || 'Unknown error'))
@@ -308,55 +315,60 @@ export default function TeamDashboard() {
                           src={horoscopeImage} 
                           alt="Horoscope portrait"
                           className="w-full h-full object-cover"
+                          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                         />
                         {/* Tooltip and Download Icons - Absolute positioned */}
-                        <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
-                          {horoscopeImagePrompt && (
-                            <TooltipProvider>
+                        <TooltipProvider>
+                          <div className="absolute top-4 right-4 flex items-center gap-2 z-50 pointer-events-auto">
+                            {horoscopeImagePrompt && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <button 
                                     type="button"
-                                    className="p-2 bg-black/70 hover:bg-black/90 rounded-full transition-colors backdrop-blur-sm"
-                                    onClick={(e) => e.stopPropagation()}
+                                    className="p-2 bg-black/80 hover:bg-black rounded-full transition-colors backdrop-blur-sm shadow-lg"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                    }}
                                   >
                                     <Info className="w-4 h-4 text-white" />
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent 
                                   side="left"
-                                  className="max-w-md p-4 bg-black/95 text-white text-xs whitespace-pre-wrap border border-white/20 z-50"
+                                  className="max-w-md p-4 bg-black/95 text-white text-xs whitespace-pre-wrap border border-white/20 z-[100]"
                                 >
                                   <p className="font-bold mb-2">Image Generation Prompt:</p>
                                   <p>{horoscopeImagePrompt}</p>
                                 </TooltipContent>
                               </Tooltip>
-                            </TooltipProvider>
-                          )}
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation()
-                              try {
-                                const response = await fetch(horoscopeImage)
-                                const blob = await response.blob()
-                                const url = window.URL.createObjectURL(blob)
-                                const a = document.createElement('a')
-                                a.href = url
-                                a.download = `horoscope-${new Date().toISOString().split('T')[0]}.png`
-                                document.body.appendChild(a)
-                                a.click()
-                                window.URL.revokeObjectURL(url)
-                                document.body.removeChild(a)
-                              } catch (error) {
-                                console.error('Error downloading image:', error)
-                              }
-                            }}
-                            className="p-2 bg-black/70 hover:bg-black/90 rounded-full transition-colors backdrop-blur-sm"
-                          >
-                            <Download className="w-4 h-4 text-white" />
-                          </button>
-                        </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                try {
+                                  const response = await fetch(horoscopeImage)
+                                  const blob = await response.blob()
+                                  const url = window.URL.createObjectURL(blob)
+                                  const a = document.createElement('a')
+                                  a.href = url
+                                  a.download = `horoscope-${new Date().toISOString().split('T')[0]}.png`
+                                  document.body.appendChild(a)
+                                  a.click()
+                                  window.URL.revokeObjectURL(url)
+                                  document.body.removeChild(a)
+                                } catch (error) {
+                                  console.error('Error downloading image:', error)
+                                }
+                              }}
+                              className="p-2 bg-black/80 hover:bg-black rounded-full transition-colors backdrop-blur-sm shadow-lg"
+                            >
+                              <Download className="w-4 h-4 text-white" />
+                            </button>
+                          </div>
+                        </TooltipProvider>
                       </div>
                     ) : null}
                   </div>

@@ -117,21 +117,29 @@ export async function generateHoroscopeImage(
   // Build theme snippet text
   const themeText = themeSnippet ? ` Theme context: ${themeSnippet}.` : ''
   
-  const prompt = `A fun, vibrant, and whimsical illustration portrait representing ${starSign} energy, featuring ${characterDescription}.
+  const prompt = `An absolutely absurd, hilariously silly, and delightfully ridiculous illustration portrait representing ${starSign} energy, featuring ${characterDescription}.
 
 Illustration style: ${styleLabel}.${tagsText}${themeText}
+
+Make this EXTREMELY silly and absurd:
+- Over-the-top, exaggerated expressions and poses
+- Ridiculously whimsical and nonsensical details
+- Playfully absurd accessories, props, or elements
+- Maximum silliness and humor - think cartoon absurdity
+- Completely unserious and delightfully ridiculous
+- Make it laugh-out-loud funny and charmingly absurd
 
 Style requirements:
 - Absolutely NO text, NO words, NO letters, NO numbers anywhere in the image
 - No borders, clean background or subtle abstract background
 - Full body or three-quarter portrait
-- Vibrant, saturated colors
+- Vibrant, saturated, eye-popping colors
 - Fun, expressive, and engaging
 - Square format, portrait orientation
 - Professional digital art quality
 - Suitable for use as a profile picture or avatar
 
-The illustration should be creative, fun, and capture the essence of ${starSign} in an entertaining and visually appealing way.`
+The illustration should be creatively absurd, hilariously silly, and capture the essence of ${starSign} in the most ridiculous and entertaining way possible. Think maximum absurdity, complete silliness, and delightful nonsense.`
 
   console.log('Calling OpenAI DALL-E API...')
   
