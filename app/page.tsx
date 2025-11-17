@@ -19,8 +19,8 @@ export default function TeamDashboard() {
     switch (mode) {
       case 'chaos': return 'bg-black'
       case 'chill': return 'bg-[#F5E6D3]'
-      case 'dark-grey': return 'bg-[#0a0a0a]'
-      case 'light-grey': return 'bg-[#fafafa]'
+      case 'dark-grey': return 'bg-black'
+      case 'light-grey': return 'bg-white'
       default: return 'bg-black'
     }
   }
@@ -29,8 +29,8 @@ export default function TeamDashboard() {
     switch (mode) {
       case 'chaos': return 'text-white'
       case 'chill': return 'text-[#4A1818]'
-      case 'dark-grey': return 'text-[#fafafa]'
-      case 'light-grey': return 'text-[#0a0a0a]'
+      case 'dark-grey': return 'text-white'
+      case 'light-grey': return 'text-black'
       default: return 'text-white'
     }
   }
@@ -39,8 +39,8 @@ export default function TeamDashboard() {
     switch (mode) {
       case 'chaos': return 'border-zinc-800/50'
       case 'chill': return 'border-[#4A1818]/20'
-      case 'dark-grey': return 'border-[#2a2a2a]'
-      case 'light-grey': return 'border-[#e5e5e5]'
+      case 'dark-grey': return 'border-[#333333]'
+      case 'light-grey': return 'border-[#e0e0e0]'
       default: return 'border-zinc-800/50'
     }
   }
@@ -51,16 +51,16 @@ export default function TeamDashboard() {
       switch (mode) {
         case 'chaos': return `${base} text-white hover:text-[#E8FF00]`
         case 'chill': return `${base} text-[#4A1818] hover:text-[#FFC043]`
-        case 'dark-grey': return `${base} text-[#fafafa] hover:text-white`
-        case 'light-grey': return `${base} text-[#0a0a0a] hover:text-[#525252]`
+        case 'dark-grey': return `${base} text-white hover:text-[#cccccc]`
+        case 'light-grey': return `${base} text-black hover:text-[#666666]`
         default: return `${base} text-white hover:text-[#E8FF00]`
       }
     } else {
       switch (mode) {
         case 'chaos': return `${base} text-zinc-500 hover:text-white`
         case 'chill': return `${base} text-[#8B4444] hover:text-[#4A1818]`
-        case 'dark-grey': return `${base} text-[#737373] hover:text-[#fafafa]`
-        case 'light-grey': return `${base} text-[#a3a3a3] hover:text-[#0a0a0a]`
+        case 'dark-grey': return `${base} text-[#808080] hover:text-white`
+        case 'light-grey': return `${base} text-[#808080] hover:text-black`
         default: return `${base} text-zinc-500 hover:text-white`
       }
     }
@@ -71,7 +71,7 @@ export default function TeamDashboard() {
       case 'chaos': return 'bg-[#E8FF00]'
       case 'chill': return 'bg-[#FFC043]'
       case 'dark-grey': return 'bg-white'
-      case 'light-grey': return 'bg-[#0a0a0a]'
+      case 'light-grey': return 'bg-black'
       default: return 'bg-[#E8FF00]'
     }
   }
@@ -80,8 +80,8 @@ export default function TeamDashboard() {
     switch (mode) {
       case 'chaos': return 'text-black'
       case 'chill': return 'text-[#4A1818]'
-      case 'dark-grey': return 'text-[#0a0a0a]'
-      case 'light-grey': return 'text-[#fafafa]'
+      case 'dark-grey': return 'text-black'
+      case 'light-grey': return 'text-white'
       default: return 'text-black'
     }
   }
@@ -108,18 +108,19 @@ export default function TeamDashboard() {
             <div className={`w-10 h-10 rounded-full border-2 ${
               mode === 'chaos' ? 'bg-gradient-to-br from-purple-500 to-pink-500 border-purple-400/30' :
               mode === 'chill' ? 'bg-gradient-to-br from-[#FFB5D8] to-[#FFC043] border-[#4A1818]/20' :
-              mode === 'dark-grey' ? 'bg-[#2a2a2a] border-[#404040]' :
-              'bg-[#e5e5e5] border-[#d4d4d4]'
+              mode === 'dark-grey' ? 'bg-[#333333] border-[#666666]' :
+              'bg-[#e0e0e0] border-[#cccccc]'
             }`} />
           </div>
         </div>
       </header>
 
       <main className="max-w-[1600px] mx-auto px-6 py-10">
-        {/* True Bento Grid - Asymmetrical Layout */}
-        <div className="bento-grid">
-          {/* Large Hero Card - spans 7 cols, 3 rows */}
-          <Card className="bg-gradient-to-br from-[#FFB84D] via-[#FF8A5C] to-[#FF6B9D] text-black p-0 rounded-3xl border-0 relative overflow-hidden group hover:scale-[1.02] transition-all col-span-12 md:col-span-7 row-span-3">
+        {/* Hero Section */}
+        <section className="mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Large Hero Card */}
+            <Card className="bg-gradient-to-br from-[#FFB84D] via-[#FF8A5C] to-[#FF6B9D] text-black p-0 rounded-3xl border-0 relative overflow-hidden group col-span-1 lg:col-span-2">
             <div className="absolute top-0 right-0 w-[55%] h-full bg-black" 
                  style={{
                    clipPath: 'polygon(25% 0, 100% 0, 100% 100%, 0 100%)'
@@ -148,17 +149,25 @@ export default function TeamDashboard() {
             </div>
           </Card>
 
-          {/* Small Launch Pad - spans 5 cols, 1 row */}
-          <Card className="bg-zinc-900 border border-zinc-700 p-8 rounded-3xl flex flex-col justify-center hover:scale-[1.02] transition-all col-span-12 md:col-span-5 row-span-1">
+            {/* Small Launch Pad */}
+            <Card className="bg-zinc-900 border border-zinc-700 p-8 rounded-3xl flex flex-col justify-center">
             <div className="w-12 h-12 bg-[#E8FF00] rounded-2xl flex items-center justify-center mb-4">
               <Zap className="w-6 h-6 text-black" />
             </div>
             <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold mb-2">Launch Pad</p>
             <h2 className="text-4xl font-black text-white leading-tight">Quick Actions</h2>
           </Card>
+        </div>
+        </section>
 
-          {/* Horoscope - spans 3 cols, 2 rows */}
-          <Card className="bg-gradient-to-br from-purple-600 to-purple-700 border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-3 row-span-2">
+        <p className="text-xs text-zinc-600 uppercase tracking-widest font-bold mb-6 flex items-center gap-2">
+          <span className="w-8 h-px bg-zinc-800"></span>
+          Personalized Information
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {/* Horoscope */}
+          <Card className="bg-gradient-to-br from-purple-600 to-purple-700 border-0 p-6 rounded-3xl">
             <div className="flex items-center gap-2 text-sm mb-3 text-[#E8FF00]">
               <Sparkles className="w-4 h-4" />
               <span className="uppercase tracking-wide font-bold text-xs">Totally Real</span>
@@ -170,8 +179,8 @@ export default function TeamDashboard() {
             </div>
           </Card>
 
-          {/* Weather - spans 4 cols, 2 rows */}
-          <Card className="bg-gradient-to-br from-sky-400 to-blue-500 border-0 p-6 rounded-3xl relative overflow-hidden hover:scale-[1.02] transition-all col-span-12 md:col-span-4 row-span-2">
+          {/* Weather */}
+          <Card className="bg-gradient-to-br from-sky-400 to-blue-500 border-0 p-6 rounded-3xl relative overflow-hidden">
             <div className="flex items-center gap-2 text-sm mb-3 text-white/90 relative z-10">
               <span className="uppercase tracking-wide font-bold text-xs">Right Now</span>
             </div>
@@ -194,8 +203,8 @@ export default function TeamDashboard() {
             </div>
           </Card>
 
-          {/* Time Zones - spans 5 cols, 2 rows */}
-          <Card className="bg-zinc-900 border border-sky-500 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-5 row-span-2">
+          {/* Time Zones */}
+          <Card className="bg-zinc-900 border border-sky-500 p-6 rounded-3xl">
             <div className="flex items-center gap-2 text-sm mb-3 text-sky-400">
               <Clock className="w-4 h-4" />
               <span className="uppercase tracking-wide font-bold text-xs">Global Team</span>
@@ -244,9 +253,16 @@ export default function TeamDashboard() {
               </div>
             </div>
           </Card>
+        </div>
 
-          {/* Playlist - spans 3 cols, 2 rows */}
-          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-3 row-span-2">
+        <p className="text-xs text-zinc-600 uppercase tracking-widest font-bold mb-6 flex items-center gap-2">
+          <span className="w-8 h-px bg-zinc-800"></span>
+          Work Updates
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {/* Playlist */}
+          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0 p-6 rounded-3xl">
             <div className="flex items-center gap-2 text-sm mb-3 text-black">
               <Music className="w-4 h-4" />
               <span className="uppercase tracking-wide font-bold text-xs">Weekly</span>
@@ -264,8 +280,8 @@ export default function TeamDashboard() {
             </Button>
           </Card>
 
-          {/* Friday Drop - spans 4 cols, 2 rows */}
-          <Card className="bg-gradient-to-br from-teal-500 to-cyan-600 border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-4 row-span-2">
+          {/* Friday Drop */}
+          <Card className="bg-gradient-to-br from-teal-500 to-cyan-600 border-0 p-6 rounded-3xl">
             <div className="flex items-center gap-2 text-sm mb-3 text-black">
               <FileText className="w-4 h-4" />
               <span className="uppercase tracking-wide font-bold text-xs">Weekly Report</span>
@@ -287,8 +303,8 @@ export default function TeamDashboard() {
             </div>
           </Card>
 
-          {/* Brand Redesign - spans 2 cols, 1 row */}
-          <Card className="bg-gradient-to-br from-pink-400 to-pink-500 border-0 p-6 rounded-3xl relative overflow-hidden hover:scale-[1.02] transition-all col-span-12 md:col-span-2 row-span-1">
+          {/* Brand Redesign */}
+          <Card className="bg-gradient-to-br from-pink-400 to-pink-500 border-0 p-6 rounded-3xl relative overflow-hidden">
             <Badge className="bg-black text-white border-0 font-bold mb-3 text-xs uppercase tracking-wide">Featured</Badge>
             <div className="mb-4">
               <p className="text-sm text-black/70 font-medium mb-1">Active Drop</p>
@@ -299,8 +315,8 @@ export default function TeamDashboard() {
             <ChevronRight className="absolute bottom-4 right-4 w-6 h-6 text-black" />
           </Card>
 
-          {/* Stats - spans 3 cols, 1 row */}
-          <Card className="bg-white border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-3 row-span-1">
+          {/* Stats */}
+          <Card className="bg-white border-0 p-6 rounded-3xl">
             <p className="text-xs uppercase tracking-wide text-zinc-600 mb-2 font-bold">This Month</p>
             <h2 className="text-3xl font-black text-black mb-6">STATS</h2>
             <div className="space-y-4">
@@ -318,9 +334,16 @@ export default function TeamDashboard() {
               </div>
             </div>
           </Card>
+        </div>
 
-          {/* Events - spans 3 cols, 2 rows */}
-          <Card className="bg-zinc-900 border border-teal-500 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-3 row-span-2">
+        <p className="text-xs text-zinc-600 uppercase tracking-widest font-bold mb-6 flex items-center gap-2">
+          <span className="w-8 h-px bg-zinc-800"></span>
+          Work Updates Continued
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {/* Events */}
+          <Card className="bg-zinc-900 border border-teal-500 p-6 rounded-3xl">
             <div className="flex items-center gap-2 text-sm mb-3 text-teal-400">
               <Calendar className="w-4 h-4" />
               <span className="uppercase tracking-wide font-bold text-xs">Today</span>
@@ -342,8 +365,8 @@ export default function TeamDashboard() {
             </div>
           </Card>
 
-          {/* Pipeline - spans 4 cols, 2 rows */}
-          <Card className="bg-[#6FD89C] border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-4 row-span-2">
+          {/* Pipeline */}
+          <Card className="bg-[#6FD89C] border-0 p-6 rounded-3xl">
             <p className="text-xs uppercase tracking-wide text-black/70 mb-2 font-bold">Work</p>
             <h2 className="text-4xl font-black text-black mb-6">PIPELINE</h2>
             <div className="space-y-3">
@@ -377,8 +400,8 @@ export default function TeamDashboard() {
             </div>
           </Card>
 
-          {/* Who Needs What - spans 5 cols, 2 rows */}
-          <Card className="bg-[#E8FF00] border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-5 row-span-2">
+          {/* Who Needs What */}
+          <Card className="bg-[#E8FF00] border-0 p-6 rounded-3xl">
             <Badge className="bg-black text-[#E8FF00] border-0 font-bold mb-3 text-xs uppercase tracking-wide">Recent Requests</Badge>
             <h2 className="text-4xl font-black text-black mb-6">WHO<br/>NEEDS<br/>WHAT</h2>
             <div className="space-y-3 mb-4">
@@ -405,9 +428,16 @@ export default function TeamDashboard() {
               CLAIM REQUEST
             </Button>
           </Card>
+        </div>
 
-          {/* Snaps - spans 7 cols, 3 rows */}
-          <Card className="bg-zinc-900 border border-purple-500 p-8 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-7 row-span-3">
+        <p className="text-xs text-zinc-600 uppercase tracking-widest font-bold mb-6 flex items-center gap-2">
+          <span className="w-8 h-px bg-zinc-800"></span>
+          Recognition & Culture
+        </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+          {/* Snaps */}
+          <Card className="lg:col-span-2 bg-zinc-900 border border-purple-500 p-8 rounded-3xl">
             <div className="flex items-center gap-2 text-sm mb-3 text-purple-400">
               <Sparkles className="w-4 h-4" />
               <span className="uppercase tracking-wide font-bold text-xs">Recent Recognition</span>
@@ -453,8 +483,9 @@ export default function TeamDashboard() {
             </Button>
           </Card>
 
-          {/* Beast Babe - spans 5 cols, 1 row */}
-          <Card className="bg-gradient-to-br from-red-500 to-pink-600 border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-5 row-span-1">
+          <div className="space-y-6">
+            {/* Beast Babe */}
+            <Card className="bg-gradient-to-br from-red-500 to-pink-600 border-0 p-6 rounded-3xl">
             <p className="text-xs uppercase tracking-wide text-white/80 mb-2 font-bold">This Week's</p>
             <h2 className="text-4xl font-black text-white mb-6">BEAST<br/>BABE</h2>
             <div className="flex items-center justify-center mb-4">
@@ -466,8 +497,8 @@ export default function TeamDashboard() {
             <p className="text-sm text-white/90 text-center font-medium">42 Snaps Received</p>
           </Card>
 
-          {/* Wins Wall - spans 5 cols, 2 rows */}
-          <Card className="bg-white border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-5 row-span-2">
+            {/* Wins Wall */}
+            <Card className="bg-white border-0 p-6 rounded-3xl">
             <div className="flex items-center gap-2 text-sm mb-2 text-black">
               <Trophy className="w-4 h-4" />
               <span className="uppercase tracking-wide font-bold text-xs">Celebrate</span>
@@ -500,9 +531,17 @@ export default function TeamDashboard() {
               Share Win
             </Button>
           </Card>
+          </div>
+        </div>
 
-          {/* Must Reads - spans 3 cols, 2 rows */}
-          <Card className="bg-gradient-to-br from-pink-300 to-pink-400 border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-3 row-span-2">
+        <p className="text-xs text-zinc-600 uppercase tracking-widest font-bold mb-6 flex items-center gap-2">
+          <span className="w-8 h-px bg-zinc-800"></span>
+          More Modules
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {/* Must Reads */}
+          <Card className="bg-gradient-to-br from-pink-300 to-pink-400 border-0 p-6 rounded-3xl">
             <div className="flex items-center gap-2 text-sm mb-3 text-black">
               <FileText className="w-4 h-4" />
               <span className="uppercase tracking-wide font-bold text-xs">Weekly</span>
@@ -520,8 +559,8 @@ export default function TeamDashboard() {
             </div>
           </Card>
 
-          {/* Ask The Hive - spans 4 cols, 2 rows */}
-          <Card className="bg-gradient-to-br from-purple-300 to-purple-400 border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-4 row-span-2">
+          {/* Ask The Hive */}
+          <Card className="bg-gradient-to-br from-purple-300 to-purple-400 border-0 p-6 rounded-3xl">
             <div className="flex items-center gap-2 text-sm mb-3 text-black">
               <MessageCircle className="w-4 h-4" />
               <span className="uppercase tracking-wide font-bold text-xs">Community</span>
@@ -542,8 +581,8 @@ export default function TeamDashboard() {
             </Button>
           </Card>
 
-          {/* Team Pulse - spans 5 cols, 2 rows */}
-          <Card className="bg-white border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-5 row-span-2">
+          {/* Team Pulse */}
+          <Card className="bg-white border-0 p-6 rounded-3xl">
             <Badge className="bg-emerald-500 text-white border-0 font-bold mb-4 text-xs">+85%</Badge>
             <h2 className="text-3xl font-black text-black mb-6">Team Pulse</h2>
             <div className="space-y-4 mb-6">
@@ -583,9 +622,11 @@ export default function TeamDashboard() {
               </div>
             </div>
           </Card>
+        </div>
 
-          {/* Loom Standup - spans 7 cols, 2 rows */}
-          <Card className="bg-gradient-to-br from-blue-500 to-purple-600 border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-7 row-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          {/* Loom Standup */}
+          <Card className="bg-gradient-to-br from-blue-500 to-purple-600 border-0 p-6 rounded-3xl">
             <div className="flex items-center gap-2 text-sm mb-3 text-white">
               <Video className="w-4 h-4" />
               <span className="uppercase tracking-wide font-bold text-xs">Daily</span>
@@ -623,8 +664,8 @@ export default function TeamDashboard() {
             </div>
           </Card>
 
-          {/* Inspiration War - spans 5 cols, 2 rows */}
-          <Card className="bg-[#E8FF00] border-0 p-8 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-5 row-span-2">
+          {/* Inspiration War */}
+          <Card className="bg-[#E8FF00] border-0 p-8 rounded-3xl">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <div className="flex items-center gap-2 text-sm mb-2 text-black">
@@ -653,9 +694,16 @@ export default function TeamDashboard() {
               <p className="text-black font-bold">8h to vote</p>
             </div>
           </Card>
+        </div>
 
-          {/* Categories - spans 7 cols, 2 rows */}
-          <Card className="bg-white border-0 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-7 row-span-2">
+        <p className="text-xs text-zinc-600 uppercase tracking-widest font-bold mb-6 flex items-center gap-2">
+          <span className="w-8 h-px bg-zinc-800"></span>
+          Browse Categories
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          {/* Categories */}
+          <Card className="bg-white border-0 p-6 rounded-3xl">
             <p className="text-xs uppercase tracking-wide text-zinc-600 mb-2 font-bold">Browse</p>
             <h2 className="text-4xl font-black text-black mb-6">CATEGORIES</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -686,8 +734,8 @@ export default function TeamDashboard() {
             </div>
           </Card>
 
-          {/* Search - spans 5 cols, 2 rows */}
-          <Card className="bg-zinc-900 border border-zinc-700 p-6 rounded-3xl hover:scale-[1.02] transition-all col-span-12 md:col-span-5 row-span-2">
+          {/* Search */}
+          <Card className="bg-zinc-900 border border-zinc-700 p-6 rounded-3xl">
             <div className="flex items-center gap-2 text-sm mb-3 text-zinc-500">
               <Search className="w-4 h-4" />
               <span className="uppercase tracking-wide font-bold text-xs">Find Anything</span>

@@ -176,38 +176,38 @@ body {
   --mode-border: rgba(74, 24, 24, 0.2); /* Deep Maroon 20% */
 }
 
-/* DARK GREYSCALE MODE */
+/* DARK GREYSCALE MODE - Pure greyscale, black background, no color */
 [data-mode="dark-grey"] {
-  --mode-bg: #0a0a0a;
-  --mode-text: #fafafa;
+  --mode-bg: #000000;
+  --mode-text: #ffffff;
   --mode-card-bg: #1a1a1a;
-  --mode-card-border: #2a2a2a;
+  --mode-card-border: #333333;
   --mode-primary: #ffffff;
-  --mode-primary-text: #0a0a0a;
-  --mode-accent-1: #d4d4d4;
-  --mode-accent-2: #a3a3a3;
-  --mode-accent-3: #737373;
-  --mode-accent-4: #525252;
-  --mode-accent-5: #404040;
-  --mode-muted: #737373;
-  --mode-border: #2a2a2a;
+  --mode-primary-text: #000000;
+  --mode-accent-1: #e5e5e5;
+  --mode-accent-2: #cccccc;
+  --mode-accent-3: #999999;
+  --mode-accent-4: #666666;
+  --mode-accent-5: #4d4d4d;
+  --mode-muted: #808080;
+  --mode-border: #333333;
 }
 
-/* LIGHT GREYSCALE MODE */
+/* LIGHT GREYSCALE MODE - Pure greyscale, white background, no color */
 [data-mode="light-grey"] {
-  --mode-bg: #fafafa;
-  --mode-text: #0a0a0a;
-  --mode-card-bg: #ffffff;
-  --mode-card-border: #e5e5e5;
-  --mode-primary: #0a0a0a;
-  --mode-primary-text: #fafafa;
-  --mode-accent-1: #525252;
-  --mode-accent-2: #737373;
-  --mode-accent-3: #a3a3a3;
-  --mode-accent-4: #d4d4d4;
+  --mode-bg: #ffffff;
+  --mode-text: #000000;
+  --mode-card-bg: #f5f5f5;
+  --mode-card-border: #e0e0e0;
+  --mode-primary: #000000;
+  --mode-primary-text: #ffffff;
+  --mode-accent-1: #4d4d4d;
+  --mode-accent-2: #666666;
+  --mode-accent-3: #999999;
+  --mode-accent-4: #cccccc;
   --mode-accent-5: #e5e5e5;
-  --mode-muted: #a3a3a3;
-  --mode-border: #e5e5e5;
+  --mode-muted: #808080;
+  --mode-border: #e0e0e0;
 }
 
 /* Apply mode colors to body */
@@ -236,13 +236,13 @@ body {
 }
 
 [data-mode="dark-grey"] .mode-switcher {
-  border-color: #2a2a2a;
-  color: #fafafa;
+  border-color: #333333;
+  color: #ffffff;
 }
 
 [data-mode="light-grey"] .mode-switcher {
-  border-color: #e5e5e5;
-  color: #0a0a0a;
+  border-color: #e0e0e0;
+  color: #000000;
 }
 
 /* Bento Grid Layout */
