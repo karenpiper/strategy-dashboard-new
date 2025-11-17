@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// This is a one-time setup route to seed the horoscope configuration
-// Call this once to populate the database with initial data
-export async function POST(request: NextRequest) {
+// Shared seeding logic
+async function seedHoroscopeConfig() {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE
@@ -231,7 +230,7 @@ export async function POST(request: NextRequest) {
     }
     console.log(`Created ${createdRules?.length || 0} rules.`)
 
-    return NextResponse.json({
+    return {
       success: true,
       message: 'Horoscope configuration seeded successfully',
       data: {
@@ -240,9 +239,33 @@ export async function POST(request: NextRequest) {
         segments: createdSegments?.length || 0,
         rules: createdRules?.length || 0,
       }
-    })
+    }
   } catch (error: any) {
     console.error('Error seeding horoscope configuration:', error)
+    throw error
+  }
+}
+
+// This is a one-time setup route to seed the horoscope configuration
+// Call this once to populate the database with initial data
+export async function POST(request: NextRequest) {
+  try {
+    const result = await seedHoroscopeConfig()
+    return NextResponse.json(result)
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: 'Failed to seed configuration: ' + (error.message || 'Unknown error') },
+      { status: 500 }
+    )
+  }
+}
+
+// Also support GET for easy browser access
+export async function GET(request: NextRequest) {
+  try {
+    const result = await seedHoroscopeConfig()
+    return NextResponse.json(result)
+  } catch (error: any) {
     return NextResponse.json(
       { error: 'Failed to seed configuration: ' + (error.message || 'Unknown error') },
       { status: 500 }
