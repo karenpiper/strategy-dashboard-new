@@ -191,6 +191,7 @@ async function seedHoroscopeConfig() {
       {
         ruleset_id: defaultRulesetId,
         segment_id: segmentMap.get('role_level_Senior'),
+        weight_styles_json: {}, // Empty object - this rule only affects character types
         weight_character_json: { 'object': 1.5, 'hybrid': 2.0, 'animal': 1.0 },
         prompt_tags_json: ['sophisticated', 'unexpected'],
         priority: 20,
