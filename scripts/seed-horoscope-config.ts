@@ -277,10 +277,7 @@ async function seed() {
 
   const { data: createdRules, error: rulesError } = await supabase
     .from('rules')
-    .upsert(validRules, {
-      onConflict: 'id',
-      ignoreDuplicates: false,
-    })
+    .insert(validRules)
     .select()
 
   if (rulesError) {
