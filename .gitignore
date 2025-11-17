@@ -1,7 +1,7 @@
 # Dependencies
 node_modules/
 package-lock.json
-pnpm-lock.yaml
+# pnpm-lock.yaml should be committed for pnpm projects
 
 # Environment variables
 .env
