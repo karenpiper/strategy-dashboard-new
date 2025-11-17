@@ -1,18 +1,11 @@
 import type { Metadata } from 'next'
-import { Raleway } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import { ModeProvider } from '@/contexts/mode-context'
 import './globals.css'
 
-const raleway = Raleway({ 
-  subsets: ["latin"],
-  variable: '--font-raleway',
-  weight: ['300', '400', '500', '600', '700', '800', '900']
-});
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Team Dashboard',
+  description: 'Your team\'s command center for everything awesome',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -40,10 +33,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${raleway.variable} font-sans antialiased`}>
-        <ModeProvider>
-          {children}
-        </ModeProvider>
+      <body className={`font-sans antialiased`}>
+        {children}
         <Analytics />
       </body>
     </html>

@@ -1,9 +1,9 @@
 export default function Loading() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black">
-      <div className="flex flex-col items-center gap-4">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#E8FF00] border-t-transparent" />
-        <p className="font-sans text-lg text-white">Loading dashboard...</p>
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-[#C4F500] border-t-transparent rounded-full animate-spin" />
+        <p className="mt-4 text-white font-bold text-center">Loading...</p>
       </div>
     </div>
   )
