@@ -67,6 +67,18 @@ export default function TeamDashboard() {
   const [userTimeZone, setUserTimeZone] = useState<string | null>(null)
   const [timeZones, setTimeZones] = useState<Array<{ label: string; city: string; time: string; offset: number }>>([])
   const [todayDate, setTodayDate] = useState<string>('')
+  const [weather, setWeather] = useState<{
+    temperature: number
+    condition: string
+    description: string
+    humidity: number
+    windSpeed: number
+    emoji: string
+    workReport: string
+    location: string
+  } | null>(null)
+  const [weatherLoading, setWeatherLoading] = useState(true)
+  const [weatherError, setWeatherError] = useState<string | null>(null)
 
   // Format today's date in user's timezone
   useEffect(() => {
@@ -840,33 +852,70 @@ export default function TeamDashboard() {
                 <Card className={`${style.bg} ${style.border} p-5 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden`}
                       style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
                 >
-                  {/* Top Header with Cloud Icon */}
-                  <div className="flex items-start justify-between mb-4 relative z-10">
-                  <div>
-                      <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
-                      <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
-                  </div>
-                    <span className="text-3xl">☁️</span>
-                </div>
-                  
-                  {/* Main Temperature */}
-                  <div className="mb-5 relative z-10">
-                    <p className={`text-5xl font-black leading-none mb-2 ${style.text}`}>72°</p>
-                    <p className={`${style.text} text-base font-semibold`}>Partly Cloudy</p>
-              </div>
-                  
-                  {/* Bottom Stats - Side by Side */}
-                  <div className="flex gap-3 relative z-10">
-                    <div className="flex-1">
-                      <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>HUMIDITY</p>
-                      <p className={`text-lg font-black ${style.text}`}>65%</p>
-                  </div>
-                    <div className="flex-1">
-                      <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>WIND</p>
-                      <p className={`text-lg font-black ${style.text}`}>8 mph</p>
-              </div>
-            </div>
-          </Card>
+                  {weatherLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className={`w-6 h-6 animate-spin ${style.text}`} />
+                    </div>
+                  ) : weatherError ? (
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
+                          <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
+                        </div>
+                        <span className="text-3xl">🌤️</span>
+                      </div>
+                      <p className={`text-sm ${style.text}/80`}>{weatherError}</p>
+                    </div>
+                  ) : weather ? (
+                    <>
+                      {/* Top Header with Weather Icon */}
+                      <div className="flex items-start justify-between mb-4 relative z-10">
+                        <div>
+                          <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
+                          <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
+                        </div>
+                        <span className="text-3xl">{weather.emoji}</span>
+                      </div>
+                      
+                      {/* Main Temperature */}
+                      <div className="mb-5 relative z-10">
+                        <p className={`text-5xl font-black leading-none mb-2 ${style.text}`}>{weather.temperature}°</p>
+                        <p className={`${style.text} text-base font-semibold capitalize`}>{weather.description}</p>
+                      </div>
+                      
+                      {/* Work Report */}
+                      {weather.workReport && (
+                        <div className={`mb-4 p-3 ${getRoundedClass('rounded-lg')} ${mode === 'chaos' ? 'bg-black/20' : mode === 'chill' ? 'bg-white/10' : 'bg-black/20'} relative z-10`}>
+                          <p className={`text-xs ${style.text}/90 leading-relaxed`}>{weather.workReport}</p>
+                        </div>
+                      )}
+                      
+                      {/* Bottom Stats - Side by Side */}
+                      <div className="flex gap-3 relative z-10">
+                        <div className="flex-1">
+                          <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>HUMIDITY</p>
+                          <p className={`text-lg font-black ${style.text}`}>{weather.humidity}%</p>
+                        </div>
+                        <div className="flex-1">
+                          <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>WIND</p>
+                          <p className={`text-lg font-black ${style.text}`}>{weather.windSpeed} mph</p>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
+                          <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
+                        </div>
+                        <span className="text-3xl">🌤️</span>
+                      </div>
+                      <p className={`text-sm ${style.text}/80`}>Loading weather...</p>
+                    </div>
+                  )}
+                </Card>
               )
             })()}
 
