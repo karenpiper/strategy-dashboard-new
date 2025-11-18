@@ -90,13 +90,13 @@ export function SpotifyPlayer({
       {/* Media Row: cover and vinyl with proper overlap */}
       <div className="media mb-2">
         <div className="mediaGroup">
-          {/* Cover */}
+          {/* Cover - positioned on top */}
           <img
             src={albumArtwork || submitterPhoto}
             alt={playlist.title || "Playlist cover"}
-            className="object-cover w-[var(--cover)] h-[var(--cover)] rounded-none ring-2 ring-emerald-300/30"
+            className="object-cover w-[var(--cover)] h-[var(--cover)] rounded-none ring-2 ring-emerald-300/30 relative z-10"
           />
-          {/* Vinyl */}
+          {/* Vinyl - positioned behind cover */}
           <div className="vinylWrap">
             <div className="vinyl rounded-full bg-black/90 ring-1 ring-black/40 pointer-events-none">
               {/* center label avatar */}

@@ -124,6 +124,7 @@
   width: var(--vinyl);
   height: var(--vinyl);
   overflow: visible;
+  z-index: 0;
 }
 
 .playlist-card .vinyl {
