@@ -125,8 +125,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch current weather
+    // Note: For free tier, use api.openweathermap.org (not pro.openweathermap.org)
     const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial`
     console.log('Fetching weather from OpenWeatherMap...')
+    console.log('Weather URL (without key):', `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=***&units=imperial`)
     const weatherResponse = await fetch(weatherUrl)
 
     if (!weatherResponse.ok) {
@@ -150,18 +152,25 @@ export async function GET(request: NextRequest) {
       
       // Provide more helpful error messages
       if (weatherResponse.status === 401) {
+        // Test URL for user to verify key manually
+        const testUrl = `https://api.openweathermap.org/data/2.5/weather?lat=45.5&lon=-122.6&appid=${apiKey.substring(0, 4)}...&units=imperial`
+        
         return NextResponse.json(
           { 
             error: 'Invalid API key. Please check that OPENWEATHER_API_KEY is correct in Vercel environment variables. Make sure to redeploy after adding the key.',
             details: errorDetails,
             troubleshooting: [
-              '1. Verify the API key is correct in your OpenWeatherMap account dashboard',
-              '2. Make sure the API key is activated (it may take a few minutes after creation)',
-              '3. Check that you copied the entire key (should be ~32 characters)',
-              '4. Ensure the environment variable is set in Vercel (not just locally)',
-              '5. Redeploy your Vercel project after adding/updating the environment variable',
-              '6. Check Vercel logs to see the actual API key being used (first 4 chars)'
-            ]
+              '1. Test your API key directly in a browser: https://api.openweathermap.org/data/2.5/weather?lat=45.5&lon=-122.6&appid=YOUR_KEY&units=imperial',
+              '2. New API keys can take up to 2 HOURS to activate, even if they show "Active" in the dashboard',
+              '3. Verify your OpenWeatherMap account has an active subscription (free tier is fine)',
+              '4. Check that the API key is not restricted to specific services in your OpenWeatherMap dashboard',
+              '5. Ensure you copied the entire key (should be ~32 characters, no spaces)',
+              '6. Try the other API key from your dashboard if you have multiple',
+              '7. Wait a few hours and try again if the key was just created',
+              '8. Check Vercel logs to verify the key being used (first 4 chars shown in logs)'
+            ],
+            apiKeyPrefix: apiKey.substring(0, 4),
+            apiKeyLength: apiKey.length
           },
           { status: 401 }
         )
