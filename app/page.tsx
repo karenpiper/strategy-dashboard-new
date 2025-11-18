@@ -176,6 +176,7 @@ export default function TeamDashboard() {
           console.log('Horoscope image received:', imageData)
           setHoroscopeImage(imageData.image_url)
           setHoroscopeImagePrompt(imageData.image_prompt || null)
+          setHoroscopeImageConfig(imageData.config || null)
         }
       } catch (error: any) {
         console.error('Error fetching horoscope data:', error)
