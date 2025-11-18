@@ -5,6 +5,9 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
+// NWS API base URL (no API key required!)
+const NWS_API_BASE = 'https://api.weather.gov'
+
 /**
  * Get weather emoji based on weather condition
  */
@@ -86,116 +89,137 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Use OpenWeatherMap API (free tier)
-    // Check both possible environment variable names
-    const apiKey = process.env.OPENWEATHER_API_KEY || process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
-    if (!apiKey) {
-      console.error('OPENWEATHER_API_KEY is not set')
-      return NextResponse.json(
-        { error: 'Weather service not configured. Please set OPENWEATHER_API_KEY in Vercel environment variables. Get a free API key from https://openweathermap.org/api' },
-        { status: 500 }
-      )
-    }
-
-    // Log API key status (first 4 chars only for security)
-    console.log('Weather API key status:', apiKey ? `${apiKey.substring(0, 4)}...` : 'NOT SET')
-    console.log('API key length:', apiKey?.length || 0)
+    console.log('Fetching weather from National Weather Service API...')
     
-    // Check if API key looks valid (OpenWeatherMap keys are typically 32 characters)
-    if (apiKey.length < 20) {
-      console.warn('API key seems too short. OpenWeatherMap keys are typically 32 characters long.')
+    // NWS API requires a User-Agent header
+    const headers = {
+      'User-Agent': 'strategy-dashboard/1.0 (contact: your-email@example.com)',
+      'Accept': 'application/json',
     }
 
-    // Reverse geocode to get location name (server-side) - skip if API key fails
-    let locationName = 'your location'
-    try {
-      const geoUrl = `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${apiKey}`
-      const geoResponse = await fetch(geoUrl)
-      if (geoResponse.ok) {
-        const geoData = await geoResponse.json()
-        if (geoData[0]) {
-          locationName = geoData[0].name || locationName
-        }
-      } else if (geoResponse.status === 401) {
-        console.error('OpenWeatherMap reverse geocoding 401 - API key may be invalid')
-      }
-    } catch (e) {
-      console.error('Reverse geocoding error (non-fatal):', e)
-      // Continue without location name
-    }
+    // Step 1: Get grid point from lat/lon
+    // NWS API only works for US locations
+    const pointsUrl = `${NWS_API_BASE}/points/${lat},${lon}`
+    console.log('Fetching grid point from NWS...')
+    const pointsResponse = await fetch(pointsUrl, { headers })
 
-    // Fetch current weather
-    // Note: For free tier, use api.openweathermap.org (not pro.openweathermap.org)
-    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial`
-    console.log('Fetching weather from OpenWeatherMap...')
-    console.log('Weather URL (without key):', `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=***&units=imperial`)
-    const weatherResponse = await fetch(weatherUrl)
-
-    if (!weatherResponse.ok) {
-      console.error('OpenWeatherMap API error:', weatherResponse.status, weatherResponse.statusText)
-      const errorText = await weatherResponse.text()
-      console.error('Error response:', errorText)
-      
-      // Try to parse error details from OpenWeatherMap
-      let errorDetails = 'The API key may be invalid, expired, or not activated.'
-      try {
-        const errorJson = JSON.parse(errorText)
-        if (errorJson.message) {
-          errorDetails = errorJson.message
-        }
-      } catch {
-        // If not JSON, use the text as-is
-        if (errorText) {
-          errorDetails = errorText
-        }
-      }
-      
-      // Provide more helpful error messages
-      if (weatherResponse.status === 401) {
-        // Test URL for user to verify key manually
-        const testUrl = `https://api.openweathermap.org/data/2.5/weather?lat=45.5&lon=-122.6&appid=${apiKey.substring(0, 4)}...&units=imperial`
-        
+    if (!pointsResponse.ok) {
+      if (pointsResponse.status === 404) {
         return NextResponse.json(
-          { 
-            error: 'Invalid API key. Please check that OPENWEATHER_API_KEY is correct in Vercel environment variables. Make sure to redeploy after adding the key.',
-            details: errorDetails,
-            troubleshooting: [
-              '1. Test your API key directly in a browser: https://api.openweathermap.org/data/2.5/weather?lat=45.5&lon=-122.6&appid=YOUR_KEY&units=imperial',
-              '2. New API keys can take up to 2 HOURS to activate, even if they show "Active" in the dashboard',
-              '3. Verify your OpenWeatherMap account has an active subscription (free tier is fine)',
-              '4. Check that the API key is not restricted to specific services in your OpenWeatherMap dashboard',
-              '5. Ensure you copied the entire key (should be ~32 characters, no spaces)',
-              '6. Try the other API key from your dashboard if you have multiple',
-              '7. Wait a few hours and try again if the key was just created',
-              '8. Check Vercel logs to verify the key being used (first 4 chars shown in logs)'
-            ],
-            apiKeyPrefix: apiKey.substring(0, 4),
-            apiKeyLength: apiKey.length
-          },
-          { status: 401 }
+          { error: 'Location not found. NWS API only supports US locations.' },
+          { status: 404 }
         )
       }
-      
+      const errorText = await pointsResponse.text()
+      console.error('NWS points API error:', pointsResponse.status, errorText)
       return NextResponse.json(
-        { error: `Failed to fetch weather data: ${weatherResponse.statusText}`, details: errorText },
-        { status: weatherResponse.status }
+        { error: `Failed to get location data: ${pointsResponse.statusText}`, details: errorText },
+        { status: pointsResponse.status }
       )
     }
 
-    const weatherData = await weatherResponse.json()
+    const pointsData = await pointsResponse.json()
+    const { gridId, gridX, gridY, properties } = pointsData
+    const forecastOffice = properties?.forecastOffice?.replace(NWS_API_BASE, '') || ''
+    const locationName = properties?.relativeLocation?.properties?.city || 
+                        properties?.relativeLocation?.properties?.areaDescription || 
+                        'your location'
 
-    const temperature = Math.round(weatherData.main.temp)
-    const condition = weatherData.weather[0]?.main || 'Unknown'
-    const description = weatherData.weather[0]?.description || condition
-    const humidity = weatherData.main.humidity
-    const windSpeed = Math.round(weatherData.wind?.speed || 0)
-    const isDay = weatherData.dt > weatherData.sys.sunrise && weatherData.dt < weatherData.sys.sunset
+    console.log(`NWS grid point: ${gridId} ${gridX},${gridY}`)
+
+    // Step 2: Get current conditions from the grid point
+    // We'll use the forecast endpoint which includes current conditions
+    const forecastUrl = `${NWS_API_BASE}/gridpoints/${gridId}/${gridX},${gridY}/forecast`
+    console.log('Fetching forecast from NWS...')
+    const forecastResponse = await fetch(forecastUrl, { headers })
+
+    if (!forecastResponse.ok) {
+      const errorText = await forecastResponse.text()
+      console.error('NWS forecast API error:', forecastResponse.status, errorText)
+      return NextResponse.json(
+        { error: `Failed to get weather forecast: ${forecastResponse.statusText}`, details: errorText },
+        { status: forecastResponse.status }
+      )
+    }
+
+    const forecastData = await forecastResponse.json()
+    
+    // Get current conditions from the first period (usually "Tonight" or "Today")
+    const currentPeriod = forecastData.properties?.periods?.[0]
+    if (!currentPeriod) {
+      return NextResponse.json(
+        { error: 'No weather data available for this location' },
+        { status: 404 }
+      )
+    }
+
+    // Step 3: Get detailed observations if available
+    let temperature = currentPeriod.temperature
+    let condition = currentPeriod.shortForecast || 'Unknown'
+    let description = currentPeriod.detailedForecast || condition
+    let windSpeed = 0
+    let humidity = null
+    let isDay = currentPeriod.isDaytime
+
+    // Try to get more detailed observations from the station
+    try {
+      const stationsUrl = `${NWS_API_BASE}/gridpoints/${gridId}/${gridX},${gridY}/stations`
+      const stationsResponse = await fetch(stationsUrl, { headers })
+      
+      if (stationsResponse.ok) {
+        const stationsData = await stationsResponse.json()
+        const observationStations = stationsData.features || []
+        
+        // Get the closest station's observations
+        if (observationStations.length > 0) {
+          const stationId = observationStations[0].properties?.stationIdentifier
+          if (stationId) {
+            const observationsUrl = `${NWS_API_BASE}/stations/${stationId}/observations/latest`
+            const obsResponse = await fetch(observationsUrl, { headers })
+            
+            if (obsResponse.ok) {
+              const obsData = await obsResponse.json()
+              const observation = obsData.properties
+              
+              // Convert temperature from Celsius to Fahrenheit if needed
+              if (observation.temperature?.value !== null) {
+                temperature = Math.round((observation.temperature.value * 9/5) + 32)
+              }
+              
+              // Get wind speed (convert from m/s to mph)
+              if (observation.windSpeed?.value !== null) {
+                windSpeed = Math.round(observation.windSpeed.value * 2.237) // m/s to mph
+              }
+              
+              // Get relative humidity
+              if (observation.relativeHumidity?.value !== null) {
+                humidity = Math.round(observation.relativeHumidity.value)
+              }
+              
+              // Get condition from observation
+              if (observation.textDescription) {
+                description = observation.textDescription
+                condition = observation.textDescription.split(' ')[0] // First word
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Could not fetch detailed observations, using forecast data:', e)
+      // Continue with forecast data
+    }
+
+    // Ensure temperature is a number
+    if (typeof temperature !== 'number') {
+      temperature = currentPeriod.temperature || 0
+    }
 
     // Generate work-related weather report
     const workReport = await generateWorkWeatherReport(
       temperature,
       description,
-      humidity,
+      humidity || 50, // Default to 50% if not available
       windSpeed,
       locationName
     )
@@ -204,7 +228,7 @@ export async function GET(request: NextRequest) {
       temperature,
       condition,
       description,
-      humidity,
+      humidity: humidity || null,
       windSpeed,
       emoji: getWeatherEmoji(description, isDay),
       workReport,
