@@ -272,6 +272,70 @@ export default function TeamDashboard() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
+            {/* Horoscope Image Actions - Tooltip and Download */}
+            {horoscopeImage && (
+              <TooltipProvider>
+                <div className="flex items-center gap-2">
+                  {horoscopeImagePrompt && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button 
+                          type="button"
+                          className={`p-2 ${getRoundedClass('rounded-full')} border-2 transition-all hover:opacity-80 ${
+                            mode === 'chaos' ? 'bg-black/20 border-[#C4F500]/40 hover:bg-black/30' :
+                            mode === 'chill' ? 'bg-[#F5E6D3]/30 border-[#FFC043]/40 hover:bg-[#F5E6D3]/40' :
+                            'bg-black/20 border-white/20 hover:bg-black/30'
+                          }`}
+                        >
+                          <Info className={`w-4 h-4 ${
+                            mode === 'chaos' ? 'text-[#C4F500]' :
+                            mode === 'chill' ? 'text-[#FFC043]' :
+                            'text-white'
+                          }`} />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent 
+                        side="bottom"
+                        className="max-w-md p-4 bg-black/95 text-white text-xs whitespace-pre-wrap border border-white/20 z-[10000]"
+                      >
+                        <p className="font-bold mb-2">Image Generation Prompt:</p>
+                        <p>{horoscopeImagePrompt}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(horoscopeImage)
+                        const blob = await response.blob()
+                        const url = window.URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = `horoscope-${new Date().toISOString().split('T')[0]}.png`
+                        document.body.appendChild(a)
+                        a.click()
+                        window.URL.revokeObjectURL(url)
+                        document.body.removeChild(a)
+                      } catch (error) {
+                        console.error('Error downloading image:', error)
+                      }
+                    }}
+                    className={`p-2 ${getRoundedClass('rounded-full')} border-2 transition-all hover:opacity-80 ${
+                      mode === 'chaos' ? 'bg-black/20 border-[#C4F500]/40 hover:bg-black/30' :
+                      mode === 'chill' ? 'bg-[#F5E6D3]/30 border-[#FFC043]/40 hover:bg-[#F5E6D3]/40' :
+                      'bg-black/20 border-white/20 hover:bg-black/30'
+                    }`}
+                  >
+                    <Download className={`w-4 h-4 ${
+                      mode === 'chaos' ? 'text-[#C4F500]' :
+                      mode === 'chill' ? 'text-[#FFC043]' :
+                      'text-white'
+                    }`} />
+                  </button>
+                </div>
+              </TooltipProvider>
+            )}
             <ModeSwitcher />
             <div className={`w-10 h-10 ${getRoundedClass('rounded-full')} border-2 ${
               mode === 'chaos' ? 'bg-[#C4F500] border-[#C4F500]/40' :
@@ -288,7 +352,7 @@ export default function TeamDashboard() {
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('hero-large') : getCardStyle('hero')
             return (
-              <Card className={`${style.bg} ${style.border} p-0 ${mode === 'chaos' ? getRoundedClass('rounded-[2.5rem]') : getRoundedClass('rounded-[2.5rem]')} relative group min-h-[500px] flex flex-col justify-between`}
+              <Card className={`${style.bg} ${style.border} p-0 ${mode === 'chaos' ? getRoundedClass('rounded-[2.5rem]') : getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden group min-h-[500px] flex flex-col justify-between`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
                 {/* Black masked section on the right with transform/rotation - contains horoscope image */}
@@ -314,66 +378,8 @@ export default function TeamDashboard() {
                     ) : null}
                   </div>
                 )}
-                {/* Tooltip and Download Icons - Positioned relative to Card, outside transformed container (chaos mode) */}
-                {mode === 'chaos' && horoscopeImage && (
-                  <TooltipProvider>
-                    <div className="absolute top-6 right-6 flex items-center gap-3 z-[100] pointer-events-auto" style={{ pointerEvents: 'auto' }}>
-                      {horoscopeImagePrompt && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button 
-                              type="button"
-                              className="p-3 bg-white hover:bg-gray-100 rounded-full transition-all shadow-2xl border-2 border-black/30 cursor-pointer"
-                              style={{ pointerEvents: 'auto', zIndex: 10001 }}
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                console.log('Info button clicked')
-                              }}
-                            >
-                              <Info className="w-5 h-5 text-black" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent 
-                            side="left"
-                            className="max-w-md p-4 bg-black/95 text-white text-xs whitespace-pre-wrap border border-white/20 z-[10002]"
-                          >
-                            <p className="font-bold mb-2">Image Generation Prompt:</p>
-                            <p>{horoscopeImagePrompt}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                      <button
-                        type="button"
-                        className="p-3 bg-white hover:bg-gray-100 rounded-full transition-all shadow-2xl border-2 border-black/30 cursor-pointer"
-                        style={{ pointerEvents: 'auto', zIndex: 10001 }}
-                        onClick={async (e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          console.log('Download button clicked')
-                          try {
-                            const response = await fetch(horoscopeImage)
-                            const blob = await response.blob()
-                            const url = window.URL.createObjectURL(blob)
-                            const a = document.createElement('a')
-                            a.href = url
-                            a.download = `horoscope-${new Date().toISOString().split('T')[0]}.png`
-                            document.body.appendChild(a)
-                            a.click()
-                            window.URL.revokeObjectURL(url)
-                            document.body.removeChild(a)
-                          } catch (error) {
-                            console.error('Error downloading image:', error)
-                          }
-                        }}
-                      >
-                        <Download className="w-5 h-5 text-black" />
-                      </button>
-                    </div>
-                  </TooltipProvider>
-                )}
                 {mode !== 'chaos' && (
-                  <div className={`absolute top-0 right-0 w-[60%] h-full ${getBgClass()}`} 
+                  <div className={`absolute top-0 right-0 w-[60%] h-full ${getBgClass()} overflow-hidden`} 
                        style={{ clipPath: 'polygon(12% 0, 100% 0, 100% 100%, 0% 100%)' }} 
                   >
                     {horoscopeImageLoading ? (
@@ -385,7 +391,7 @@ export default function TeamDashboard() {
                         <p className="text-white text-sm text-center">{horoscopeImageError}</p>
                       </div>
                     ) : horoscopeImage ? (
-                      <div className="relative w-full h-full overflow-hidden">
+                      <div className="relative w-full h-full">
                         <img 
                           src={horoscopeImage} 
                           alt="Horoscope portrait"
@@ -395,64 +401,6 @@ export default function TeamDashboard() {
                       </div>
                     ) : null}
                   </div>
-                )}
-                {/* Tooltip and Download Icons - Positioned relative to Card (non-chaos modes) */}
-                {mode !== 'chaos' && horoscopeImage && (
-                  <TooltipProvider>
-                    <div className="absolute top-6 right-6 flex items-center gap-3 z-[100] pointer-events-auto" style={{ pointerEvents: 'auto' }}>
-                      {horoscopeImagePrompt && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button 
-                              type="button"
-                              className="p-3 bg-white hover:bg-gray-100 rounded-full transition-all shadow-2xl border-2 border-black/30 cursor-pointer"
-                              style={{ pointerEvents: 'auto', zIndex: 10001 }}
-                              onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                console.log('Info button clicked')
-                              }}
-                            >
-                              <Info className="w-5 h-5 text-black" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent 
-                            side="left"
-                            className="max-w-md p-4 bg-black/95 text-white text-xs whitespace-pre-wrap border border-white/20 z-[10002]"
-                          >
-                            <p className="font-bold mb-2">Image Generation Prompt:</p>
-                            <p>{horoscopeImagePrompt}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                      <button
-                        type="button"
-                        className="p-3 bg-white hover:bg-gray-100 rounded-full transition-all shadow-2xl border-2 border-black/30 cursor-pointer"
-                        style={{ pointerEvents: 'auto', zIndex: 10001 }}
-                        onClick={async (e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          console.log('Download button clicked')
-                          try {
-                            const response = await fetch(horoscopeImage)
-                            const blob = await response.blob()
-                            const url = window.URL.createObjectURL(blob)
-                            const a = document.createElement('a')
-                            a.href = url
-                            a.download = `horoscope-${new Date().toISOString().split('T')[0]}.png`
-                            document.body.appendChild(a)
-                            a.click()
-                            window.URL.revokeObjectURL(url)
-                            document.body.removeChild(a)
-                          } catch (error) {
-                            console.error('Error downloading image:', error)
-                          }
-                        }}
-                      >
-                        <Download className="w-5 h-5 text-black" />
-                      </button>
-                    </div>
-                  </TooltipProvider>
                 )}
                 <div className="relative z-10 p-8 md:p-12 h-full flex flex-col justify-between">
                   <div>
