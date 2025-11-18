@@ -99,6 +99,12 @@ export async function GET(request: NextRequest) {
 
     // Log API key status (first 4 chars only for security)
     console.log('Weather API key status:', apiKey ? `${apiKey.substring(0, 4)}...` : 'NOT SET')
+    console.log('API key length:', apiKey?.length || 0)
+    
+    // Check if API key looks valid (OpenWeatherMap keys are typically 32 characters)
+    if (apiKey.length < 20) {
+      console.warn('API key seems too short. OpenWeatherMap keys are typically 32 characters long.')
+    }
 
     // Reverse geocode to get location name (server-side) - skip if API key fails
     let locationName = 'your location'
@@ -128,12 +134,34 @@ export async function GET(request: NextRequest) {
       const errorText = await weatherResponse.text()
       console.error('Error response:', errorText)
       
+      // Try to parse error details from OpenWeatherMap
+      let errorDetails = 'The API key may be invalid, expired, or not activated.'
+      try {
+        const errorJson = JSON.parse(errorText)
+        if (errorJson.message) {
+          errorDetails = errorJson.message
+        }
+      } catch {
+        // If not JSON, use the text as-is
+        if (errorText) {
+          errorDetails = errorText
+        }
+      }
+      
       // Provide more helpful error messages
       if (weatherResponse.status === 401) {
         return NextResponse.json(
           { 
             error: 'Invalid API key. Please check that OPENWEATHER_API_KEY is correct in Vercel environment variables. Make sure to redeploy after adding the key.',
-            details: 'The API key may be invalid, expired, or not activated. Check your OpenWeatherMap account.'
+            details: errorDetails,
+            troubleshooting: [
+              '1. Verify the API key is correct in your OpenWeatherMap account dashboard',
+              '2. Make sure the API key is activated (it may take a few minutes after creation)',
+              '3. Check that you copied the entire key (should be ~32 characters)',
+              '4. Ensure the environment variable is set in Vercel (not just locally)',
+              '5. Redeploy your Vercel project after adding/updating the environment variable',
+              '6. Check Vercel logs to see the actual API key being used (first 4 chars)'
+            ]
           },
           { status: 401 }
         )
