@@ -43,6 +43,20 @@ export default function TeamDashboard() {
       themeSnippet?: string | null
       settingHint?: string | null
     }
+    matchedSegments?: Array<{ type: string; value: string }>
+    appliedRules?: Array<{
+      segmentType: string
+      segmentValue: string
+      priority: number
+      styleWeights: number
+      characterWeights: number
+      promptTags: string[]
+    }>
+    themes?: Array<{
+      name: string
+      moodTags: string[]
+      textSnippet: string | null
+    }>
   } | null>(null)
   const [horoscopeLoading, setHoroscopeLoading] = useState(true)
   const [horoscopeImageLoading, setHoroscopeImageLoading] = useState(true)

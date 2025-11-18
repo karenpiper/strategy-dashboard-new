@@ -101,8 +101,17 @@ export async function GET(request: NextRequest) {
       .maybeSingle()
     
     if (cachedHoroscope?.image_url) {
-      // For cached horoscopes, we need to rebuild the config to get prompt tags and theme
-      // But we can use the stored metadata as a fallback
+      // For cached horoscopes, rebuild the config to get all the data (prompt tags, theme, etc.)
+      // This ensures we have complete information even for cached images
+      const config = await fetchHoroscopeConfig(
+        supabase,
+        birthdayMonth,
+        birthdayDay,
+        profile.discipline,
+        profile.role
+      )
+      const { userProfile: rebuiltProfile, resolvedChoices: rebuiltChoices } = config
+      
       return NextResponse.json({
         image_url: cachedHoroscope.image_url,
         image_prompt: cachedHoroscope.image_prompt || null,
@@ -110,22 +119,24 @@ export async function GET(request: NextRequest) {
         config: {
           userProfile: {
             sign: starSign,
-            element: userProfile.element,
-            modality: userProfile.modality,
+            element: rebuiltProfile.element,
+            modality: rebuiltProfile.modality,
             discipline: profile.discipline || null,
-            roleLevel: userProfile.roleLevel || null,
-            weekday: userProfile.weekday,
-            season: userProfile.season,
+            roleLevel: rebuiltProfile.roleLevel || null,
+            weekday: rebuiltProfile.weekday,
+            season: rebuiltProfile.season,
           },
           resolvedChoices: {
-            styleKey: cachedHoroscope.style_key || null,
-            styleLabel: cachedHoroscope.style_label || null,
-            characterType: cachedHoroscope.character_type || null,
+            styleKey: cachedHoroscope.style_key || rebuiltChoices.styleKey,
+            styleLabel: cachedHoroscope.style_label || rebuiltChoices.styleLabel,
+            characterType: cachedHoroscope.character_type || rebuiltChoices.characterType,
             settingHint: cachedHoroscope.setting_hint || null,
-            // For cached, we don't have prompt tags/theme stored, so we'll rebuild config
-            promptTags: resolvedChoices.promptTags || [],
-            themeSnippet: resolvedChoices.themeSnippet || null,
+            promptTags: rebuiltChoices.promptTags || [],
+            themeSnippet: rebuiltChoices.themeSnippet || null,
           },
+          matchedSegments: config.matchedSegments || [],
+          appliedRules: config.appliedRules || [],
+          themes: config.themes || [],
         },
       })
     }
@@ -166,6 +177,15 @@ export async function GET(request: NextRequest) {
         onConflict: 'user_id,date',
       })
     
+    // Get additional config data for display
+    const fullConfig = await fetchHoroscopeConfig(
+      supabase,
+      birthdayMonth,
+      birthdayDay,
+      profile.discipline,
+      profile.role
+    )
+    
     return NextResponse.json({
       image_url: imageUrl,
       image_prompt: prompt,
@@ -188,6 +208,9 @@ export async function GET(request: NextRequest) {
           themeSnippet: resolvedChoices.themeSnippet || null,
           settingHint: resolvedChoices.settingHint || null,
         },
+        matchedSegments: fullConfig.matchedSegments || [],
+        appliedRules: fullConfig.appliedRules || [],
+        themes: fullConfig.themes || [],
       },
     })
   } catch (error: any) {

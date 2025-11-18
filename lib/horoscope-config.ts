@@ -71,10 +71,33 @@ export async function fetchHoroscopeConfig(
   // Step 7: Make resolved choices from config
   const resolvedChoices = makeResolvedChoices(resolvedConfig, styles)
   
+  // Build list of matched segments for debugging/display
+  const matchedSegments = segments.map(s => ({
+    type: s.type,
+    value: s.value,
+  }))
+  
+  // Build list of applied rules for debugging/display
+  const appliedRules = rules.map(r => ({
+    segmentType: segments.find(s => s.id === r.segment_id)?.type || 'unknown',
+    segmentValue: segments.find(s => s.id === r.segment_id)?.value || 'unknown',
+    priority: r.priority,
+    styleWeights: Object.keys(r.weight_styles_json || {}).length,
+    characterWeights: Object.keys(r.weight_character_json || {}).length,
+    promptTags: r.prompt_tags_json || [],
+  }))
+  
   return {
     userProfile,
     resolvedChoices,
     starSign,
+    matchedSegments,
+    appliedRules,
+    themes: themes.map(t => ({
+      name: t.name,
+      moodTags: t.mood_tags_json || [],
+      textSnippet: t.text_snippet,
+    })),
   }
 }
 
