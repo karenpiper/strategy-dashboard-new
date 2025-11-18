@@ -90,44 +90,118 @@ export async function generateHoroscopeImage(
     styleLabel: string
     promptTags?: string[]
     themeSnippet?: string | null
+  },
+  userProfile?: {
+    element?: string
+    modality?: string
+    discipline?: string | null
+    roleLevel?: string | null
+    weekday?: string
+    season?: string
   }
 ): Promise<{ imageUrl: string; prompt: string }> {
   const { characterType, styleLabel, promptTags = [], themeSnippet } = resolvedChoices
+  const { element, modality, discipline, roleLevel, weekday, season } = userProfile || {}
   
-  // Build character description based on type
+  // Build detailed character description based on type and profile
   let characterDescription = ''
   switch (characterType) {
     case 'human':
       characterDescription = 'a human character or figure'
+      if (roleLevel) {
+        characterDescription += ` with ${roleLevel.toLowerCase()}-level energy`
+      }
       break
     case 'animal':
       characterDescription = 'an animal character (realistic or anthropomorphic)'
+      if (element) {
+        characterDescription += ` embodying ${element} element energy`
+      }
       break
     case 'object':
       characterDescription = 'an object or inanimate thing personified'
+      if (discipline) {
+        characterDescription += ` related to ${discipline.toLowerCase()} work`
+      }
       break
     case 'hybrid':
       characterDescription = 'a hybrid or fantastical creature combining human, animal, or object elements'
+      if (modality) {
+        characterDescription += ` with ${modality} energy`
+      }
       break
   }
   
-  // Build prompt tags text
-  const tagsText = promptTags.length > 0 ? ` Incorporate these mood and style elements: ${promptTags.join(', ')}.` : ''
+  // Build zodiac-specific details
+  const zodiacDetails: string[] = []
+  if (element) {
+    const elementTraits: Record<string, string> = {
+      fire: 'fiery, energetic, bold, passionate',
+      earth: 'grounded, practical, stable, earthy',
+      air: 'light, airy, intellectual, breezy',
+      water: 'fluid, emotional, deep, flowing'
+    }
+    zodiacDetails.push(elementTraits[element] || element)
+  }
+  
+  if (modality) {
+    const modalityTraits: Record<string, string> = {
+      cardinal: 'initiating, action-oriented, leadership energy',
+      fixed: 'stable, persistent, unwavering energy',
+      mutable: 'adaptable, flexible, changeable energy'
+    }
+    zodiacDetails.push(modalityTraits[modality] || modality)
+  }
+  
+  // Build context details
+  const contextDetails: string[] = []
+  if (discipline) {
+    contextDetails.push(`${discipline.toLowerCase()} professional`)
+  }
+  if (roleLevel) {
+    contextDetails.push(`${roleLevel.toLowerCase()} level`)
+  }
+  if (weekday) {
+    contextDetails.push(`${weekday.toLowerCase()} energy`)
+  }
+  if (season) {
+    contextDetails.push(`${season.toLowerCase()} season vibes`)
+  }
+  
+  // Build prompt tags text with more detail
+  let tagsText = ''
+  if (promptTags.length > 0) {
+    tagsText = `\n\nMood and style elements: ${promptTags.join(', ')}.`
+  }
   
   // Build theme snippet text
-  const themeText = themeSnippet ? ` Theme context: ${themeSnippet}.` : ''
+  let themeText = ''
+  if (themeSnippet) {
+    themeText = `\n\nTheme context: ${themeSnippet}`
+  }
   
-  const prompt = `An absolutely absurd, hilariously silly, and delightfully ridiculous illustration portrait representing ${starSign} energy, featuring ${characterDescription}.
+  // Build zodiac context
+  let zodiacContext = ''
+  if (zodiacDetails.length > 0) {
+    zodiacContext = `\n\nZodiac energy: ${zodiacDetails.join(', ')}.`
+  }
+  
+  // Build professional context
+  let professionalContext = ''
+  if (contextDetails.length > 0) {
+    professionalContext = `\n\nCharacter context: ${contextDetails.join(', ')}.`
+  }
+  
+  const prompt = `An absolutely absurd, hilariously silly, and delightfully ridiculous illustration portrait representing ${starSign} energy, featuring ${characterDescription}.${zodiacContext}${professionalContext}
 
 Illustration style: ${styleLabel}.${tagsText}${themeText}
 
-Make this EXTREMELY silly and absurd:
-- Over-the-top, exaggerated expressions and poses
-- Ridiculously whimsical and nonsensical details
-- Playfully absurd accessories, props, or elements
-- Maximum silliness and humor - think cartoon absurdity
-- Completely unserious and delightfully ridiculous
-- Make it laugh-out-loud funny and charmingly absurd
+Character details:
+- The character should embody the essence of ${starSign} in an absurd and hilarious way
+- ${characterType === 'object' ? 'The object should be personified with exaggerated personality and expression' : characterType === 'hybrid' ? 'The hybrid creature should combine elements in unexpected and silly ways' : characterType === 'animal' ? 'The animal should have exaggerated, cartoon-like expressions and poses' : 'The human should have over-the-top, exaggerated expressions and poses'}
+- Include playfully absurd accessories, props, or elements that relate to the character's energy
+- Maximum silliness and humor - think cartoon absurdity and delightful nonsense
+- Completely unserious and laugh-out-loud funny
 
 Style requirements:
 - Absolutely NO text, NO words, NO letters, NO numbers anywhere in the image
@@ -139,7 +213,7 @@ Style requirements:
 - Professional digital art quality
 - Suitable for use as a profile picture or avatar
 
-The illustration should be creatively absurd, hilariously silly, and capture the essence of ${starSign} in the most ridiculous and entertaining way possible. Think maximum absurdity, complete silliness, and delightful nonsense.`
+The illustration should be creatively absurd, hilariously silly, and capture the essence of ${starSign} combined with all the contextual elements in the most ridiculous and entertaining way possible. Think maximum absurdity, complete silliness, and delightful nonsense.`
 
   console.log('Calling OpenAI DALL-E API...')
   
