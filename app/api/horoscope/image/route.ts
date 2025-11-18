@@ -10,6 +10,7 @@ import {
   resolveConfig,
   makeResolvedChoices,
 } from '@/lib/horoscope-engine'
+import { fetchHoroscopeConfig } from '@/lib/horoscope-config'
 import { getStarSign } from '@/lib/horoscope-utils'
 
 // Supabase client setup - uses service role for database operations

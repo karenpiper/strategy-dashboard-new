@@ -11,6 +11,7 @@ import {
   resolveConfig,
   makeResolvedChoices,
 } from '@/lib/horoscope-engine'
+import { fetchHoroscopeConfig } from '@/lib/horoscope-config'
 
 // Supabase client setup - uses service role for database operations
 // This bypasses RLS so the API can insert/update horoscopes
@@ -229,64 +230,19 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Build user profile (logic in code)
-    const userProfile = buildUserProfile(
+    // Use admin client for all database operations
+    const supabase = await getSupabaseAdminClient()
+    
+    // Fetch horoscope configuration (shared logic)
+    console.log('Fetching horoscope configuration...')
+    const config = await fetchHoroscopeConfig(
+      supabase,
       birthdayMonth,
       birthdayDay,
       profile.discipline,
       profile.role
     )
-    
-    const starSign = userProfile.sign
-    
-    // Use admin client for all database operations
-    const supabase = await getSupabaseAdminClient()
-    
-    // Step 1: Fetch segments for profile
-    console.log('Fetching segments for profile...')
-    const segments = await fetchSegmentsForProfile(supabase, userProfile)
-    console.log(`Found ${segments.length} matching segments`)
-    
-    // Step 2: Fetch rules for segments
-    const segmentIds = segments.map(s => s.id)
-    const rules = await fetchRulesForSegments(supabase, segmentIds)
-    console.log(`Found ${rules.length} matching rules`)
-    
-    // Step 3: Fetch current themes
-    const themes = await fetchCurrentThemes(supabase, userProfile.today)
-    console.log(`Found ${themes.length} active themes`)
-    
-    // Step 4: Fetch theme rules for themes and segments
-    let allThemeRules: any[] = []
-    for (const theme of themes) {
-      const themeRules = await fetchThemeRules(supabase, theme.id, segmentIds)
-      allThemeRules.push(...themeRules)
-    }
-    console.log(`Found ${allThemeRules.length} theme rules`)
-    
-    // Step 5: Fetch active styles
-    const styles = await fetchActiveStyles(supabase)
-    console.log(`Found ${styles.length} active styles`)
-    
-    // If no styles found, return error (database not seeded)
-    if (styles.length === 0) {
-      return NextResponse.json(
-        { error: 'Horoscope configuration not initialized. Please run the seed script to populate styles, segments, and rules.' },
-        { status: 500 }
-      )
-    }
-    
-    // Step 6: Resolve config from database rules and themes
-    const resolvedConfig = resolveConfig(rules, themes, allThemeRules, styles)
-    console.log('Resolved config:', {
-      styleCount: Object.keys(resolvedConfig.styleWeights).length,
-      characterWeights: resolvedConfig.characterTypeWeights,
-      tagCount: resolvedConfig.extraPromptTags.length,
-      hasTheme: !!resolvedConfig.themeSnippet,
-    })
-    
-    // Step 7: Make resolved choices from config
-    const resolvedChoices = makeResolvedChoices(resolvedConfig, styles)
+    const { userProfile, resolvedChoices, starSign } = config
     console.log('Resolved choices:', resolvedChoices)
     
     // Fetch from Cafe Astrology and transform to Co-Star style

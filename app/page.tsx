@@ -32,67 +32,60 @@ export default function TeamDashboard() {
   const [userName, setUserName] = useState<string>('Friend')
   const [characterName, setCharacterName] = useState<string | null>(null)
 
-  // Fetch horoscope text on mount
+  // Fetch horoscope text and image in parallel on mount
   useEffect(() => {
-    async function fetchHoroscope() {
+    async function fetchHoroscopeData() {
+      // Set loading states
+      setHoroscopeLoading(true)
+      setHoroscopeImageLoading(true)
+      setHoroscopeError(null)
+      setHoroscopeImageError(null)
+      
       try {
-        setHoroscopeLoading(true)
-        setHoroscopeError(null)
-        const response = await fetch('/api/horoscope')
-        const data = await response.json()
+        // Fetch both in parallel for faster loading
+        const [textResponse, imageResponse] = await Promise.all([
+          fetch('/api/horoscope'),
+          fetch('/api/horoscope/image')
+        ])
         
-        if (!response.ok) {
-          console.error('Horoscope API error:', response.status, data)
-          if (response.status === 401) {
+        // Process text response
+        const textData = await textResponse.json()
+        if (!textResponse.ok) {
+          console.error('Horoscope API error:', textResponse.status, textData)
+          if (textResponse.status === 401) {
             setHoroscopeError('Please log in to view your horoscope')
           } else {
-            setHoroscopeError(data.error || 'Failed to load horoscope')
+            setHoroscopeError(textData.error || 'Failed to load horoscope')
           }
-          return
+        } else {
+          console.log('Horoscope data received:', textData)
+          setHoroscope(textData)
+          // Generate silly character name based on star sign
+          if (textData.star_sign) {
+            setCharacterName(generateSillyCharacterName(textData.star_sign))
+          }
         }
         
-        console.log('Horoscope data received:', data)
-        setHoroscope(data)
-        // Generate silly character name based on star sign
-        if (data.star_sign) {
-          setCharacterName(generateSillyCharacterName(data.star_sign))
+        // Process image response
+        const imageData = await imageResponse.json()
+        if (!imageResponse.ok) {
+          console.error('Horoscope image API error:', imageResponse.status, imageData)
+          setHoroscopeImageError(imageData.error || 'Failed to load horoscope image')
+        } else {
+          console.log('Horoscope image received:', imageData)
+          setHoroscopeImage(imageData.image_url)
+          setHoroscopeImagePrompt(imageData.image_prompt || null)
         }
       } catch (error: any) {
-        console.error('Error fetching horoscope:', error)
+        console.error('Error fetching horoscope data:', error)
         setHoroscopeError('Failed to load horoscope: ' + (error.message || 'Unknown error'))
-      } finally {
-        setHoroscopeLoading(false)
-      }
-    }
-    fetchHoroscope()
-  }, [])
-
-  // Fetch horoscope image separately on mount
-  useEffect(() => {
-    async function fetchHoroscopeImage() {
-      try {
-        setHoroscopeImageLoading(true)
-        setHoroscopeImageError(null)
-        const response = await fetch('/api/horoscope/image')
-        const data = await response.json()
-        
-        if (!response.ok) {
-          console.error('Horoscope image API error:', response.status, data)
-          setHoroscopeImageError(data.error || 'Failed to load horoscope image')
-          return
-        }
-        
-        console.log('Horoscope image received:', data)
-        setHoroscopeImage(data.image_url)
-        setHoroscopeImagePrompt(data.image_prompt || null)
-      } catch (error: any) {
-        console.error('Error fetching horoscope image:', error)
         setHoroscopeImageError('Failed to load horoscope image: ' + (error.message || 'Unknown error'))
       } finally {
+        setHoroscopeLoading(false)
         setHoroscopeImageLoading(false)
       }
     }
-    fetchHoroscopeImage()
+    fetchHoroscopeData()
   }, [])
 
   // Comprehensive mode-aware card styling
@@ -475,11 +468,11 @@ export default function TeamDashboard() {
                     {['Give Snap', 'Need Help', 'Add Win'].map((label) => (
                       <Button key={label} className={`${mode === 'chaos' ? 'bg-black text-[#FFE500] hover:bg-[#0F0F0F] hover:scale-105' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} py-3 md:py-4 px-6 md:px-8 text-base md:text-lg uppercase tracking-wider transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}>
                         {mode === 'code' ? `[${label.toUpperCase().replace(' ', ' ')}]` : label} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
-                      </Button>
+                  </Button>
                     ))}
-                  </div>
                 </div>
-              </Card>
+              </div>
+            </Card>
             )
           })()}
         </section>
@@ -508,19 +501,19 @@ export default function TeamDashboard() {
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
                 <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
-                  <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" />
                   <span className="uppercase tracking-wider font-black text-xs">Totally Real</span>
-                </div>
+            </div>
                 <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.accent }}>YOUR<br/>HOROSCOPE</h2>
                 
                 {horoscopeLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className={`w-6 h-6 animate-spin ${style.text}`} />
-                  </div>
+            </div>
                 ) : horoscopeError ? (
                   <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-4 border-2`} style={{ borderColor: `${style.accent}40` }}>
                     <p className={`text-sm ${style.text}`}>{horoscopeError}</p>
-                  </div>
+            </div>
                 ) : horoscope ? (
                   <div className="space-y-6">
                     {/* Horoscope Text Container */}
@@ -533,8 +526,8 @@ export default function TeamDashboard() {
                         {horoscope.horoscope_text.split('\n\n').map((paragraph, idx) => (
                           <p key={idx}>{paragraph}</p>
                         ))}
-                      </div>
-                    </div>
+              </div>
+              </div>
                     
                     {/* Bottom Row: Do's and Don'ts - Half Width Each */}
                     {(horoscope.horoscope_dos?.length || horoscope.horoscope_donts?.length) && (
@@ -551,7 +544,7 @@ export default function TeamDashboard() {
                                 </li>
                               ))}
                             </ul>
-                          </div>
+            </div>
                         )}
                         
                         {/* Don'ts - Right Half */}
@@ -566,15 +559,15 @@ export default function TeamDashboard() {
                                 </li>
                               ))}
                             </ul>
-                          </div>
+            </div>
                         )}
-                      </div>
-                    )}
                   </div>
+                    )}
+                </div>
                 ) : (
                   <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-4 border-2`} style={{ borderColor: `${style.accent}40` }}>
                     <p className={`text-sm ${style.text}`}>No horoscope available</p>
-                  </div>
+              </div>
                 )}
               </Card>
             )
@@ -611,30 +604,30 @@ export default function TeamDashboard() {
                 >
                   {/* Top Header with Cloud Icon */}
                   <div className="flex items-start justify-between mb-4 relative z-10">
-                    <div>
+                  <div>
                       <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
                       <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
-                    </div>
-                    <span className="text-3xl">☁️</span>
                   </div>
+                    <span className="text-3xl">☁️</span>
+                </div>
                   
                   {/* Main Temperature */}
                   <div className="mb-5 relative z-10">
                     <p className={`text-5xl font-black leading-none mb-2 ${style.text}`}>72°</p>
                     <p className={`${style.text} text-base font-semibold`}>Partly Cloudy</p>
-                  </div>
+              </div>
                   
                   {/* Bottom Stats - Side by Side */}
                   <div className="flex gap-3 relative z-10">
                     <div className="flex-1">
                       <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>HUMIDITY</p>
                       <p className={`text-lg font-black ${style.text}`}>65%</p>
-                    </div>
+                  </div>
                     <div className="flex-1">
                       <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>WIND</p>
                       <p className={`text-lg font-black ${style.text}`}>8 mph</p>
-                    </div>
-                  </div>
+                </div>
+              </div>
                 </Card>
               )
             })()}
@@ -673,18 +666,18 @@ export default function TeamDashboard() {
                          style={{ 
                            backgroundColor: timeZoneColors[idx],
                          }}>
-                      <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3">
                         <span className="text-lg">{tz.emoji}</span>
-                        <div>
+                  <div>
                           <p className={`font-black text-sm ${mode === 'chaos' ? 'text-black' : 'text-white'}`}>{tz.city}</p>
                           <p className={`text-xs font-medium ${mode === 'chaos' ? 'text-black/70' : 'text-white/80'}`}>{tz.people} people</p>
-                        </div>
-                      </div>
-                      <span className={`font-black text-sm ${mode === 'chaos' ? 'text-black' : 'text-white'}`}>{tz.time}</span>
-                    </div>
-                  ))}
+                  </div>
                 </div>
-              </Card>
+                      <span className={`font-black text-sm ${mode === 'chaos' ? 'text-black' : 'text-white'}`}>{tz.time}</span>
+              </div>
+                  ))}
+            </div>
+          </Card>
             )
           })()}
           </div>
@@ -700,7 +693,7 @@ export default function TeamDashboard() {
           ) : (
             <>
               <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
-              Work Updates
+          Work Updates
             </>
           )}
         </p>
@@ -728,10 +721,10 @@ export default function TeamDashboard() {
                 <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#FF00FF] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFB5D8] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-10 text-sm uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
                   {mode === 'code' ? '[PLAY ON SPOTIFY]' : (
                     <>
-                      <Play className="w-4 h-4 mr-2" /> Play on Spotify
+              <Play className="w-4 h-4 mr-2" /> Play on Spotify
                     </>
                   )}
-                </Button>
+            </Button>
           </Card>
             )
           })()}
@@ -822,7 +815,7 @@ export default function TeamDashboard() {
           ) : (
             <>
               <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
-              Work Updates Continued
+          Work Updates Continued
             </>
           )}
         </p>
@@ -954,7 +947,7 @@ export default function TeamDashboard() {
           ) : (
             <>
               <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
-              Recognition & Culture
+          Recognition & Culture
             </>
           )}
         </p>
@@ -1074,7 +1067,7 @@ export default function TeamDashboard() {
           ) : (
             <>
               <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
-              More Modules
+          More Modules
             </>
           )}
         </p>
@@ -1277,7 +1270,7 @@ export default function TeamDashboard() {
           ) : (
             <>
               <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
-              Browse Categories
+          Browse Categories
             </>
           )}
         </p>
