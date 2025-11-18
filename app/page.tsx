@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, Calendar, Music, FileText, MessageCircle, Trophy, TrendingUp, Users, Zap, Star, Heart, Coffee, Lightbulb, ChevronRight, Play, CheckCircle, Clock, ArrowRight, Video, Sparkles, Loader2, Download, Bot, Info } from 'lucide-react'
+import { Search, Calendar, Music, FileText, MessageCircle, Trophy, TrendingUp, Users, Zap, Star, Heart, Coffee, Lightbulb, ChevronRight, ChevronLeft, Play, CheckCircle, Clock, ArrowRight, Video, Sparkles, Loader2, Download, Bot, Info } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -76,9 +76,13 @@ export default function TeamDashboard() {
     emoji: string
     workReport: string
     location: string
+    lat?: number
+    lon?: number
   } | null>(null)
   const [weatherLoading, setWeatherLoading] = useState(true)
   const [weatherError, setWeatherError] = useState<string | null>(null)
+  const [currentMapIndex, setCurrentMapIndex] = useState(0)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null)
 
   // Format today's date in user's timezone
   useEffect(() => {
@@ -123,7 +127,8 @@ export default function TeamDashboard() {
               }
 
               const data = await response.json()
-              setWeather(data)
+              setWeather({ ...data, lat: latitude, lon: longitude })
+              setUserLocation({ lat: latitude, lon: longitude })
               setWeatherLoading(false)
             },
             (error) => {
