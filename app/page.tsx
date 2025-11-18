@@ -726,9 +726,9 @@ export default function TeamDashboard() {
                               ? 'ring-2 ring-[#FFC043] ring-offset-2 ring-offset-[#F5E6D3]'
                               : 'ring-2 ring-[#00FF00] ring-offset-2 ring-offset-black'
                             : ''
-                        } ${!isUserTz ? 'opacity-50' : ''}`}
+                        }`}
                         style={{
-                          backgroundColor: timeZoneColors[idx],
+                          backgroundColor: isUserTz ? timeZoneColors[idx] : '#333333',
                           boxShadow: isUserTz 
                             ? mode === 'chaos' 
                               ? '0 0 10px rgba(196, 245, 0, 0.5)' 
@@ -738,19 +738,19 @@ export default function TeamDashboard() {
                             : 'none',
                         } as React.CSSProperties}
                       >
-                        <span className={`text-2xl flex-shrink-0 ${!isUserTz ? 'opacity-60' : ''}`}>{emojiMap[tz.label] || '🌍'}</span>
+                        <span className="text-2xl flex-shrink-0">{emojiMap[tz.label] || '🌍'}</span>
                         <div className="flex-1 min-w-0">
                           <p className={`font-black text-xs truncate ${
                             isUserTz 
                               ? mode === 'chaos' ? 'text-black' : 'text-white'
-                              : mode === 'chaos' ? 'text-black/90' : 'text-white/95'
+                              : 'text-white'
                           }`}>
                             {tz.label}
                           </p>
                           <p className={`text-xs font-medium truncate ${
                             isUserTz 
                               ? mode === 'chaos' ? 'text-black/70' : 'text-white/80'
-                              : mode === 'chaos' ? 'text-black/75' : 'text-white/85'
+                              : 'text-white/80'
                           }`}>
                             {tz.time}
                           </p>
