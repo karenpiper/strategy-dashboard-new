@@ -904,11 +904,43 @@ export default function TeamDashboard() {
               )
             })()}
 
-            {/* Weather - Clean Design */}
+            {/* Weather - Enhanced Design with Maps */}
             {(() => {
+              // Weather map types from WeatherAPI.com
+              const weatherMaps = [
+                { type: 'tmp2m', label: 'Temperature', path: 'tmp2m' },
+                { type: 'precip', label: 'Precipitation', path: 'precip' },
+                { type: 'pressure', label: 'Pressure', path: 'pressure' },
+                { type: 'wind', label: 'Wind Speed', path: 'wind' },
+              ]
+
+              // Generate weather map URL for current location
+              const getWeatherMapUrl = (mapType: string, zoom: number = 4) => {
+                if (!weather?.lat || !weather?.lon) return null
+                
+                const now = new Date()
+                const utcDate = now.toISOString().split('T')[0].replace(/-/g, '') // yyyyMMdd
+                const utcHour = String(now.getUTCHours()).padStart(2, '0') // HH
+                
+                // Calculate tile coordinates (simplified - for actual implementation, you'd need proper tile math)
+                // For now, we'll use a center point approach
+                const lat = weather.lat
+                const lon = weather.lon
+                
+                // Simple tile calculation (this is approximate)
+                const n = Math.pow(2, zoom)
+                const x = Math.floor((lon + 180) / 360 * n)
+                const y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n)
+                
+                return `https://weathermaps.weatherapi.com/${mapType}/tiles/${utcDate}${utcHour}/${zoom}/${x}/${y}.png`
+              }
+
               const style = mode === 'chaos' ? getSpecificCardStyle('weather') : getCardStyle('team')
+              const currentMap = weatherMaps[currentMapIndex]
+              const mapUrl = getWeatherMapUrl(currentMap.path)
+              
               return (
-                <Card className={`${style.bg} ${style.border} p-5 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden`}
+                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden`}
                       style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
                 >
                   {weatherLoading ? (
@@ -927,9 +959,9 @@ export default function TeamDashboard() {
                       <p className={`text-sm ${style.text}/80`}>{weatherError}</p>
                     </div>
                   ) : weather ? (
-                    <>
+                    <div className="space-y-4">
                       {/* Top Header with Weather Icon */}
-                      <div className="flex items-start justify-between mb-4 relative z-10">
+                      <div className="flex items-start justify-between relative z-10">
                         <div>
                           <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
                           <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
@@ -937,31 +969,79 @@ export default function TeamDashboard() {
                         <span className="text-3xl">{weather.emoji}</span>
                       </div>
                       
+                      {/* Weather Map Carousel */}
+                      {mapUrl && weather.lat && weather.lon && (
+                        <div className="relative w-full h-32 rounded-xl overflow-hidden mb-4 bg-black/20">
+                          <img 
+                            src={mapUrl} 
+                            alt={currentMap.label}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Hide image if it fails to load
+                              e.currentTarget.style.display = 'none'
+                            }}
+                          />
+                          {/* Map Navigation */}
+                          <div className="absolute inset-0 flex items-center justify-between p-2">
+                            <button
+                              onClick={() => setCurrentMapIndex((prev) => (prev - 1 + weatherMaps.length) % weatherMaps.length)}
+                              className={`p-1.5 ${getRoundedClass('rounded-full')} bg-black/40 hover:bg-black/60 transition-all backdrop-blur-sm`}
+                              aria-label="Previous map"
+                            >
+                              <ChevronLeft className="w-4 h-4 text-white" />
+                            </button>
+                            <div className={`px-3 py-1 ${getRoundedClass('rounded-full')} bg-black/40 backdrop-blur-sm`}>
+                              <p className="text-xs font-bold text-white uppercase">{currentMap.label}</p>
+                            </div>
+                            <button
+                              onClick={() => setCurrentMapIndex((prev) => (prev + 1) % weatherMaps.length)}
+                              className={`p-1.5 ${getRoundedClass('rounded-full')} bg-black/40 hover:bg-black/60 transition-all backdrop-blur-sm`}
+                              aria-label="Next map"
+                            >
+                              <ChevronRight className="w-4 h-4 text-white" />
+                            </button>
+                          </div>
+                          {/* Map Dots Indicator */}
+                          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1.5">
+                            {weatherMaps.map((_, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => setCurrentMapIndex(idx)}
+                                className={`w-1.5 h-1.5 ${getRoundedClass('rounded-full')} transition-all ${
+                                  idx === currentMapIndex ? 'bg-white w-4' : 'bg-white/50'
+                                }`}
+                                aria-label={`View ${weatherMaps[idx].label} map`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       {/* Main Temperature */}
-                      <div className="mb-5 relative z-10">
-                        <p className={`text-5xl font-black leading-none mb-2 ${style.text}`}>{weather.temperature}°</p>
-                        <p className={`${style.text} text-base font-semibold capitalize`}>{weather.description}</p>
+                      <div className="relative z-10">
+                        <p className={`text-6xl font-black leading-none mb-2 ${style.text}`}>{weather.temperature}°</p>
+                        <p className={`${style.text} text-base font-semibold capitalize mb-4`}>{weather.description}</p>
                       </div>
                       
-                      {/* Work Report */}
+                      {/* Work Report - More Prominent */}
                       {weather.workReport && (
-                        <div className={`mb-4 p-3 ${getRoundedClass('rounded-lg')} ${mode === 'chaos' ? 'bg-black/20' : mode === 'chill' ? 'bg-white/10' : 'bg-black/20'} relative z-10`}>
-                          <p className={`text-xs ${style.text}/90 leading-relaxed`}>{weather.workReport}</p>
+                        <div className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} ${mode === 'chaos' ? 'bg-black/30 backdrop-blur-sm' : mode === 'chill' ? 'bg-white/15 backdrop-blur-sm' : 'bg-black/30 backdrop-blur-sm'} relative z-10 border ${mode === 'chaos' ? 'border-white/20' : mode === 'chill' ? 'border-white/20' : 'border-white/20'}`}>
+                          <p className={`text-sm font-medium ${style.text} leading-relaxed`}>{weather.workReport}</p>
                         </div>
                       )}
                       
                       {/* Bottom Stats - Side by Side */}
-                      <div className="flex gap-3 relative z-10">
+                      <div className="flex gap-4 relative z-10">
                         <div className="flex-1">
                           <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>HUMIDITY</p>
-                          <p className={`text-lg font-black ${style.text}`}>{weather.humidity}%</p>
+                          <p className={`text-xl font-black ${style.text}`}>{weather.humidity}%</p>
                         </div>
                         <div className="flex-1">
                           <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>WIND</p>
-                          <p className={`text-lg font-black ${style.text}`}>{weather.windSpeed} mph</p>
+                          <p className={`text-xl font-black ${style.text}`}>{weather.windSpeed} mph</p>
                         </div>
                       </div>
-                    </>
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       <div className="flex items-start justify-between mb-4">
