@@ -1183,10 +1183,7 @@ export default function TeamDashboard() {
               <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                <div className="flex items-center gap-2 mb-4">
-                  <FileText className="w-4 h-4" style={{ color: style.accent }} />
-                  <span className={`text-xs uppercase tracking-wider font-black ${style.text}/90`}>WEEKLY REPORT</span>
-                </div>
+                <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>WEEKLY REPORT</p>
                 <h2 className={`text-3xl font-black mb-6 uppercase leading-tight ${style.text}`}>THE FRIDAY DROP</h2>
                 <div className="grid grid-cols-3 gap-2">
                   {[
@@ -1194,9 +1191,9 @@ export default function TeamDashboard() {
                     { value: '8', label: 'SHIPPED' },
                     { value: '12', label: 'IN QA' },
                   ].map((stat) => (
-                    <div key={stat.label} className={`${mode === 'chaos' ? 'bg-black/20' : mode === 'chill' ? 'bg-white/10' : 'bg-black/20'} ${getRoundedClass('rounded-lg')} p-3 text-center`}>
+                    <div key={stat.label} className={`bg-black/30 ${getRoundedClass('rounded-lg')} p-3 text-center`}>
                       <p className={`text-2xl font-black mb-1 ${style.text}`}>{stat.value}</p>
-                      <p className={`text-xs font-bold uppercase tracking-wide ${style.text}/80`}>{stat.label}</p>
+                      <p className={`text-xs font-bold uppercase tracking-wide ${style.text}`}>{stat.label}</p>
                     </div>
                   ))}
                 </div>
@@ -1211,12 +1208,10 @@ export default function TeamDashboard() {
               <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-xs uppercase tracking-wider font-black ${style.text}/90`}>FEATURED</span>
-                  <span className={`text-xs uppercase tracking-wider font-black ${style.text}/70`}>ACTIVE DROP</span>
-                </div>
+                <p className={`text-xs uppercase tracking-wider mb-2 font-black ${style.text}`}>FEATURED</p>
+                <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}/70`}>ACTIVE DROP</p>
                 <h2 className={`text-3xl font-black mb-3 uppercase leading-tight ${style.text}`}>BRAND REDESIGN</h2>
-                <p className={`text-sm font-medium mb-4 ${style.text}/70`}>Branding</p>
+                <p className={`text-sm font-medium ${style.text}/70`}>Branding</p>
                 <div className="absolute bottom-4 right-4 text-4xl">🎨</div>
               </Card>
             )
@@ -1270,22 +1265,20 @@ export default function TeamDashboard() {
           {/* Events */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('events') : getCardStyle('work')
+            const mintColor = '#00FF87'
             return (
               <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : { borderColor: style.accent }}
               >
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="w-4 h-4" style={{ color: style.accent }} />
-                  <span className={`text-xs uppercase tracking-wider font-black`} style={{ color: style.accent }}>TODAY</span>
-                </div>
+                <p className={`text-xs uppercase tracking-wider mb-4 font-black`} style={{ color: mintColor }}>TODAY</p>
                 <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>EVENTS</h2>
                 <div className="space-y-2">
                   {[
                     { time: '10:30 Team Standup' },
                     { time: '14:00 Design Review' },
                   ].map((event) => (
-                    <div key={event.time} className={`bg-black/30 ${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`}>
-                      <Clock className="w-4 h-4" style={{ color: style.accent }} />
+                    <div key={event.time} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`} style={{ backgroundColor: `${mintColor}33` }}>
+                      <Clock className="w-4 h-4" style={{ color: mintColor }} />
                       <p className={`text-sm font-black ${style.text}`}>{event.time}</p>
                     </div>
                   ))}
@@ -1297,27 +1290,25 @@ export default function TeamDashboard() {
           {/* Pipeline */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('pipeline') : getCardStyle('work')
+            const mintColor = '#00FF87'
             const pipelineItems = [
-              { label: 'New Business', count: '12', icon: FileText },
-              { label: 'In Progress', count: '8', icon: Zap },
-              { label: 'Completed', count: '24', icon: CheckCircle },
+              { label: 'New Business', count: '12', icon: FileText, iconColor: '#FFE500' }, // Yellow
+              { label: 'In Progress', count: '8', icon: Zap, iconColor: '#9D4EFF' }, // Purple
+              { label: 'Completed', count: '24', icon: CheckCircle, iconColor: mintColor }, // Green
             ]
             return (
               <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                <div className="flex items-center gap-2 mb-4">
-                  <FileText className="w-4 h-4" style={{ color: style.accent }} />
-                  <span className={`text-xs uppercase tracking-wider font-black ${style.text}/90`}>WORK</span>
-                </div>
+                <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>WORK</p>
                 <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>PIPELINE</h2>
                 <div className="space-y-2">
                   {pipelineItems.map((item) => {
                     const IconComponent = item.icon
                     return (
-                      <div key={item.label} className={`${mode === 'chaos' ? 'bg-black/30' : mode === 'chill' ? 'bg-white/10' : 'bg-black/30'} ${getRoundedClass('rounded-lg')} p-3 flex items-center justify-between`}>
+                      <div key={item.label} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center justify-between`} style={{ backgroundColor: `${mintColor}33` }}>
                         <div className="flex items-center gap-2">
-                          <IconComponent className="w-4 h-4" style={{ color: style.accent }} />
+                          <IconComponent className="w-4 h-4" style={{ color: item.iconColor }} />
                           <span className={`text-sm font-black ${style.text}`}>{item.label}</span>
                         </div>
                         <span className={`text-lg font-black ${style.text}`}>{item.count}</span>
@@ -1336,23 +1327,24 @@ export default function TeamDashboard() {
               <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}/80`}>RECENT REQUESTS</p>
+                <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>RECENT REQUESTS</p>
                 <h2 className={`text-3xl font-black mb-6 uppercase leading-tight ${style.text}`}>WHO NEEDS WHAT</h2>
                 <div className="space-y-2 mb-4">
                   {[
                     { name: 'Alex', task: 'Design Review', emoji: '😊' },
                     { name: 'Sarah', task: 'Code Help', emoji: '💻' },
                   ].map((request) => (
-                    <div key={request.name} className={`${mode === 'chaos' ? 'bg-black/30' : mode === 'chill' ? 'bg-white/10' : 'bg-black/30'} ${getRoundedClass('rounded-lg')} p-3 flex items-center justify-between`}>
+                    <div key={request.name} className={`bg-black ${getRoundedClass('rounded-lg')} p-3 flex items-center justify-between`}>
                       <div>
-                        <p className={`text-sm font-black ${style.text}`}>{request.name} {request.task}</p>
+                        <p className={`text-sm font-black ${style.text}`}>{request.name}</p>
+                        <p className={`text-xs ${style.text}/60`}>{request.task}</p>
                       </div>
                       <span className="text-xl">{request.emoji}</span>
                     </div>
                   ))}
                 </div>
-                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-white hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-white hover:bg-[#3A1414]' : mode === 'code' ? 'bg-black text-[#00FF00] border border-[#00FF00] hover:bg-[#0F0F0F]' : 'bg-black text-white hover:bg-[#0F0F0F]'} font-black ${getRoundedClass('rounded-lg')} h-10 text-sm uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
-                  {mode === 'code' ? '[CLAIM REQUEST]' : 'CLAIM REQUEST'}
+                <Button className={`w-full bg-black text-white hover:bg-[#0F0F0F] font-black ${getRoundedClass('rounded-lg')} h-10 text-sm uppercase`}>
+                  CLAIM REQUEST
                 </Button>
               </Card>
             )
