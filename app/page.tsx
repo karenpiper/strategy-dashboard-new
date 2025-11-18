@@ -309,12 +309,12 @@ export default function TeamDashboard() {
         'weather': { bg: 'bg-gradient-to-br from-[#00B8D4] to-[#0066CC]', border: 'border-0', glow: '', text: 'text-white', accent: '#00D4FF' },
         'timezones': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#00D4FF' },
         'playlist': { bg: 'bg-gradient-to-br from-[#FF6B00] to-[#FF8A00]', border: 'border-0', glow: '', text: 'text-white', accent: '#FF00FF' },
-        'friday-drop': { bg: 'bg-gradient-to-br from-[#00B8D4] to-[#00ACC1]', border: 'border-0', glow: '', text: 'text-white', accent: '#FF6B00' },
-        'brand-redesign': { bg: 'bg-gradient-to-br from-[#FF4081] to-[#E91E63]', border: 'border-0', glow: '', text: 'text-white', accent: '#FF00FF' },
-        'stats': { bg: 'bg-white', border: 'border-0', glow: '', text: 'text-black', accent: '#00FF87' },
-        'events': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#00FF87' },
-        'pipeline': { bg: 'bg-[#6FD89C]', border: 'border-0', glow: '', text: 'text-white', accent: '#FF6B00' },
-        'who-needs-what': { bg: 'bg-[#E8FF00]', border: 'border-0', glow: '', text: 'text-black', accent: '#FF6B00' },
+        'friday-drop': { bg: 'bg-[#40E0D0]', border: 'border-0', glow: '', text: 'text-black', accent: '#000000' }, // Turquoise with black
+        'brand-redesign': { bg: 'bg-[#FF69B4]', border: 'border-0', glow: '', text: 'text-black', accent: '#000000' }, // Pink with black
+        'stats': { bg: 'bg-white', border: 'border-0', glow: '', text: 'text-black', accent: '#00FF87' }, // White with black and mint highlight
+        'events': { bg: 'bg-[#000000]', border: 'border-2', glow: '', text: 'text-white', accent: '#00FF87' }, // Black with mint and outline
+        'pipeline': { bg: 'bg-[#00FF87]', border: 'border-0', glow: '', text: 'text-black', accent: '#000000' }, // Mint with black
+        'who-needs-what': { bg: 'bg-[#E8FF00]', border: 'border-0', glow: '', text: 'text-black', accent: '#000000' }, // Yellow with black
         'snaps': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#E8FF00' },
         'beast-babe': { bg: 'bg-gradient-to-br from-[#FF0055] to-[#FF4081]', border: 'border-0', glow: '', text: 'text-white', accent: '#E8FF00' },
         'wins-wall': { bg: 'bg-white', border: 'border-0', glow: '', text: 'text-black', accent: '#00FF87' },
@@ -1085,9 +1085,13 @@ export default function TeamDashboard() {
             
             // Example playlist data - replace with actual Spotify API data
             const playlistData = {
-              albumCoverUrl: 'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526', // Example: Spotify album art
-              trackName: 'Coding Vibes',
-              artistName: 'Curated by Alex',
+              coverArtUrl: 'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526', // Spotify cover art
+              userImageUrl: '/placeholder-user.jpg', // User image for center label
+              title: 'AN ACTUAL GOOD PLAYLIST',
+              submittedBy: 'Karen Piper',
+              trackCount: 20,
+              duration: '73:48',
+              description: 'Frank Ocean, Baby Keem, Kendrick Lamar, Tyler, The Creator, Travis Scott, Kacy Hill, Future, Lil Baby, Lil Yachty, Mike WiLL Made-It, Ski Mask The Slump God, Gunna, Young Thug, Lil Uzi Vert, Eminem, Playboi Carti, Pharrell Williams, 21 Savage, Denzel Curry, Cordae',
             }
             
             return (
@@ -1096,31 +1100,77 @@ export default function TeamDashboard() {
               >
                 <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
                   <Music className="w-4 h-4" />
-                  <span className="uppercase tracking-wider font-black text-xs">Weekly</span>
+                  <span className="uppercase tracking-wider font-black text-xs">THIS WEEK SOUNDS LIKE</span>
                 </div>
-                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>PLAYLIST</h2>
                 
-                {/* Spotify Player with Spinning Record */}
+                {/* Cover Art - Static image above the spinning record */}
+                <div className="mb-4">
+                  <img 
+                    src={playlistData.coverArtUrl}
+                    alt={playlistData.title}
+                    className="w-full aspect-square object-cover rounded-lg"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://via.placeholder.com/400/1DB954/FFFFFF?text=Album'
+                    }}
+                  />
+                </div>
+                
+                {/* Spotify Player with Spinning Record (user image in center) */}
                 <SpotifyPlayer
-                  albumCoverUrl={playlistData.albumCoverUrl}
-                  trackName={playlistData.trackName}
-                  artistName={playlistData.artistName}
+                  albumCoverUrl={playlistData.coverArtUrl}
+                  userImageUrl={playlistData.userImageUrl}
+                  trackName={playlistData.title}
+                  artistName={`by ${playlistData.submittedBy}`}
                   isPlaying={isPlaying}
                   onPlayPause={() => setIsPlaying(!isPlaying)}
-                  className="mb-6"
+                  className="mb-4"
                 />
                 
-                <Button 
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  className={`w-full ${mode === 'chaos' ? 'bg-black text-[#FF00FF] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFB5D8] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-10 text-sm uppercase ${mode === 'code' ? 'font-mono' : ''}`}
-                >
-                  {mode === 'code' ? '[PLAY ON SPOTIFY]' : (
-                    <>
-                      {isPlaying ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-                      {isPlaying ? 'Pause' : 'Play on Spotify'}
-                    </>
-                  )}
-                </Button>
+                {/* Playlist Title */}
+                <div className="text-center mb-4">
+                  <h3 className={`text-xl font-black mb-1 ${style.text}`}>{playlistData.title}</h3>
+                  <p className={`text-sm ${style.text}/70`}>by {playlistData.submittedBy}</p>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-3 mb-4">
+                  {/* Play Button */}
+                  <Button 
+                    onClick={() => setIsPlaying(!isPlaying)}
+                    className={`flex-1 ${mode === 'chaos' ? 'bg-[#1DB954] hover:bg-[#1ed760] text-white' : mode === 'chill' ? 'bg-[#1DB954] hover:bg-[#1ed760] text-white' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-[#1DB954] hover:bg-[#1ed760] text-white'} font-black ${getRoundedClass('rounded-full')} h-10 text-sm uppercase ${mode === 'code' ? 'font-mono' : ''}`}
+                  >
+                    {mode === 'code' ? '[PLAY]' : (
+                      <>
+                        {isPlaying ? <Pause className="w-4 h-4 mr-2" fill="currentColor" /> : <Play className="w-4 h-4 mr-2" fill="currentColor" />}
+                        {isPlaying ? 'PAUSE' : 'PLAY'}
+                      </>
+                    )}
+                  </Button>
+                  
+                  {/* Spotify Button */}
+                  <Button 
+                    onClick={() => window.open('https://open.spotify.com/playlist/example', '_blank')}
+                    className={`flex-1 ${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 text-white' : mode === 'chill' ? 'bg-black/40 hover:bg-black/60 text-white' : mode === 'code' ? 'bg-black text-[#00FF00] border border-[#00FF00] hover:bg-[#0F0F0F]' : 'bg-black/40 hover:bg-black/60 text-white'} font-black ${getRoundedClass('rounded-full')} h-10 text-sm uppercase ${mode === 'code' ? 'font-mono' : ''}`}
+                  >
+                    {mode === 'code' ? '[SPOTIFY]' : 'SPOTIFY'}
+                  </Button>
+                </div>
+                
+                {/* Track Info and Animated EQ */}
+                <div className="flex items-center justify-between mb-4">
+                  <p className={`text-sm ${style.text}/70`}>
+                    {playlistData.trackCount} tracks | {playlistData.duration}
+                  </p>
+                  <AudioEQ 
+                    isPlaying={isPlaying} 
+                    color={mode === 'chaos' ? style.accent : mode === 'code' ? '#00FF00' : '#1DB954'}
+                  />
+                </div>
+                
+                {/* Description */}
+                <p className={`text-xs ${style.text}/60 leading-relaxed line-clamp-3`}>
+                  {playlistData.description}
+                </p>
               </Card>
             )
           })()}
@@ -1221,11 +1271,11 @@ export default function TeamDashboard() {
             const style = mode === 'chaos' ? getSpecificCardStyle('events') : getCardStyle('work')
             return (
               <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : { borderColor: style.accent }}
               >
                 <div className="flex items-center gap-2 mb-4">
                   <Calendar className="w-4 h-4" style={{ color: style.accent }} />
-                  <span className={`text-xs uppercase tracking-wider font-black ${style.text}/90`}>TODAY</span>
+                  <span className={`text-xs uppercase tracking-wider font-black`} style={{ color: style.accent }}>TODAY</span>
                 </div>
                 <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>EVENTS</h2>
                 <div className="space-y-2">
@@ -1233,7 +1283,7 @@ export default function TeamDashboard() {
                     { time: '10:30 Team Standup' },
                     { time: '14:00 Design Review' },
                   ].map((event) => (
-                    <div key={event.time} className={`${mode === 'chaos' ? 'bg-black/30' : mode === 'chill' ? 'bg-white/10' : 'bg-black/30'} ${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`}>
+                    <div key={event.time} className={`bg-black/30 ${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`}>
                       <Clock className="w-4 h-4" style={{ color: style.accent }} />
                       <p className={`text-sm font-black ${style.text}`}>{event.time}</p>
                     </div>

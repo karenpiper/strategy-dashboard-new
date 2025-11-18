@@ -7,6 +7,7 @@ import { useMode } from '@/contexts/mode-context'
 
 interface SpotifyPlayerProps {
   albumCoverUrl?: string
+  userImageUrl?: string // User image for the center label
   trackName?: string
   artistName?: string
   isPlaying?: boolean
@@ -55,6 +56,7 @@ function ImageWithFallback({
 
 export function SpotifyPlayer({
   albumCoverUrl = 'https://via.placeholder.com/300/1DB954/FFFFFF?text=Album',
+  userImageUrl,
   trackName = 'Track Name',
   artistName = 'Artist Name',
   isPlaying = false,
@@ -129,13 +131,19 @@ export function SpotifyPlayer({
             'border-gray-700/8'
           }`}></div>
           
-          {/* Center label with album artwork */}
+          {/* Center label with user image (or fallback) */}
           <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 ${getRoundedClass('rounded-full')} overflow-hidden border-2 ${
             mode === 'chaos' ? 'border-[#FF00FF] bg-[#FF00FF]/10' : 
             mode === 'chill' ? 'border-[#FFB5D8] bg-[#FFB5D8]/10' : 
             'border-yellow-400 bg-yellow-100'
           } shadow-lg`}>
-            {albumCoverUrl ? (
+            {userImageUrl ? (
+              <ImageWithFallback 
+                src={userImageUrl}
+                alt="User"
+                className="w-full h-full object-cover"
+              />
+            ) : albumCoverUrl ? (
               <ImageWithFallback 
                 src={albumCoverUrl}
                 alt={trackName}
