@@ -99,6 +99,69 @@ export default function TeamDashboard() {
     return () => clearInterval(interval)
   }, [])
   
+  // Fetch weather data based on user's location
+  useEffect(() => {
+    async function fetchWeather() {
+      try {
+        setWeatherLoading(true)
+        setWeatherError(null)
+
+        // Try to get location from browser geolocation
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              const { latitude, longitude } = position.coords
+              
+              // Reverse geocode to get location name (optional, can use coordinates)
+              let locationName = 'your location'
+              try {
+                const geoResponse = await fetch(
+                  `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || ''}`
+                )
+                if (geoResponse.ok) {
+                  const geoData = await geoResponse.json()
+                  if (geoData[0]) {
+                    locationName = geoData[0].name || locationName
+                  }
+                }
+              } catch (e) {
+                // Ignore geocoding errors
+              }
+
+              // Fetch weather
+              const response = await fetch(
+                `/api/weather?lat=${latitude}&lon=${longitude}&location=${encodeURIComponent(locationName)}`
+              )
+              
+              if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Failed to fetch weather')
+              }
+
+              const data = await response.json()
+              setWeather(data)
+              setWeatherLoading(false)
+            },
+            (error) => {
+              console.error('Geolocation error:', error)
+              setWeatherError('Unable to get your location for weather')
+              setWeatherLoading(false)
+            }
+          )
+        } else {
+          setWeatherError('Geolocation not supported')
+          setWeatherLoading(false)
+        }
+      } catch (error: any) {
+        console.error('Error fetching weather:', error)
+        setWeatherError(error.message || 'Failed to load weather')
+        setWeatherLoading(false)
+      }
+    }
+
+    fetchWeather()
+  }, [])
+  
   // Detect user timezone and calculate timezone times
   useEffect(() => {
     // Detect user's timezone
