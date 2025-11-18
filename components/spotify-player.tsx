@@ -13,6 +13,7 @@ interface SpotifyPlayerProps {
   isPlaying?: boolean
   onPlayPause?: () => void
   className?: string
+  hideText?: boolean // Hide track info text
 }
 
 // Image with fallback component
@@ -62,6 +63,7 @@ export function SpotifyPlayer({
   isPlaying = false,
   onPlayPause,
   className = '',
+  hideText = false,
 }: SpotifyPlayerProps) {
   const { mode } = useMode()
   const [isSpinning, setIsSpinning] = useState(isPlaying)
@@ -192,23 +194,25 @@ export function SpotifyPlayer({
         </motion.div>
       </div>
 
-      {/* Track Info */}
-      <div className="text-center">
-        <p className={`font-bold text-sm mb-1 ${
-          mode === 'chaos' ? 'text-white' : 
-          mode === 'chill' ? 'text-white' : 
-          'text-white'
-        } truncate`}>
-          {trackName}
-        </p>
-        <p className={`text-xs ${
-          mode === 'chaos' ? 'text-white/70' : 
-          mode === 'chill' ? 'text-white/70' : 
-          'text-white/70'
-        } truncate`}>
-          {artistName}
-        </p>
-      </div>
+      {/* Track Info - Only show if not hidden */}
+      {!hideText && (
+        <div className="text-center">
+          <p className={`font-bold text-sm mb-1 ${
+            mode === 'chaos' ? 'text-white' : 
+            mode === 'chill' ? 'text-white' : 
+            'text-white'
+          } truncate`}>
+            {trackName}
+          </p>
+          <p className={`text-xs ${
+            mode === 'chaos' ? 'text-white/70' : 
+            mode === 'chill' ? 'text-white/70' : 
+            'text-white/70'
+          } truncate`}>
+            {artistName}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

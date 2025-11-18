@@ -1086,90 +1086,89 @@ export default function TeamDashboard() {
             
             // Example playlist data - replace with actual Spotify API data
             const playlistData = {
-              coverArtUrl: 'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526', // Spotify cover art
+              albumCovers: [
+                'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526',
+                'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526',
+                'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526',
+                'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526',
+              ],
               userImageUrl: '/placeholder-user.jpg', // User image for center label
-              title: 'AN ACTUAL GOOD PLAYLIST',
-              submittedBy: 'Karen Piper',
+              title: 'Halloween Prom',
+              submittedBy: 'Rebecca Smith',
               trackCount: 20,
-              duration: '73:48',
-              description: 'Frank Ocean, Baby Keem, Kendrick Lamar, Tyler, The Creator, Travis Scott, Kacy Hill, Future, Lil Baby, Lil Yachty, Mike WiLL Made-It, Ski Mask The Slump God, Gunna, Young Thug, Lil Uzi Vert, Eminem, Playboi Carti, Pharrell Williams, 21 Savage, Denzel Curry, Cordae',
+              description: 'macabre mingling, bone-chilling bops, spooky sl dances, and spiked punch - vampy vibes include',
             }
             
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} group`}
+              <Card className={`${style.bg} ${style.border} p-4 ${getRoundedClass('rounded-[2.5rem]')} group`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
-                  <Music className="w-4 h-4" />
-                  <span className="uppercase tracking-wider font-black text-xs">THIS WEEK SOUNDS LIKE</span>
+                {/* Album Covers Grid with Overlapping Record */}
+                <div className="relative mb-4">
+                  {/* 2x2 Grid of Album Covers */}
+                  <div className="grid grid-cols-2 gap-1 w-32">
+                    {playlistData.albumCovers.map((cover, index) => (
+                      <img
+                        key={index}
+                        src={cover}
+                        alt={`Album ${index + 1}`}
+                        className="w-full aspect-square object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://via.placeholder.com/150/1DB954/FFFFFF?text=Album'
+                        }}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Spinning Record Overlapping Right Side */}
+                  <div className="absolute top-0 right-0 -mr-8">
+                    <SpotifyPlayer
+                      albumCoverUrl={playlistData.albumCovers[0]}
+                      userImageUrl={playlistData.userImageUrl}
+                      trackName=""
+                      artistName=""
+                      isPlaying={isPlaying}
+                      onPlayPause={() => setIsPlaying(!isPlaying)}
+                      className="w-32 h-32"
+                      hideText={true}
+                    />
+                  </div>
                 </div>
-                
-                {/* Cover Art - Static image above the spinning record */}
-                <div className="mb-4">
-                  <img 
-                    src={playlistData.coverArtUrl}
-                    alt={playlistData.title}
-                    className="w-full aspect-square object-cover rounded-lg"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://via.placeholder.com/400/1DB954/FFFFFF?text=Album'
-                    }}
-                  />
-                </div>
-                
-                {/* Spotify Player with Spinning Record (user image in center) */}
-                <SpotifyPlayer
-                  albumCoverUrl={playlistData.coverArtUrl}
-                  userImageUrl={playlistData.userImageUrl}
-                  trackName={playlistData.title}
-                  artistName={`by ${playlistData.submittedBy}`}
-                  isPlaying={isPlaying}
-                  onPlayPause={() => setIsPlaying(!isPlaying)}
-                  className="mb-4"
-                />
                 
                 {/* Playlist Title */}
-                <div className="text-center mb-4">
-                  <h3 className={`text-xl font-black mb-1 ${style.text}`}>{playlistData.title}</h3>
+                <div className="text-center mb-3">
+                  <h3 className={`text-lg font-serif mb-1 ${style.text}`}>{playlistData.title}</h3>
                   <p className={`text-sm ${style.text}/70`}>by {playlistData.submittedBy}</p>
                 </div>
                 
-                {/* Action Buttons */}
-                <div className="flex gap-3 mb-4">
-                  {/* Play Button */}
-                  <Button 
-                    onClick={() => setIsPlaying(!isPlaying)}
-                    className={`flex-1 ${mode === 'chaos' ? 'bg-[#1DB954] hover:bg-[#1ed760] text-white' : mode === 'chill' ? 'bg-[#1DB954] hover:bg-[#1ed760] text-white' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-[#1DB954] hover:bg-[#1ed760] text-white'} font-black ${getRoundedClass('rounded-full')} h-10 text-sm uppercase ${mode === 'code' ? 'font-mono' : ''}`}
-                  >
-                    {mode === 'code' ? '[PLAY]' : (
-                      <>
-                        {isPlaying ? <Pause className="w-4 h-4 mr-2" fill="currentColor" /> : <Play className="w-4 h-4 mr-2" fill="currentColor" />}
-                        {isPlaying ? 'PAUSE' : 'PLAY'}
-                      </>
-                    )}
-                  </Button>
-                  
-                  {/* Spotify Button */}
-                  <Button 
-                    onClick={() => window.open('https://open.spotify.com/playlist/example', '_blank')}
-                    className={`flex-1 ${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 text-white' : mode === 'chill' ? 'bg-black/40 hover:bg-black/60 text-white' : mode === 'code' ? 'bg-black text-[#00FF00] border border-[#00FF00] hover:bg-[#0F0F0F]' : 'bg-black/40 hover:bg-black/60 text-white'} font-black ${getRoundedClass('rounded-full')} h-10 text-sm uppercase ${mode === 'code' ? 'font-mono' : ''}`}
-                  >
-                    {mode === 'code' ? '[SPOTIFY]' : 'SPOTIFY'}
-                  </Button>
-                </div>
+                {/* Open in Spotify Button */}
+                <Button 
+                  onClick={() => window.open('https://open.spotify.com/playlist/example', '_blank')}
+                  className={`w-full mb-3 ${mode === 'chaos' ? 'bg-[#1DB954] hover:bg-[#1ed760] text-white' : mode === 'chill' ? 'bg-[#1DB954] hover:bg-[#1ed760] text-white' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-[#1DB954] hover:bg-[#1ed760] text-white'} font-black ${getRoundedClass('rounded-lg')} h-10 text-sm uppercase ${mode === 'code' ? 'font-mono' : ''}`}
+                >
+                  {mode === 'code' ? '[OPEN IN SPOTIFY]' : (
+                    <>
+                      <Music className="w-4 h-4 mr-2" />
+                      Open in Spotify
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
                 
                 {/* Track Info and Animated EQ */}
-                <div className="flex items-center justify-between mb-4">
-                  <p className={`text-sm ${style.text}/70`}>
-                    {playlistData.trackCount} tracks | {playlistData.duration}
-                  </p>
+                <div className="flex items-center justify-between mb-3">
                   <AudioEQ 
                     isPlaying={isPlaying} 
                     color={mode === 'chaos' ? style.accent : mode === 'code' ? '#00FF00' : '#1DB954'}
+                    className="flex-1"
                   />
+                  <p className={`text-sm ml-4 ${style.text}/70`}>
+                    {playlistData.trackCount} tracks
+                  </p>
                 </div>
                 
                 {/* Description */}
-                <p className={`text-xs ${style.text}/60 leading-relaxed line-clamp-3`}>
+                <p className={`text-xs ${style.text}/60 leading-relaxed`}>
                   {playlistData.description}
                 </p>
               </Card>
