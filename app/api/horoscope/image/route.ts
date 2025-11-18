@@ -11,7 +11,6 @@ import {
   makeResolvedChoices,
 } from '@/lib/horoscope-engine'
 import { fetchHoroscopeConfig } from '@/lib/horoscope-config'
-import { getStarSign } from '@/lib/horoscope-utils'
 
 // Supabase client setup - uses service role for database operations
 async function getSupabaseAdminClient() {
@@ -78,42 +77,17 @@ export async function GET(request: NextRequest) {
     }
     
     // Build user profile
-    const userProfile = buildUserProfile(
+    const supabase = await getSupabaseAdminClient()
+    
+    // Fetch horoscope configuration (shared logic)
+    const config = await fetchHoroscopeConfig(
+      supabase,
       birthdayMonth,
       birthdayDay,
       profile.discipline,
       profile.role
     )
-    
-    const starSign = userProfile.sign
-    
-    // Use admin client for all database operations
-    const supabase = await getSupabaseAdminClient()
-    
-    // Fetch configuration from database
-    const segments = await fetchSegmentsForProfile(supabase, userProfile)
-    const segmentIds = segments.map(s => s.id)
-    const rules = await fetchRulesForSegments(supabase, segmentIds)
-    const themes = await fetchCurrentThemes(supabase, userProfile.today)
-    
-    let allThemeRules: any[] = []
-    for (const theme of themes) {
-      const themeRules = await fetchThemeRules(supabase, theme.id, segmentIds)
-      allThemeRules.push(...themeRules)
-    }
-    
-    const styles = await fetchActiveStyles(supabase)
-    
-    if (styles.length === 0) {
-      return NextResponse.json(
-        { error: 'Horoscope configuration not initialized' },
-        { status: 500 }
-      )
-    }
-    
-    // Resolve config and make choices
-    const resolvedConfig = resolveConfig(rules, themes, allThemeRules, styles)
-    const resolvedChoices = makeResolvedChoices(resolvedConfig, styles)
+    const { userProfile, resolvedChoices, starSign } = config
     
     // Check for cached image
     const today = new Date()
