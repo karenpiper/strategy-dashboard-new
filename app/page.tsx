@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { getStarSignEmoji } from '@/lib/horoscope-utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { generateSillyCharacterName } from '@/lib/silly-names'
+import { SpotifyPlayer } from '@/components/spotify-player'
 
 // Force dynamic rendering to avoid SSR issues with context
 export const dynamic = 'force-dynamic'
@@ -1080,30 +1081,47 @@ export default function TeamDashboard() {
           {/* Playlist */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('playlist') : getCardStyle('vibes')
+            const [isPlaying, setIsPlaying] = useState(false)
+            
+            // Example playlist data - replace with actual Spotify API data
+            const playlistData = {
+              albumCoverUrl: 'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526', // Example: Spotify album art
+              trackName: 'Coding Vibes',
+              artistName: 'Curated by Alex',
+            }
+            
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} group`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
                 <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
-              <Music className="w-4 h-4" />
+                  <Music className="w-4 h-4" />
                   <span className="uppercase tracking-wider font-black text-xs">Weekly</span>
-            </div>
-                <h2 className={`text-3xl font-black mb-4 uppercase ${style.text}`}>PLAYLIST</h2>
-            <div className="flex items-center justify-center mb-4">
-                  <div className="w-20 h-20 rounded-2xl flex items-center justify-center" style={{ backgroundColor: style.accent }}>
-                    <Music className={`w-10 h-10 ${mode === 'chaos' || mode === 'code' ? 'text-black' : 'text-[#4A1818]'}`} />
-              </div>
-            </div>
-                <p className={`font-black text-sm mb-1 ${style.text}`}>Coding Vibes</p>
-                <p className={`text-xs mb-4 ${style.text}/70`}>Curated by Alex</p>
-                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#FF00FF] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFB5D8] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-10 text-sm uppercase ${mode === 'code' ? 'font-mono' : ''}`}>
+                </div>
+                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>PLAYLIST</h2>
+                
+                {/* Spotify Player with Spinning Record */}
+                <SpotifyPlayer
+                  albumCoverUrl={playlistData.albumCoverUrl}
+                  trackName={playlistData.trackName}
+                  artistName={playlistData.artistName}
+                  isPlaying={isPlaying}
+                  onPlayPause={() => setIsPlaying(!isPlaying)}
+                  className="mb-6"
+                />
+                
+                <Button 
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className={`w-full ${mode === 'chaos' ? 'bg-black text-[#FF00FF] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFB5D8] hover:bg-[#3A1414]' : mode === 'code' ? 'bg-[#00FF00] text-black border border-[#00FF00] hover:bg-[#00CC00]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black ${getRoundedClass('rounded-full')} h-10 text-sm uppercase ${mode === 'code' ? 'font-mono' : ''}`}
+                >
                   {mode === 'code' ? '[PLAY ON SPOTIFY]' : (
                     <>
-              <Play className="w-4 h-4 mr-2" /> Play on Spotify
+                      {isPlaying ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+                      {isPlaying ? 'Pause' : 'Play on Spotify'}
                     </>
                   )}
-            </Button>
-          </Card>
+                </Button>
+              </Card>
             )
           })()}
 
