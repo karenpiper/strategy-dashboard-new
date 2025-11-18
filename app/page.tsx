@@ -618,28 +618,9 @@ export default function TeamDashboard() {
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('horoscope') : getCardStyle('vibes')
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} md:col-span-2 relative overflow-visible`}
+              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} md:col-span-2`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                {/* Playful background image - extends beyond card */}
-                <div 
-                  className="absolute -top-8 -left-8 md:-top-12 md:-left-12 w-48 md:w-64 h-48 md:h-64 opacity-20 md:opacity-30 pointer-events-none z-0"
-                  style={{
-                    transform: 'rotate(-8deg)',
-                    filter: mode === 'chaos' ? 'sepia(0.3) saturate(1.2)' : mode === 'chill' ? 'sepia(0.2) saturate(0.9)' : 'grayscale(0.3)',
-                  }}
-                >
-                  <img 
-                    src="/tarot-portrait.png" 
-                    alt="Mystical tarot portrait" 
-                    className="w-full h-full object-cover"
-                    style={{
-                      mixBlendMode: mode === 'chaos' ? 'multiply' : mode === 'chill' ? 'soft-light' : 'normal',
-                    }}
-                  />
-                </div>
-                
-                <div className="relative z-10">
                   <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
                 <Sparkles className="w-4 h-4" />
                     <span className="uppercase tracking-wider font-black text-xs">Totally Real</span>
@@ -657,12 +638,12 @@ export default function TeamDashboard() {
                   ) : horoscope ? (
                     <div className="space-y-6">
                       {/* Horoscope Text Container */}
-                      <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-6 border-2 relative z-10`} style={{ borderColor: `${style.accent}40` }}>
+                      <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-6 border-2`} style={{ borderColor: `${style.accent}40` }}>
                         <p className="text-base font-black mb-3 flex items-center gap-2" style={{ color: style.accent }}>
                           <span>{getStarSignEmoji(horoscope.star_sign)}</span>
                           <span>{horoscope.star_sign.toUpperCase()}</span>
                         </p>
-                        <div className={`text-base leading-relaxed ${style.text} space-y-3 relative z-10`}>
+                        <div className={`text-base leading-relaxed ${style.text} space-y-3`}>
                           {horoscope.horoscope_text.split('\n\n').map((paragraph, idx) => (
                             <p key={idx}>{paragraph}</p>
                           ))}
@@ -705,11 +686,10 @@ export default function TeamDashboard() {
                     )}
                   </div>
                   ) : (
-                    <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-4 border-2 relative z-10`} style={{ borderColor: `${style.accent}40` }}>
+                    <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-4 border-2`} style={{ borderColor: `${style.accent}40` }}>
                       <p className={`text-sm ${style.text}`}>No horoscope available</p>
                 </div>
                   )}
-                </div>
               </Card>
             )
           })()}
