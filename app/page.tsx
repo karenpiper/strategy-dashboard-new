@@ -112,25 +112,9 @@ export default function TeamDashboard() {
             async (position) => {
               const { latitude, longitude } = position.coords
               
-              // Reverse geocode to get location name (optional, can use coordinates)
-              let locationName = 'your location'
-              try {
-                const geoResponse = await fetch(
-                  `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY || ''}`
-                )
-                if (geoResponse.ok) {
-                  const geoData = await geoResponse.json()
-                  if (geoData[0]) {
-                    locationName = geoData[0].name || locationName
-                  }
-                }
-              } catch (e) {
-                // Ignore geocoding errors
-              }
-
-              // Fetch weather
+              // Fetch weather (reverse geocoding happens server-side)
               const response = await fetch(
-                `/api/weather?lat=${latitude}&lon=${longitude}&location=${encodeURIComponent(locationName)}`
+                `/api/weather?lat=${latitude}&lon=${longitude}`
               )
               
               if (!response.ok) {

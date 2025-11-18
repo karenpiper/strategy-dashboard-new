@@ -78,7 +78,6 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const lat = searchParams.get('lat')
     const lon = searchParams.get('lon')
-    const location = searchParams.get('location') || 'your location'
 
     if (!lat || !lon) {
       return NextResponse.json(
@@ -93,9 +92,25 @@ export async function GET(request: NextRequest) {
     if (!apiKey) {
       console.error('OPENWEATHER_API_KEY is not set')
       return NextResponse.json(
-        { error: 'Weather service not configured. Please set OPENWEATHER_API_KEY in environment variables.' },
+        { error: 'Weather service not configured. Please set OPENWEATHER_API_KEY in Vercel environment variables. Get a free API key from https://openweathermap.org/api' },
         { status: 500 }
       )
+    }
+
+    // Reverse geocode to get location name (server-side)
+    let locationName = 'your location'
+    try {
+      const geoUrl = `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${apiKey}`
+      const geoResponse = await fetch(geoUrl)
+      if (geoResponse.ok) {
+        const geoData = await geoResponse.json()
+        if (geoData[0]) {
+          locationName = geoData[0].name || locationName
+        }
+      }
+    } catch (e) {
+      console.error('Reverse geocoding error (non-fatal):', e)
+      // Continue without location name
     }
 
     // Fetch current weather
@@ -104,8 +119,10 @@ export async function GET(request: NextRequest) {
 
     if (!weatherResponse.ok) {
       console.error('OpenWeatherMap API error:', weatherResponse.status, weatherResponse.statusText)
+      const errorText = await weatherResponse.text()
+      console.error('Error response:', errorText)
       return NextResponse.json(
-        { error: 'Failed to fetch weather data' },
+        { error: `Failed to fetch weather data: ${weatherResponse.statusText}` },
         { status: weatherResponse.status }
       )
     }
@@ -125,7 +142,7 @@ export async function GET(request: NextRequest) {
       description,
       humidity,
       windSpeed,
-      location
+      locationName
     )
 
     return NextResponse.json({
