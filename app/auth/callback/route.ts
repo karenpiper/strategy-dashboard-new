@@ -30,9 +30,15 @@ export async function GET(request: NextRequest) {
               return request.cookies.getAll()
             },
             set(name: string, value: string, options: any) {
-              // Set cookie on both request and response
-              request.cookies.set({ name, value, ...options })
-              response.cookies.set({ name, value, ...options })
+              // Set cookie on both request and response with proper options
+              const cookieOptions = {
+                ...options,
+                path: '/',
+                sameSite: 'lax' as const,
+                secure: process.env.NODE_ENV === 'production',
+              }
+              request.cookies.set({ name, value, ...cookieOptions })
+              response.cookies.set({ name, value, ...cookieOptions })
             },
             remove(name: string, options: any) {
               // Remove cookie from both request and response
@@ -43,24 +49,36 @@ export async function GET(request: NextRequest) {
         }
       )
 
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+      const { data: { session: exchangeSession }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
       
       if (exchangeError) {
         console.error('Error exchanging code for session:', exchangeError)
         return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(exchangeError.message)}`)
       }
 
-      // Verify the session was created
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
-      if (sessionError || !session) {
-        console.error('Session not created after exchange:', sessionError)
+      if (!exchangeSession) {
+        console.error('No session returned from exchangeCodeForSession')
         return NextResponse.redirect(`${origin}/login?error=Session not created`)
       }
 
-      console.log('Successfully authenticated user:', session.user.email)
+      console.log('Successfully authenticated user:', exchangeSession.user.email)
+      console.log('Session expires at:', new Date(exchangeSession.expires_at! * 1000).toISOString())
+
+      // Verify the session is accessible after setting cookies
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error('Error getting session after exchange:', sessionError)
+        // Still redirect - cookies might be set even if getSession fails
+      } else if (!session) {
+        console.error('Session not accessible after exchange')
+        // Still redirect - try anyway
+      } else {
+        console.log('Session verified after exchange:', session.user.email)
+      }
 
       // Successfully authenticated, redirect to home with cookies set
+      // The response object already has the cookies set from the exchangeCodeForSession call
       return response
     } catch (error: any) {
       console.error('Error in auth callback:', error)

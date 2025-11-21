@@ -72,14 +72,17 @@ export async function middleware(request: NextRequest) {
       }
     )
 
+    // Refresh session to ensure we have the latest auth state
     const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser()
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
 
-    // If there's an error getting the user, treat as unauthenticated
-    if (error) {
-      console.error('Error getting user in middleware:', error)
+    const user = session?.user ?? null
+
+    // If there's an error getting the session, treat as unauthenticated
+    if (sessionError) {
+      console.error('Error getting session in middleware:', sessionError)
       // If we can't verify auth, redirect to login (except for login/auth/profile routes)
       if (
         !pathname.startsWith('/login') &&
@@ -101,6 +104,7 @@ export async function middleware(request: NextRequest) {
       !pathname.startsWith('/profile/setup') &&
       !pathname.startsWith('/api')
     ) {
+      console.log('No user found, redirecting to login. Pathname:', pathname)
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       return NextResponse.redirect(url)
@@ -108,9 +112,15 @@ export async function middleware(request: NextRequest) {
 
     // Redirect logged-in users away from login page
     if (user && pathname === '/login') {
+      console.log('User logged in, redirecting from login to home')
       const url = request.nextUrl.clone()
       url.pathname = '/'
       return NextResponse.redirect(url)
+    }
+
+    // Log successful auth check (only in development)
+    if (user && process.env.NODE_ENV === 'development') {
+      console.log('User authenticated:', user.email, 'Path:', pathname)
     }
   } catch (error) {
     console.error('Middleware error:', error)
