@@ -1,21 +1,30 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/auth-context'
-import { Card } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, Calendar, Briefcase, Users } from 'lucide-react'
 
-export default function ProfileSetupPage() {
-  const { user, loading: authLoading } = useAuth()
-  const router = useRouter()
+interface ProfileSetupModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onComplete: () => void
+}
+
+export function ProfileSetupModal({ open, onOpenChange, onComplete }: ProfileSetupModalProps) {
+  const { user } = useAuth()
   const supabase = createClient()
   
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -23,53 +32,30 @@ export default function ProfileSetupPage() {
   const [discipline, setDiscipline] = useState('')
   const [role, setRole] = useState('')
   
-  // Redirect to login if not authenticated
+  // Load existing profile data if available
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login')
-    }
-  }, [user, authLoading, router])
+    async function loadProfile() {
+      if (!user || !open) return
 
-  // Check if profile already exists and has birthday
-  // Only redirect if accessed directly (not from account menu)
-  useEffect(() => {
-    async function checkProfile() {
-      if (!user) return
-      
-      setLoading(true)
       try {
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('birthday, discipline, role')
           .eq('id', user.id)
           .maybeSingle()
         
-        // Only auto-redirect if profile is complete and user came here directly
-        // Check if there's a referrer or if this is a direct navigation
-        const cameFromAccountMenu = document.referrer.includes(window.location.origin)
-        
-        if (profile && profile.birthday && !cameFromAccountMenu) {
-          // Profile already set up, redirect to dashboard only if not from account menu
-          router.push('/')
-          return
-        }
-        
-        // Pre-fill if profile exists but missing birthday
         if (profile) {
+          setBirthday(profile.birthday || '')
           setDiscipline(profile.discipline || '')
           setRole(profile.role || '')
         }
       } catch (err) {
-        console.error('Error checking profile:', err)
-      } finally {
-        setLoading(false)
+        console.error('Error loading profile:', err)
       }
     }
-    
-    if (!authLoading && user) {
-      checkProfile()
-    }
-  }, [user, authLoading, router, supabase])
+
+    loadProfile()
+  }, [user, open, supabase])
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -85,7 +71,7 @@ export default function ProfileSetupPage() {
         return
       }
       
-      // Update profile - use update instead of upsert to avoid schema cache issues
+      // Update or insert profile
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -116,16 +102,9 @@ export default function ProfileSetupPage() {
         throw updateError
       }
       
-      if (updateError) {
-        // Check if it's a schema error
-        if (updateError.message?.includes('birthday') || updateError.message?.includes('schema cache')) {
-          throw new Error('Database schema needs to be updated. Please run the migration script in Supabase SQL Editor: supabase/add-profile-fields.sql')
-        }
-        throw updateError
-      }
-      
-      // Redirect to dashboard
-      router.push('/')
+      // Success - close modal and notify parent
+      onComplete()
+      onOpenChange(false)
     } catch (err: any) {
       console.error('Error saving profile:', err)
       let errorMessage = err.message || 'Failed to save profile. Please try again.'
@@ -140,46 +119,30 @@ export default function ProfileSetupPage() {
     }
   }
   
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-  
-  if (!user) {
-    router.push('/login')
-    return null
-  }
-  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Complete Your Profile</h1>
-          <p className="text-muted-foreground">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Complete Your Profile</DialogTitle>
+          <DialogDescription>
             We need a few details to personalize your horoscope
-          </p>
-        </div>
+          </DialogDescription>
+        </DialogHeader>
         
         {error && (
-          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="birthday" className="flex items-center gap-2 mb-2">
+            <Label htmlFor="modal-birthday" className="flex items-center gap-2 mb-2">
               <Calendar className="w-4 h-4" />
               Birthday <span className="text-destructive">*</span>
             </Label>
             <Input
-              id="birthday"
+              id="modal-birthday"
               type="text"
               value={birthday}
               onChange={(e) => setBirthday(e.target.value)}
@@ -194,59 +157,61 @@ export default function ProfileSetupPage() {
           </div>
           
           <div>
-            <Label htmlFor="discipline" className="flex items-center gap-2 mb-2">
+            <Label htmlFor="modal-discipline" className="flex items-center gap-2 mb-2">
               <Users className="w-4 h-4" />
               Discipline (Optional)
             </Label>
             <Input
-              id="discipline"
+              id="modal-discipline"
               type="text"
               value={discipline}
               onChange={(e) => setDiscipline(e.target.value)}
               placeholder="e.g., Design, Engineering, Marketing"
               className="w-full"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              Your department or team. This helps personalize your horoscope.
-            </p>
           </div>
           
           <div>
-            <Label htmlFor="role" className="flex items-center gap-2 mb-2">
+            <Label htmlFor="modal-role" className="flex items-center gap-2 mb-2">
               <Briefcase className="w-4 h-4" />
               Role (Optional)
             </Label>
             <Input
-              id="role"
+              id="modal-role"
               type="text"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               placeholder="e.g., Creative Director, Senior Engineer"
               className="w-full"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              Your job title. This helps personalize your horoscope.
-            </p>
           </div>
           
-          <Button
-            type="submit"
-            disabled={saving || !birthday}
-            className="w-full"
-            size="lg"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              'Complete Profile'
-            )}
-          </Button>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={saving}
+            >
+              Skip for now
+            </Button>
+            <Button
+              type="submit"
+              disabled={saving || !birthday}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Profile'
+              )}
+            </Button>
+          </div>
         </form>
-      </Card>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 

@@ -17,6 +17,8 @@ import { generateSillyCharacterName } from '@/lib/silly-names'
 import { SpotifyPlayer } from '@/components/spotify-player'
 import { AudioEQ } from '@/components/audio-eq'
 import { PlaylistData } from '@/lib/spotify-player-types'
+import { ProfileSetupModal } from '@/components/profile-setup-modal'
+import { createClient } from '@/lib/supabase/client'
 
 // Force dynamic rendering to avoid SSR issues with context
 export const dynamic = 'force-dynamic'
@@ -103,6 +105,8 @@ export default function TeamDashboard() {
   const [weatherError, setWeatherError] = useState<string | null>(null)
   const [currentMapIndex, setCurrentMapIndex] = useState(0)
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [profileChecked, setProfileChecked] = useState(false)
 
   // Format today's date in user's timezone
   useEffect(() => {
@@ -286,10 +290,9 @@ export default function TeamDashboard() {
           if (textResponse.status === 401) {
             setHoroscopeError('Please log in to view your horoscope')
           } else if (textResponse.status === 404 && textData.error?.includes('profile')) {
-            // Profile setup needed - redirect to setup page only if user is authenticated
-            if (user) {
-              router.push('/profile/setup')
-              return
+            // Profile setup needed - show modal instead of redirecting
+            if (user && !showProfileModal) {
+              setShowProfileModal(true)
             }
           } else {
             setHoroscopeError(textData.error || 'Failed to load horoscope')
@@ -1769,6 +1772,16 @@ export default function TeamDashboard() {
           <p className={`text-center text-[10px] mt-4 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]/70' : 'text-[#666666]'}`}>v1.2.3-beta-test.beta</p>
         </footer>
       </main>
+      
+      {/* Profile Setup Modal - Shows on first visit */}
+      <ProfileSetupModal
+        open={showProfileModal}
+        onOpenChange={setShowProfileModal}
+        onComplete={() => {
+          // Refresh horoscope data after profile is completed
+          window.location.reload()
+        }}
+      />
     </div>
   )
 }

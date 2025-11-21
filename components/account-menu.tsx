@@ -71,12 +71,26 @@ export function AccountMenu() {
 
   const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || null
   const displayName = profile?.full_name || user.user_metadata?.full_name || user.email || 'User'
+  
+  // Generate initials for fallback
+  const getInitials = (name: string, email: string) => {
+    if (name && name !== email) {
+      const parts = name.split(' ')
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      }
+      return name.substring(0, 2).toUpperCase()
+    }
+    return email.substring(0, 2).toUpperCase()
+  }
+  
+  const initials = getInitials(displayName, user.email || '')
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className={`relative ${getRoundedClass('rounded-full')} border-2 transition-all hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+          className={`relative ${getRoundedClass('rounded-full')} border-2 transition-all hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 overflow-hidden ${
             mode === 'chaos' ? 'border-[#C4F500]/40 focus:ring-[#C4F500]' :
             mode === 'chill' ? 'border-[#FFC043]/40 focus:ring-[#FFC043]' :
             'border-white/20 focus:ring-white'
@@ -88,16 +102,29 @@ export function AccountMenu() {
               src={avatarUrl}
               alt={displayName}
               className="w-10 h-10 rounded-full object-cover"
+              onError={(e) => {
+                // Hide image and show fallback on error
+                const target = e.target as HTMLImageElement
+                target.style.display = 'none'
+                const parent = target.parentElement
+                if (parent) {
+                  const fallback = parent.querySelector('.avatar-fallback') as HTMLElement
+                  if (fallback) fallback.style.display = 'flex'
+                }
+              }}
             />
-          ) : (
-            <div className={`w-10 h-10 ${getRoundedClass('rounded-full')} flex items-center justify-center ${
+          ) : null}
+          <div 
+            className={`avatar-fallback w-10 h-10 ${getRoundedClass('rounded-full')} flex items-center justify-center text-sm font-semibold ${
+              avatarUrl ? 'hidden' : ''
+            } ${
               mode === 'chaos' ? 'bg-[#C4F500] text-black' :
               mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818]' :
               'bg-white text-black'
-            }`}>
-              <UserIcon className="w-6 h-6" />
-            </div>
-          )}
+            }`}
+          >
+            {initials}
+          </div>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
@@ -110,7 +137,7 @@ export function AccountMenu() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push('/profile/setup')}>
+        <DropdownMenuItem onClick={() => router.push('/profile')}>
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
