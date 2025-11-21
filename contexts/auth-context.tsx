@@ -24,35 +24,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true
+    let timeoutId: NodeJS.Timeout | null = null
 
-    // Get initial session
-    async function getInitialSession() {
+    // Get initial session with retry logic
+    async function getInitialSession(retryCount = 0) {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
           console.error('Error getting session:', error)
+          // Retry once after a short delay if we get an error
+          if (retryCount === 0 && mounted) {
+            timeoutId = setTimeout(() => getInitialSession(1), 500)
+            return
+          }
         }
         
         if (mounted) {
           setUser(session?.user ?? null)
           setLoading(false)
+          
+          if (session) {
+            console.log('Initial session loaded:', session.user.email)
+          } else {
+            console.log('No initial session found')
+          }
         }
       } catch (error) {
         console.error('Error in getInitialSession:', error)
+        // Retry once after a short delay
+        if (retryCount === 0 && mounted) {
+          timeoutId = setTimeout(() => getInitialSession(1), 500)
+          return
+        }
         if (mounted) {
           setLoading(false)
         }
       }
     }
 
-    getInitialSession()
+    // Small delay to ensure cookies are available after OAuth redirect
+    timeoutId = setTimeout(() => {
+      getInitialSession()
+    }, 100)
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email)
+      console.log('Auth state changed:', event, session?.user?.email || 'no session')
       
       if (mounted) {
         setUser(session?.user ?? null)
@@ -67,6 +87,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
       subscription.unsubscribe()
     }
   }, [router, supabase, pathname])

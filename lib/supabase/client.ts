@@ -3,7 +3,23 @@ import { createBrowserClient } from '@supabase/ssr'
 export function createClient() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return document.cookie.split('; ').map(cookie => {
+            const [name, ...rest] = cookie.split('=')
+            return { name, value: rest.join('=') }
+          })
+        },
+        set(name: string, value: string, options?: any) {
+          // Browser client handles cookies automatically, but we can log for debugging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Setting cookie:', name)
+          }
+        },
+      },
+    }
   )
 }
 
