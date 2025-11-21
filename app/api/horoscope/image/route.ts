@@ -11,6 +11,7 @@ import {
   makeResolvedChoices,
 } from '@/lib/horoscope-engine'
 import { fetchHoroscopeConfig } from '@/lib/horoscope-config'
+import { createClient } from '@/lib/supabase/server'
 
 // Supabase client setup - uses service role for database operations
 async function getSupabaseAdminClient() {
@@ -37,22 +38,33 @@ async function getSupabaseAdminClient() {
 
 export async function GET(request: NextRequest) {
   try {
-    // TEMPORARY: Hardcoded test data (remove when authentication is added back)
-    const TEST_MODE = true // Set to false when auth is enabled
+    // Get authenticated user from Supabase (server-side)
+    const supabase = await createClient()
     
-    let userId: string
-    let profile: { birthday: string; discipline: string | null; role: string | null }
+    // Get the authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    if (TEST_MODE) {
-      userId = '00000000-0000-0000-0000-000000000000'
-      profile = {
-        birthday: '03/15', // March 15th - Pisces
-        discipline: 'Design',
-        role: 'Creative Director'
-      }
-    } else {
-      // TODO: Add authentication logic here
-      return NextResponse.json({ error: 'Authentication not implemented' }, { status: 401 })
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const userId = user.id
+
+    // Fetch user profile to get birthday, discipline, and role
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('birthday, discipline, role')
+      .eq('id', userId)
+      .single()
+
+    if (profileError || !profile) {
+      return NextResponse.json(
+        { error: 'User profile not found. Please complete your profile.' },
+        { status: 404 }
+      )
     }
     
     // Parse birthday
@@ -76,12 +88,12 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Build user profile
-    const supabase = await getSupabaseAdminClient()
+    // Use admin client for database operations (bypasses RLS)
+    const supabaseAdmin = await getSupabaseAdminClient()
     
     // Fetch horoscope configuration (shared logic)
     const config = await fetchHoroscopeConfig(
-      supabase,
+      supabaseAdmin,
       birthdayMonth,
       birthdayDay,
       profile.discipline,
@@ -93,7 +105,7 @@ export async function GET(request: NextRequest) {
     const today = new Date()
     const todayDate = today.toISOString().split('T')[0] // YYYY-MM-DD format
     
-    const { data: cachedHoroscope, error: cacheError } = await supabase
+    const { data: cachedHoroscope, error: cacheError } = await supabaseAdmin
       .from('horoscopes')
       .select('image_url, image_prompt, style_key, style_label, character_type, setting_hint, date, generated_at')
       .eq('user_id', userId)
@@ -110,7 +122,7 @@ export async function GET(request: NextRequest) {
       // For cached horoscopes, rebuild the config to get all the data (prompt tags, theme, etc.)
       // This ensures we have complete information even for cached images
       const config = await fetchHoroscopeConfig(
-        supabase,
+        supabaseAdmin,
         birthdayMonth,
         birthdayDay,
         profile.discipline,
@@ -171,7 +183,8 @@ export async function GET(request: NextRequest) {
     
     // Save image URL and prompt to database (upsert horoscope record)
     // This ensures we only generate once per user per day
-    const { error: saveError } = await supabase
+    // Historical images are preserved - each day gets its own row
+    const { error: saveError } = await supabaseAdmin
       .from('horoscopes')
       .upsert({
         user_id: userId,
@@ -196,7 +209,7 @@ export async function GET(request: NextRequest) {
     
     // Get additional config data for display
     const fullConfig = await fetchHoroscopeConfig(
-      supabase,
+      supabaseAdmin,
       birthdayMonth,
       birthdayDay,
       profile.discipline,

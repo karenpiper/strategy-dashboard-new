@@ -1,4 +1,8 @@
 -- Horoscopes table for caching daily horoscopes
+-- Each user gets one horoscope (text + image) per day
+-- Historical images are preserved - the UNIQUE constraint on (user_id, date) ensures
+-- each day gets its own row, so all past images remain in the database
+-- The hero section only displays today's image, but all historical images are stored
 CREATE TABLE IF NOT EXISTS public.horoscopes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -6,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.horoscopes (
   horoscope_text TEXT NOT NULL,
   horoscope_dos JSONB NOT NULL DEFAULT '[]'::jsonb,
   horoscope_donts JSONB NOT NULL DEFAULT '[]'::jsonb,
-  image_url TEXT NOT NULL,
+  image_url TEXT NOT NULL, -- URL to the generated hero image for this day
   image_prompt TEXT, -- The full prompt used to generate the image
   style_family TEXT,
   style_key TEXT,
@@ -14,9 +18,9 @@ CREATE TABLE IF NOT EXISTS public.horoscopes (
   character_type TEXT, -- 'human', 'animal', 'object', 'hybrid'
   setting_hint TEXT,
   generated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
-  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  date DATE NOT NULL DEFAULT CURRENT_DATE, -- Date for this horoscope (YYYY-MM-DD)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
-  UNIQUE(user_id, date)
+  UNIQUE(user_id, date) -- Ensures one horoscope per user per day, preserves all historical records
 );
 
 -- Add indexes for faster lookups

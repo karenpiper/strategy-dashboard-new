@@ -12,6 +12,7 @@ import {
   makeResolvedChoices,
 } from '@/lib/horoscope-engine'
 import { fetchHoroscopeConfig } from '@/lib/horoscope-config'
+import { createClient } from '@/lib/supabase/server'
 
 // Supabase client setup - uses service role for database operations
 // This bypasses RLS so the API can insert/update horoscopes
@@ -97,110 +98,69 @@ async function getSupabaseAuthClient() {
 
 export async function GET(request: NextRequest) {
   try {
-    // TEMPORARY: Hardcoded test data (remove when authentication is added back)
-    const TEST_MODE = true // Set to false when auth is enabled
+    // Get authenticated user from Supabase (server-side)
+    const supabase = await createClient()
     
-    let userId: string
-    let profile: { birthday: string; discipline: string | null; role: string | null }
+    // Get the authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    if (TEST_MODE) {
-      // Hardcoded test user data
-      userId = '00000000-0000-0000-0000-000000000000' // Test user ID
-      profile = {
-        birthday: '03/15', // March 15th - Pisces
-        discipline: 'Design',
-        role: 'Creative Director'
-      }
-      console.log('Horoscope API - Using hardcoded test data:', profile)
-    } else {
-      // Use auth client to get user session
-      const supabaseAuth = await getSupabaseAuthClient()
-      
-      // Get user from session
-      const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
-      
-      if (authError) {
-        console.error('Auth error in horoscope API:', authError)
-        return NextResponse.json({ error: 'Authentication error: ' + authError.message }, { status: 401 })
-      }
-      
-      if (!user) {
-        console.log('No user found in horoscope API')
-        return NextResponse.json({ error: 'Please log in to view your horoscope' }, { status: 401 })
-      }
-      
-      console.log('Horoscope API - User authenticated:', user.email)
-      userId = user.id
-      
-      // Use admin client for database operations (bypasses RLS)
-      const supabase = await getSupabaseAdminClient()
-    
-      // Get today's date
-      const today = new Date()
-      const todayDate = today.toISOString().split('T')[0] // YYYY-MM-DD format
-      
-      // Check for cached horoscope
-      const { data: cachedHoroscope, error: cacheError } = await supabase
-        .from('horoscopes')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('date', todayDate)
-        .maybeSingle()
-      
-      // If cached and generated within last 24 hours, return it
-      if (cachedHoroscope && !cacheError) {
-        const generatedAt = new Date(cachedHoroscope.generated_at)
-        const hoursSinceGeneration = (today.getTime() - generatedAt.getTime()) / (1000 * 60 * 60)
-        
-        if (hoursSinceGeneration < 24) {
-          return NextResponse.json({
-            star_sign: cachedHoroscope.star_sign,
-            horoscope_text: cachedHoroscope.horoscope_text,
-            horoscope_dos: cachedHoroscope.horoscope_dos || [],
-            horoscope_donts: cachedHoroscope.horoscope_donts || [],
-            image_url: cachedHoroscope.image_url,
-            cached: true,
-          })
-        }
-      }
-      
-      // Fetch user profile to get birthday, discipline (department), role (title)
-      // Try 'profiles' table first, fallback to 'users' if needed
-      let profileData: any = null
-      
-      // Try profiles table first
-      const { data, error: profileErr } = await supabase
-        .from('profiles')
-        .select('birthday, discipline, role')
-        .eq('id', userId)
-        .maybeSingle()
-      
-      if (profileErr || !data) {
-        // Try users table as fallback
-        const { data: userData, error: userErr } = await supabase
-          .from('users')
-          .select('birthday, discipline, role')
-          .eq('id', userId)
-          .maybeSingle()
-        
-        if (userErr || !userData) {
-          console.error('Profile error:', profileErr || userErr)
-          return NextResponse.json(
-            { error: 'User profile not found. Please ensure your profile has a birthday set.' },
-            { status: 404 }
-          )
-        }
-        profileData = userData
-      } else {
-        profileData = data
-      }
-      
-      profile = profileData
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
     }
+
+    const userId = user.id
+
+    // Use admin client for database operations (bypasses RLS)
+    const supabaseAdmin = await getSupabaseAdminClient()
     
-    // Get today's date (for both test mode and auth mode)
+    // Get today's date
     const today = new Date()
     const todayDate = today.toISOString().split('T')[0] // YYYY-MM-DD format
+    
+    // Check for cached horoscope for today - return immediately if found
+    const { data: cachedHoroscope, error: cacheError } = await supabaseAdmin
+      .from('horoscopes')
+      .select('star_sign, horoscope_text, horoscope_dos, horoscope_donts, image_url, date, generated_at')
+      .eq('user_id', userId)
+      .eq('date', todayDate)
+      .maybeSingle()
+    
+    if (cacheError) {
+      console.error('Error checking cache:', cacheError)
+    }
+    
+    // If we have a cached horoscope for today, return it immediately (don't regenerate)
+    if (cachedHoroscope?.horoscope_text && cachedHoroscope.date === todayDate) {
+      console.log('Returning cached horoscope for user', userId, 'on date', todayDate)
+      return NextResponse.json({
+        star_sign: cachedHoroscope.star_sign,
+        horoscope_text: cachedHoroscope.horoscope_text,
+        horoscope_dos: cachedHoroscope.horoscope_dos || [],
+        horoscope_donts: cachedHoroscope.horoscope_donts || [],
+        image_url: cachedHoroscope.image_url || '',
+        cached: true,
+      })
+    }
+    
+    // Only generate new horoscope if we don't have one cached for today
+    console.log('No cached horoscope found for user', userId, 'on date', todayDate, '- generating new horoscope')
+    
+    // Fetch user profile to get birthday, discipline (department), role (title)
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('birthday, discipline, role')
+      .eq('id', userId)
+      .single()
+
+    if (profileError || !profile) {
+      return NextResponse.json(
+        { error: 'User profile not found. Please complete your profile.' },
+        { status: 404 }
+      )
+    }
     
     // Parse birthday - could be stored as "MM/DD", "MM-DD", or separate fields
     let birthdayMonth: number | null = null
@@ -230,13 +190,10 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Use admin client for all database operations
-    const supabase = await getSupabaseAdminClient()
-    
     // Fetch horoscope configuration (shared logic)
     console.log('Fetching horoscope configuration...')
     const config = await fetchHoroscopeConfig(
-      supabase,
+      supabaseAdmin,
       birthdayMonth,
       birthdayDay,
       profile.discipline,
@@ -270,14 +227,14 @@ export async function GET(request: NextRequest) {
       console.log(`Horoscope text generation completed in ${elapsedTime}ms`)
       
       // Get image URL from database (it should already be generated by the image endpoint)
-      const { data: cachedHoroscope } = await supabase
+      const { data: cachedImage } = await supabaseAdmin
         .from('horoscopes')
         .select('image_url')
         .eq('user_id', userId)
         .eq('date', todayDate)
         .maybeSingle()
       
-      imageUrl = cachedHoroscope?.image_url || ''
+      imageUrl = cachedImage?.image_url || ''
       
       console.log('Horoscope generated successfully:', { 
         horoscopeText: horoscopeText.substring(0, 50) + '...', 
@@ -293,33 +250,32 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Save to database (skip in test mode)
-    if (!TEST_MODE) {
-      const supabase = await getSupabaseAdminClient()
-      const { error: insertError } = await supabase
-        .from('horoscopes')
-        .upsert({
-          user_id: userId,
-          star_sign: starSign,
-          horoscope_text: horoscopeText,
-          horoscope_dos: horoscopeDos,
-          horoscope_donts: horoscopeDonts,
-          image_url: imageUrl,
-          style_key: resolvedChoices.styleKey,
-          style_label: resolvedChoices.styleLabel,
-          character_type: resolvedChoices.characterType,
-          date: todayDate,
-          generated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id,date',
-        })
-      
-      if (insertError) {
-        console.error('Error saving horoscope:', insertError)
-        // Still return the generated horoscope even if save fails
-      }
+    // Save horoscope text to database (upsert horoscope record)
+    // This ensures we only generate once per user per day
+    // Historical horoscopes are preserved - each day gets its own row
+    const { error: saveError } = await supabaseAdmin
+      .from('horoscopes')
+      .upsert({
+        user_id: userId,
+        star_sign: starSign,
+        horoscope_text: horoscopeText,
+        horoscope_dos: horoscopeDos,
+        horoscope_donts: horoscopeDonts,
+        image_url: imageUrl, // May be empty if image hasn't been generated yet
+        style_key: resolvedChoices.styleKey,
+        style_label: resolvedChoices.styleLabel,
+        character_type: resolvedChoices.characterType,
+        date: todayDate, // Use today's date as the cache key
+        generated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,date', // Unique constraint ensures one horoscope per user per day
+      })
+    
+    if (saveError) {
+      console.error('Error saving horoscope:', saveError)
+      // Continue anyway - we still return the generated horoscope
     } else {
-      console.log('Test mode: Skipping database save')
+      console.log('Successfully saved horoscope for user', userId, 'on date', todayDate)
     }
     
     return NextResponse.json({

@@ -248,69 +248,83 @@ export default function TeamDashboard() {
     return () => clearInterval(interval)
   }, [userTimeZone])
   
-  // Fetch horoscope text and image in parallel on mount
-  // COMMENTED OUT TO SAVE API TOKENS - Uncomment when ready to use
+  // Fetch horoscope text and image on mount - only fetches today's data
+  // Historical horoscopes are stored in the database but only today's is displayed
   useEffect(() => {
-    // Set loading states to false since we're not fetching
-    setHoroscopeLoading(false)
-    setHoroscopeImageLoading(false)
-    setHoroscopeError('Horoscope generation is temporarily disabled to save API tokens')
-    setHoroscopeImageError('Image generation is temporarily disabled to save API tokens')
+    async function fetchHoroscopeData() {
+      // Only fetch if user is authenticated
+      if (!user) {
+        setHoroscopeLoading(false)
+        setHoroscopeImageLoading(false)
+        setHoroscopeError('Please log in to view your horoscope')
+        setHoroscopeImageError('Please log in to view your horoscope image')
+        return
+      }
+
+      setHoroscopeLoading(true)
+      setHoroscopeImageLoading(true)
+      setHoroscopeError(null)
+      setHoroscopeImageError(null)
+      
+      try {
+        // Fetch both text and image in parallel for faster loading
+        const [textResponse, imageResponse] = await Promise.all([
+          fetch('/api/horoscope'),
+          fetch('/api/horoscope/image')
+        ])
+        
+        // Process text response
+        const textData = await textResponse.json()
+        if (!textResponse.ok) {
+          console.error('Horoscope API error:', textResponse.status, textData)
+          if (textResponse.status === 401) {
+            setHoroscopeError('Please log in to view your horoscope')
+          } else {
+            setHoroscopeError(textData.error || 'Failed to load horoscope')
+          }
+        } else {
+          console.log('Horoscope data received:', textData)
+          // Only set today's horoscope - historical horoscopes remain in database
+          setHoroscope({
+            star_sign: textData.star_sign,
+            horoscope_text: textData.horoscope_text,
+            horoscope_dos: textData.horoscope_dos || [],
+            horoscope_donts: textData.horoscope_donts || [],
+          })
+          // Generate silly character name based on star sign
+          if (textData.star_sign) {
+            setCharacterName(generateSillyCharacterName(textData.star_sign))
+          }
+        }
+        
+        // Process image response
+        const imageData = await imageResponse.json()
+        if (!imageResponse.ok) {
+          console.error('Horoscope image API error:', imageResponse.status, imageData)
+          if (imageResponse.status === 401) {
+            setHoroscopeImageError('Please log in to view your horoscope image')
+          } else {
+            setHoroscopeImageError(imageData.error || 'Failed to load horoscope image')
+          }
+        } else {
+          console.log('Horoscope image received:', imageData)
+          // Only set today's image - historical images remain in database
+          setHoroscopeImage(imageData.image_url)
+          setHoroscopeImagePrompt(imageData.image_prompt || null)
+          setHoroscopeImageConfig(imageData.config || null)
+        }
+      } catch (error: any) {
+        console.error('Error fetching horoscope data:', error)
+        setHoroscopeError('Failed to load horoscope: ' + (error.message || 'Unknown error'))
+        setHoroscopeImageError('Failed to load horoscope image: ' + (error.message || 'Unknown error'))
+      } finally {
+        setHoroscopeLoading(false)
+        setHoroscopeImageLoading(false)
+      }
+    }
     
-    // async function fetchHoroscopeData() {
-    //   // Set loading states
-    //   setHoroscopeLoading(true)
-    //   setHoroscopeImageLoading(true)
-    //   setHoroscopeError(null)
-    //   setHoroscopeImageError(null)
-    //   
-    //   try {
-    //     // Fetch both in parallel for faster loading
-    //     const [textResponse, imageResponse] = await Promise.all([
-    //       fetch('/api/horoscope'),
-    //       fetch('/api/horoscope/image')
-    //     ])
-    //     
-    //     // Process text response
-    //     const textData = await textResponse.json()
-    //     if (!textResponse.ok) {
-    //       console.error('Horoscope API error:', textResponse.status, textData)
-    //       if (textResponse.status === 401) {
-    //         setHoroscopeError('Please log in to view your horoscope')
-    //       } else {
-    //         setHoroscopeError(textData.error || 'Failed to load horoscope')
-    //       }
-    //     } else {
-    //       console.log('Horoscope data received:', textData)
-    //       setHoroscope(textData)
-    //       // Generate silly character name based on star sign
-    //       if (textData.star_sign) {
-    //         setCharacterName(generateSillyCharacterName(textData.star_sign))
-    //       }
-    //     }
-    //     
-    //     // Process image response
-    //     const imageData = await imageResponse.json()
-    //     if (!imageResponse.ok) {
-    //       console.error('Horoscope image API error:', imageResponse.status, imageData)
-    //       setHoroscopeImageError(imageData.error || 'Failed to load horoscope image')
-    //     } else {
-    //       console.log('Horoscope image received:', imageData)
-    //       setHoroscopeImage(imageData.image_url)
-    //       setHoroscopeImagePrompt(imageData.image_prompt || null)
-    //       setHoroscopeImageConfig(imageData.config || null)
-    //     }
-    //   } catch (error: any) {
-    //     console.error('Error fetching horoscope data:', error)
-    //     setHoroscopeError('Failed to load horoscope: ' + (error.message || 'Unknown error'))
-    //     setHoroscopeImageError('Failed to load horoscope image: ' + (error.message || 'Unknown error'))
-    //   } finally {
-    //     setHoroscopeLoading(false)
-    //     setHoroscopeImageLoading(false)
-    //   }
-    // }
-    // fetchHoroscopeData()
-  }, [])
+    fetchHoroscopeData()
+  }, [user])
 
   // Comprehensive mode-aware card styling
   type CardSection = 'hero' | 'recognition' | 'work' | 'team' | 'vibes' | 'community' | 'default'
