@@ -29,9 +29,15 @@ export async function GET(request: NextRequest) {
             getAll() {
               return request.cookies.getAll()
             },
+            setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+              // Set all cookies on both request and response
+              cookiesToSet.forEach(({ name, value, options }) => {
+                request.cookies.set({ name, value, ...options })
+                response.cookies.set({ name, value, ...options })
+              })
+            },
             set(name: string, value: string, options: any) {
               // Set cookie on both request and response
-              // Supabase SSR handles the cookie options automatically
               request.cookies.set({ name, value, ...options })
               response.cookies.set({ name, value, ...options })
             },
