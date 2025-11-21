@@ -4,6 +4,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   email TEXT,
   full_name TEXT,
   avatar_url TEXT,
+  birthday TEXT, -- Stored as "MM/DD" format (e.g., "03/15" for March 15th)
+  discipline TEXT, -- Department/team (e.g., "Design", "Engineering", "Marketing")
+  role TEXT, -- Job title/role (e.g., "Creative Director", "Senior Engineer")
   base_role TEXT NOT NULL DEFAULT 'user' CHECK (base_role IN ('user', 'contributor', 'leader', 'admin')),
   special_access TEXT[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,

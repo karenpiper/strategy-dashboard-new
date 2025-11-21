@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { ModeSwitcher } from "@/components/mode-switcher"
 import { useMode } from "@/contexts/mode-context"
 import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { getStarSignEmoji } from '@/lib/horoscope-utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -22,6 +23,7 @@ export const dynamic = 'force-dynamic'
 export default function TeamDashboard() {
   const { mode } = useMode()
   const { user, loading: authLoading } = useAuth()
+  const router = useRouter()
 
   // Show loading state while checking authentication
   if (authLoading) {
@@ -261,6 +263,8 @@ export default function TeamDashboard() {
         return
       }
 
+      console.log('Fetching horoscope data for authenticated user...')
+
       setHoroscopeLoading(true)
       setHoroscopeImageLoading(true)
       setHoroscopeError(null)
@@ -279,6 +283,10 @@ export default function TeamDashboard() {
           console.error('Horoscope API error:', textResponse.status, textData)
           if (textResponse.status === 401) {
             setHoroscopeError('Please log in to view your horoscope')
+          } else if (textResponse.status === 404 && textData.error?.includes('profile')) {
+            // Profile setup needed - redirect to setup page
+            router.push('/profile/setup')
+            return
           } else {
             setHoroscopeError(textData.error || 'Failed to load horoscope')
           }
@@ -303,6 +311,9 @@ export default function TeamDashboard() {
           console.error('Horoscope image API error:', imageResponse.status, imageData)
           if (imageResponse.status === 401) {
             setHoroscopeImageError('Please log in to view your horoscope image')
+          } else if (imageResponse.status === 404 && imageData.error?.includes('profile')) {
+            // Profile setup needed - will be handled by text response redirect
+            setHoroscopeImageError('Please complete your profile to view your horoscope image')
           } else {
             setHoroscopeImageError(imageData.error || 'Failed to load horoscope image')
           }

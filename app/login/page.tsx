@@ -15,12 +15,30 @@ export default function LoginPage() {
 
   useEffect(() => {
     // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        router.push('/')
+    async function checkSession() {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) {
+          console.error('Error checking session:', error)
+        }
+        if (session?.user) {
+          router.push('/')
+        }
+      } catch (error) {
+        console.error('Error in checkSession:', error)
       }
-    })
+    }
+    checkSession()
   }, [router, supabase])
+
+  // Check for error in URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const errorParam = params.get('error')
+    if (errorParam) {
+      setError(errorParam)
+    }
+  }, [])
 
   const handleGoogleLogin = async () => {
     try {

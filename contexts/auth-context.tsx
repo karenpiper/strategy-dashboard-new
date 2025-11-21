@@ -1,9 +1,9 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface AuthContextType {
   user: User | null
@@ -17,31 +17,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClient()
+  const pathname = usePathname()
+  
+  // Create supabase client once and memoize it
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
+    let mounted = true
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    async function getInitialSession() {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Error getting session:', error)
+        }
+        
+        if (mounted) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Error in getInitialSession:', error)
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    getInitialSession()
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (!session) {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email)
+      
+      if (mounted) {
+        setUser(session?.user ?? null)
+        setLoading(false)
+      }
+
+      // Only redirect to login if we're not already on login/auth pages
+      if (!session && event === 'SIGNED_OUT' && pathname && !pathname.startsWith('/login') && !pathname.startsWith('/auth')) {
         router.push('/login')
       }
     })
 
-    return () => subscription.unsubscribe()
-  }, [router, supabase])
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [router, supabase, pathname])
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Error signing out:', error)
+      }
+      setUser(null)
+      router.push('/login')
+    } catch (error) {
+      console.error('Error in signOut:', error)
+    }
   }
 
   return (

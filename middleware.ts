@@ -10,9 +10,8 @@ export async function middleware(request: NextRequest) {
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error('Missing Supabase environment variables in middleware')
-    // If env vars are missing, redirect to login for security
+    // If env vars are missing, allow access to login page only
     if (!pathname.startsWith('/login') && !pathname.startsWith('/auth/callback')) {
-      console.log('Redirecting to login - missing env vars')
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       return NextResponse.redirect(url)
@@ -81,10 +80,11 @@ export async function middleware(request: NextRequest) {
     // If there's an error getting the user, treat as unauthenticated
     if (error) {
       console.error('Error getting user in middleware:', error)
-      // If we can't verify auth, redirect to login (except for login/auth routes)
+      // If we can't verify auth, redirect to login (except for login/auth/profile routes)
       if (
         !pathname.startsWith('/login') &&
         !pathname.startsWith('/auth/callback') &&
+        !pathname.startsWith('/profile/setup') &&
         !pathname.startsWith('/api')
       ) {
         const url = request.nextUrl.clone()
@@ -93,11 +93,12 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Protect all routes except login, auth callback, and API routes
+    // Protect all routes except login, auth callback, profile setup, and API routes
     if (
       !user &&
       !pathname.startsWith('/login') &&
       !pathname.startsWith('/auth/callback') &&
+      !pathname.startsWith('/profile/setup') &&
       !pathname.startsWith('/api')
     ) {
       const url = request.nextUrl.clone()
@@ -113,11 +114,12 @@ export async function middleware(request: NextRequest) {
     }
   } catch (error) {
     console.error('Middleware error:', error)
-    // On error, redirect to login for security (except for login/auth routes)
+    // On error, redirect to login for security (except for login/auth/profile routes)
     const pathname = request.nextUrl.pathname
     if (
       !pathname.startsWith('/login') &&
       !pathname.startsWith('/auth/callback') &&
+      !pathname.startsWith('/profile/setup') &&
       !pathname.startsWith('/api')
     ) {
       const url = request.nextUrl.clone()
