@@ -46,11 +46,13 @@ export async function GET(request: NextRequest) {
       query = query.order('project_name', { ascending: sortOrder === 'asc' })
     } else if (sortBy === 'author_id') {
       query = query.order('author_id', { ascending: sortOrder === 'asc' })
-    } else if (sortBy === 'created_at' || sortBy === 'date') {
+    } else if (sortBy === 'date') {
+      query = query.order('date', { ascending: sortOrder === 'asc' })
+    } else if (sortBy === 'created_at') {
       query = query.order('created_at', { ascending: sortOrder === 'asc' })
     } else {
       // Default sorting
-      query = query.order('created_at', { ascending: false })
+      query = query.order('date', { ascending: false })
     }
 
     // Apply filters

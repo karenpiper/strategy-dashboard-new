@@ -303,7 +303,7 @@ export default function TeamDashboard() {
       if (!user) return
       
       try {
-        const response = await fetch('/api/work-samples?sortBy=created_at&sortOrder=desc')
+        const response = await fetch('/api/work-samples?sortBy=date&sortOrder=desc')
         if (response.ok) {
           const result = await response.json()
           if (result.data && Array.isArray(result.data)) {
@@ -1277,7 +1277,7 @@ export default function TeamDashboard() {
               return (
                 <div className="flex-1 p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className={`text-3xl font-black uppercase leading-tight ${textStyle}`}>WORK SAMPLES</h2>
+                    <h2 className={`text-3xl font-black uppercase leading-tight ${textStyle}`}>RECENT WORK</h2>
                     <div className="flex items-center gap-3">
                       <Link 
                         href="/work-samples"
