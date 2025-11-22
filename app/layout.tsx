@@ -3,6 +3,7 @@ import { Raleway } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ModeProvider } from '@/contexts/mode-context'
 import { AuthProvider } from '@/contexts/auth-context'
+import { PermissionsProvider } from '@/contexts/permissions-context'
 import './globals.css'
 
 const raleway = Raleway({ 
@@ -43,9 +44,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${raleway.variable} font-sans antialiased`}>
         <AuthProvider>
-          <ModeProvider>
-            {children}
-          </ModeProvider>
+          <PermissionsProvider>
+            <ModeProvider>
+              {children}
+            </ModeProvider>
+          </PermissionsProvider>
         </AuthProvider>
         <Analytics />
       </body>
