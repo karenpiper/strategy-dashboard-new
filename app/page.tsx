@@ -45,6 +45,15 @@ export default function TeamDashboard() {
     horoscope_dos?: string[]
     horoscope_donts?: string[]
   } | null>(null)
+  const [workSamples, setWorkSamples] = useState<Array<{
+    id: string
+    project_name: string
+    description: string
+    type?: { name: string } | null
+    author?: { full_name?: string; email?: string } | null
+    client?: string | null
+    date: string
+  }>>([])
   const [horoscopeImage, setHoroscopeImage] = useState<string | null>(null)
   const [horoscopeImagePrompt, setHoroscopeImagePrompt] = useState<string | null>(null)
   const [horoscopeImageConfig, setHoroscopeImageConfig] = useState<{
@@ -284,6 +293,27 @@ export default function TeamDashboard() {
       checkProfileSetup()
     }
   }, [user, authLoading, profileChecked])
+
+  // Fetch work samples
+  useEffect(() => {
+    async function fetchWorkSamples() {
+      if (!user) return
+      
+      try {
+        const response = await fetch('/api/work-samples?sortBy=created_at&sortOrder=desc')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.work_samples) {
+            setWorkSamples(data.work_samples.slice(0, 3))
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching work samples:', error)
+      }
+    }
+    
+    fetchWorkSamples()
+  }, [user])
   
   // Fetch horoscope text and image on mount - only fetches today's data
   // Historical horoscopes are stored in the database but only today's is displayed
@@ -1224,16 +1254,45 @@ export default function TeamDashboard() {
               )
             })()}
 
-            {/* Placeholder - 3/4 width, fills remaining height, right under Friday Drop */}
+            {/* Work Samples - 3/4 width, fills remaining height, right under Friday Drop */}
             {(() => {
               const style = mode === 'chaos' ? getCardStyle('work') : getCardStyle('work')
               return (
                 <Card className={`${style.bg} ${style.border} p-6 flex-1 ${getRoundedClass('rounded-[2.5rem]')}`}
                       style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
                 >
-                  <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>NEW CARD</p>
-                  <h2 className={`text-3xl font-black mb-6 uppercase leading-tight ${style.text}`}>PLACEHOLDER</h2>
-                  <p className={`text-sm font-medium ${style.text}/70`}>Content goes here</p>
+                  <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>WORK SAMPLES</p>
+                  <div className="space-y-4">
+                    {workSamples.length > 0 ? (
+                      workSamples.map((sample) => (
+                        <div key={sample.id} className={`${getRoundedClass('rounded-lg')} p-4 border ${style.border} ${style.bg}`}>
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <h3 className={`text-lg font-black uppercase mb-1 ${style.text}`}>{sample.project_name}</h3>
+                              {sample.type && (
+                                <p className={`text-xs uppercase tracking-wide mb-2 ${style.text}/70`}>{sample.type.name}</p>
+                              )}
+                              {sample.description && (
+                                <p className={`text-sm ${style.text}/80 line-clamp-2`}>{sample.description}</p>
+                              )}
+                              <div className="flex items-center gap-4 mt-2">
+                                {sample.author && (
+                                  <p className={`text-xs ${style.text}/70`}>
+                                    {sample.author.full_name || sample.author.email}
+                                  </p>
+                                )}
+                                {sample.client && (
+                                  <p className={`text-xs ${style.text}/70`}>Client: {sample.client}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className={`text-sm ${style.text}/70`}>No work samples available</p>
+                    )}
+                  </div>
                 </Card>
               )
             })()}
