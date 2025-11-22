@@ -119,13 +119,35 @@ export async function GET(request: NextRequest) {
       let folderListInfo: any = null
       try {
         console.log('Attempting to list accessible files/folders...')
+        // List folders in shared drives
         const listResponse = await drive.files.list({
           q: "mimeType='application/vnd.google-apps.folder'",
-          fields: 'files(id, name)',
-          pageSize: 20,
+          fields: 'files(id, name, driveId)',
+          pageSize: 50,
           supportsAllDrives: true,
           includeItemsFromAllDrives: true,
+          corpora: 'allDrives',
         } as any)
+        
+        // Also try to list shared drives
+        let sharedDrivesInfo: any = null
+        try {
+          const drivesResponse = await drive.drives.list({
+            pageSize: 10,
+          } as any)
+          sharedDrivesInfo = {
+            count: drivesResponse.data.drives?.length || 0,
+            drives: drivesResponse.data.drives?.map((d: any) => ({
+              id: d.id,
+              name: d.name,
+            })) || [],
+          }
+        } catch (drivesError: any) {
+          sharedDrivesInfo = {
+            error: drivesError.message,
+            note: 'May not have permission to list shared drives',
+          }
+        }
         
         folderListInfo = {
           status: 'success',
@@ -133,9 +155,11 @@ export async function GET(request: NextRequest) {
           accessibleFolders: listResponse.data.files?.map((f: any) => ({
             id: f.id,
             name: f.name,
+            driveId: f.driveId,
             matches: f.id === folderId || f.id === folderId.replace(/\.+$/, ''),
           })) || [],
           targetFolderId: folderId,
+          sharedDrivesInfo: sharedDrivesInfo,
         }
       } catch (listError: any) {
         folderListInfo = {
@@ -150,7 +174,7 @@ export async function GET(request: NextRequest) {
         // Try with supportsAllDrives in case it's a shared drive
         const folderInfo = await drive.files.get({
           fileId: folderId,
-          fields: 'id, name, mimeType',
+          fields: 'id, name, mimeType, driveId',
           supportsAllDrives: true,
         } as any)
 
@@ -235,20 +259,25 @@ export async function GET(request: NextRequest) {
                   folderListInfo: folderListInfo, // Include what folders the service account CAN see
                 },
                 fix: [
-                  `1. Verify the folder ID is correct: ${folderId}`,
-                  `2. Open the folder in Google Drive: https://drive.google.com/drive/folders/${cleanFolderId}`,
-                  `3. Click "Share" button (top right)`,
-                  `4. Add this EXACT email: ${clientEmail}`,
-                  `5. Give it "Editor" permissions (not Viewer)`,
-                  `6. Make sure to click "Send" or "Done"`,
-                  `7. Wait 10-30 seconds for permissions to propagate`,
-                  `8. Try the test again`,
+                  `This appears to be a shared drive (Google Workspace). For shared drives:`,
                   ``,
-                  `Note: If this is a shared drive (Google Workspace), you may need to:`,
-                  `- Add the service account to the shared drive's members (not just the folder)`,
-                  `- Go to the shared drive settings → Members → Add ${clientEmail}`,
-                  `- Give it "Content Manager" or "Manager" role`,
-                  `- Or use domain-wide delegation (more complex setup)`,
+                  `1. Go to the shared drive (not just the folder): https://drive.google.com/drive/folders/0AJ0UrK02gPTzUk9PVA`,
+                  `2. Click the shared drive name at the top (or the "i" info icon)`,
+                  `3. Click "Manage members" or go to the Members tab`,
+                  `4. Click "Add members"`,
+                  `5. Add this EXACT email: ${clientEmail}`,
+                  `6. Give it "Content Manager" or "Manager" role (NOT just Viewer)`,
+                  `7. Click "Send"`,
+                  `8. Wait 1-2 minutes for permissions to propagate`,
+                  `9. Try the test again`,
+                  ``,
+                  `Important: The service account must be a MEMBER of the shared drive itself,`,
+                  `not just have access to individual folders within it.`,
+                  ``,
+                  `If you've already done this, verify:`,
+                  `- The service account email is exactly: ${clientEmail}`,
+                  `- The role is "Content Manager" or "Manager" (not "Viewer" or "Commenter")`,
+                  `- The folder ID ${folderId} is correct (check the URL when you open the folder)`,
                 ],
               }
               return NextResponse.json({ results }, { status: 500 })
