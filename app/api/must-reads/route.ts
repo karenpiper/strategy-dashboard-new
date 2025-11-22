@@ -420,10 +420,12 @@ export async function PUT(request: NextRequest) {
     if (pinned !== undefined) {
       updateData.pinned = pinned || false
     }
-    if (submitted_by !== undefined) {
-      // Convert empty string to null, keep valid UUIDs
-      updateData.submitted_by = (submitted_by && submitted_by.trim() !== '') ? submitted_by : null
+    if (submitted_by !== undefined && submitted_by !== null && submitted_by.trim() !== '') {
+      // Only update if a valid UUID is provided
+      updateData.submitted_by = submitted_by.trim()
     }
+    // If submitted_by is undefined, null, or empty, don't include it in the update
+    // This prevents trying to set it to null if there's a NOT NULL constraint
 
     // Include week_start_date if provided
     if (week_start_date) {
