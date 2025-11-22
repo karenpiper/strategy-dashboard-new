@@ -280,11 +280,15 @@ export default function MustReadAdmin() {
         resetForm()
         fetchMustReads()
       } else {
-        alert(`Error: ${result.error}`)
+        const errorMsg = result.details 
+          ? `${result.error}\n\nDetails: ${result.details}${result.code ? `\nCode: ${result.code}` : ''}`
+          : result.error || 'Failed to update must read'
+        console.error('Error updating must read:', result)
+        alert(errorMsg)
       }
     } catch (error) {
       console.error('Error updating must read:', error)
-      alert('Failed to update must read')
+      alert(`Failed to update must read: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -578,35 +582,6 @@ export default function MustReadAdmin() {
                     </div>
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>Notes (optional)</Label>
-                    <Textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="Add any notes about this article"
-                      rows={3}
-                    />
-                  </div>
-                </div>
-
-                {/* Right Column */}
-                <div className="space-y-4">
-                  <div>
-                    <Label className={cardStyle.text}>Category (optional)</Label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
-                    >
-                      <option value="">No Category</option>
-                      <option value="Technology">Technology</option>
-                      <option value="Culture">Culture</option>
-                      <option value="Fun">Fun</option>
-                      <option value="Industry">Industry</option>
-                      <option value="Craft">Craft</option>
-                    </select>
-                  </div>
-                  <div>
                     <Label className={cardStyle.text}>Source (optional)</Label>
                     <Input
                       value={formData.source}
@@ -657,6 +632,35 @@ export default function MustReadAdmin() {
                     <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
                       AI will generate up to 3 relevant tags from the article
                     </p>
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className={cardStyle.text}>Category (optional)</Label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                    >
+                      <option value="">No Category</option>
+                      <option value="Technology">Technology</option>
+                      <option value="Culture">Culture</option>
+                      <option value="Fun">Fun</option>
+                      <option value="Industry">Industry</option>
+                      <option value="Craft">Craft</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Notes (optional)</Label>
+                    <Textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="Add any notes about this article"
+                      rows={3}
+                    />
                   </div>
                   <div>
                     <Label className={cardStyle.text}>Date</Label>
@@ -943,35 +947,6 @@ export default function MustReadAdmin() {
                   </div>
                 </div>
                 <div>
-                  <Label className={cardStyle.text}>Notes (optional)</Label>
-                  <Textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder="Add any notes about this article"
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-4">
-                <div>
-                  <Label className={cardStyle.text}>Category (optional)</Label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
-                  >
-                    <option value="">No Category</option>
-                    <option value="Technology">Technology</option>
-                    <option value="Culture">Culture</option>
-                    <option value="Fun">Fun</option>
-                    <option value="Industry">Industry</option>
-                    <option value="Craft">Craft</option>
-                  </select>
-                </div>
-                <div>
                   <Label className={cardStyle.text}>Source (optional)</Label>
                   <Input
                     value={formData.source}
@@ -1022,6 +997,35 @@ export default function MustReadAdmin() {
                   <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
                     AI will generate up to 3 relevant tags from the article
                   </p>
+                </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-4">
+                <div>
+                  <Label className={cardStyle.text}>Category (optional)</Label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                  >
+                    <option value="">No Category</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Culture">Culture</option>
+                    <option value="Fun">Fun</option>
+                    <option value="Industry">Industry</option>
+                    <option value="Craft">Craft</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Notes (optional)</Label>
+                  <Textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    placeholder="Add any notes about this article"
+                    rows={3}
+                  />
                 </div>
                 <div>
                   <Label className={cardStyle.text}>Date</Label>

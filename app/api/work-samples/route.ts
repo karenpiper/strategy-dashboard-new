@@ -356,13 +356,14 @@ export async function PUT(request: NextRequest) {
 
     // Handle submitted_by in update
     let submittedById = undefined // Don't update if not provided
-    if (submitted_by !== undefined) {
-      if (submitted_by && submitted_by.trim() !== '') {
+    if (submitted_by !== undefined && submitted_by !== null) {
+      const submittedByStr = String(submitted_by).trim()
+      if (submittedByStr !== '') {
         // Verify submitted_by user exists if specified
         const { data: submittedByProfile, error: submittedByError } = await supabase
           .from('profiles')
           .select('id')
-          .eq('id', submitted_by.trim())
+          .eq('id', submittedByStr)
           .single()
 
         if (submittedByError || !submittedByProfile) {
@@ -371,11 +372,14 @@ export async function PUT(request: NextRequest) {
             { status: 400 }
           )
         }
-        submittedById = submitted_by.trim()
+        submittedById = submittedByStr
       } else {
         // Explicitly set to null to clear the field
         submittedById = null
       }
+    } else if (submitted_by === null) {
+      // Explicitly null means clear the field
+      submittedById = null
     }
 
     const updateData: any = {

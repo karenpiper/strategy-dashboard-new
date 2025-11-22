@@ -422,12 +422,13 @@ export async function PUT(request: NextRequest) {
     }
     if (submitted_by !== undefined) {
       // Allow setting to null to clear the field, or set to a valid UUID
-      if (submitted_by && submitted_by.trim() !== '') {
+      if (submitted_by !== null && String(submitted_by).trim() !== '') {
+        const submittedByStr = String(submitted_by).trim()
         // Verify submitted_by user exists if specified
         const { data: submittedProfile, error: submittedError } = await supabase
           .from('profiles')
           .select('id')
-          .eq('id', submitted_by.trim())
+          .eq('id', submittedByStr)
           .single()
 
         if (submittedError || !submittedProfile) {
@@ -436,7 +437,7 @@ export async function PUT(request: NextRequest) {
             { status: 400 }
           )
         }
-        updateData.submitted_by = submitted_by.trim()
+        updateData.submitted_by = submittedByStr
       } else {
         // Explicitly set to null to clear the field
         updateData.submitted_by = null

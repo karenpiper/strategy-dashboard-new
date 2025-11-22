@@ -463,20 +463,29 @@ export default function WorkSampleAdmin() {
     }
 
     try {
+      const updatePayload: any = {
+        id: editingItem.id,
+        project_name: formData.project_name,
+        description: formData.description,
+        type_id: formData.type_id || null,
+        client: formData.client || null,
+        author_id: formData.author_id,
+        date: formData.date,
+        thumbnail_url: formData.thumbnail_url || null,
+        file_url: formData.file_url || null,
+        file_link: formData.file_link || null,
+        file_name: formData.file_name || null,
+      }
+
+      // Only include submitted_by if it's explicitly set (even if empty string/null)
+      if (formData.submitted_by !== undefined && formData.submitted_by !== null) {
+        updatePayload.submitted_by = formData.submitted_by.trim() === '' ? null : formData.submitted_by
+      }
+
       const response = await fetch('/api/work-samples', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: editingItem.id,
-          ...formData,
-          type_id: formData.type_id || null,
-          client: formData.client || null,
-          submitted_by: formData.submitted_by || user?.id || null,
-          thumbnail_url: formData.thumbnail_url || null,
-          file_url: formData.file_url || null,
-          file_link: formData.file_link || null,
-          file_name: formData.file_name || null,
-        }),
+        body: JSON.stringify(updatePayload),
       })
 
       const result = await response.json()
@@ -487,11 +496,15 @@ export default function WorkSampleAdmin() {
         resetForm()
         fetchWorkSamples()
       } else {
-        alert(`Error: ${result.error}`)
+        const errorMsg = result.details 
+          ? `${result.error}\n\nDetails: ${result.details}${result.code ? `\nCode: ${result.code}` : ''}`
+          : result.error || 'Failed to update work sample'
+        console.error('Error updating work sample:', result)
+        alert(errorMsg)
       }
     } catch (error) {
       console.error('Error updating work sample:', error)
-      alert('Failed to update work sample')
+      alert(`Failed to update work sample: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
