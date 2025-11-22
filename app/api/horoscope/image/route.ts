@@ -103,6 +103,8 @@ export async function GET(request: NextRequest) {
     const today = new Date()
     const todayDate = today.toISOString().split('T')[0] // YYYY-MM-DD format
     
+    console.log('Checking for cached image - user:', userId, 'date:', todayDate)
+    
     const { data: cachedHoroscope, error: cacheError } = await supabaseAdmin
       .from('horoscopes')
       .select('image_url, image_prompt, style_key, style_label, character_type, setting_hint, date, generated_at')
@@ -114,9 +116,16 @@ export async function GET(request: NextRequest) {
       console.error('Error checking cache:', cacheError)
     }
     
+    console.log('Image cache check result:', {
+      found: !!cachedHoroscope,
+      hasImage: !!cachedHoroscope?.image_url,
+      date: cachedHoroscope?.date,
+      expectedDate: todayDate
+    })
+    
     // If we have a cached image for today, return it immediately (don't regenerate)
-    if (cachedHoroscope?.image_url && cachedHoroscope.date === todayDate) {
-      console.log('Returning cached image for user', userId, 'on date', todayDate)
+    if (cachedHoroscope && cachedHoroscope.image_url) {
+      console.log('✅ Returning cached image for user', userId, 'on date', todayDate)
       // For cached horoscopes, rebuild the config to get all the data (prompt tags, theme, etc.)
       // This ensures we have complete information even for cached images
       const config = await fetchHoroscopeConfig(

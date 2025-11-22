@@ -114,9 +114,11 @@ export async function GET(request: NextRequest) {
     // Use admin client for database operations (bypasses RLS)
     const supabaseAdmin = await getSupabaseAdminClient()
     
-    // Get today's date
+    // Get today's date in YYYY-MM-DD format (use UTC to ensure consistency)
     const today = new Date()
     const todayDate = today.toISOString().split('T')[0] // YYYY-MM-DD format
+    
+    console.log('Checking for cached horoscope - user:', userId, 'date:', todayDate)
     
     // Check for cached horoscope for today - return immediately if found
     const { data: cachedHoroscope, error: cacheError } = await supabaseAdmin
@@ -130,9 +132,16 @@ export async function GET(request: NextRequest) {
       console.error('Error checking cache:', cacheError)
     }
     
-    // If we have a cached horoscope for today, return it immediately (don't regenerate)
-    if (cachedHoroscope?.horoscope_text && cachedHoroscope.date === todayDate) {
-      console.log('Returning cached horoscope for user', userId, 'on date', todayDate)
+    console.log('Cache check result:', {
+      found: !!cachedHoroscope,
+      hasText: !!cachedHoroscope?.horoscope_text,
+      date: cachedHoroscope?.date,
+      expectedDate: todayDate
+    })
+    
+    // If we have a cached horoscope for today with text, return it immediately (don't regenerate)
+    if (cachedHoroscope && cachedHoroscope.horoscope_text) {
+      console.log('✅ Returning cached horoscope for user', userId, 'on date', todayDate)
       return NextResponse.json({
         star_sign: cachedHoroscope.star_sign,
         horoscope_text: cachedHoroscope.horoscope_text,
