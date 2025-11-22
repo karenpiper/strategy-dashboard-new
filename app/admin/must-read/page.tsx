@@ -692,7 +692,6 @@ export default function MustReadAdmin() {
                     Add
                   </Button>
                 </div>
-              </div>
             </DialogContent>
           </Dialog>
 
@@ -1036,7 +1035,6 @@ export default function MustReadAdmin() {
                   Update
                 </Button>
               </div>
-            </div>
           </DialogContent>
         </Dialog>
       </div>
