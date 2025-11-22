@@ -22,8 +22,7 @@ import {
   Users,
   Shield,
   Loader2,
-  CheckCircle2,
-  ShieldOff
+  CheckCircle2
 } from 'lucide-react'
 import Link from 'next/link'
 
