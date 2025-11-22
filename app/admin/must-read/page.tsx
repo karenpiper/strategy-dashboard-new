@@ -827,7 +827,9 @@ export default function MustReadAdmin() {
                         {item.article_title}
                       </td>
                       <td className={`p-4 ${cardStyle.text}/70 text-sm font-bold`}>
-                        {item.submitted_by_profile?.full_name || item.submitted_by_profile?.email || 'Unknown'}
+                        {item.submitted_by && item.submitted_by_profile
+                          ? (item.submitted_by_profile.full_name || item.submitted_by_profile.email)
+                          : 'None'}
                       </td>
                       <td className={`p-4 ${cardStyle.text}/70 text-sm font-bold`}>
                         {new Date(item.created_at).toLocaleDateString()}
