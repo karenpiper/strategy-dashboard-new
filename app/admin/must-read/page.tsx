@@ -74,6 +74,7 @@ export default function MustReadAdmin() {
     notes: '',
     pinned: false,
     assigned_to: '',
+    submitted_by: '', // Can be blank
     date: getTodayDate(), // Default to current date
     category: '',
     source: '',
@@ -83,6 +84,9 @@ export default function MustReadAdmin() {
 
   const [generatingSummary, setGeneratingSummary] = useState(false)
   const [generatingTags, setGeneratingTags] = useState(false)
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importResults, setImportResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
 
   // Theme-aware styling helpers
   const getBgClass = () => {
@@ -197,7 +201,8 @@ export default function MustReadAdmin() {
         body: JSON.stringify({
           ...restFormData,
           week_start_date: date, // Send date as week_start_date
-          assigned_to: formData.assigned_to || user?.id,
+          assigned_to: formData.assigned_to || user?.id || null,
+          submitted_by: formData.submitted_by || null, // Can be blank/null
         }),
       })
 
@@ -229,6 +234,7 @@ export default function MustReadAdmin() {
       notes: item.notes || '',
       pinned: item.pinned,
       assigned_to: item.assigned_to || user?.id || '',
+      submitted_by: item.submitted_by || '',
       date: item.week_start_date || getTodayDate(), // Use week_start_date or default to today
       category: item.category || '',
       source: item.source || '',
@@ -251,6 +257,7 @@ export default function MustReadAdmin() {
           ...restFormData,
           week_start_date: date, // Send date as week_start_date
           assigned_to: formData.assigned_to || null,
+          submitted_by: formData.submitted_by || null, // Can be blank/null
         }),
       })
 
@@ -325,6 +332,7 @@ export default function MustReadAdmin() {
       notes: '',
       pinned: false,
       assigned_to: user?.id || '',
+      submitted_by: '', // Can be blank
       date: getTodayDate(), // Reset to current date
       category: '',
       source: '',

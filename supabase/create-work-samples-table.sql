@@ -29,7 +29,11 @@ CREATE TABLE IF NOT EXISTS public.work_samples (
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   created_by UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  thumbnail_url TEXT,
+  file_url TEXT,
+  file_link TEXT,
+  file_name TEXT
 );
 
 -- Add indexes for faster lookups
@@ -78,3 +82,8 @@ CREATE POLICY "Users can delete work samples"
   ON public.work_samples FOR DELETE
   USING (auth.role() = 'authenticated');
 
+-- Add comments for documentation
+COMMENT ON COLUMN public.work_samples.thumbnail_url IS 'URL for thumbnail image stored in Supabase storage';
+COMMENT ON COLUMN public.work_samples.file_url IS 'Google Drive file URL after upload';
+COMMENT ON COLUMN public.work_samples.file_link IS 'Optional external link to file';
+COMMENT ON COLUMN public.work_samples.file_name IS 'Original filename for display';
