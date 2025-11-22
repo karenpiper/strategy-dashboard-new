@@ -44,15 +44,19 @@ export async function GET(request: NextRequest) {
     const assignedTo = searchParams.get('assigned_to')
 
     // Build query - use the column names that exist in the table
+    // Include all possible columns to handle different table schemas
     let query = supabase
       .from('must_reads')
       .select(`
         id,
         title,
+        article_title,
         url,
+        article_url,
         notes,
         pinned,
         submitted_by,
+        created_by,
         assigned_to,
         week_start_date,
         created_at,
@@ -87,10 +91,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Map response to expected format (article_title, article_url)
+    // Handle both old and new column name conventions
     let mappedData = (data || []).map((item: any) => ({
       ...item,
-      article_title: item.title || item.article_title,
-      article_url: item.url || item.article_url,
+      article_title: item.title || item.article_title || '',
+      article_url: item.url || item.article_url || '',
+      // Ensure created_by is included if it exists
+      created_by: item.created_by || item.submitted_by,
+      submitted_by: item.submitted_by || item.created_by,
     }))
 
     // Apply search filter in memory (for title and notes)
@@ -208,15 +216,22 @@ export async function POST(request: NextRequest) {
     weekStart.setDate(today.getDate() + daysToMonday)
     weekStart.setHours(0, 0, 0, 0) // Start of day
     
+    // Build insert data with all required fields
+    // Based on errors, the table uses: title, url, week_start_date, created_by
     const insertData: any = {
-      title: article_title,  // Map article_title to title column
-      url: article_url,      // Map article_url to url column (assuming it exists)
+      // Required fields based on errors
+      title: article_title,  // Table uses 'title' not 'article_title'
+      url: article_url,      // Table uses 'url' not 'article_url'
+      created_by: user.id,   // Required field - who created the record
+      week_start_date: weekStart.toISOString().split('T')[0], // Required - Monday of current week
+      // Optional but commonly used fields
       notes: notes || null,
       pinned: pinned || false,
-      submitted_by: user.id,
+      submitted_by: user.id, // May or may not exist, but include it
       assigned_to: assignedToId,
-      week_start_date: weekStart.toISOString().split('T')[0], // Format as YYYY-MM-DD
       updated_at: new Date().toISOString(),
+      // Include created_at in case it's not auto-generated
+      created_at: new Date().toISOString(),
     }
 
     const { data, error } = await supabase
@@ -225,10 +240,13 @@ export async function POST(request: NextRequest) {
       .select(`
         id,
         title,
+        article_title,
         url,
+        article_url,
         notes,
         pinned,
         submitted_by,
+        created_by,
         assigned_to,
         week_start_date,
         created_at,
@@ -238,8 +256,11 @@ export async function POST(request: NextRequest) {
 
     // Map the response back to the expected format
     if (data) {
-      data.article_title = data.title
-      data.article_url = data.url
+      data.article_title = data.title || data.article_title
+      data.article_url = data.url || data.article_url
+      // Ensure created_by is included
+      data.created_by = data.created_by || data.submitted_by
+      data.submitted_by = data.submitted_by || data.created_by
     }
 
     if (error) {
@@ -316,10 +337,13 @@ export async function PUT(request: NextRequest) {
       .select(`
         id,
         title,
+        article_title,
         url,
+        article_url,
         notes,
         pinned,
         submitted_by,
+        created_by,
         assigned_to,
         week_start_date,
         created_at,
@@ -337,8 +361,11 @@ export async function PUT(request: NextRequest) {
 
     // Map response to expected format
     if (data) {
-      data.article_title = data.title
-      data.article_url = data.url
+      data.article_title = data.title || data.article_title
+      data.article_url = data.url || data.article_url
+      // Ensure created_by is included
+      data.created_by = data.created_by || data.submitted_by
+      data.submitted_by = data.submitted_by || data.created_by
     }
 
     return NextResponse.json({ data })
