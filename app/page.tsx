@@ -1194,7 +1194,7 @@ export default function TeamDashboard() {
           })()}
 
           {/* Right side container - Friday Drop + Placeholder */}
-          <div className="col-span-1 md:col-span-3 flex flex-col gap-6 h-full">
+          <div className="col-span-1 md:col-span-3 row-span-2 flex flex-col gap-6 h-full">
             {/* Friday Drop - 3/4 width, taller, top row */}
             {(() => {
               const style = mode === 'chaos' ? getSpecificCardStyle('friday-drop') : getCardStyle('work')
