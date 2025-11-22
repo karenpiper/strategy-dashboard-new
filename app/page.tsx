@@ -352,6 +352,9 @@ export default function TeamDashboard() {
           console.error('Horoscope image API error:', imageResponse.status, imageData)
           if (imageResponse.status === 401) {
             setHoroscopeImageError('Please log in to view your horoscope image')
+          } else if (imageResponse.status === 402) {
+            // Payment required / billing limit
+            setHoroscopeImageError('OpenAI billing limit reached. Please check your OpenAI account billing settings.')
           } else if (imageResponse.status === 404 && imageData.error?.includes('profile')) {
             // Profile setup needed - will be handled by text response redirect
             setHoroscopeImageError('Please complete your profile to view your horoscope image')

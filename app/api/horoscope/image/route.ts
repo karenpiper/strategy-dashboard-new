@@ -346,12 +346,21 @@ export async function GET(request: NextRequest) {
     
     // Provide more helpful error messages
     let errorMessage = error.message || 'Failed to generate horoscope image'
+    let statusCode = 500
     
-    // Check if it's a database table missing error
-    if (error.message?.includes('relation') && error.message?.includes('does not exist')) {
+    // Check for specific error types
+    if (error.message?.includes('billing limit') || error.message?.includes('billing')) {
+      errorMessage = 'OpenAI billing limit reached. Please check your OpenAI account billing settings and add payment method if needed.'
+      statusCode = 402 // Payment Required
+    } else if (error.message?.includes('rate limit')) {
+      errorMessage = 'OpenAI API rate limit exceeded. Please try again in a few minutes.'
+      statusCode = 429 // Too Many Requests
+    } else if (error.message?.includes('relation') && error.message?.includes('does not exist')) {
       errorMessage = 'Database tables not found. Please run the database migrations: create-prompt-slot-system.sql and seed-prompt-slot-catalogs.sql'
+      statusCode = 500
     } else if (error.message?.includes('No style groups available') || error.message?.includes('No compatible style reference found')) {
       errorMessage = 'Prompt slot catalogs not found. Please run the seed-prompt-slot-catalogs.sql migration.'
+      statusCode = 500
     }
     
     return NextResponse.json(
@@ -359,7 +368,7 @@ export async function GET(request: NextRequest) {
         error: errorMessage,
         details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       },
-      { status: 500 }
+      { status: statusCode }
     )
   }
 }

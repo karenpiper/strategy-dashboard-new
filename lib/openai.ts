@@ -204,9 +204,30 @@ export async function generateHoroscopeImage(
     return { imageUrl, prompt, slots }
   } catch (error: any) {
     console.error('Error generating horoscope image:', error)
+    
+    // Handle specific OpenAI API errors
     if (error.response) {
-      console.error('OpenAI API error response:', error.response.status, error.response.data)
+      const status = error.response.status
+      const errorData = error.response.data
+      console.error('OpenAI API error response:', status, errorData)
+      
+      // Check for billing/quota errors
+      if (status === 400 || status === 429) {
+        const errorMessage = errorData?.error?.message || error.message || 'OpenAI API error'
+        
+        if (errorMessage.toLowerCase().includes('billing') || 
+            errorMessage.toLowerCase().includes('quota') ||
+            errorMessage.toLowerCase().includes('limit')) {
+          throw new Error('OpenAI billing limit reached. Please check your OpenAI account billing settings.')
+        }
+        
+        if (status === 429) {
+          throw new Error('OpenAI API rate limit exceeded. Please try again later.')
+        }
+      }
     }
+    
+    // Re-throw with original error if not handled above
     throw error
   }
 }
