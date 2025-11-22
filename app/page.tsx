@@ -53,6 +53,7 @@ export default function TeamDashboard() {
     author?: { full_name?: string; email?: string } | null
     client?: string | null
     date: string
+    thumbnail_url?: string | null
   }>>([])
   const [horoscopeImage, setHoroscopeImage] = useState<string | null>(null)
   const [horoscopeImagePrompt, setHoroscopeImagePrompt] = useState<string | null>(null)
@@ -425,7 +426,7 @@ export default function TeamDashboard() {
         'who-needs-what': { bg: 'bg-[#E8FF00]', border: 'border-0', glow: '', text: 'text-black', accent: '#000000' }, // Yellow with black
         'snaps': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#E8FF00' },
         'beast-babe': { bg: 'bg-gradient-to-br from-[#FF0055] to-[#FF4081]', border: 'border-0', glow: '', text: 'text-white', accent: '#E8FF00' },
-        'wins-wall': { bg: 'bg-white', border: 'border-0', glow: '', text: 'text-black', accent: '#00FF87' },
+        'wins-wall': { bg: 'bg-gradient-to-br from-[#00B8D4] to-[#0066CC]', border: 'border-0', glow: '', text: 'text-white', accent: '#00D4FF' },
         'must-reads': { bg: 'bg-gradient-to-br from-[#FF4081] to-[#E91E63]', border: 'border-0', glow: '', text: 'text-white', accent: '#FF00FF' },
         'ask-hive': { bg: 'bg-gradient-to-br from-[#9D4EFF] to-[#7B2CBE]', border: 'border-0', glow: '', text: 'text-white', accent: '#9D4EFF' },
         'team-pulse': { bg: 'bg-white', border: 'border-0', glow: '', text: 'text-black', accent: '#00FF87' },
@@ -436,9 +437,13 @@ export default function TeamDashboard() {
       }
       return chaosCardStyles[cardName] || chaosCardStyles['hero-large']
     } else {
+      // Special case for wins-wall - always use blue background
+      if (cardName === 'wins-wall') {
+        return { bg: 'bg-gradient-to-br from-[#00B8D4] to-[#0066CC]', border: 'border-0', glow: '', text: 'text-white', accent: '#00D4FF' }
+      }
       // For chill and code modes, use section-based styling
       return getCardStyle(cardName === 'hero-large' || cardName === 'launch-pad' ? 'hero' : 
-                         cardName === 'snaps' || cardName === 'beast-babe' || cardName === 'wins-wall' ? 'recognition' :
+                         cardName === 'snaps' || cardName === 'beast-babe' ? 'recognition' :
                          cardName === 'events' || cardName === 'pipeline' || cardName === 'who-needs-what' || cardName === 'friday-drop' ? 'work' :
                          cardName === 'weather' || cardName === 'timezones' || cardName === 'team-pulse' || cardName === 'loom-standup' ? 'team' :
                          cardName === 'horoscope' || cardName === 'playlist' || cardName === 'brand-redesign' || cardName === 'must-reads' || cardName === 'inspiration-war' ? 'vibes' :
@@ -1256,44 +1261,36 @@ export default function TeamDashboard() {
 
             {/* Work Samples - 3/4 width, fills remaining height, right under Friday Drop */}
             {(() => {
-              const style = mode === 'chaos' ? getCardStyle('work') : getCardStyle('work')
+              const textStyle = mode === 'chaos' ? 'text-white' : mode === 'chill' ? 'text-[#4A1818]' : 'text-[#FFFFFF]'
               return (
-                <Card className={`${style.bg} ${style.border} p-6 flex-1 ${getRoundedClass('rounded-[2.5rem]')}`}
-                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-                >
-                  <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>WORK SAMPLES</p>
-                  <div className="space-y-4">
+                <div className="flex-1 p-6">
+                  <p className={`text-xs uppercase tracking-wider mb-4 font-black ${textStyle}`}>WORK SAMPLES</p>
+                  <div className="grid grid-cols-3 gap-4">
                     {workSamples.length > 0 ? (
                       workSamples.map((sample) => (
-                        <div key={sample.id} className={`${getRoundedClass('rounded-lg')} p-4 border ${style.border} ${style.bg}`}>
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                              <h3 className={`text-lg font-black uppercase mb-1 ${style.text}`}>{sample.project_name}</h3>
-                              {sample.type && (
-                                <p className={`text-xs uppercase tracking-wide mb-2 ${style.text}/70`}>{sample.type.name}</p>
-                              )}
-                              {sample.description && (
-                                <p className={`text-sm ${style.text}/80 line-clamp-2`}>{sample.description}</p>
-                              )}
-                              <div className="flex items-center gap-4 mt-2">
-                                {sample.author && (
-                                  <p className={`text-xs ${style.text}/70`}>
-                                    {sample.author.full_name || sample.author.email}
-                                  </p>
-                                )}
-                                {sample.client && (
-                                  <p className={`text-xs ${style.text}/70`}>Client: {sample.client}</p>
-                                )}
-                              </div>
+                        <div key={sample.id} className="flex flex-col">
+                          {sample.thumbnail_url ? (
+                            <img 
+                              src={sample.thumbnail_url} 
+                              alt={sample.project_name}
+                              className={`w-full aspect-square object-cover ${getRoundedClass('rounded-lg')} mb-2`}
+                            />
+                          ) : (
+                            <div className={`w-full aspect-square ${getRoundedClass('rounded-lg')} mb-2 bg-gray-200 flex items-center justify-center`}>
+                              <span className="text-gray-400 text-xs">No Image</span>
                             </div>
-                          </div>
+                          )}
+                          <h3 className={`text-sm font-black uppercase mb-1 ${textStyle}`}>{sample.project_name}</h3>
+                          {sample.type && (
+                            <p className={`text-xs uppercase tracking-wide ${textStyle}/70`}>{sample.type.name}</p>
+                          )}
                         </div>
                       ))
                     ) : (
-                      <p className={`text-sm ${style.text}/70`}>No work samples available</p>
+                      <p className={`text-sm col-span-3 ${textStyle}/70`}>No work samples available</p>
                     )}
                   </div>
-                </Card>
+                </div>
               )
             })()}
           </div>
@@ -1487,7 +1484,7 @@ export default function TeamDashboard() {
 
             {/* Wins Wall */}
             {(() => {
-              const style = mode === 'chaos' ? getSpecificCardStyle('wins-wall') : getCardStyle('recognition')
+              const style = getSpecificCardStyle('wins-wall')
               const wins = [
                 { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '🎉' },
                 { name: 'Jamie Park', win: 'Shipped v2.0!', emoji: '🚀' },
