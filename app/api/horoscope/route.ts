@@ -379,21 +379,89 @@ export async function GET(request: NextRequest) {
     }
     
     console.log('💾 Saving horoscope text to database...')
-    const { error: upsertError } = await supabaseAdmin
+    console.log('   Upsert data:', {
+      user_id: upsertData.user_id,
+      date: upsertData.date,
+      star_sign: upsertData.star_sign,
+      text_length: upsertData.horoscope_text?.length || 0,
+      has_dos: !!upsertData.horoscope_dos?.length,
+      has_donts: !!upsertData.horoscope_donts?.length,
+      character_name: upsertData.character_name,
+      has_image_url: !!upsertData.image_url
+    })
+    
+    const { data: upsertResult, error: upsertError } = await supabaseAdmin
       .from('horoscopes')
       .upsert(upsertData, {
         onConflict: 'user_id,date', // Use the unique constraint
         ignoreDuplicates: false // Update existing records
       })
+      .select() // Return the inserted/updated record
     
     if (upsertError) {
       // This is critical - if we can't save, we've wasted an API call
       console.error('❌ CRITICAL: Error upserting horoscope text:', upsertError)
+      console.error('   Error details:', {
+        message: upsertError.message,
+        details: upsertError.details,
+        hint: upsertError.hint,
+        code: upsertError.code
+      })
       console.error('   This means we generated text but failed to save it - API call was wasted!')
-      // Still return the generated horoscope, but log the error
-      console.warn('Warning: Failed to save horoscope to database, but returning generated horoscope')
+      console.error('   Data that failed to save:', upsertData)
+      
+      // Try to verify if record exists despite error
+      const { data: verifyRecord } = await supabaseAdmin
+        .from('horoscopes')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('date', todayDate)
+        .maybeSingle()
+      
+      if (verifyRecord) {
+        console.log('   ⚠️ Record exists despite error - may have been saved by another request')
+        // Record exists, so we can return it
+      } else {
+        console.error('   ❌ CONFIRMED: No record exists - save completely failed!')
+        // CRITICAL: If we can't save, we should NOT return the generated horoscope
+        // because it will be lost and we'll regenerate on next request
+        // Return an error instead to prevent API waste
+        return NextResponse.json(
+          { 
+            error: 'Failed to save horoscope to database. The generated horoscope was not saved. Please try again or contact support.',
+            details: upsertError.message,
+            code: upsertError.code
+          },
+          { status: 500 }
+        )
+      }
     } else {
       console.log('✅ Successfully saved horoscope text for user', userId, 'on date', todayDate)
+      if (upsertResult && upsertResult.length > 0) {
+        console.log('   Saved record:', {
+          id: upsertResult[0].id,
+          date: upsertResult[0].date,
+          text_length: upsertResult[0].horoscope_text?.length || 0
+        })
+      } else {
+        console.warn('   ⚠️ Upsert succeeded but no data returned')
+      }
+      
+      // Verify the record was actually saved
+      const { data: verifyRecord, error: verifyError } = await supabaseAdmin
+        .from('horoscopes')
+        .select('horoscope_text, date')
+        .eq('user_id', userId)
+        .eq('date', todayDate)
+        .maybeSingle()
+      
+      if (verifyError) {
+        console.error('   ❌ Error verifying saved record:', verifyError)
+      } else if (verifyRecord) {
+        console.log('   ✅ Verified: Record exists in database with text length:', verifyRecord.horoscope_text?.length || 0)
+      } else {
+        console.error('   ❌ VERIFICATION FAILED: Record not found after save!')
+      }
     }
     
     return NextResponse.json({
