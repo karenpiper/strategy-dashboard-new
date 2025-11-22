@@ -366,7 +366,14 @@ export async function GET(request: NextRequest) {
       cached: false,
     })
   } catch (error: any) {
-    console.error('Error in horoscope image API:', error)
+    console.error('❌ ERROR in horoscope image API:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      cause: error.cause,
+      response: error.response?.data
+    })
     
     // Provide more helpful error messages
     let errorMessage = error.message || 'Failed to generate horoscope image'

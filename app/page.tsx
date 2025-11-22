@@ -294,23 +294,29 @@ export default function TeamDashboard() {
   // Fetch horoscope text and image on mount - only fetches today's data
   // Historical horoscopes are stored in the database but only today's is displayed
   useEffect(() => {
+    let isMounted = true // Prevent state updates if component unmounts
+    
     async function fetchHoroscopeData() {
       // Only fetch if user is authenticated
       if (!user) {
-        setHoroscopeLoading(false)
-        setHoroscopeImageLoading(false)
-        setHoroscopeError('Please log in to view your horoscope')
-        setHoroscopeImageError('Please log in to view your horoscope image')
+        if (isMounted) {
+          setHoroscopeLoading(false)
+          setHoroscopeImageLoading(false)
+          setHoroscopeError('Please log in to view your horoscope')
+          setHoroscopeImageError('Please log in to view your horoscope image')
+        }
         return
       }
 
       // Don't redirect to profile setup from here - let the API handle it
       console.log('Fetching horoscope data for authenticated user...')
 
-      setHoroscopeLoading(true)
-      setHoroscopeImageLoading(true)
-      setHoroscopeError(null)
-      setHoroscopeImageError(null)
+      if (isMounted) {
+        setHoroscopeLoading(true)
+        setHoroscopeImageLoading(true)
+        setHoroscopeError(null)
+        setHoroscopeImageError(null)
+      }
       
       try {
         // Fetch both text and image in parallel for faster loading
@@ -318,6 +324,8 @@ export default function TeamDashboard() {
           fetch('/api/horoscope'),
           fetch('/api/horoscope/avatar')
         ])
+        
+        if (!isMounted) return // Don't process if component unmounted
         
         // Process text response
         const textData = await textResponse.json()
@@ -380,12 +388,18 @@ export default function TeamDashboard() {
         setHoroscopeError('Failed to load horoscope: ' + (error.message || 'Unknown error'))
         setHoroscopeImageError('Failed to load horoscope image: ' + (error.message || 'Unknown error'))
       } finally {
-        setHoroscopeLoading(false)
-        setHoroscopeImageLoading(false)
+        if (isMounted) {
+          setHoroscopeLoading(false)
+          setHoroscopeImageLoading(false)
+        }
       }
     }
     
     fetchHoroscopeData()
+    
+    return () => {
+      isMounted = false // Cleanup on unmount
+    }
   }, [user])
 
   // Comprehensive mode-aware card styling
