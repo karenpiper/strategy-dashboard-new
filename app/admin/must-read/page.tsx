@@ -496,13 +496,13 @@ export default function MustReadAdmin() {
     <div className={`${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'} min-h-screen p-6`}>
       <div className="max-w-[1600px] mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className={`text-4xl font-black uppercase tracking-wider ${getTextClass()} mb-2`}>Must Reads</h1>
-          <p className={`${getTextClass()}/70 font-normal`}>Manage articles and resources</p>
+        <div className="mb-4">
+          <h1 className={`text-2xl font-black uppercase tracking-wider ${getTextClass()} mb-1`}>Must Reads</h1>
+          <p className={`${getTextClass()}/70 text-sm font-normal`}>Manage articles and resources</p>
         </div>
 
         {/* Actions Bar */}
-        <div className="mb-6 flex flex-wrap items-center gap-4">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
             setIsAddDialogOpen(open)
             if (open) {
@@ -511,13 +511,13 @@ export default function MustReadAdmin() {
           }}>
             <DialogTrigger asChild>
               <Button 
-                className={`${getRoundedClass('rounded-lg')} ${
+                className={`${getRoundedClass('rounded-lg')} h-8 text-xs ${
                   mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
                   mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
                   'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
                 } font-black uppercase tracking-wider ${mode === 'code' ? 'font-mono' : ''}`}
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-3 h-3 mr-1" />
                 Add New
               </Button>
             </DialogTrigger>
@@ -715,9 +715,9 @@ export default function MustReadAdmin() {
             <Button
               onClick={handleBulkDelete}
               variant="destructive"
-              className={`${getRoundedClass('rounded-lg')} font-black uppercase tracking-wider`}
+              className={`${getRoundedClass('rounded-lg')} h-8 text-xs font-black uppercase tracking-wider`}
             >
-              <Trash2 className="w-4 h-4 mr-2" />
+              <Trash2 className="w-3 h-3 mr-1" />
               Delete Selected ({selectedIds.size})
             </Button>
           )}
@@ -725,23 +725,23 @@ export default function MustReadAdmin() {
           {/* Search */}
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${getTextClass()}/50`} />
+              <Search className={`absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 ${getTextClass()}/50`} />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search all fields..."
-                className={`pl-10 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                className={`pl-7 h-8 text-xs ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
               />
             </div>
           </div>
 
           {/* Filter */}
-          <div className="flex items-center gap-2">
-            <Filter className={`w-4 h-4 ${getTextClass()}/50`} />
+          <div className="flex items-center gap-1">
+            <Filter className={`w-3 h-3 ${getTextClass()}/50`} />
             <select
               value={filterPinned || 'all'}
               onChange={(e) => setFilterPinned(e.target.value === 'all' ? null : e.target.value)}
-              className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+              className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} h-8 px-2 text-xs ${getRoundedClass('rounded-md')}`}
             >
               <option value="all">All</option>
               <option value="true">Pinned Only</option>
@@ -750,7 +750,7 @@ export default function MustReadAdmin() {
           </div>
 
           {/* Sort */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <select
               value={`${sortBy}-${sortOrder}`}
               onChange={(e) => {
@@ -758,7 +758,7 @@ export default function MustReadAdmin() {
                 setSortBy(by)
                 setSortOrder(order)
               }}
-              className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+              className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} h-8 px-2 text-xs ${getRoundedClass('rounded-md')}`}
             >
               <option value="created_at-desc">Date (Newest)</option>
               <option value="created_at-asc">Date (Oldest)</option>
@@ -770,12 +770,12 @@ export default function MustReadAdmin() {
 
         {/* List */}
         {loading ? (
-          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
-            <p className={cardStyle.text}>Loading...</p>
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-3 ${getRoundedClass('rounded-xl')}`}>
+            <p className={`${cardStyle.text} text-sm`}>Loading...</p>
           </Card>
         ) : filteredMustReads.length === 0 ? (
-          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
-            <p className={cardStyle.text}>No must reads found.</p>
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-3 ${getRoundedClass('rounded-xl')}`}>
+            <p className={`${cardStyle.text} text-sm`}>No must reads found.</p>
           </Card>
         ) : (
           <Card className={`${cardStyle.bg} ${cardStyle.border} border ${getRoundedClass('rounded-xl')} overflow-hidden`}>
@@ -788,13 +788,13 @@ export default function MustReadAdmin() {
                         type="checkbox"
                         checked={selectedIds.size === filteredMustReads.length && filteredMustReads.length > 0}
                         onChange={toggleSelectAll}
-                        className="w-4 h-4"
+                        className="w-3 h-3"
                       />
                     </th>
-                    <th className={`p-4 text-left ${cardStyle.text} font-black uppercase text-sm`}>Pin</th>
-                    <th className={`p-4 text-left ${cardStyle.text} font-black uppercase text-sm`}>Title</th>
-                    <th className={`p-4 text-left ${cardStyle.text} font-black uppercase text-sm`}>Created On</th>
-                    <th className={`p-4 text-right ${cardStyle.text} font-black uppercase text-sm`}>Actions</th>
+                    <th className={`p-2 text-left ${cardStyle.text} font-black uppercase text-xs`}>Pin</th>
+                    <th className={`p-2 text-left ${cardStyle.text} font-black uppercase text-xs`}>Title</th>
+                    <th className={`p-2 text-left ${cardStyle.text} font-black uppercase text-xs`}>Created On</th>
+                    <th className={`p-2 text-right ${cardStyle.text} font-black uppercase text-xs`}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -806,50 +806,51 @@ export default function MustReadAdmin() {
                       }`}
                       style={item.pinned ? { backgroundColor: `${cardStyle.accent}20` } : {}}
                     >
-                      <td className="p-4">
+                      <td className="p-2">
                         <input
                           type="checkbox"
                           checked={selectedIds.has(item.id)}
                           onChange={() => toggleSelect(item.id)}
-                          className="w-4 h-4"
+                          className="w-3 h-3"
                         />
                       </td>
-                      <td className="p-4">
+                      <td className="p-2">
                         {item.pinned && (
-                          <Pin className={`w-4 h-4`} style={{ color: cardStyle.accent }} />
+                          <Pin className={`w-3 h-3`} style={{ color: cardStyle.accent }} />
                         )}
                       </td>
-                      <td className={`p-4 ${cardStyle.text} font-semibold`}>
+                      <td className={`p-2 ${cardStyle.text} font-semibold text-sm`}>
                         {item.article_title}
                       </td>
-                      <td className={`p-4 ${cardStyle.text}/70 text-sm font-normal`}>
+                      <td className={`p-2 ${cardStyle.text}/70 text-xs font-normal`}>
                         {new Date(item.created_at).toLocaleDateString()}
                       </td>
-                      <td className="p-4">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="p-2">
+                        <div className="flex items-center justify-end gap-1">
                           <Button
                             onClick={() => handleTogglePin(item.id, item.pinned)}
                             size="sm"
                             variant="outline"
-                            className={`${cardStyle.border} border ${cardStyle.text}`}
+                            className={`${cardStyle.border} border ${cardStyle.text} h-6 px-2`}
                             title={item.pinned ? 'Unpin' : 'Pin'}
                           >
-                            <Pin className={`w-4 h-4 ${item.pinned ? 'fill-current' : ''}`} />
+                            <Pin className={`w-3 h-3 ${item.pinned ? 'fill-current' : ''}`} />
                           </Button>
                           <Button
                             onClick={() => handleEdit(item)}
                             size="sm"
                             variant="outline"
-                            className={`${cardStyle.border} border ${cardStyle.text}`}
+                            className={`${cardStyle.border} border ${cardStyle.text} h-6 px-2`}
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3 h-3" />
                           </Button>
                           <Button
                             onClick={() => handleDelete(item.id)}
                             size="sm"
                             variant="destructive"
+                            className="h-6 px-2"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
                       </td>

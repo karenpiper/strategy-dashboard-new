@@ -8,13 +8,10 @@ import { usePathname, useRouter } from 'next/navigation'
 import { 
   Home, 
   FileText, 
-  Newspaper, 
   Briefcase, 
   FolderOpen, 
   GitBranch, 
-  Video, 
   Crown, 
-  HelpCircle, 
   Music, 
   Bell, 
   Users, 
@@ -104,21 +101,13 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       ]
     },
     {
-      title: 'SUBMIT CONTENT',
-      items: [
-        { href: '/admin/must-read', label: 'Submit Must Read', icon: FileText, permission: null },
-        { href: '/admin/news', label: 'Submit News', icon: Newspaper, permission: null },
-      ]
-    },
-    {
       title: 'CONTENT MANAGEMENT',
       items: [
+        { href: '/admin/must-read', label: 'Must Reads', icon: FileText, permission: null },
         { href: '/admin/work-sample', label: 'Work Samples', icon: Briefcase, permission: null },
         { href: '/admin/content', label: 'Resources', icon: FolderOpen, permission: 'canManageContent' as const },
         { href: '/admin/pipeline', label: 'Pipeline', icon: GitBranch, permission: null },
-        { href: '/admin/recordings', label: 'Meeting Recordings', icon: Video, permission: null },
         { href: '/admin/beast-babe', label: 'Beast Babe', icon: Crown, permission: 'canPassBeastBabe' as const },
-        { href: '/admin/weekly-question', label: 'Weekly Question', icon: HelpCircle, permission: null },
         { href: '/admin/playlists', label: 'Playlist', icon: Music, permission: 'canManagePlaylists' as const },
       ]
     },
