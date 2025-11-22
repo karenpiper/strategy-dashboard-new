@@ -25,6 +25,8 @@ export default function DeckAdmin() {
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [title, setTitle] = useState('')
+  const [manualFileId, setManualFileId] = useState('')
+  const [useManualUpload, setUseManualUpload] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<{
     type: 'idle' | 'success' | 'error'
     message: string
@@ -63,10 +65,69 @@ export default function DeckAdmin() {
   }
 
   const handleUpload = async () => {
+    // If using manual upload, just process the file ID
+    if (useManualUpload) {
+      if (!manualFileId.trim()) {
+        setUploadStatus({
+          type: 'error',
+          message: 'Please enter a Google Drive file ID'
+        })
+        return
+      }
+
+      setUploading(true)
+      setUploadStatus({ type: 'idle', message: '' })
+
+      try {
+        const ingestResponse = await fetch('/api/upload-deck', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            gdrive_file_id: manualFileId.trim(),
+            title: title.trim() || undefined,
+          }),
+        })
+
+        const ingestResult = await ingestResponse.json()
+
+        if (!ingestResponse.ok) {
+          throw new Error(ingestResult.error || 'Failed to process deck')
+        }
+
+        setUploadStatus({
+          type: 'success',
+          message: `Deck processed successfully! Processed ${ingestResult.slides_count} slides and ${ingestResult.topics_count} topics.`
+        })
+
+        // Reset form
+        setManualFileId('')
+        setTitle('')
+        setUseManualUpload(false)
+        
+        // Close dialog after 2 seconds
+        setTimeout(() => {
+          setIsUploadDialogOpen(false)
+          setUploadStatus({ type: 'idle', message: '' })
+        }, 2000)
+      } catch (error: any) {
+        console.error('Error processing deck:', error)
+        setUploadStatus({
+          type: 'error',
+          message: error.message || 'Failed to process deck'
+        })
+      } finally {
+        setUploading(false)
+      }
+      return
+    }
+
+    // Direct file upload
     if (!selectedFile) {
       setUploadStatus({
         type: 'error',
-        message: 'Please select a PDF file'
+        message: 'Please select a PDF file or use manual upload'
       })
       return
     }
@@ -87,6 +148,16 @@ export default function DeckAdmin() {
       const uploadResult = await uploadResponse.json()
 
       if (!uploadResponse.ok) {
+        // If file is too large, suggest manual upload
+        if (uploadResponse.status === 413) {
+          setUploadStatus({
+            type: 'error',
+            message: `File is too large (${(selectedFile.size / 1024 / 1024).toFixed(2)}MB) for direct upload due to Vercel's 4.5MB limit. Please upload the file manually to Google Drive and paste the file ID below.`
+          })
+          setUseManualUpload(true)
+          setUploading(false)
+          return
+        }
         throw new Error(uploadResult.error || 'Failed to upload file to Google Drive')
       }
 
@@ -184,28 +255,67 @@ export default function DeckAdmin() {
                   <DialogTitle>Upload Presentation Deck</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="file">PDF File</Label>
-                    <div className="mt-2">
-                      <Input
-                        id="file"
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        onChange={handleFileSelect}
-                        disabled={uploading}
-                        className="cursor-pointer"
-                      />
-                      {selectedFile && (
-                        <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                          <File className="w-4 h-4" />
-                          <span>{selectedFile.name}</span>
-                          <span className="text-xs">
-                            ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      id="useManual"
+                      checked={useManualUpload}
+                      onChange={(e) => {
+                        setUseManualUpload(e.target.checked)
+                        if (e.target.checked) {
+                          setSelectedFile(null)
+                        }
+                      }}
+                      disabled={uploading}
+                      className="cursor-pointer"
+                    />
+                    <Label htmlFor="useManual" className="cursor-pointer text-sm">
+                      Upload manually to Google Drive and paste file ID
+                    </Label>
                   </div>
+
+                  {useManualUpload ? (
+                    <div>
+                      <Label htmlFor="manualFileId">Google Drive File ID</Label>
+                      <Input
+                        id="manualFileId"
+                        value={manualFileId}
+                        onChange={(e) => setManualFileId(e.target.value)}
+                        placeholder="Paste Google Drive file ID here (from the file URL)"
+                        disabled={uploading}
+                        className="mt-2"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Alternative to direct upload - for files larger than 4.5MB, upload manually to Google Drive and paste the file ID here.
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <Label htmlFor="file">PDF File</Label>
+                      <div className="mt-2">
+                        <Input
+                          id="file"
+                          type="file"
+                          accept=".pdf,application/pdf"
+                          onChange={handleFileSelect}
+                          disabled={uploading}
+                          className="cursor-pointer"
+                        />
+                        {selectedFile && (
+                          <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                            <File className="w-4 h-4" />
+                            <span>{selectedFile.name}</span>
+                            <span className="text-xs">
+                              ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                            </span>
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Note: Files larger than 4.5MB will need to be uploaded manually to Google Drive.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <Label htmlFor="title">Title (optional)</Label>
