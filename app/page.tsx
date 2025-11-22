@@ -1195,26 +1195,26 @@ export default function TeamDashboard() {
 
           {/* Right side container - Friday Drop + Placeholder */}
           <div className="col-span-1 md:col-span-3 flex flex-col gap-6 h-full">
-            {/* Friday Drop - 3/4 width, very short (1/3 height), top row */}
+            {/* Friday Drop - 3/4 width, 2/5 height, top row */}
             {(() => {
               const style = mode === 'chaos' ? getSpecificCardStyle('friday-drop') : getCardStyle('work')
               return (
-                <Card className={`${style.bg} ${style.border} p-1.5 ${getRoundedClass('rounded-[2.5rem]')}`}
+                <Card className={`${style.bg} ${style.border} p-2 flex-[0_0_40%] ${getRoundedClass('rounded-[2.5rem]')}`}
                       style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between h-full">
                     <div>
-                      <p className={`text-[10px] uppercase tracking-wider mb-0 font-black ${style.text}`}>WEEKLY REPORT</p>
-                      <h2 className={`text-sm font-black uppercase leading-tight ${style.text}`}>THE FRIDAY DROP</h2>
+                      <p className={`text-[10px] uppercase tracking-wider mb-1 font-black ${style.text}`}>WEEKLY REPORT</p>
+                      <h2 className={`text-base font-black uppercase leading-tight ${style.text}`}>THE FRIDAY DROP</h2>
                     </div>
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-3 gap-2">
                       {[
                         { value: '5', label: 'NEW' },
                         { value: '8', label: 'SHIPPED' },
                         { value: '12', label: 'IN QA' },
                       ].map((stat) => (
-                        <div key={stat.label} className={`bg-black/30 ${getRoundedClass('rounded-lg')} p-1 text-center`}>
-                          <p className={`text-sm font-black mb-0 ${style.text}`}>{stat.value}</p>
+                        <div key={stat.label} className={`bg-black/30 ${getRoundedClass('rounded-lg')} p-1.5 text-center`}>
+                          <p className={`text-base font-black mb-0.5 ${style.text}`}>{stat.value}</p>
                           <p className={`text-[10px] font-bold uppercase tracking-wide ${style.text}`}>{stat.label}</p>
                         </div>
                       ))}
