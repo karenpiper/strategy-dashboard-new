@@ -1236,10 +1236,10 @@ export default function TeamDashboard() {
             {(() => {
               const style = mode === 'chaos' ? getSpecificCardStyle('friday-drop') : getCardStyle('work')
               return (
-                <Card className={`${style.bg} ${style.border} py-8 px-6 flex-[0_0_auto] ${getRoundedClass('rounded-[2.5rem]')}`}>
-                  <div className="flex items-start justify-between gap-6">
+                <Card className={`${style.bg} ${style.border} py-6 px-6 flex-[0_0_auto] ${getRoundedClass('rounded-[2.5rem]')}`}>
+                  <div className="flex items-baseline justify-between gap-6">
                     <h2 className={`text-3xl font-black uppercase leading-none ${style.text} whitespace-nowrap`}>WEEKLY REPORT</h2>
-                    <div className="flex items-start gap-6 -mt-2">
+                    <div className="flex items-baseline gap-6">
                       {[
                         { value: '5', label: 'new business' },
                         { value: '8', label: 'pitches shipped' },
