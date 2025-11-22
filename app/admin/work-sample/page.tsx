@@ -43,7 +43,6 @@ interface WorkSample {
   author_id: string
   date: string
   created_by: string
-  submitted_by: string | null
   created_at: string
   updated_at: string
   thumbnail_url: string | null
@@ -53,7 +52,6 @@ interface WorkSample {
   type?: WorkSampleType | null
   author?: User | null
   created_by_profile?: User | null
-  submitted_by_profile?: User | null
 }
 
 export default function WorkSampleAdmin() {
@@ -92,7 +90,6 @@ export default function WorkSampleAdmin() {
     type_id: '',
     client: '',
     author_id: user?.id || '',
-    submitted_by: user?.id || '',
     date: getTodayDate(),
     thumbnail_url: '',
     file_url: '',
@@ -408,7 +405,7 @@ export default function WorkSampleAdmin() {
           type_id: formData.type_id || null,
           client: formData.client || null,
           author_id: formData.author_id || user?.id,
-          // submitted_by is automatically set to logged-in user by API
+          // created_by is automatically set to logged-in user by API
           thumbnail_url: formData.thumbnail_url || null,
           file_url: formData.file_url || null,
           file_link: formData.file_link || null,
@@ -443,7 +440,6 @@ export default function WorkSampleAdmin() {
       type_id: item.type_id || '',
       client: item.client || '',
       author_id: item.author_id,
-      submitted_by: item.submitted_by || '',
       date: item.date,
       thumbnail_url: item.thumbnail_url || '',
       file_url: item.file_url || '',
@@ -475,7 +471,7 @@ export default function WorkSampleAdmin() {
         file_url: formData.file_url || null,
         file_link: formData.file_link || null,
         file_name: formData.file_name || null,
-        // submitted_by is not updated - keeps original submitter
+        // created_by is not updated - keeps original creator
       }
 
       const response = await fetch('/api/work-samples', {
@@ -559,7 +555,6 @@ export default function WorkSampleAdmin() {
       type_id: '',
       client: '',
       author_id: user?.id || '',
-      submitted_by: '',
       date: getTodayDate(),
       thumbnail_url: '',
       file_url: '',

@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { project_name, description, type_id, client, author_id, submitted_by, date, thumbnail_url, file_url, file_link, file_name } = body
+    const { project_name, description, type_id, client, author_id, date, thumbnail_url, file_url, file_link, file_name } = body
 
     if (!project_name || !description) {
       return NextResponse.json(
@@ -211,16 +211,13 @@ export async function POST(request: NextRequest) {
     // Use provided date or default to today
     const finalDate = date || new Date().toISOString().split('T')[0]
 
-    // Always set submitted_by to the logged-in user (original submitter)
-    const submittedById = user.id
-
+    // created_by tracks who originally created the record
     const insertData: any = {
       project_name,
       description,
       client: client || null,
       type_id: type_id || null,
       author_id: authorId,
-      submitted_by: submittedById,
       date: finalDate,
       created_by: user.id,
       updated_at: new Date().toISOString(),
@@ -242,7 +239,6 @@ export async function POST(request: NextRequest) {
         author_id,
         date,
         created_by,
-        submitted_by,
         created_at,
         updated_at,
         thumbnail_url,
@@ -293,7 +289,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, project_name, description, type_id, client, author_id, submitted_by, date, thumbnail_url, file_url, file_link, file_name } = body
+    const { id, project_name, description, type_id, client, author_id, date, thumbnail_url, file_url, file_link, file_name } = body
 
     if (!id) {
       return NextResponse.json(
@@ -329,7 +325,7 @@ export async function PUT(request: NextRequest) {
     // Use provided date or default to today
     const finalDate = date || new Date().toISOString().split('T')[0]
 
-    // submitted_by is not updated - it always keeps the original submitter
+    // created_by is not updated - it always keeps the original creator
     // This field is set automatically on create and cannot be changed
 
     const updateData: any = {
@@ -346,7 +342,7 @@ export async function PUT(request: NextRequest) {
       file_name: file_name || null,
     }
 
-    // submitted_by is not included in update - keeps original value
+    // created_by is not included in update - keeps original value
 
     const { data, error } = await supabase
       .from('work_samples')
@@ -361,7 +357,6 @@ export async function PUT(request: NextRequest) {
         author_id,
         date,
         created_by,
-        submitted_by,
         created_at,
         updated_at,
         thumbnail_url,
