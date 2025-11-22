@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/auth-context'
@@ -8,24 +8,30 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Calendar, Briefcase, Users, ArrowLeft } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
+import { Loader2, Calendar, Briefcase, Users, ArrowLeft, Upload, MapPin, Globe, FileText } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ProfilePage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const supabase = createClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   
-  const [birthday, setBirthday] = useState('')
-  const [discipline, setDiscipline] = useState('')
-  const [role, setRole] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [fullName, setFullName] = useState('')
+  const [birthday, setBirthday] = useState('') // MM/DD format
+  const [startDate, setStartDate] = useState('') // YYYY-MM-DD format
+  const [bio, setBio] = useState('')
+  const [location, setLocation] = useState('')
+  const [website, setWebsite] = useState('')
+  const [discipline, setDiscipline] = useState('')
   
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -43,9 +49,9 @@ export default function ProfilePage() {
       try {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('birthday, discipline, role, avatar_url, full_name')
+          .select('birthday, discipline, role, avatar_url, full_name, start_date, bio, location, website')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
         
         if (profileError && profileError.code !== 'PGRST116') {
           console.error('Error loading profile:', profileError)
@@ -54,9 +60,22 @@ export default function ProfilePage() {
         if (profile) {
           setBirthday(profile.birthday || '')
           setDiscipline(profile.discipline || '')
-          setRole(profile.role || '')
           setAvatarUrl(profile.avatar_url || null)
           setFullName(profile.full_name || user.user_metadata?.full_name || '')
+          setBio(profile.bio || '')
+          setLocation(profile.location || '')
+          setWebsite(profile.website || '')
+          
+          // Format start_date from YYYY-MM-DD to MM/DD/YYYY for display
+          if (profile.start_date) {
+            const date = new Date(profile.start_date)
+            const month = String(date.getMonth() + 1).padStart(2, '0')
+            const day = String(date.getDate()).padStart(2, '0')
+            const year = date.getFullYear()
+            setStartDate(`${year}-${month}-${day}`) // Keep in YYYY-MM-DD for input type="date"
+          } else {
+            setStartDate('')
+          }
         } else {
           // No profile yet, use defaults
           setFullName(user.user_metadata?.full_name || user.email || '')
@@ -74,6 +93,70 @@ export default function ProfilePage() {
     }
   }, [user, authLoading, supabase])
   
+  // Handle profile photo upload
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be less than 5MB')
+      return
+    }
+
+    setUploading(true)
+    setError(null)
+
+    try {
+      // Create a unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const filePath = `avatars/${fileName}`
+
+      // Upload to Supabase storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id)
+
+      if (updateError) {
+        throw updateError
+      }
+
+      setAvatarUrl(publicUrl)
+      setSuccess('Profile photo updated successfully!')
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err: any) {
+      console.error('Error uploading photo:', err)
+      setError(err.message || 'Failed to upload photo. Please try again.')
+    } finally {
+      setUploading(false)
+    }
+  }
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -90,6 +173,27 @@ export default function ProfilePage() {
           return
         }
       }
+
+      // Validate website URL if provided
+      if (website && website.trim() !== '') {
+        try {
+          // Add https:// if no protocol is specified
+          const url = website.startsWith('http://') || website.startsWith('https://') 
+            ? website 
+            : `https://${website}`
+          new URL(url) // Validate URL format
+        } catch {
+          setError('Please enter a valid website URL')
+          setSaving(false)
+          return
+        }
+      }
+
+      // Format start_date from YYYY-MM-DD to DATE format for database
+      let startDateFormatted: string | null = null
+      if (startDate) {
+        startDateFormatted = startDate // Already in YYYY-MM-DD format
+      }
       
       // Update or insert profile
       const { error: updateError } = await supabase
@@ -97,7 +201,10 @@ export default function ProfilePage() {
         .update({
           birthday: birthday || null,
           discipline: discipline || null,
-          role: role || null,
+          start_date: startDateFormatted,
+          bio: bio || null,
+          location: location || null,
+          website: website || null,
           full_name: fullName || null,
           updated_at: new Date().toISOString(),
         })
@@ -111,7 +218,10 @@ export default function ProfilePage() {
             id: user?.id,
             birthday: birthday || null,
             discipline: discipline || null,
-            role: role || null,
+            start_date: startDateFormatted,
+            bio: bio || null,
+            location: location || null,
+            website: website || null,
             full_name: fullName || null,
             email: user?.email || null,
             updated_at: new Date().toISOString(),
@@ -134,8 +244,8 @@ export default function ProfilePage() {
       let errorMessage = err.message || 'Failed to save profile. Please try again.'
       
       // Provide helpful error message for schema issues
-      if (errorMessage.includes('schema') || errorMessage.includes('birthday') || errorMessage.includes('column')) {
-        errorMessage = 'Database schema needs to be updated. Please run the migration script: supabase/add-profile-fields.sql in your Supabase SQL Editor.'
+      if (errorMessage.includes('schema') || errorMessage.includes('column')) {
+        errorMessage = 'Database schema needs to be updated. Please run the migration script: supabase/add-profile-fields-extended.sql in your Supabase SQL Editor.'
       }
       
       setError(errorMessage)
@@ -189,7 +299,7 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          {/* Avatar Section */}
+          {/* Avatar Section with Upload */}
           <div className="mb-8 pb-8 border-b">
             <Label className="text-sm font-medium mb-4 block">Profile Picture</Label>
             <div className="flex items-center gap-4">
@@ -199,7 +309,6 @@ export default function ProfilePage() {
                   alt={fullName || user.email || 'User'}
                   className="w-20 h-20 rounded-full object-cover border-2 border-border"
                   onError={(e) => {
-                    // Fallback to initials if image fails to load
                     const target = e.target as HTMLImageElement
                     target.style.display = 'none'
                     const parent = target.parentElement
@@ -215,9 +324,38 @@ export default function ProfilePage() {
               >
                 {initials}
               </div>
-              <div>
-                <p className="text-sm font-medium">{fullName || user.email || 'User'}</p>
-                <p className="text-xs text-muted-foreground">Avatar from Google account</p>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload Photo
+                      </>
+                    )}
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG or GIF. Max size 5MB
+                </p>
               </div>
             </div>
           </div>
@@ -250,6 +388,21 @@ export default function ProfilePage() {
             </div>
 
             <div>
+              <Label htmlFor="bio" className="flex items-center gap-2 mb-2">
+                <FileText className="w-4 h-4" />
+                Bio
+              </Label>
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Tell us about yourself..."
+                className="w-full min-h-[100px]"
+                rows={4}
+              />
+            </div>
+
+            <div>
               <Label htmlFor="birthday" className="flex items-center gap-2 mb-2">
                 <Calendar className="w-4 h-4" />
                 Birthday
@@ -258,13 +411,74 @@ export default function ProfilePage() {
                 id="birthday"
                 type="text"
                 value={birthday}
-                onChange={(e) => setBirthday(e.target.value)}
+                onChange={(e) => {
+                  let value = e.target.value
+                  // Auto-format MM/DD
+                  value = value.replace(/[^\d/]/g, '')
+                  if (value.length === 2 && !value.includes('/')) {
+                    value = value + '/'
+                  }
+                  if (value.length > 5) {
+                    value = value.slice(0, 5)
+                  }
+                  setBirthday(value)
+                }}
                 placeholder="MM/DD (e.g., 03/15)"
-                pattern="(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])"
+                maxLength={5}
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Enter your birthday in MM/DD format. Required for horoscope generation.
+                Month and day only (required for horoscope generation)
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="start-date" className="flex items-center gap-2 mb-2">
+                <Calendar className="w-4 h-4" />
+                Start Date
+              </Label>
+              <Input
+                id="start-date"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Your start date (month, day, and year)
+              </p>
+            </div>
+
+            <div>
+              <Label htmlFor="location" className="flex items-center gap-2 mb-2">
+                <MapPin className="w-4 h-4" />
+                Location
+              </Label>
+              <Input
+                id="location"
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g., New York, NY"
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="website" className="flex items-center gap-2 mb-2">
+                <Globe className="w-4 h-4" />
+                Website
+              </Label>
+              <Input
+                id="website"
+                type="text"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="example.com or https://example.com"
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Your personal or professional website
               </p>
             </div>
             
@@ -283,24 +497,6 @@ export default function ProfilePage() {
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Your department or team. This helps personalize your horoscope.
-              </p>
-            </div>
-            
-            <div>
-              <Label htmlFor="role" className="flex items-center gap-2 mb-2">
-                <Briefcase className="w-4 h-4" />
-                Role
-              </Label>
-              <Input
-                id="role"
-                type="text"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                placeholder="e.g., Creative Director, Senior Engineer"
-                className="w-full"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Your job title. This helps personalize your horoscope.
               </p>
             </div>
             
@@ -332,4 +528,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-
