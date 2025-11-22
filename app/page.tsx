@@ -1239,23 +1239,19 @@ export default function TeamDashboard() {
                 <Card className={`${style.bg} ${style.border} py-8 px-6 flex-[0_0_auto] ${getRoundedClass('rounded-[2.5rem]')}`}
                       style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className={`text-xs uppercase tracking-wider mb-2 font-black ${style.text}`}>WEEKLY REPORT</p>
-                      <h2 className={`text-xl font-black uppercase leading-tight ${style.text}`}>THE FRIDAY DROP</h2>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        { value: '5', label: 'NEW' },
-                        { value: '8', label: 'SHIPPED' },
-                        { value: '12', label: 'IN QA' },
-                      ].map((stat) => (
-                        <div key={stat.label} className={`bg-black/30 ${getRoundedClass('rounded-[2.5rem]')} p-3 text-center`}>
-                          <p className={`text-xl font-black mb-1 ${style.text}`}>{stat.value}</p>
-                          <p className={`text-xs font-bold uppercase tracking-wide ${style.text}`}>{stat.label}</p>
-                        </div>
-                      ))}
-                    </div>
+                  <h2 className={`text-3xl font-black mb-6 uppercase leading-tight ${style.text}`}>WEEKLY REPORT</h2>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { value: '5', label: 'new business' },
+                      { value: '8', label: 'pitches shipped' },
+                      { value: '12', label: 'placeholder' },
+                      { value: '3', label: 'placeholder' },
+                    ].map((stat) => (
+                      <div key={stat.label} className="flex items-baseline gap-2">
+                        <span className={`text-2xl font-black ${style.text}`}>{stat.value}</span>
+                        <span className={`text-sm font-medium uppercase tracking-wide ${style.text}/80`}>{stat.label}</span>
+                      </div>
+                    ))}
                   </div>
                 </Card>
               )
