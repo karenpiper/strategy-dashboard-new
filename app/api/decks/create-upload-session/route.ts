@@ -4,10 +4,13 @@ import { createClient } from '@/lib/supabase/server'
 
 // Initialize Google Drive API (supports both service account JSON and individual vars)
 function getDriveClient() {
-  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID?.trim()
+  // Clean folder ID: trim whitespace and remove trailing periods
+  let folderId = process.env.GOOGLE_DRIVE_FOLDER_ID?.trim()
   if (!folderId) {
     throw new Error('GOOGLE_DRIVE_FOLDER_ID is required')
   }
+  // Remove trailing periods (common copy-paste issue)
+  folderId = folderId.replace(/\.+$/, '')
 
   // Try service account JSON first, then fallback to individual vars
   let clientEmail: string
@@ -39,7 +42,7 @@ function getDriveClient() {
     scopes: ['https://www.googleapis.com/auth/drive.file'],
   })
 
-  return { drive: google.drive({ version: 'v3', auth }), folderId, auth }
+  return { drive: google.drive({ version: 'v3', auth }), folderId, auth, clientEmail }
 }
 
 export const runtime = 'nodejs'
@@ -72,10 +75,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { drive, folderId, auth } = getDriveClient()
+    const { drive, folderId, auth, clientEmail } = getDriveClient()
 
-    // Step 1: Create an empty file in Google Drive to get the file ID
-    console.log('Creating empty file in Google Drive:', { fileName, folderId: folderId.substring(0, 10) + '...' })
+    // Step 1: Verify folder exists and is accessible
+    try {
+      const folderInfo = await drive.files.get({
+        fileId: folderId,
+        fields: 'id, name, mimeType',
+      })
+      console.log('Verified folder access:', { folderId, folderName: folderInfo.data.name })
+      
+      if (folderInfo.data.mimeType !== 'application/vnd.google-apps.folder') {
+        throw new Error(`The provided ID (${folderId}) is not a folder. It is a ${folderInfo.data.mimeType}`)
+      }
+    } catch (folderError: any) {
+      if (folderError.code === 404) {
+        throw new Error(`Folder not found: ${folderId}. Please verify the folder ID and ensure the service account (${clientEmail}) has been granted access to this folder in Google Drive.`)
+      }
+      throw new Error(`Failed to verify folder access: ${folderError.message}`)
+    }
+
+    // Step 2: Create an empty file in Google Drive to get the file ID
+    console.log('Creating empty file in Google Drive:', { fileName, folderId })
     
     const emptyFile = await drive.files.create({
       requestBody: {
@@ -92,7 +113,7 @@ export async function POST(request: NextRequest) {
     const fileId = emptyFile.data.id
     console.log('Created empty file with ID:', fileId)
 
-    // Step 2: Get resumable upload URL for this file ID using files.update
+    // Step 3: Get resumable upload URL for this file ID using files.update
     const authClient = await auth.getAccessToken()
     if (!authClient.token) {
       throw new Error('Failed to get access token')
