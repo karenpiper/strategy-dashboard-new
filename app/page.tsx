@@ -816,13 +816,16 @@ export default function TeamDashboard() {
                           className="w-full h-full object-cover"
                           style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                           onError={(e) => {
-                            // Image failed to load (likely expired URL)
-                            // Don't regenerate - we only generate once per day
-                            // Just hide the broken image and show an error message
+                            // Image failed to load (likely expired URL from old system)
+                            // New images are stored in Supabase and won't expire
+                            // Just hide the broken image
                             const target = e.target as HTMLImageElement
                             target.style.display = 'none'
-                            setHoroscopeImageError('Image URL has expired. A new image will be generated tomorrow.')
-                            console.log('Image URL expired or failed to load. Not regenerating to avoid billing limits.')
+                            // Only show error for old expired URLs, not for new Supabase-stored images
+                            if (horoscopeImage && horoscopeImage.includes('oaidalleapiprodscus')) {
+                              setHoroscopeImageError('Image URL has expired. A new image will be generated tomorrow.')
+                              console.log('Image URL expired (old OpenAI URL). New images are stored permanently in Supabase.')
+                            }
                           }}
                         />
                       </div>
@@ -849,13 +852,16 @@ export default function TeamDashboard() {
                           className="w-full h-full object-cover"
                           style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                           onError={(e) => {
-                            // Image failed to load (likely expired URL)
-                            // Don't regenerate - we only generate once per day
-                            // Just hide the broken image and show an error message
+                            // Image failed to load (likely expired URL from old system)
+                            // New images are stored in Supabase and won't expire
+                            // Just hide the broken image
                             const target = e.target as HTMLImageElement
                             target.style.display = 'none'
-                            setHoroscopeImageError('Image URL has expired. A new image will be generated tomorrow.')
-                            console.log('Image URL expired or failed to load. Not regenerating to avoid billing limits.')
+                            // Only show error for old expired URLs, not for new Supabase-stored images
+                            if (horoscopeImage && horoscopeImage.includes('oaidalleapiprodscus')) {
+                              setHoroscopeImageError('Image URL has expired. A new image will be generated tomorrow.')
+                              console.log('Image URL expired (old OpenAI URL). New images are stored permanently in Supabase.')
+                            }
                           }}
                         />
                       </div>

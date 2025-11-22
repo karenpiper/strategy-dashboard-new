@@ -264,6 +264,47 @@ export async function GET(request: NextRequest) {
       userProfile.season
     )
     
+    // Download the image from OpenAI and upload to Supabase storage to prevent expiration
+    console.log('📥 Downloading image from OpenAI and uploading to Supabase storage...')
+    let permanentImageUrl = imageUrl
+    try {
+      // Download the image
+      const imageResponse = await fetch(imageUrl)
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to download image: ${imageResponse.statusText}`)
+      }
+      const imageBlob = await imageResponse.blob()
+      const imageBuffer = Buffer.from(await imageBlob.arrayBuffer())
+      
+      // Upload to Supabase storage (avatars bucket)
+      const fileName = `horoscope-${userId}-${todayDate}.png`
+      const filePath = `${userId}/${fileName}`
+      
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from('avatars')
+        .upload(filePath, imageBuffer, {
+          contentType: 'image/png',
+          cacheControl: '3600',
+          upsert: true
+        })
+      
+      if (uploadError) {
+        console.error('⚠️ Failed to upload to Supabase storage, using OpenAI URL:', uploadError)
+        // Continue with OpenAI URL if upload fails
+      } else {
+        // Get public URL from Supabase
+        const { data: { publicUrl } } = supabaseAdmin.storage
+          .from('avatars')
+          .getPublicUrl(filePath)
+        
+        permanentImageUrl = publicUrl
+        console.log('✅ Image uploaded to Supabase storage:', permanentImageUrl)
+      }
+    } catch (storageError: any) {
+      console.error('⚠️ Error storing image in Supabase, using OpenAI URL:', storageError)
+      // Continue with OpenAI URL if storage fails
+    }
+    
     // Save image URL and prompt to database (upsert horoscope record)
     // This ensures we only generate once per user per day
     // Historical images are preserved - each day gets its own row
@@ -277,10 +318,11 @@ export async function GET(request: NextRequest) {
     
     // Use upsert but preserve existing text if it exists
     // Store slots and reasoning together in prompt_slots_json
+    // Use permanentImageUrl (Supabase storage) instead of OpenAI URL to prevent expiration
     const upsertData: any = {
       user_id: userId,
       star_sign: starSign,
-      image_url: imageUrl,
+      image_url: permanentImageUrl, // Use Supabase storage URL (doesn't expire)
       image_prompt: prompt,
       prompt_slots_json: { ...slots, reasoning }, // Store selected slot IDs and reasoning
       date: todayDate, // Explicitly set date to ensure consistency
@@ -358,7 +400,7 @@ export async function GET(request: NextRequest) {
     console.log('Reasoning keys:', reasoning ? Object.keys(reasoning) : 'no reasoning')
     
     return NextResponse.json({
-      image_url: imageUrl,
+      image_url: permanentImageUrl, // Return Supabase storage URL (doesn't expire)
       image_prompt: prompt,
       prompt_slots: slots,
       prompt_slots_labels: slotLabels,
