@@ -660,7 +660,7 @@ export default function MustReadAdmin() {
                   <div>
                     <Label className={cardStyle.text}>Submitted By</Label>
                     <select
-                      value={formData.submitted_by}
+                      value={formData.submitted_by || ''}
                       onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
                       className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                     >
@@ -675,7 +675,7 @@ export default function MustReadAdmin() {
                   <div>
                     <Label className={cardStyle.text}>Assigned To</Label>
                     <select
-                      value={formData.assigned_to}
+                      value={formData.assigned_to || ''}
                       onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
                       className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                     >
@@ -781,85 +781,91 @@ export default function MustReadAdmin() {
             <p className={cardStyle.text}>No must reads found.</p>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {/* Select All */}
-            <div className="flex items-center gap-2 mb-4">
-              <input
-                type="checkbox"
-                checked={selectedIds.size === filteredMustReads.length && filteredMustReads.length > 0}
-                onChange={toggleSelectAll}
-                className="w-4 h-4"
-              />
-              <Label className={cardStyle.text}>Select All</Label>
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border ${getRoundedClass('rounded-xl')} overflow-hidden`}>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className={`${cardStyle.border} border-b`}>
+                    <th className="p-4 text-left w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.size === filteredMustReads.length && filteredMustReads.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4"
+                      />
+                    </th>
+                    <th className={`p-4 text-left ${cardStyle.text} font-black uppercase text-sm`}>Pin</th>
+                    <th className={`p-4 text-left ${cardStyle.text} font-black uppercase text-sm`}>Title</th>
+                    <th className={`p-4 text-left ${cardStyle.text} font-black uppercase text-sm`}>Submitted By</th>
+                    <th className={`p-4 text-left ${cardStyle.text} font-black uppercase text-sm`}>Created On</th>
+                    <th className={`p-4 text-right ${cardStyle.text} font-black uppercase text-sm`}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMustReads.map((item) => (
+                    <tr
+                      key={item.id}
+                      className={`${cardStyle.border} border-b hover:opacity-80 transition-opacity ${
+                        item.pinned ? 'bg-opacity-20' : ''
+                      }`}
+                      style={item.pinned ? { backgroundColor: `${cardStyle.accent}20` } : {}}
+                    >
+                      <td className="p-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(item.id)}
+                          onChange={() => toggleSelect(item.id)}
+                          className="w-4 h-4"
+                        />
+                      </td>
+                      <td className="p-4">
+                        {item.pinned && (
+                          <Pin className={`w-4 h-4`} style={{ color: cardStyle.accent }} />
+                        )}
+                      </td>
+                      <td className={`p-4 ${cardStyle.text} font-black uppercase`}>
+                        {item.article_title}
+                      </td>
+                      <td className={`p-4 ${cardStyle.text}/70 text-sm font-bold`}>
+                        {item.submitted_by_profile?.full_name || item.submitted_by_profile?.email || 'Unknown'}
+                      </td>
+                      <td className={`p-4 ${cardStyle.text}/70 text-sm font-bold`}>
+                        {new Date(item.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            onClick={() => handleTogglePin(item.id, item.pinned)}
+                            size="sm"
+                            variant="outline"
+                            className={`${cardStyle.border} border ${cardStyle.text}`}
+                            title={item.pinned ? 'Unpin' : 'Pin'}
+                          >
+                            <Pin className={`w-4 h-4 ${item.pinned ? 'fill-current' : ''}`} />
+                          </Button>
+                          <Button
+                            onClick={() => handleEdit(item)}
+                            size="sm"
+                            variant="outline"
+                            className={`${cardStyle.border} border ${cardStyle.text}`}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => handleDelete(item.id)}
+                            size="sm"
+                            variant="destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-
-            {filteredMustReads.map((item) => (
-              <Card
-                key={item.id}
-                className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')} ${
-                  item.pinned ? 'ring-2' : ''
-                }`}
-                style={item.pinned ? { ringColor: cardStyle.accent } : {}}
-              >
-                <div className="flex items-start gap-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(item.id)}
-                    onChange={() => toggleSelect(item.id)}
-                    className="w-4 h-4 mt-1"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          {item.pinned && (
-                            <Pin className={`w-4 h-4`} style={{ color: cardStyle.accent }} />
-                          )}
-                          <h3 className={`text-xl font-black uppercase ${cardStyle.text}`}>
-                            {item.article_title}
-                          </h3>
-                        </div>
-                        <div className={`flex items-center gap-4 text-sm ${cardStyle.text}/70 font-bold`}>
-                          <span>
-                            Submitted by: {item.submitted_by_profile?.full_name || item.submitted_by_profile?.email || 'Unknown'}
-                          </span>
-                          <span>
-                            Created: {new Date(item.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => handleTogglePin(item.id, item.pinned)}
-                          size="sm"
-                          variant="outline"
-                          className={`${cardStyle.border} border ${cardStyle.text}`}
-                          title={item.pinned ? 'Unpin' : 'Pin'}
-                        >
-                          <Pin className={`w-4 h-4 ${item.pinned ? 'fill-current' : ''}`} />
-                        </Button>
-                        <Button
-                          onClick={() => handleEdit(item)}
-                          size="sm"
-                          variant="outline"
-                          className={`${cardStyle.border} border ${cardStyle.text}`}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          onClick={() => handleDelete(item.id)}
-                          size="sm"
-                          variant="destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+          </Card>
         )}
 
         {/* Edit Dialog */}
@@ -1014,7 +1020,7 @@ export default function MustReadAdmin() {
                 <div>
                   <Label className={cardStyle.text}>Submitted By</Label>
                   <select
-                    value={formData.submitted_by}
+                    value={formData.submitted_by || ''}
                     onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
                     className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                   >
@@ -1029,7 +1035,7 @@ export default function MustReadAdmin() {
                 <div>
                   <Label className={cardStyle.text}>Assigned To</Label>
                   <select
-                    value={formData.assigned_to}
+                    value={formData.assigned_to || ''}
                     onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
                     className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                   >
