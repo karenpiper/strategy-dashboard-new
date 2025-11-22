@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { transformHoroscopeToCoStarStyle, generateHoroscopeImage } from '@/lib/openai'
 import { fetchCafeAstrologyHoroscope } from '@/lib/cafe-astrology'
+import { generateSillyCharacterName } from '@/lib/silly-names'
 import {
   buildUserProfile,
   fetchSegmentsForProfile,
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
     // Use gte and lt to handle any timezone edge cases, but primarily use exact match
     const { data: cachedHoroscope, error: cacheError } = await supabaseAdmin
       .from('horoscopes')
-      .select('star_sign, horoscope_text, horoscope_dos, horoscope_donts, image_url, date, generated_at')
+      .select('star_sign, horoscope_text, horoscope_dos, horoscope_donts, image_url, date, generated_at, character_name')
       .eq('user_id', userId)
       .eq('date', todayDate)
       .maybeSingle()
@@ -150,21 +151,25 @@ export async function GET(request: NextRequest) {
       recentHoroscopes: recentHoroscopes?.map(h => ({ date: h.date, hasText: !!h.horoscope_text }))
     })
     
-    // If we have a cached horoscope for today with text, return it immediately (don't regenerate)
+    // IMPORTANT: Only regenerate if there's NO cached text at all
+    // This ensures horoscope text is generated ONCE per day per user and cached in the database
+    // This prevents hitting billing limits by regenerating unnecessarily
+    
     if (cachedHoroscope && cachedHoroscope.horoscope_text && cachedHoroscope.horoscope_text.trim() !== '') {
-      console.log('✅ Returning cached horoscope for user', userId, 'on date', todayDate)
+      console.log('✅ Returning cached horoscope text for user', userId, 'on date', todayDate, '- NO API CALL - using database cache')
       return NextResponse.json({
         star_sign: cachedHoroscope.star_sign,
         horoscope_text: cachedHoroscope.horoscope_text,
         horoscope_dos: cachedHoroscope.horoscope_dos || [],
         horoscope_donts: cachedHoroscope.horoscope_donts || [],
         image_url: cachedHoroscope.image_url || '',
+        character_name: cachedHoroscope.character_name || null,
         cached: true,
       })
     }
     
     // Only generate new horoscope if we don't have one cached for today
-    console.log('No cached horoscope found for user', userId, 'on date', todayDate, '- generating new horoscope')
+    console.log('⚠️ No cached horoscope text found for user', userId, 'on date', todayDate, '- GENERATING NEW HOROSCOPE (this will call OpenAI API)')
     
     // Fetch user profile to get birthday, discipline (department), role (title)
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -219,6 +224,10 @@ export async function GET(request: NextRequest) {
     )
     const { userProfile, resolvedChoices, starSign } = config
     console.log('Resolved choices:', resolvedChoices)
+    
+    // Generate character name once per day (same time as horoscope text)
+    const characterName = generateSillyCharacterName(starSign)
+    console.log('Generated character name:', characterName)
     
     // Fetch from Cafe Astrology and transform to Co-Star style
     console.log('Generating horoscope for:', { starSign, profile: userProfile })
@@ -285,6 +294,7 @@ export async function GET(request: NextRequest) {
       horoscope_text: horoscopeText,
       horoscope_dos: horoscopeDos,
       horoscope_donts: horoscopeDonts,
+      character_name: characterName,
       date: todayDate, // Explicitly set date to ensure consistency
       generated_at: new Date().toISOString(),
     }
@@ -321,6 +331,7 @@ export async function GET(request: NextRequest) {
       horoscope_dos: horoscopeDos,
       horoscope_donts: horoscopeDonts,
       image_url: imageUrl,
+      character_name: characterName,
       cached: false,
     })
   } catch (error: any) {

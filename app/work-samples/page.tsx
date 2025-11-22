@@ -5,7 +5,7 @@ import { useMode } from '@/contexts/mode-context'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Search, ExternalLink, User, Calendar } from 'lucide-react'
+import { Search, ExternalLink, User, Calendar, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { AccountMenu } from '@/components/account-menu'
@@ -15,8 +15,10 @@ interface WorkSample {
   id: string
   project_name: string
   description: string
-  type?: { name: string } | null
-  author?: { full_name?: string; email?: string } | null
+  type_id?: string | null
+  type?: { id?: string; name: string } | null
+  author_id?: string | null
+  author?: { id?: string; full_name?: string; email?: string } | null
   client?: string | null
   date: string
   thumbnail_url?: string | null
@@ -32,6 +34,16 @@ export default function WorkSamplesPage() {
   const [workSamples, setWorkSamples] = useState<WorkSample[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
+  const [filterAuthorId, setFilterAuthorId] = useState<string | null>(null)
+  const [filterTypeId, setFilterTypeId] = useState<string | null>(null)
+  const [filterClient, setFilterClient] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<string>('date')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  
+  // Unique values for filters (extracted from work samples)
+  const [uniqueAuthors, setUniqueAuthors] = useState<Array<{ id: string; name: string }>>([])
+  const [uniqueTypes, setUniqueTypes] = useState<Array<{ id: string; name: string }>>([])
+  const [uniqueClients, setUniqueClients] = useState<string[]>([])
 
   // Theme-aware styling helpers (matching main dashboard)
   const getBgClass = () => {
@@ -114,12 +126,48 @@ export default function WorkSamplesPage() {
       
       setLoading(true)
       try {
-        const searchParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ''
-        const response = await fetch(`/api/work-samples?sortBy=date&sortOrder=desc${searchParam}`)
+        const params = new URLSearchParams()
+        if (searchQuery) params.set('search', searchQuery)
+        if (filterAuthorId) params.set('author_id', filterAuthorId)
+        if (filterTypeId) params.set('type_id', filterTypeId)
+        if (filterClient) params.set('client', filterClient)
+        params.set('sortBy', sortBy)
+        params.set('sortOrder', sortOrder)
+        
+        const response = await fetch(`/api/work-samples?${params.toString()}`)
         if (response.ok) {
           const result = await response.json()
           if (result.data && Array.isArray(result.data)) {
             setWorkSamples(result.data)
+            
+            // Extract unique values for filters
+            const authors = new Map<string, { id: string; name: string }>()
+            const types = new Map<string, { id: string; name: string }>()
+            const clients = new Set<string>()
+            
+            result.data.forEach((sample: WorkSample) => {
+              // Use author_id from the sample
+              if (sample.author_id && sample.author && !authors.has(sample.author_id)) {
+                authors.set(sample.author_id, {
+                  id: sample.author_id,
+                  name: sample.author.full_name || sample.author.email || 'Unknown'
+                })
+              }
+              // Use type_id from the sample
+              if (sample.type_id && sample.type && !types.has(sample.type_id)) {
+                types.set(sample.type_id, {
+                  id: sample.type_id,
+                  name: sample.type.name
+                })
+              }
+              if (sample.client) {
+                clients.add(sample.client)
+              }
+            })
+            
+            setUniqueAuthors(Array.from(authors.values()).sort((a, b) => a.name.localeCompare(b.name)))
+            setUniqueTypes(Array.from(types.values()).sort((a, b) => a.name.localeCompare(b.name)))
+            setUniqueClients(Array.from(clients).sort())
           }
         }
       } catch (error) {
@@ -130,7 +178,7 @@ export default function WorkSamplesPage() {
     }
     
     fetchWorkSamples()
-  }, [user, searchQuery])
+  }, [user, searchQuery, filterAuthorId, filterTypeId, filterClient, sortBy, sortOrder])
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -176,19 +224,94 @@ export default function WorkSamplesPage() {
             <h1 className={`text-4xl font-black uppercase ${getTextClass()}`}>WORK SAMPLES</h1>
           </div>
           
-          {/* Search */}
-          <form onSubmit={handleSearchSubmit} className="max-w-md">
-            <div className="relative">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${getTextClass()}/50`} />
-              <Input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search work samples..."
-                className={`pl-10 h-12 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818] placeholder:text-gray-400' : 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500'}`}
-              />
+          {/* Filters and Search */}
+          <div className="flex flex-wrap items-center gap-4 mb-6">
+            {/* Search */}
+            <form onSubmit={handleSearchSubmit} className="flex-1 min-w-[200px] max-w-md">
+              <div className="relative">
+                <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${getTextClass()}/50`} />
+                <Input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search work samples..."
+                  className={`pl-10 h-12 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818] placeholder:text-gray-400' : 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500'}`}
+                />
+              </div>
+            </form>
+            
+            {/* Filters */}
+            <div className="flex items-center gap-3">
+              <Filter className={`w-4 h-4 ${getTextClass()}/70`} />
+              
+              {/* Author Filter */}
+              <select
+                value={filterAuthorId || 'all'}
+                onChange={(e) => setFilterAuthorId(e.target.value === 'all' ? null : e.target.value)}
+                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-lg')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
+              >
+                <option value="all">All Authors</option>
+                {uniqueAuthors.map(author => (
+                  <option key={author.id} value={author.id}>
+                    {author.name}
+                  </option>
+                ))}
+              </select>
+              
+              {/* Type Filter */}
+              <select
+                value={filterTypeId || 'all'}
+                onChange={(e) => setFilterTypeId(e.target.value === 'all' ? null : e.target.value)}
+                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-lg')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
+              >
+                <option value="all">All Types</option>
+                {uniqueTypes.map(type => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+              
+              {/* Client Filter */}
+              <select
+                value={filterClient || 'all'}
+                onChange={(e) => setFilterClient(e.target.value === 'all' ? null : e.target.value)}
+                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-lg')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
+              >
+                <option value="all">All Clients</option>
+                {uniqueClients.map(client => (
+                  <option key={client} value={client}>
+                    {client}
+                  </option>
+                ))}
+              </select>
             </div>
-          </form>
+            
+            {/* Sort */}
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className={`w-4 h-4 ${getTextClass()}/70`} />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-lg')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
+              >
+                <option value="date">Date</option>
+                <option value="name">Name</option>
+                <option value="client">Client</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white hover:bg-black/50' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818] hover:bg-gray-50' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50'} border ${getRoundedClass('rounded-lg')} flex items-center justify-center transition-colors`}
+                title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+              >
+                {sortOrder === 'asc' ? (
+                  <ArrowUp className="w-4 h-4" />
+                ) : (
+                  <ArrowDown className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Work Samples Grid */}

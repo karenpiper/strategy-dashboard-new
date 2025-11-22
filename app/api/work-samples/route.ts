@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const typeId = searchParams.get('type_id')
     const authorId = searchParams.get('author_id')
-    const sortBy = searchParams.get('sortBy') || 'created_at'
+    const client = searchParams.get('client')
+    const sortBy = searchParams.get('sortBy') || 'date'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
 
     // Build query - fetch base data first, then enrich with related data
@@ -44,13 +45,15 @@ export async function GET(request: NextRequest) {
     // Apply sorting
     const isAscending = sortOrder?.toLowerCase() === 'asc'
     
-    if (sortBy === 'project_name') {
+    if (sortBy === 'project_name' || sortBy === 'name') {
       query = query.order('project_name', { ascending: isAscending })
     } else if (sortBy === 'author_id') {
       query = query.order('author_id', { ascending: isAscending })
     } else if (sortBy === 'date') {
       // Sort by date field - desc means newest first (ascending: false)
       query = query.order('date', { ascending: isAscending })
+    } else if (sortBy === 'client') {
+      query = query.order('client', { ascending: isAscending })
     } else if (sortBy === 'created_at') {
       query = query.order('created_at', { ascending: isAscending })
     } else {
@@ -65,6 +68,10 @@ export async function GET(request: NextRequest) {
 
     if (authorId) {
       query = query.eq('author_id', authorId)
+    }
+
+    if (client) {
+      query = query.eq('client', client)
     }
 
     const { data: workSamplesData, error } = await query

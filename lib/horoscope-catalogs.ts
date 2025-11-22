@@ -58,6 +58,21 @@ export interface SelectedPromptSlots {
   constraints_ids: string[]
 }
 
+export interface SlotReasoning {
+  style_medium?: string
+  style_reference?: string
+  subject_role?: string
+  subject_twist?: string
+  setting_place?: string
+  setting_time?: string
+  activity?: string
+  mood_vibe?: string
+  color_palette?: string
+  camera_frame?: string
+  lighting_style?: string
+  constraints?: string
+}
+
 /**
  * Fetch all style groups from database
  */

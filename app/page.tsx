@@ -45,6 +45,7 @@ export default function TeamDashboard() {
     horoscope_text: string
     horoscope_dos?: string[]
     horoscope_donts?: string[]
+    character_name?: string | null
   } | null>(null)
   const [workSamples, setWorkSamples] = useState<Array<{
     id: string
@@ -63,6 +64,7 @@ export default function TeamDashboard() {
   const [horoscopeImagePrompt, setHoroscopeImagePrompt] = useState<string | null>(null)
   const [horoscopeImageSlots, setHoroscopeImageSlots] = useState<any>(null)
   const [horoscopeImageSlotsLabels, setHoroscopeImageSlotsLabels] = useState<any>(null)
+  const [horoscopeImageSlotsReasoning, setHoroscopeImageSlotsReasoning] = useState<any>(null)
   const [horoscopeLoading, setHoroscopeLoading] = useState(true)
   const [horoscopeImageLoading, setHoroscopeImageLoading] = useState(true)
   const [horoscopeError, setHoroscopeError] = useState<string | null>(null)
@@ -314,7 +316,7 @@ export default function TeamDashboard() {
         // Fetch both text and image in parallel for faster loading
         const [textResponse, imageResponse] = await Promise.all([
           fetch('/api/horoscope'),
-          fetch('/api/horoscope/image')
+          fetch('/api/horoscope/avatar')
         ])
         
         // Process text response
@@ -342,7 +344,8 @@ export default function TeamDashboard() {
           })
           // Generate silly character name based on star sign
           if (textData.star_sign) {
-            setCharacterName(generateSillyCharacterName(textData.star_sign))
+            // Use character_name from API if available, otherwise generate (for backwards compatibility)
+            setCharacterName(textData.character_name || generateSillyCharacterName(textData.star_sign))
           }
         }
         
@@ -368,6 +371,7 @@ export default function TeamDashboard() {
           setHoroscopeImagePrompt(imageData.image_prompt || null)
           setHoroscopeImageSlots(imageData.prompt_slots || null)
           setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
+          setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
         }
       } catch (error: any) {
         console.error('Error fetching horoscope data:', error)
@@ -602,45 +606,105 @@ export default function TeamDashboard() {
                           {horoscopeImageSlotsLabels && (
                             <div>
                               <p className="font-semibold mb-2 text-[#C4F500]">Selected Slots:</p>
-                              <div className="space-y-1 pl-2 text-xs">
+                              <div className="space-y-2 pl-2 text-xs">
                                 {horoscopeImageSlotsLabels.style_medium && (
-                                  <p><span className="text-gray-400">Style Medium:</span> {horoscopeImageSlotsLabels.style_medium}</p>
+                                  <div>
+                                    <p><span className="text-gray-400">Style Medium:</span> {horoscopeImageSlotsLabels.style_medium}</p>
+                                    {horoscopeImageSlotsReasoning?.style_medium && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.style_medium}</p>
+                                    )}
+                                  </div>
                                 )}
                                 {horoscopeImageSlotsLabels.style_reference && (
-                                  <p><span className="text-gray-400">Style Reference:</span> {horoscopeImageSlotsLabels.style_reference}</p>
+                                  <div>
+                                    <p><span className="text-gray-400">Style Reference:</span> {horoscopeImageSlotsLabels.style_reference}</p>
+                                    {horoscopeImageSlotsReasoning?.style_reference && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.style_reference}</p>
+                                    )}
+                                  </div>
                                 )}
                                 {horoscopeImageSlotsLabels.subject_role && (
-                                  <p><span className="text-gray-400">Subject Role:</span> {horoscopeImageSlotsLabels.subject_role}</p>
+                                  <div>
+                                    <p><span className="text-gray-400">Subject Role:</span> {horoscopeImageSlotsLabels.subject_role}</p>
+                                    {horoscopeImageSlotsReasoning?.subject_role && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.subject_role}</p>
+                                    )}
+                                  </div>
                                 )}
                                 {horoscopeImageSlotsLabels.subject_twist && (
-                                  <p><span className="text-gray-400">Subject Twist:</span> {horoscopeImageSlotsLabels.subject_twist}</p>
+                                  <div>
+                                    <p><span className="text-gray-400">Subject Twist:</span> {horoscopeImageSlotsLabels.subject_twist}</p>
+                                    {horoscopeImageSlotsReasoning?.subject_twist && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.subject_twist}</p>
+                                    )}
+                                  </div>
                                 )}
                                 {horoscopeImageSlotsLabels.setting_place && (
-                                  <p><span className="text-gray-400">Setting Place:</span> {horoscopeImageSlotsLabels.setting_place}</p>
+                                  <div>
+                                    <p><span className="text-gray-400">Setting Place:</span> {horoscopeImageSlotsLabels.setting_place}</p>
+                                    {horoscopeImageSlotsReasoning?.setting_place && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.setting_place}</p>
+                                    )}
+                                  </div>
                                 )}
                                 {horoscopeImageSlotsLabels.setting_time && (
-                                  <p><span className="text-gray-400">Setting Time:</span> {horoscopeImageSlotsLabels.setting_time}</p>
+                                  <div>
+                                    <p><span className="text-gray-400">Setting Time:</span> {horoscopeImageSlotsLabels.setting_time}</p>
+                                    {horoscopeImageSlotsReasoning?.setting_time && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.setting_time}</p>
+                                    )}
+                                  </div>
                                 )}
                                 {horoscopeImageSlotsLabels.activity && (
-                                  <p><span className="text-gray-400">Activity:</span> {horoscopeImageSlotsLabels.activity}</p>
+                                  <div>
+                                    <p><span className="text-gray-400">Activity:</span> {horoscopeImageSlotsLabels.activity}</p>
+                                    {horoscopeImageSlotsReasoning?.activity && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.activity}</p>
+                                    )}
+                                  </div>
                                 )}
                                 {horoscopeImageSlotsLabels.mood_vibe && (
-                                  <p><span className="text-gray-400">Mood Vibe:</span> {horoscopeImageSlotsLabels.mood_vibe}</p>
+                                  <div>
+                                    <p><span className="text-gray-400">Mood Vibe:</span> {horoscopeImageSlotsLabels.mood_vibe}</p>
+                                    {horoscopeImageSlotsReasoning?.mood_vibe && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.mood_vibe}</p>
+                                    )}
+                                  </div>
                                 )}
                                 {horoscopeImageSlotsLabels.color_palette && (
-                                  <p><span className="text-gray-400">Color Palette:</span> {horoscopeImageSlotsLabels.color_palette}</p>
+                                  <div>
+                                    <p><span className="text-gray-400">Color Palette:</span> {horoscopeImageSlotsLabels.color_palette}</p>
+                                    {horoscopeImageSlotsReasoning?.color_palette && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.color_palette}</p>
+                                    )}
+                                  </div>
                                 )}
                                 {horoscopeImageSlotsLabels.camera_frame && (
-                                  <p><span className="text-gray-400">Camera Frame:</span> {horoscopeImageSlotsLabels.camera_frame}</p>
+                                  <div>
+                                    <p><span className="text-gray-400">Camera Frame:</span> {horoscopeImageSlotsLabels.camera_frame}</p>
+                                    {horoscopeImageSlotsReasoning?.camera_frame && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.camera_frame}</p>
+                                    )}
+                                  </div>
                                 )}
                                 {horoscopeImageSlotsLabels.lighting_style && (
-                                  <p><span className="text-gray-400">Lighting Style:</span> {horoscopeImageSlotsLabels.lighting_style}</p>
+                                  <div>
+                                    <p><span className="text-gray-400">Lighting Style:</span> {horoscopeImageSlotsLabels.lighting_style}</p>
+                                    {horoscopeImageSlotsReasoning?.lighting_style && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.lighting_style}</p>
+                                    )}
+                                  </div>
                                 )}
                                 {horoscopeImageSlotsLabels.constraints && horoscopeImageSlotsLabels.constraints.length > 0 && (
-                                  <p>
-                                    <span className="text-gray-400">Constraints:</span>{' '}
-                                    {horoscopeImageSlotsLabels.constraints.join(', ')}
-                                  </p>
+                                  <div>
+                                    <p>
+                                      <span className="text-gray-400">Constraints:</span>{' '}
+                                      {horoscopeImageSlotsLabels.constraints.join(', ')}
+                                    </p>
+                                    {horoscopeImageSlotsReasoning?.constraints && (
+                                      <p className="text-gray-500 text-[10px] pl-4 italic">→ {horoscopeImageSlotsReasoning.constraints}</p>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -662,7 +726,7 @@ export default function TeamDashboard() {
                     onClick={async () => {
                       try {
                         // Use our API proxy to avoid CORS issues
-                        const downloadUrl = `/api/horoscope/image/download?url=${encodeURIComponent(horoscopeImage)}`
+                        const downloadUrl = `/api/horoscope/avatar/download?url=${encodeURIComponent(horoscopeImage)}`
                         const a = document.createElement('a')
                         a.href = downloadUrl
                         a.download = `horoscope-${horoscope?.star_sign || 'daily'}-${new Date().toISOString().split('T')[0]}.png`
@@ -765,16 +829,9 @@ export default function TeamDashboard() {
                     <h1 className={`text-[clamp(3rem,8vw+1rem,10rem)] font-black mb-4 md:mb-6 leading-[0.85] tracking-tight uppercase text-black ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? `> Hello, ${userName}` : `Hello, ${userName}`}
                     </h1>
-                    {characterName && (
-                      <p className={`text-[clamp(1.25rem,3vw+0.5rem,2.5rem)] font-bold max-w-2xl leading-tight text-black ${mode === 'code' ? 'font-mono' : ''}`}>
-                        {mode === 'code' ? `:: Today you're giving '${characterName}'` : `Today you're giving '${characterName}'`}
-                      </p>
-                    )}
-                    {!characterName && (
-                      <p className={`text-[clamp(1.25rem,3vw+0.5rem,2.5rem)] font-bold max-w-2xl leading-tight text-black ${mode === 'code' ? 'font-mono' : ''}`}>
-                        {mode === 'code' ? ':: Let\'s ship something amazing today' : 'Let\'s ship something amazing today'}
-                      </p>
-                    )}
+                    <p className={`text-[clamp(1.25rem,3vw+0.5rem,2.5rem)] font-bold max-w-2xl leading-tight text-black ${mode === 'code' ? 'font-mono' : ''}`}>
+                      {mode === 'code' ? ':: Let\'s ship something amazing today' : 'Let\'s ship something amazing today'}
+                    </p>
                     <p className={`text-base md:text-lg lg:text-xl font-bold mt-4 text-black/70 ${mode === 'code' ? 'font-mono' : ''}`}>
                       {mode === 'code' ? `C:\\> date: ${todayDate || 'Loading...'}` : todayDate || 'Loading...'}
                     </p>
@@ -903,9 +960,15 @@ export default function TeamDashboard() {
               >
                   <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
                 <Sparkles className="w-4 h-4" />
-                    <span className="uppercase tracking-wider font-black text-xs">Totally Real</span>
+                    <span className="uppercase tracking-wider font-black text-xs">Your Horoscope</span>
               </div>
-                  <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.accent }}>YOUR<br/>HOROSCOPE</h2>
+                  {characterName ? (
+                    <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.accent }}>
+                      {mode === 'code' ? `:: Today you're giving '${characterName}'` : `Today you're giving '${characterName}'`}
+                    </h2>
+                  ) : (
+                    <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.accent }}>YOUR<br/>HOROSCOPE</h2>
+                  )}
                   
                   {horoscopeLoading ? (
                     <div className="flex items-center justify-center py-8">

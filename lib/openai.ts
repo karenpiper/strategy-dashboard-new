@@ -104,7 +104,7 @@ export async function generateHoroscopeImage(
   },
   weekday: string,
   season: string
-): Promise<{ imageUrl: string; prompt: string; slots: any }> {
+): Promise<{ imageUrl: string; prompt: string; slots: any; reasoning: any }> {
   console.log('Building horoscope prompt with slot-based system...')
 
   // Build prompt using new system
@@ -122,7 +122,7 @@ export async function generateHoroscopeImage(
     hates_clowns: userProfile.hates_clowns,
   }
 
-  const { prompt, slots } = await buildHoroscopePrompt(
+  const { prompt, slots, reasoning } = await buildHoroscopePrompt(
     supabase,
     userId,
     date,
@@ -182,37 +182,37 @@ export async function generateHoroscopeImage(
 
   console.log('Calling OpenAI DALL-E API with generated prompt...')
   
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY is not set in environment variables')
-  }
-  
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not set in environment variables')
+    }
+    
   // Retry logic with exponential backoff for rate limits
   const maxRetries = 3
   let lastError: any = null
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const response = await openai.images.generate({
-        model: 'dall-e-3',
-        prompt: prompt,
-        size: '1024x1024', // Square format for portrait/avatar use
-        quality: 'standard',
-        n: 1,
-      })
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: prompt,
+      size: '1024x1024', // Square format for portrait/avatar use
+      quality: 'standard',
+      n: 1,
+    })
 
-      const imageUrl = response.data[0]?.url
-      if (!imageUrl) {
-        throw new Error('Failed to generate horoscope image - empty response')
-      }
+    const imageUrl = response.data[0]?.url
+    if (!imageUrl) {
+      throw new Error('Failed to generate horoscope image - empty response')
+    }
 
-      console.log('OpenAI DALL-E API call successful')
-      return { imageUrl, prompt, slots }
-    } catch (error: any) {
+    console.log('OpenAI DALL-E API call successful')
+      return { imageUrl, prompt, slots, reasoning }
+  } catch (error: any) {
       lastError = error
       console.error(`Error generating horoscope image (attempt ${attempt + 1}/${maxRetries + 1}):`, error)
       
       // Handle specific OpenAI API errors
-      if (error.response) {
+    if (error.response) {
         const status = error.response.status
         const errorData = error.response.data
         const errorMessage = errorData?.error?.message || error.message || 'OpenAI API error'
@@ -250,8 +250,8 @@ export async function generateHoroscopeImage(
       }
       
       // If no response object, don't retry
-      throw error
-    }
+    throw error
+  }
   }
   
   // If we exhausted all retries, throw the last error

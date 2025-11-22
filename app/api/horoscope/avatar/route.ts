@@ -182,11 +182,15 @@ export async function GET(request: NextRequest) {
         }
       }
       
+      // Extract reasoning from cached slots if available
+      const cachedReasoning = slots?.reasoning || null
+      
       return NextResponse.json({
         image_url: cachedHoroscope.image_url,
         image_prompt: cachedHoroscope.image_prompt || null,
         prompt_slots: cachedHoroscope.prompt_slots_json || null,
         prompt_slots_labels: Object.keys(slotLabels).length > 0 ? slotLabels : null,
+        prompt_slots_reasoning: cachedReasoning,
         cached: true,
       })
     }
@@ -196,7 +200,7 @@ export async function GET(request: NextRequest) {
     console.log('⚠️ No cached image found for user', userId, 'on date', todayDate, '- GENERATING NEW IMAGE (this will call OpenAI API)')
     
     // Generate new image with new slot-based prompt system
-    const { imageUrl, prompt, slots } = await generateHoroscopeImage(
+    const { imageUrl, prompt, slots, reasoning } = await generateHoroscopeImage(
       supabaseAdmin,
       userId,
       todayDate,
@@ -228,12 +232,13 @@ export async function GET(request: NextRequest) {
       .maybeSingle()
     
     // Use upsert but preserve existing text if it exists
+    // Store slots and reasoning together in prompt_slots_json
     const upsertData: any = {
       user_id: userId,
       star_sign: starSign,
       image_url: imageUrl,
       image_prompt: prompt,
-      prompt_slots_json: slots, // Store selected slot IDs
+      prompt_slots_json: { ...slots, reasoning }, // Store selected slot IDs and reasoning
       date: todayDate, // Explicitly set date to ensure consistency
       generated_at: new Date().toISOString(),
     }
@@ -310,6 +315,7 @@ export async function GET(request: NextRequest) {
       image_prompt: prompt,
       prompt_slots: slots,
       prompt_slots_labels: slotLabels,
+      prompt_slots_reasoning: reasoning,
       cached: false,
     })
   } catch (error: any) {

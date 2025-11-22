@@ -6,6 +6,7 @@
 import {
   PromptSlotCatalog,
   SelectedPromptSlots,
+  SlotReasoning,
   UserAvatarState,
   StyleGroup,
   fetchAllPromptSlotCatalogs,
@@ -274,21 +275,28 @@ function getProfileWeights(userProfile: UserProfile): {
 
 /**
  * Weighted random selection from catalog items
+ * Returns both the selected item and reasoning
  */
 function selectFromCatalog(
   rng: SeededRandom,
   catalogs: PromptSlotCatalog[],
   weights?: Record<string, number>,
-  excludeIds: string[] = []
-): PromptSlotCatalog | null {
-  if (catalogs.length === 0) return null
+  excludeIds: string[] = [],
+  reasoningContext?: string
+): { item: PromptSlotCatalog | null; reasoning: string } {
+  if (catalogs.length === 0) return { item: null, reasoning: 'No items available' }
 
   // Filter out excluded items
   const available = catalogs.filter((c) => !excludeIds.includes(c.id))
+  const wasFiltered = available.length < catalogs.length
 
   if (available.length === 0) {
     // If all are excluded, fall back to all catalogs
-    return catalogs[Math.floor(rng.next() * catalogs.length)]
+    const selected = catalogs[Math.floor(rng.next() * catalogs.length)]
+    return {
+      item: selected,
+      reasoning: wasFiltered ? 'All items were recently used, selected from full catalog' : 'Random selection'
+    }
   }
 
   // Apply weights if provided
@@ -297,53 +305,98 @@ function selectFromCatalog(
     return { catalog, weight }
   })
 
+  // Check if any weights were applied
+  const hasWeights = weights && Object.keys(weights).length > 0
+  const boostedItems = hasWeights
+    ? weighted.filter((w) => weights![w.catalog.value] && weights![w.catalog.value] > 1.0)
+    : []
+
   // Normalize weights
   const totalWeight = weighted.reduce((sum, item) => sum + item.weight, 0)
   if (totalWeight === 0) {
-    return available[Math.floor(rng.next() * available.length)]
+    const selected = available[Math.floor(rng.next() * available.length)]
+    return {
+      item: selected,
+      reasoning: wasFiltered ? 'Selected from available items (avoiding recent)' : 'Random selection'
+    }
   }
 
   // Select based on weighted probability
   let random = rng.next() * totalWeight
+  let selected: PromptSlotCatalog | null = null
   for (const item of weighted) {
     random -= item.weight
     if (random <= 0) {
-      return item.catalog
+      selected = item.catalog
+      break
     }
   }
 
   // Fallback
-  return weighted[0]?.catalog || null
+  selected = selected || weighted[0]?.catalog || null
+
+  // Build reasoning
+  const reasons: string[] = []
+  if (wasFiltered) {
+    reasons.push('avoiding recently used')
+  }
+  if (hasWeights && boostedItems.length > 0) {
+    const wasBoosted = boostedItems.some((b) => b.catalog.id === selected?.id)
+    if (wasBoosted) {
+      reasons.push('weighted by theme/preferences')
+    } else {
+      reasons.push('random selection')
+    }
+  } else {
+    reasons.push('random selection')
+  }
+  if (reasoningContext) {
+    reasons.push(`(${reasoningContext})`)
+  }
+
+  return {
+    item: selected,
+    reasoning: reasons.join(', ')
+  }
 }
 
 /**
  * Select style group with rotation logic
+ * Returns both the selected group and reasoning
  */
 function selectStyleGroup(
   rng: SeededRandom,
   styleGroups: StyleGroup[],
   recentGroupIds: string[]
-): StyleGroup | null {
-  if (styleGroups.length === 0) return null
+): { group: StyleGroup | null; reasoning: string } {
+  if (styleGroups.length === 0) return { group: null, reasoning: 'No style groups available' }
 
   // Filter out recently used groups (last 7 days)
   const available = styleGroups.filter((g) => !recentGroupIds.includes(g.id))
+  const wasFiltered = available.length < styleGroups.length
 
   // If all groups were used recently, use all groups
   const candidates = available.length > 0 ? available : styleGroups
+  const selected = candidates[Math.floor(rng.next() * candidates.length)]
 
-  return candidates[Math.floor(rng.next() * candidates.length)]
+  const reasoning = wasFiltered
+    ? 'selected from groups not used in last 7 days (style rotation)'
+    : 'all groups were recently used, random selection from all groups'
+
+  return { group: selected, reasoning }
 }
 
 /**
  * Select style reference compatible with selected style group
+ * Returns both the selected item and reasoning
  */
 function selectStyleReference(
   rng: SeededRandom,
   catalogs: PromptSlotCatalog[],
   styleGroupId: string,
-  excludeIds: string[] = []
-): PromptSlotCatalog | null {
+  excludeIds: string[] = [],
+  weights?: Record<string, number>
+): { item: PromptSlotCatalog | null; reasoning: string } {
   // Filter by style group and exclude recent
   const compatible = catalogs.filter(
     (c) => c.style_group_id === styleGroupId && !excludeIds.includes(c.id)
@@ -353,12 +406,33 @@ function selectStyleReference(
     // Fallback to any style reference
     const available = catalogs.filter((c) => !excludeIds.includes(c.id))
     if (available.length === 0) {
-      return catalogs[Math.floor(rng.next() * catalogs.length)]
+      const selected = catalogs[Math.floor(rng.next() * catalogs.length)]
+      return {
+        item: selected,
+        reasoning: 'no compatible styles available, random selection from all'
+      }
     }
-    return available[Math.floor(rng.next() * available.length)]
+    const selected = available[Math.floor(rng.next() * available.length)]
+    return {
+      item: selected,
+      reasoning: 'no compatible styles in selected group, selected from available'
+    }
   }
 
-  return compatible[Math.floor(rng.next() * compatible.length)]
+  // Apply weights if provided
+  if (weights && Object.keys(weights).length > 0) {
+    const result = selectFromCatalog(rng, compatible, weights, [], 'compatible with selected style group')
+    return {
+      item: result.item,
+      reasoning: `compatible with selected style group, ${result.reasoning}`
+    }
+  }
+
+  const selected = compatible[Math.floor(rng.next() * compatible.length)]
+  return {
+    item: selected,
+    reasoning: 'compatible with selected style group, random selection'
+  }
 }
 
 /**
@@ -434,7 +508,7 @@ export async function buildHoroscopePrompt(
   userProfile: UserProfile,
   weekday: string,
   season: string
-): Promise<{ prompt: string; slots: SelectedPromptSlots }> {
+): Promise<{ prompt: string; slots: SelectedPromptSlots; reasoning: SlotReasoning }> {
   // Fetch catalogs and style groups
   let catalogs: Record<string, PromptSlotCatalog[]>
   let styleGroups: StyleGroup[]
@@ -478,44 +552,52 @@ export async function buildHoroscopePrompt(
   const profileWeights = getProfileWeights(userProfile) // Rule 4: Profile-based weights
 
   // Rule 2: Select style group with rotation
-  const selectedStyleGroup = selectStyleGroup(
+  const styleGroupResult = selectStyleGroup(
     rng,
     styleGroups,
     userAvatarState.recent_style_group_ids || []
   )
-  if (!selectedStyleGroup) {
+  if (!styleGroupResult.group) {
     throw new Error('No style groups available')
   }
+  const selectedStyleGroup = styleGroupResult.group
+  const reasoning: SlotReasoning = {}
 
   // Select style reference compatible with style group
   // Apply profile weights if available
   const styleReferenceCandidates = catalogs.style_reference.filter(
     (c) => c.style_group_id === selectedStyleGroup.id && !userAvatarState.recent_style_reference_ids?.includes(c.id)
   )
-  const styleReference = selectFromCatalog(
+  const styleReferenceResult = selectStyleReference(
     rng,
     styleReferenceCandidates.length > 0 ? styleReferenceCandidates : catalogs.style_reference,
-    profileWeights.styleReferenceWeight,
-    userAvatarState.recent_style_reference_ids || []
+    selectedStyleGroup.id,
+    userAvatarState.recent_style_reference_ids || [],
+    profileWeights.styleReferenceWeight
   )
-  if (!styleReference) {
+  if (!styleReferenceResult.item) {
     throw new Error('No compatible style reference found')
   }
+  const styleReference = styleReferenceResult.item
+  reasoning.style_reference = styleReferenceResult.reasoning
 
   // Select style medium (can be random or based on compatible_mediums)
   // Apply profile weights if available
   const styleMediumCandidates = profileWeights.excludeValues
     ? catalogs.style_medium.filter((c) => !profileWeights.excludeValues!.some((exclude) => c.value.toLowerCase().includes(exclude)))
     : catalogs.style_medium
-  const styleMedium = selectFromCatalog(
+  const styleMediumResult = selectFromCatalog(
     rng,
     styleMediumCandidates,
     profileWeights.styleMediumWeight,
-    []
+    [],
+    profileWeights.excludeValues ? 'excluding user preferences' : undefined
   )
-  if (!styleMedium) {
+  if (!styleMediumResult.item) {
     throw new Error('No style medium available')
   }
+  const styleMedium = styleMediumResult.item
+  reasoning.style_medium = styleMediumResult.reasoning
 
   // Rule 5: Select other slots avoiding recent repeats
   // Combine weekday, zodiac theme, and profile weights for subject role
@@ -527,40 +609,57 @@ export async function buildHoroscopePrompt(
   const subjectRoleCandidates = profileWeights.excludeValues
     ? catalogs.subject_role.filter((c) => !profileWeights.excludeValues!.some((exclude) => c.value.toLowerCase().includes(exclude)))
     : catalogs.subject_role
-  const subjectRole = selectFromCatalog(
+  const hasSubjectRoleWeights = Object.keys(subjectRoleWeights).length > 0
+  const subjectRoleResult = selectFromCatalog(
     rng,
     subjectRoleCandidates,
-    Object.keys(subjectRoleWeights).length > 0 ? subjectRoleWeights : undefined,
-    userAvatarState.recent_subject_role_ids || []
+    hasSubjectRoleWeights ? subjectRoleWeights : undefined,
+    userAvatarState.recent_subject_role_ids || [],
+    hasSubjectRoleWeights ? `weighted by ${weekday} theme, ${userProfile.starSign || 'zodiac'} theme, and user preferences` : undefined
   )
-  if (!subjectRole) {
+  if (!subjectRoleResult.item) {
     throw new Error('No subject role available')
   }
+  const subjectRole = subjectRoleResult.item
+  reasoning.subject_role = subjectRoleResult.reasoning
 
-  const subjectTwist = selectFromCatalog(rng, catalogs.subject_twist, undefined, [])
+  const subjectTwistResult = selectFromCatalog(rng, catalogs.subject_twist, undefined, [])
+  const subjectTwist = subjectTwistResult.item
+  if (subjectTwist) {
+    reasoning.subject_twist = subjectTwistResult.reasoning
+  }
 
-  const settingPlace = selectFromCatalog(
+  const settingPlaceWeights = {
+    ...weekdayTheme.settingPlaceWeight,
+    ...seasonalTheme.settingPlaceWeight,
+  }
+  const hasSettingPlaceWeights = Object.keys(settingPlaceWeights).length > 0
+  const settingPlaceResult = selectFromCatalog(
     rng,
     catalogs.setting_place,
-    {
-      ...weekdayTheme.settingPlaceWeight,
-      ...seasonalTheme.settingPlaceWeight,
-    },
-    userAvatarState.recent_setting_place_ids || []
+    hasSettingPlaceWeights ? settingPlaceWeights : undefined,
+    userAvatarState.recent_setting_place_ids || [],
+    hasSettingPlaceWeights ? `weighted by ${weekday} theme and ${season} season` : undefined
   )
-  if (!settingPlace) {
+  if (!settingPlaceResult.item) {
     throw new Error('No setting place available')
   }
+  const settingPlace = settingPlaceResult.item
+  reasoning.setting_place = settingPlaceResult.reasoning
 
-  const settingTime = selectFromCatalog(rng, catalogs.setting_time, undefined, [])
-  if (!settingTime) {
+  const settingTimeResult = selectFromCatalog(rng, catalogs.setting_time, undefined, [])
+  if (!settingTimeResult.item) {
     throw new Error('No setting time available')
   }
+  const settingTime = settingTimeResult.item
+  reasoning.setting_time = settingTimeResult.reasoning
 
-  const activity = selectFromCatalog(rng, catalogs.activity, undefined, [])
-  if (!activity) {
+  const activityResult = selectFromCatalog(rng, catalogs.activity, undefined, [])
+  if (!activityResult.item) {
     throw new Error('No activity available')
   }
+  const activity = activityResult.item
+  reasoning.activity = activityResult.reasoning
 
   // Combine weekday, seasonal, and zodiac theme weights for mood
   const moodVibeWeights = {
@@ -568,60 +667,76 @@ export async function buildHoroscopePrompt(
     ...seasonalTheme.moodVibeWeight,
     ...zodiacTheme.moodVibeWeight,
   }
-  const moodVibe = selectFromCatalog(
+  const hasMoodVibeWeights = Object.keys(moodVibeWeights).length > 0
+  const moodVibeResult = selectFromCatalog(
     rng,
     catalogs.mood_vibe,
-    Object.keys(moodVibeWeights).length > 0 ? moodVibeWeights : undefined,
-    []
+    hasMoodVibeWeights ? moodVibeWeights : undefined,
+    [],
+    hasMoodVibeWeights ? `weighted by ${weekday} theme, ${season} season, and ${userProfile.starSign || 'zodiac'} theme` : undefined
   )
-  if (!moodVibe) {
+  if (!moodVibeResult.item) {
     throw new Error('No mood vibe available')
   }
+  const moodVibe = moodVibeResult.item
+  reasoning.mood_vibe = moodVibeResult.reasoning
 
   // Combine seasonal and zodiac theme weights for color palette
   const colorPaletteWeights = {
     ...seasonalTheme.colorPaletteWeight,
     ...zodiacTheme.colorPaletteWeight,
   }
-  const colorPalette = selectFromCatalog(
+  const hasColorPaletteWeights = Object.keys(colorPaletteWeights).length > 0
+  const colorPaletteResult = selectFromCatalog(
     rng,
     catalogs.color_palette,
-    Object.keys(colorPaletteWeights).length > 0 ? colorPaletteWeights : undefined,
-    []
+    hasColorPaletteWeights ? colorPaletteWeights : undefined,
+    [],
+    hasColorPaletteWeights ? `weighted by ${season} season and ${userProfile.starSign || 'zodiac'} theme` : undefined
   )
-  if (!colorPalette) {
+  if (!colorPaletteResult.item) {
     throw new Error('No color palette available')
   }
+  const colorPalette = colorPaletteResult.item
+  reasoning.color_palette = colorPaletteResult.reasoning
 
-  const cameraFrame = selectFromCatalog(rng, catalogs.camera_frame, undefined, [])
-  if (!cameraFrame) {
+  const cameraFrameResult = selectFromCatalog(rng, catalogs.camera_frame, undefined, [])
+  if (!cameraFrameResult.item) {
     throw new Error('No camera frame available')
   }
+  const cameraFrame = cameraFrameResult.item
+  reasoning.camera_frame = cameraFrameResult.reasoning
 
-  const lightingStyle = selectFromCatalog(rng, catalogs.lighting_style, undefined, [])
-  if (!lightingStyle) {
+  const lightingStyleResult = selectFromCatalog(rng, catalogs.lighting_style, undefined, [])
+  if (!lightingStyleResult.item) {
     throw new Error('No lighting style available')
   }
+  const lightingStyle = lightingStyleResult.item
+  reasoning.lighting_style = lightingStyleResult.reasoning
 
   // Select constraints (can select multiple)
   const constraints = []
+  const constraintReasons: string[] = []
   const availableConstraints = catalogs.constraints.filter((c) => c.value !== 'no_text_in_image') // Always include no text
   for (let i = 0; i < Math.min(3, availableConstraints.length); i++) {
-    const constraint = selectFromCatalog(
+    const constraintResult = selectFromCatalog(
       rng,
       availableConstraints.filter((c) => !constraints.includes(c.id)),
       undefined,
       []
     )
-    if (constraint) {
-      constraints.push(constraint.id)
+    if (constraintResult.item) {
+      constraints.push(constraintResult.item.id)
+      constraintReasons.push(constraintResult.reasoning)
     }
   }
   // Always include no_text_in_image
   const noTextConstraint = catalogs.constraints.find((c) => c.value === 'no_text_in_image')
   if (noTextConstraint) {
     constraints.push(noTextConstraint.id)
+    constraintReasons.push('always included (no text in image)')
   }
+  reasoning.constraints = constraintReasons.join('; ')
 
   const slots: SelectedPromptSlots = {
     style_medium_id: styleMedium.id,
@@ -641,6 +756,6 @@ export async function buildHoroscopePrompt(
   // Build prompt string
   const prompt = buildPromptString(slots, catalogs, userProfile)
 
-  return { prompt, slots }
+  return { prompt, slots, reasoning }
 }
 
