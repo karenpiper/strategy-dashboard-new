@@ -211,32 +211,8 @@ export async function POST(request: NextRequest) {
     // Use provided date or default to today
     const finalDate = date || new Date().toISOString().split('T')[0]
 
-    // Handle submitted_by: 
-    // - If explicitly set to empty string, use NULL
-    // - If provided with a value, verify and use it
-    // - If not provided at all, default to user.id
-    let submittedById = user.id // Default to logged-in user
-    if (submitted_by !== undefined && submitted_by !== null) {
-      if (submitted_by.trim() === '') {
-        // Explicitly left blank - use NULL
-        submittedById = null
-      } else {
-        // Verify submitted_by user exists if specified
-        const { data: submittedByProfile, error: submittedByError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', submitted_by)
-          .single()
-
-        if (submittedByError || !submittedByProfile) {
-          return NextResponse.json(
-            { error: 'Submitted by user profile not found', details: submittedByError?.message },
-            { status: 400 }
-          )
-        }
-        submittedById = submitted_by
-      }
-    }
+    // Always set submitted_by to the logged-in user (original submitter)
+    const submittedById = user.id
 
     const insertData: any = {
       project_name,
@@ -354,33 +330,8 @@ export async function PUT(request: NextRequest) {
     // Use provided date or default to today
     const finalDate = date || new Date().toISOString().split('T')[0]
 
-    // Handle submitted_by in update
-    let submittedById = undefined // Don't update if not provided
-    if (submitted_by !== undefined && submitted_by !== null) {
-      const submittedByStr = String(submitted_by).trim()
-      if (submittedByStr !== '') {
-        // Verify submitted_by user exists if specified
-        const { data: submittedByProfile, error: submittedByError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', submittedByStr)
-          .single()
-
-        if (submittedByError || !submittedByProfile) {
-          return NextResponse.json(
-            { error: 'Submitted by user profile not found', details: submittedByError?.message },
-            { status: 400 }
-          )
-        }
-        submittedById = submittedByStr
-      } else {
-        // Explicitly set to null to clear the field
-        submittedById = null
-      }
-    } else if (submitted_by === null) {
-      // Explicitly null means clear the field
-      submittedById = null
-    }
+    // submitted_by is not updated - it always keeps the original submitter
+    // This field is set automatically on create and cannot be changed
 
     const updateData: any = {
       project_name,
@@ -396,10 +347,7 @@ export async function PUT(request: NextRequest) {
       file_name: file_name || null,
     }
 
-    // Only include submitted_by in update if it was explicitly provided
-    if (submitted_by !== undefined) {
-      updateData.submitted_by = submittedById
-    }
+    // submitted_by is not included in update - keeps original value
 
     const { data, error } = await supabase
       .from('work_samples')

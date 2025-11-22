@@ -205,7 +205,7 @@ export default function MustReadAdmin() {
         body: JSON.stringify({
           ...restFormData,
           week_start_date: date, // Send date as week_start_date
-          submitted_by: formData.submitted_by && formData.submitted_by.trim() !== '' ? formData.submitted_by : null,
+          // submitted_by is automatically set to logged-in user by API
           assigned_to: formData.assigned_to || null,
         }),
       })
@@ -267,7 +267,7 @@ export default function MustReadAdmin() {
           source: formData.source || null,
           summary: formData.summary || null,
           tags: formData.tags || null,
-          submitted_by: formData.submitted_by && formData.submitted_by.trim() !== '' ? formData.submitted_by : null,
+          // submitted_by is not updated - keeps original submitter
           assigned_to: formData.assigned_to && formData.assigned_to.trim() !== '' ? formData.assigned_to : null,
         }),
       })
@@ -672,21 +672,6 @@ export default function MustReadAdmin() {
                     />
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>Submitted By</Label>
-                    <select
-                      value={formData.submitted_by || ''}
-                      onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
-                      className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
-                    >
-                      <option value="">None</option>
-                      {users.map(u => (
-                        <option key={u.id} value={u.id}>
-                          {u.full_name || u.email}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
                     <Label className={cardStyle.text}>Assigned To</Label>
                     <select
                       value={formData.assigned_to || ''}
@@ -779,8 +764,6 @@ export default function MustReadAdmin() {
               <option value="created_at-asc">Date (Oldest)</option>
               <option value="article_title-asc">Article Name (A-Z)</option>
               <option value="article_title-desc">Article Name (Z-A)</option>
-              <option value="submitted_by-asc">Submitted By (A-Z)</option>
-              <option value="submitted_by-desc">Submitted By (Z-A)</option>
             </select>
           </div>
         </div>
@@ -810,7 +793,6 @@ export default function MustReadAdmin() {
                     </th>
                     <th className={`p-4 text-left ${cardStyle.text} font-black uppercase text-sm`}>Pin</th>
                     <th className={`p-4 text-left ${cardStyle.text} font-black uppercase text-sm`}>Title</th>
-                    <th className={`p-4 text-left ${cardStyle.text} font-black uppercase text-sm`}>Submitted By</th>
                     <th className={`p-4 text-left ${cardStyle.text} font-black uppercase text-sm`}>Created On</th>
                     <th className={`p-4 text-right ${cardStyle.text} font-black uppercase text-sm`}>Actions</th>
                   </tr>
@@ -839,11 +821,6 @@ export default function MustReadAdmin() {
                       </td>
                       <td className={`p-4 ${cardStyle.text} font-semibold`}>
                         {item.article_title}
-                      </td>
-                      <td className={`p-4 ${cardStyle.text}/70 text-sm font-normal`}>
-                        {item.submitted_by && item.submitted_by_profile
-                          ? (item.submitted_by_profile.full_name || item.submitted_by_profile.email)
-                          : 'None'}
                       </td>
                       <td className={`p-4 ${cardStyle.text}/70 text-sm font-normal`}>
                         {new Date(item.created_at).toLocaleDateString()}
@@ -1035,21 +1012,6 @@ export default function MustReadAdmin() {
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                   />
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Submitted By</Label>
-                  <select
-                    value={formData.submitted_by || ''}
-                    onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
-                    className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
-                  >
-                    <option value="">None</option>
-                    {users.map(u => (
-                      <option key={u.id} value={u.id}>
-                        {u.full_name || u.email}
-                      </option>
-                    ))}
-                  </select>
                 </div>
                 <div>
                   <Label className={cardStyle.text}>Assigned To</Label>

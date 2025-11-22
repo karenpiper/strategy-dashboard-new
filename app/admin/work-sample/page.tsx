@@ -408,7 +408,7 @@ export default function WorkSampleAdmin() {
           type_id: formData.type_id || null,
           client: formData.client || null,
           author_id: formData.author_id || user?.id,
-          submitted_by: formData.submitted_by || user?.id || null,
+          // submitted_by is automatically set to logged-in user by API
           thumbnail_url: formData.thumbnail_url || null,
           file_url: formData.file_url || null,
           file_link: formData.file_link || null,
@@ -443,7 +443,7 @@ export default function WorkSampleAdmin() {
       type_id: item.type_id || '',
       client: item.client || '',
       author_id: item.author_id,
-      submitted_by: item.submitted_by || user?.id || '',
+      submitted_by: item.submitted_by || '',
       date: item.date,
       thumbnail_url: item.thumbnail_url || '',
       file_url: item.file_url || '',
@@ -475,11 +475,7 @@ export default function WorkSampleAdmin() {
         file_url: formData.file_url || null,
         file_link: formData.file_link || null,
         file_name: formData.file_name || null,
-      }
-
-      // Only include submitted_by if it's explicitly set (even if empty string/null)
-      if (formData.submitted_by !== undefined && formData.submitted_by !== null) {
-        updatePayload.submitted_by = formData.submitted_by.trim() === '' ? null : formData.submitted_by
+        // submitted_by is not updated - keeps original submitter
       }
 
       const response = await fetch('/api/work-samples', {
@@ -563,7 +559,7 @@ export default function WorkSampleAdmin() {
       type_id: '',
       client: '',
       author_id: user?.id || '',
-      submitted_by: user?.id || '',
+      submitted_by: '',
       date: getTodayDate(),
       thumbnail_url: '',
       file_url: '',
@@ -751,21 +747,6 @@ export default function WorkSampleAdmin() {
                       onChange={(e) => setFormData({ ...formData, author_id: e.target.value })}
                       className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                     >
-                      {allUsers.map(u => (
-                        <option key={u.id} value={u.id}>
-                          {u.full_name || u.email}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <Label className={cardStyle.text}>Submitted By</Label>
-                    <select
-                      value={formData.submitted_by || ''}
-                      onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
-                      className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
-                    >
-                      <option value="">None</option>
                       {allUsers.map(u => (
                         <option key={u.id} value={u.id}>
                           {u.full_name || u.email}
@@ -1091,21 +1072,6 @@ export default function WorkSampleAdmin() {
                     onChange={(e) => setFormData({ ...formData, author_id: e.target.value })}
                     className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                   >
-                    {allUsers.map(u => (
-                      <option key={u.id} value={u.id}>
-                        {u.full_name || u.email}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Submitted By</Label>
-                  <select
-                    value={formData.submitted_by || ''}
-                    onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
-                    className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
-                  >
-                    <option value="">None</option>
                     {allUsers.map(u => (
                       <option key={u.id} value={u.id}>
                         {u.full_name || u.email}

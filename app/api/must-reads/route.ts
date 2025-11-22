@@ -232,24 +232,8 @@ export async function POST(request: NextRequest) {
 
     console.log('Table access test passed')
 
-    // Set submitted_by - can be null/empty if not specified
-    const submittedById = submitted_by && submitted_by.trim() !== '' ? submitted_by : null
-
-    // Verify submitted_by user exists if specified
-    if (submitted_by && submitted_by.trim() !== '') {
-      const { data: submittedProfile, error: submittedError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', submitted_by)
-        .single()
-
-      if (submittedError || !submittedProfile) {
-        return NextResponse.json(
-          { error: 'Submitted by user profile not found', details: submittedError?.message },
-          { status: 400 }
-        )
-      }
-    }
+    // Always set submitted_by to the logged-in user (original submitter)
+    const submittedById = user.id
 
     // Verify assigned_to user exists if specified
     const assignedToId = (assigned_to && assigned_to.trim() !== '') ? assigned_to : null
@@ -420,29 +404,8 @@ export async function PUT(request: NextRequest) {
     if (pinned !== undefined) {
       updateData.pinned = pinned || false
     }
-    if (submitted_by !== undefined) {
-      // Allow setting to null to clear the field, or set to a valid UUID
-      if (submitted_by !== null && String(submitted_by).trim() !== '') {
-        const submittedByStr = String(submitted_by).trim()
-        // Verify submitted_by user exists if specified
-        const { data: submittedProfile, error: submittedError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', submittedByStr)
-          .single()
-
-        if (submittedError || !submittedProfile) {
-          return NextResponse.json(
-            { error: 'Submitted by user profile not found', details: submittedError?.message },
-            { status: 400 }
-          )
-        }
-        updateData.submitted_by = submittedByStr
-      } else {
-        // Explicitly set to null to clear the field
-        updateData.submitted_by = null
-      }
-    }
+    // submitted_by is not updated - it always keeps the original submitter
+    // This field is set automatically on create and cannot be changed
 
     // Include week_start_date if provided
     if (week_start_date) {
