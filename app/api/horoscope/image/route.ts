@@ -91,10 +91,12 @@ export async function GET(request: NextRequest) {
     const { userProfile, resolvedChoices, starSign } = config
     
     // Check for cached image - only generate once per user per day
+    // Use local timezone for date calculation (midnight local time)
     const today = new Date()
-    const todayDate = today.toISOString().split('T')[0] // YYYY-MM-DD format
+    const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const todayDate = localDate.toISOString().split('T')[0] // YYYY-MM-DD format
     
-    console.log('Checking for cached image - user:', userId, 'date:', todayDate, 'UTC time:', today.toISOString())
+    console.log('Checking for cached image - user:', userId, 'date:', todayDate, 'local time:', today.toLocaleString())
     
     const { data: cachedHoroscope, error: cacheError } = await supabaseAdmin
       .from('horoscopes')
@@ -110,7 +112,7 @@ export async function GET(request: NextRequest) {
     // Also check if there are any recent horoscopes for debugging
     const { data: recentHoroscopes } = await supabaseAdmin
       .from('horoscopes')
-      .select('date, image_url, generated_at')
+      .select('date, image_url, generated_at, prompt_slots_json')
       .eq('user_id', userId)
       .order('date', { ascending: false })
       .limit(5)
@@ -118,15 +120,42 @@ export async function GET(request: NextRequest) {
     console.log('Image cache check result:', {
       found: !!cachedHoroscope,
       hasImage: !!cachedHoroscope?.image_url,
+      hasPromptSlots: !!cachedHoroscope?.prompt_slots_json,
       date: cachedHoroscope?.date,
       expectedDate: todayDate,
-      recentHoroscopes: recentHoroscopes?.map(h => ({ date: h.date, hasImage: !!h.image_url }))
+      recentHoroscopes: recentHoroscopes?.map(h => ({ date: h.date, hasImage: !!h.image_url, hasSlots: !!h.prompt_slots_json }))
     })
     
-    // If we have a cached image for today, return it immediately (don't regenerate)
-    if (cachedHoroscope && cachedHoroscope.image_url && cachedHoroscope.image_url.trim() !== '') {
+    // Helper function to check if Azure blob URL is expired
+    const isUrlExpired = (url: string): boolean => {
+      try {
+        const urlObj = new URL(url)
+        const seParam = urlObj.searchParams.get('se') // Expiration time parameter
+        if (seParam) {
+          const expirationTime = new Date(seParam)
+          const now = new Date()
+          // Regenerate if URL expires within the next hour (buffer time)
+          return expirationTime.getTime() < now.getTime() + 3600000
+        }
+      } catch (e) {
+        // If we can't parse the URL, assume it's valid
+      }
+      return false
+    }
+    
+    // Check if we need to regenerate:
+    // 1. No cached image
+    // 2. Image URL exists but prompt_slots_json is null (old system - needs migration to new system)
+    // 3. Empty image URL
+    // 4. Image URL is expired (Azure blob signed URLs expire)
+    const urlExpired = cachedHoroscope?.image_url ? isUrlExpired(cachedHoroscope.image_url) : false
+    const needsRegeneration = !cachedHoroscope?.image_url || 
+                              cachedHoroscope.image_url.trim() === '' ||
+                              !cachedHoroscope.prompt_slots_json ||
+                              urlExpired
+    
+    if (cachedHoroscope && cachedHoroscope.image_url && cachedHoroscope.image_url.trim() !== '' && cachedHoroscope.prompt_slots_json && !urlExpired) {
       console.log('✅ Returning cached image for user', userId, 'on date', todayDate)
-      
       return NextResponse.json({
         image_url: cachedHoroscope.image_url,
         image_prompt: cachedHoroscope.image_prompt || null,
@@ -135,8 +164,17 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Only generate new image if we don't have one cached for today
-    console.log('No cached image found for user', userId, 'on date', todayDate, '- generating new image')
+    if (needsRegeneration) {
+      console.log('Regenerating image - reason:', {
+        noCache: !cachedHoroscope,
+        noImage: !cachedHoroscope?.image_url || cachedHoroscope.image_url.trim() === '',
+        oldSystem: !cachedHoroscope?.prompt_slots_json,
+        urlExpired: urlExpired,
+      })
+    }
+    
+    // Generate new image (either no cache, old system, or expired URL)
+    console.log('Generating new image for user', userId, 'on date', todayDate)
     
     // Generate new image with new slot-based prompt system
     const { imageUrl, prompt, slots } = await generateHoroscopeImage(

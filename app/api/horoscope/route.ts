@@ -114,11 +114,12 @@ export async function GET(request: NextRequest) {
     // Use admin client for database operations (bypasses RLS)
     const supabaseAdmin = await getSupabaseAdminClient()
     
-    // Get today's date in YYYY-MM-DD format (use UTC to ensure consistency)
+    // Get today's date in YYYY-MM-DD format (use local timezone for midnight local time)
     const today = new Date()
-    const todayDate = today.toISOString().split('T')[0] // YYYY-MM-DD format
+    const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const todayDate = localDate.toISOString().split('T')[0] // YYYY-MM-DD format
     
-    console.log('Checking for cached horoscope - user:', userId, 'date:', todayDate, 'UTC time:', today.toISOString())
+    console.log('Checking for cached horoscope - user:', userId, 'date:', todayDate, 'local time:', today.toLocaleString())
     
     // Check for cached horoscope for today - return immediately if found
     // Use gte and lt to handle any timezone edge cases, but primarily use exact match
