@@ -19,7 +19,6 @@ import { AudioEQ } from '@/components/audio-eq'
 import { PlaylistData } from '@/lib/spotify-player-types'
 import { ProfileSetupModal } from '@/components/profile-setup-modal'
 import { createClient } from '@/lib/supabase/client'
-import { imageToAscii } from '@/lib/ascii-art'
 
 // Force dynamic rendering to avoid SSR issues with context
 export const dynamic = 'force-dynamic'
@@ -47,7 +46,6 @@ export default function TeamDashboard() {
     horoscope_donts?: string[]
   } | null>(null)
   const [horoscopeImage, setHoroscopeImage] = useState<string | null>(null)
-  const [horoscopeAscii, setHoroscopeAscii] = useState<string | null>(null)
   const [horoscopeImagePrompt, setHoroscopeImagePrompt] = useState<string | null>(null)
   const [horoscopeImageConfig, setHoroscopeImageConfig] = useState<{
     userProfile?: {
@@ -375,25 +373,6 @@ export default function TeamDashboard() {
     
     fetchHoroscopeData()
   }, [user])
-
-  // Convert horoscope image to ASCII art when image is loaded
-  useEffect(() => {
-    async function convertToAscii() {
-      if (horoscopeImage) {
-        try {
-          const ascii = await imageToAscii(horoscopeImage, 50, 30)
-          setHoroscopeAscii(ascii)
-        } catch (error) {
-          console.error('Error converting image to ASCII:', error)
-          setHoroscopeAscii(null)
-        }
-      } else {
-        setHoroscopeAscii(null)
-      }
-    }
-    
-    convertToAscii()
-  }, [horoscopeImage])
 
   // Comprehensive mode-aware card styling
   type CardSection = 'hero' | 'recognition' | 'work' | 'team' | 'vibes' | 'community' | 'default'
@@ -727,15 +706,14 @@ export default function TeamDashboard() {
                       <div className="w-full h-full flex items-center justify-center p-8">
                         <p className="text-white text-sm text-center">{horoscopeImageError}</p>
                       </div>
-                    ) : horoscopeAscii ? (
-                      <div className="relative w-full h-full flex items-center justify-center p-4 overflow-auto">
-                        <pre className="text-[8px] leading-[0.7] font-mono text-white whitespace-pre">
-                          {horoscopeAscii}
-                        </pre>
-                      </div>
                     ) : horoscopeImage ? (
-                      <div className="relative w-full h-full flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-white" />
+                      <div className="relative w-full h-full">
+                        <img 
+                          src={horoscopeImage} 
+                          alt="Horoscope portrait"
+                          className="w-full h-full object-cover"
+                          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                        />
                       </div>
                     ) : null}
                   </div>
@@ -752,15 +730,14 @@ export default function TeamDashboard() {
                       <div className="w-full h-full flex items-center justify-center p-8">
                         <p className="text-white text-sm text-center">{horoscopeImageError}</p>
                       </div>
-                    ) : horoscopeAscii ? (
-                      <div className="relative w-full h-full flex items-center justify-center p-4 overflow-auto">
-                        <pre className="text-[8px] leading-[0.7] font-mono text-white whitespace-pre">
-                          {horoscopeAscii}
-                        </pre>
-                      </div>
                     ) : horoscopeImage ? (
-                      <div className="relative w-full h-full flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-white" />
+                      <div className="relative w-full h-full">
+                        <img 
+                          src={horoscopeImage} 
+                          alt="Horoscope portrait"
+                          className="w-full h-full object-cover"
+                          style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                        />
                       </div>
                     ) : null}
                   </div>
