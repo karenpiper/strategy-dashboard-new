@@ -126,14 +126,36 @@ export async function GET(request: NextRequest) {
       recentHoroscopes: recentHoroscopes?.map(h => ({ date: h.date, hasImage: !!h.image_url, hasSlots: !!h.prompt_slots_json }))
     })
     
-    // IMPORTANT: Only regenerate if there's NO cached image at all
-    // We return cached images even if:
-    // - URL is expired (frontend will handle the error)
-    // - prompt_slots_json is null (old system - we'll migrate gradually)
-    // This prevents hitting billing limits by regenerating unnecessarily
-    // Images are generated ONCE per day per user and cached in the database
+    // Helper function to check if image URL is expired or will expire soon
+    // OpenAI DALL-E URLs expire after a certain time (typically 1 hour)
+    // We check by attempting to fetch the image with a HEAD request
+    const isImageUrlExpired = async (url: string): Promise<boolean> => {
+      try {
+        const response = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(5000) })
+        // 410 = Gone (expired), 403 = Forbidden (expired/invalid)
+        return !response.ok || response.status === 410 || response.status === 403
+      } catch (error) {
+        // Network errors or timeouts - assume expired
+        console.log('Image URL check failed, assuming expired:', error)
+        return true
+      }
+    }
     
+    // Check if cached image exists and is valid
+    let shouldRegenerate = false
     if (cachedHoroscope && cachedHoroscope.image_url && cachedHoroscope.image_url.trim() !== '') {
+      // Check if URL is expired
+      const isExpired = await isImageUrlExpired(cachedHoroscope.image_url)
+      if (isExpired) {
+        console.log('⚠️ Cached image URL is expired, will regenerate')
+        shouldRegenerate = true
+      }
+    } else {
+      shouldRegenerate = true
+    }
+    
+    // Return cached image if it exists and is valid
+    if (cachedHoroscope && cachedHoroscope.image_url && cachedHoroscope.image_url.trim() !== '' && !shouldRegenerate) {
       console.log('✅ Returning cached image for user', userId, 'on date', todayDate, '- NO API CALL - using database cache')
       
       // Resolve slot IDs to labels for display (only if prompt_slots_json exists)
@@ -183,7 +205,14 @@ export async function GET(request: NextRequest) {
       }
       
       // Extract reasoning from cached slots if available
+      // Reasoning is stored at the top level of prompt_slots_json: { ...slots, reasoning }
       const cachedReasoning = slots?.reasoning || null
+      console.log('Cached reasoning:', cachedReasoning)
+      console.log('Cached slots structure:', slots ? Object.keys(slots) : 'no slots')
+      console.log('Has reasoning property:', slots && 'reasoning' in slots)
+      if (slots && cachedReasoning) {
+        console.log('Reasoning keys:', Object.keys(cachedReasoning))
+      }
       
       return NextResponse.json({
         image_url: cachedHoroscope.image_url,
@@ -195,9 +224,13 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Only generate new image if there's NO cached image at all
-    // This ensures we only generate once per day and avoid hitting billing limits
-    console.log('⚠️ No cached image found for user', userId, 'on date', todayDate, '- GENERATING NEW IMAGE (this will call OpenAI API)')
+    // Generate new image if there's no cached image or if the cached image URL is expired
+    // This ensures we only generate once per day (unless URL expires) and avoid hitting billing limits
+    if (shouldRegenerate) {
+      console.log('⚠️ No valid cached image found for user', userId, 'on date', todayDate, '- GENERATING NEW IMAGE (this will call OpenAI API)')
+    } else {
+      console.log('⚠️ No cached image found for user', userId, 'on date', todayDate, '- GENERATING NEW IMAGE (this will call OpenAI API)')
+    }
     
     // Generate new image with new slot-based prompt system
     const { imageUrl, prompt, slots, reasoning } = await generateHoroscopeImage(
@@ -309,6 +342,9 @@ export async function GET(request: NextRequest) {
         slotLabels.constraints = (slots.constraints_ids || []).map((id: string) => catalogMap.get(id)?.label).filter(Boolean)
       }
     }
+    
+    console.log('New image reasoning:', reasoning)
+    console.log('Reasoning keys:', reasoning ? Object.keys(reasoning) : 'no reasoning')
     
     return NextResponse.json({
       image_url: imageUrl,

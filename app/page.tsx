@@ -366,12 +366,14 @@ export default function TeamDashboard() {
           }
         } else {
           console.log('Horoscope image received:', imageData)
+          console.log('Reasoning received:', imageData.prompt_slots_reasoning)
           // Only set today's image - historical images remain in database
           setHoroscopeImage(imageData.image_url)
           setHoroscopeImagePrompt(imageData.image_prompt || null)
           setHoroscopeImageSlots(imageData.prompt_slots || null)
           setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
           setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
+          console.log('Reasoning state set to:', imageData.prompt_slots_reasoning)
         }
       } catch (error: any) {
         console.error('Error fetching horoscope data:', error)
@@ -602,6 +604,13 @@ export default function TeamDashboard() {
                       >
                         <p className="font-bold mb-3 text-sm">Image Generation Details</p>
                         <div className="space-y-4">
+                          {/* Debug: Show reasoning object if available */}
+                          {process.env.NODE_ENV === 'development' && horoscopeImageSlotsReasoning && (
+                            <div className="text-[10px] text-gray-500 border-t border-gray-700 pt-2">
+                              <p className="font-semibold mb-1">Debug - Reasoning Object:</p>
+                              <pre className="whitespace-pre-wrap break-words">{JSON.stringify(horoscopeImageSlotsReasoning, null, 2)}</pre>
+                            </div>
+                          )}
                           {/* Prompt Slots Section */}
                           {horoscopeImageSlotsLabels && (
                             <div>
@@ -792,6 +801,35 @@ export default function TeamDashboard() {
                           alt="Horoscope portrait"
                           className="w-full h-full object-cover"
                           style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                          onError={async (e) => {
+                            const target = e.target as HTMLImageElement
+                            const img = target
+                            // Check if it's a 410/403 error (expired URL)
+                            try {
+                              const response = await fetch(img.src, { method: 'HEAD' })
+                              if (response.status === 410 || response.status === 403) {
+                                console.log('Image URL expired, refreshing...')
+                                // Trigger a refresh by clearing the image and refetching
+                                setHoroscopeImage(null)
+                                setHoroscopeImageLoading(true)
+                                // Refetch the image
+                                const imageResponse = await fetch('/api/horoscope/avatar')
+                                if (imageResponse.ok) {
+                                  const imageData = await imageResponse.json()
+                                  if (imageData.image_url) {
+                                    setHoroscopeImage(imageData.image_url)
+                                    setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
+                                    setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
+                                  }
+                                }
+                                setHoroscopeImageLoading(false)
+                              }
+                            } catch (error) {
+                              console.error('Error checking image URL:', error)
+                              // Hide broken image
+                              img.style.display = 'none'
+                            }
+                          }}
                         />
                       </div>
                     ) : null}
@@ -816,6 +854,35 @@ export default function TeamDashboard() {
                           alt="Horoscope portrait"
                           className="w-full h-full object-cover"
                           style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                          onError={async (e) => {
+                            const target = e.target as HTMLImageElement
+                            const img = target
+                            // Check if it's a 410/403 error (expired URL)
+                            try {
+                              const response = await fetch(img.src, { method: 'HEAD' })
+                              if (response.status === 410 || response.status === 403) {
+                                console.log('Image URL expired, refreshing...')
+                                // Trigger a refresh by clearing the image and refetching
+                                setHoroscopeImage(null)
+                                setHoroscopeImageLoading(true)
+                                // Refetch the image
+                                const imageResponse = await fetch('/api/horoscope/avatar')
+                                if (imageResponse.ok) {
+                                  const imageData = await imageResponse.json()
+                                  if (imageData.image_url) {
+                                    setHoroscopeImage(imageData.image_url)
+                                    setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
+                                    setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
+                                  }
+                                }
+                                setHoroscopeImageLoading(false)
+                              }
+                            } catch (error) {
+                              console.error('Error checking image URL:', error)
+                              // Hide broken image
+                              img.style.display = 'none'
+                            }
+                          }}
                         />
                       </div>
                     ) : null}

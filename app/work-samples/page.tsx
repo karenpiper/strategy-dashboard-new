@@ -5,7 +5,7 @@ import { useMode } from '@/contexts/mode-context'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Search, ExternalLink, User, Calendar, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Search, ExternalLink, User, Calendar, Filter, ArrowUpDown, ArrowUp, ArrowDown, Grid3x3, List } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { AccountMenu } from '@/components/account-menu'
@@ -39,6 +39,7 @@ export default function WorkSamplesPage() {
   const [filterClient, setFilterClient] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<string>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [viewMode, setViewMode] = useState<'thumbnails' | 'list'>('thumbnails')
   
   // Unique values for filters (extracted from work samples)
   const [uniqueAuthors, setUniqueAuthors] = useState<Array<{ id: string; name: string }>>([])
@@ -287,6 +288,24 @@ export default function WorkSamplesPage() {
               </select>
             </div>
             
+            {/* View Toggle */}
+            <div className="flex items-center gap-2 border-l pl-4 ml-4">
+              <button
+                onClick={() => setViewMode('thumbnails')}
+                className={`h-12 px-4 ${mode === 'chaos' ? viewMode === 'thumbnails' ? 'bg-[#C4F500] text-black border-[#C4F500]' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50' : mode === 'chill' ? viewMode === 'thumbnails' ? 'bg-[#FFC043] text-[#4A1818] border-[#FFC043]' : 'bg-white border-gray-300 text-[#4A1818] hover:bg-gray-50' : viewMode === 'thumbnails' ? 'bg-white text-black border-white' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50'} border ${getRoundedClass('rounded-lg')} flex items-center justify-center transition-colors`}
+                title="Thumbnail View"
+              >
+                <Grid3x3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`h-12 px-4 ${mode === 'chaos' ? viewMode === 'list' ? 'bg-[#C4F500] text-black border-[#C4F500]' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50' : mode === 'chill' ? viewMode === 'list' ? 'bg-[#FFC043] text-[#4A1818] border-[#FFC043]' : 'bg-white border-gray-300 text-[#4A1818] hover:bg-gray-50' : viewMode === 'list' ? 'bg-white text-black border-white' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50'} border ${getRoundedClass('rounded-lg')} flex items-center justify-center transition-colors`}
+                title="List View"
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+            
             {/* Sort */}
             <div className="flex items-center gap-2">
               <ArrowUpDown className={`w-4 h-4 ${getTextClass()}/70`} />
@@ -314,107 +333,206 @@ export default function WorkSamplesPage() {
           </div>
         </div>
 
-        {/* Work Samples Grid */}
+        {/* Work Samples - Thumbnail or List View */}
         {loading ? (
           <div className="text-center py-12">
             <p className={getTextClass()}>Loading...</p>
           </div>
         ) : workSamples.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {workSamples.map((sample) => (
-              <Card key={sample.id} className={`${getBgClass()} border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${getRoundedClass('rounded-xl')} overflow-hidden`}>
-                <div className="flex flex-col">
-                  {/* Thumbnail */}
-                  {sample.thumbnail_url ? (
-                    <img 
-                      src={
-                        // Use proxy immediately for Airtable URLs (they're expired)
-                        sample.thumbnail_url.includes('airtable.com') || sample.thumbnail_url.includes('airtableusercontent.com')
-                          ? `/api/work-samples/thumbnail?url=${encodeURIComponent(sample.thumbnail_url)}`
-                          // For Supabase URLs, try direct first, fallback to proxy on error
-                          : sample.thumbnail_url
-                      }
-                      alt={sample.project_name}
-                      className={`w-full aspect-video object-cover ${getRoundedClass('rounded-t-xl')}`}
-                      onError={(e) => {
-                        // Try proxy if direct URL fails (for Supabase URLs)
-                        const target = e.target as HTMLImageElement
-                        const originalSrc = target.src
-                        if (originalSrc.includes('supabase') && !originalSrc.includes('/api/work-samples/thumbnail')) {
-                          target.src = `/api/work-samples/thumbnail?url=${encodeURIComponent(originalSrc)}`
-                        } else {
-                          // Hide broken image and show placeholder
-                          target.style.display = 'none'
-                          const placeholder = target.nextElementSibling as HTMLElement
-                          if (placeholder) {
-                            placeholder.style.display = 'flex'
-                          }
+          viewMode === 'thumbnails' ? (
+            /* Thumbnail Grid View */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {workSamples.map((sample) => (
+                <Card key={sample.id} className={`${getBgClass()} border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${getRoundedClass('rounded-xl')} overflow-hidden`}>
+                  <div className="flex flex-col">
+                    {/* Thumbnail */}
+                    {sample.thumbnail_url ? (
+                      <img 
+                        src={
+                          // Use proxy immediately for Airtable URLs (they're expired)
+                          sample.thumbnail_url.includes('airtable.com') || sample.thumbnail_url.includes('airtableusercontent.com')
+                            ? `/api/work-samples/thumbnail?url=${encodeURIComponent(sample.thumbnail_url)}`
+                            // For Supabase URLs, try direct first, fallback to proxy on error
+                            : sample.thumbnail_url
                         }
-                      }}
-                    />
-                  ) : null}
-                  <div className={`w-full aspect-video ${getRoundedClass('rounded-t-xl')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''}`}>
-                    <span className="text-gray-400 text-xs">No Image</span>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6 flex flex-col gap-3">
-                    {/* Date */}
-                    <div className="flex items-center gap-2">
-                      <Calendar className={`w-4 h-4 ${getTextClass()}/70`} />
-                      <p className={`text-xs ${getTextClass()}/70`}>
-                        {sample.date ? new Date(sample.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}
-                      </p>
+                        alt={sample.project_name}
+                        className={`w-full aspect-video object-cover ${getRoundedClass('rounded-t-xl')}`}
+                        onError={(e) => {
+                          // Try proxy if direct URL fails (for Supabase URLs)
+                          const target = e.target as HTMLImageElement
+                          const originalSrc = target.src
+                          if (originalSrc.includes('supabase') && !originalSrc.includes('/api/work-samples/thumbnail')) {
+                            target.src = `/api/work-samples/thumbnail?url=${encodeURIComponent(originalSrc)}`
+                          } else {
+                            // Hide broken image and show placeholder
+                            target.style.display = 'none'
+                            const placeholder = target.nextElementSibling as HTMLElement
+                            if (placeholder) {
+                              placeholder.style.display = 'flex'
+                            }
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div className={`w-full aspect-video ${getRoundedClass('rounded-t-xl')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''}`}>
+                      <span className="text-gray-400 text-xs">No Image</span>
                     </div>
-                    
-                    {/* Title with external link */}
-                    {(sample.file_link || sample.file_url) ? (
-                      <a
-                        href={sample.file_link || sample.file_url || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`text-xl font-black uppercase ${getTextClass()} hover:opacity-70 transition-opacity flex items-center gap-2`}
-                      >
-                        {sample.project_name}
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    ) : (
-                      <h3 className={`text-xl font-black uppercase ${getTextClass()}`}>{sample.project_name}</h3>
-                    )}
-                    
-                    {/* Client as badge */}
-                    {sample.client && (
-                      <div className={`inline-flex items-center px-3 py-1 rounded ${getRoundedClass('rounded-md')} ${mode === 'chaos' ? 'bg-gray-800' : mode === 'chill' ? 'bg-gray-200' : 'bg-gray-800'} w-fit`}>
-                        <span className={`text-xs font-medium ${getTextClass()}`}>{sample.client}</span>
-                      </div>
-                    )}
-                    
-                    {/* Type */}
-                    {sample.type && (
-                      <div className={`inline-flex items-center px-3 py-1 rounded ${getRoundedClass('rounded-md')} ${mode === 'chaos' ? 'bg-gray-800' : mode === 'chill' ? 'bg-gray-200' : 'bg-gray-800'} w-fit`}>
-                        <span className={`text-xs font-medium ${getTextClass()}`}>{sample.type.name}</span>
-                      </div>
-                    )}
-                    
-                    {/* Author */}
-                    {sample.author && (
+
+                    {/* Content */}
+                    <div className="p-6 flex flex-col gap-3">
+                      {/* Date */}
                       <div className="flex items-center gap-2">
-                        <User className={`w-4 h-4 ${getTextClass()}/70`} />
-                        <p className={`text-sm ${getTextClass()}/70`}>
-                          {sample.author.full_name || sample.author.email}
+                        <Calendar className={`w-4 h-4 ${getTextClass()}/70`} />
+                        <p className={`text-xs ${getTextClass()}/70`}>
+                          {sample.date ? new Date(sample.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}
                         </p>
                       </div>
-                    )}
-                    
-                    {/* Description */}
-                    {sample.description && (
-                      <p className={`text-sm ${getTextClass()}/80 line-clamp-3`}>{sample.description}</p>
-                    )}
+                      
+                      {/* Title with external link */}
+                      {(sample.file_link || sample.file_url) ? (
+                        <a
+                          href={sample.file_link || sample.file_url || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`text-xl font-black uppercase ${getTextClass()} hover:opacity-70 transition-opacity flex items-center gap-2`}
+                        >
+                          {sample.project_name}
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      ) : (
+                        <h3 className={`text-xl font-black uppercase ${getTextClass()}`}>{sample.project_name}</h3>
+                      )}
+                      
+                      {/* Client as badge */}
+                      {sample.client && (
+                        <div className={`inline-flex items-center px-3 py-1 rounded ${getRoundedClass('rounded-md')} ${mode === 'chaos' ? 'bg-gray-800' : mode === 'chill' ? 'bg-gray-200' : 'bg-gray-800'} w-fit`}>
+                          <span className={`text-xs font-medium ${getTextClass()}`}>{sample.client}</span>
+                        </div>
+                      )}
+                      
+                      {/* Type */}
+                      {sample.type && (
+                        <div className={`inline-flex items-center px-3 py-1 rounded ${getRoundedClass('rounded-md')} ${mode === 'chaos' ? 'bg-gray-800' : mode === 'chill' ? 'bg-gray-200' : 'bg-gray-800'} w-fit`}>
+                          <span className={`text-xs font-medium ${getTextClass()}`}>{sample.type.name}</span>
+                        </div>
+                      )}
+                      
+                      {/* Author */}
+                      {sample.author && (
+                        <div className="flex items-center gap-2">
+                          <User className={`w-4 h-4 ${getTextClass()}/70`} />
+                          <p className={`text-sm ${getTextClass()}/70`}>
+                            {sample.author.full_name || sample.author.email}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Description */}
+                      {sample.description && (
+                        <p className={`text-sm ${getTextClass()}/80 line-clamp-3`}>{sample.description}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            /* List View */
+            <div className="space-y-4">
+              {workSamples.map((sample) => (
+                <Card key={sample.id} className={`${getBgClass()} border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${getRoundedClass('rounded-xl')} overflow-hidden`}>
+                  <div className="flex flex-col md:flex-row gap-6 p-6">
+                    {/* Thumbnail - Smaller in list view */}
+                    <div className="flex-shrink-0 w-full md:w-48">
+                      {sample.thumbnail_url ? (
+                        <img 
+                          src={
+                            sample.thumbnail_url.includes('airtable.com') || sample.thumbnail_url.includes('airtableusercontent.com')
+                              ? `/api/work-samples/thumbnail?url=${encodeURIComponent(sample.thumbnail_url)}`
+                              : sample.thumbnail_url
+                          }
+                          alt={sample.project_name}
+                          className={`w-full h-32 md:h-full object-cover ${getRoundedClass('rounded-lg')}`}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            const originalSrc = target.src
+                            if (originalSrc.includes('supabase') && !originalSrc.includes('/api/work-samples/thumbnail')) {
+                              target.src = `/api/work-samples/thumbnail?url=${encodeURIComponent(originalSrc)}`
+                            } else {
+                              target.style.display = 'none'
+                              const placeholder = target.nextElementSibling as HTMLElement
+                              if (placeholder) {
+                                placeholder.style.display = 'flex'
+                              }
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-full h-32 md:h-full ${getRoundedClass('rounded-lg')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''}`}>
+                        <span className="text-gray-400 text-xs">No Image</span>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 flex flex-col gap-3">
+                      {/* Title with external link */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          {(sample.file_link || sample.file_url) ? (
+                            <a
+                              href={sample.file_link || sample.file_url || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`text-xl font-black uppercase ${getTextClass()} hover:opacity-70 transition-opacity flex items-center gap-2`}
+                            >
+                              {sample.project_name}
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          ) : (
+                            <h3 className={`text-xl font-black uppercase ${getTextClass()}`}>{sample.project_name}</h3>
+                          )}
+                        </div>
+                        {/* Date - Right aligned in list view */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Calendar className={`w-4 h-4 ${getTextClass()}/70`} />
+                          <p className={`text-xs ${getTextClass()}/70 whitespace-nowrap`}>
+                            {sample.date ? new Date(sample.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Badges Row */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {sample.client && (
+                          <div className={`inline-flex items-center px-3 py-1 rounded ${getRoundedClass('rounded-md')} ${mode === 'chaos' ? 'bg-gray-800' : mode === 'chill' ? 'bg-gray-200' : 'bg-gray-800'}`}>
+                            <span className={`text-xs font-medium ${getTextClass()}`}>{sample.client}</span>
+                          </div>
+                        )}
+                        {sample.type && (
+                          <div className={`inline-flex items-center px-3 py-1 rounded ${getRoundedClass('rounded-md')} ${mode === 'chaos' ? 'bg-gray-800' : mode === 'chill' ? 'bg-gray-200' : 'bg-gray-800'}`}>
+                            <span className={`text-xs font-medium ${getTextClass()}`}>{sample.type.name}</span>
+                          </div>
+                        )}
+                        {sample.author && (
+                          <div className="flex items-center gap-2">
+                            <User className={`w-4 h-4 ${getTextClass()}/70`} />
+                            <p className={`text-xs ${getTextClass()}/70`}>
+                              {sample.author.full_name || sample.author.email}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Description - Full in list view */}
+                      {sample.description && (
+                        <p className={`text-sm ${getTextClass()}/80`}>{sample.description}</p>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )
         ) : (
           <div className="text-center py-12">
             <p className={`text-lg ${getTextClass()}/70`}>
