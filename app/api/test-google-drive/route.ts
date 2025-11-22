@@ -114,6 +114,34 @@ export async function GET(request: NextRequest) {
       }
 
       // Step 4: Test folder access
+      // First, let's see what folders the service account can access
+      try {
+        console.log('Attempting to list accessible files/folders...')
+        const listResponse = await drive.files.list({
+          q: "mimeType='application/vnd.google-apps.folder'",
+          fields: 'files(id, name)',
+          pageSize: 10,
+          supportsAllDrives: true,
+          includeItemsFromAllDrives: true,
+        } as any)
+        
+        results.step4_folder = {
+          status: 'info',
+          message: `Service account can see ${listResponse.data.files?.length || 0} folders`,
+          data: {
+            accessibleFolders: listResponse.data.files?.map((f: any) => ({
+              id: f.id,
+              name: f.name,
+              matches: f.id === folderId || f.id === folderId.replace(/\.+$/, ''),
+            })) || [],
+            targetFolderId: folderId,
+          },
+        }
+      } catch (listError: any) {
+        console.log('Could not list folders:', listError.message)
+      }
+
+      // Now try to access the specific folder
       try {
         // Try with supportsAllDrives in case it's a shared drive
         const folderInfo = await drive.files.get({
@@ -158,27 +186,65 @@ export async function GET(request: NextRequest) {
               }
             }
           } catch (retryError: any) {
-            // Still 404, provide detailed instructions
-            results.step4_folder = {
-              status: 'error',
-              message: `Folder not found: ${folderId}`,
-              details: {
-                folderId: folderId,
-                serviceAccount: clientEmail,
-                errorCode: error.code,
-                errorMessage: error.message,
-              },
-              fix: [
-                `1. Verify the folder ID is correct: ${folderId}`,
-                `2. Open the folder in Google Drive: https://drive.google.com/drive/folders/${folderId}`,
-                `3. Click "Share" button`,
-                `4. Add this email: ${clientEmail}`,
-                `5. Give it "Editor" permissions`,
-                `6. Click "Send" or "Done"`,
-                `7. Wait a few seconds and try again`,
-              ],
+            // Still 404 - check if folder ID has trailing period issue
+            const cleanFolderId = folderId.replace(/\.+$/, '')
+            let finalError = retryError
+            
+            // Try with cleaned folder ID if different
+            if (cleanFolderId !== folderId) {
+              try {
+                const folderInfoClean = await drive.files.get({
+                  fileId: cleanFolderId,
+                  fields: 'id, name, mimeType',
+                  supportsAllDrives: true,
+                } as any)
+                results.step4_folder = {
+                  status: 'success',
+                  message: 'Folder found after removing trailing period from folder ID',
+                  data: {
+                    folderName: folderInfoClean.data.name,
+                    folderId: folderInfoClean.data.id,
+                    originalFolderId: folderId,
+                    cleanedFolderId: cleanFolderId,
+                  },
+                }
+                // Update folderId for subsequent steps
+                folderId = cleanFolderId
+              } catch (cleanError: any) {
+                finalError = cleanError
+              }
             }
-            return NextResponse.json({ results }, { status: 500 })
+            
+            if (finalError.code === 404) {
+              // Still 404, provide detailed instructions
+              results.step4_folder = {
+                status: 'error',
+                message: `Folder not found: ${folderId}`,
+                details: {
+                  folderId: folderId,
+                  cleanedFolderId: cleanFolderId,
+                  serviceAccount: clientEmail,
+                  errorCode: finalError.code,
+                  errorMessage: finalError.message,
+                  note: 'The service account cannot see this folder. It needs to be explicitly shared.',
+                },
+                fix: [
+                  `1. Verify the folder ID is correct: ${folderId}`,
+                  `2. Open the folder in Google Drive: https://drive.google.com/drive/folders/${cleanFolderId}`,
+                  `3. Click "Share" button (top right)`,
+                  `4. Add this EXACT email: ${clientEmail}`,
+                  `5. Give it "Editor" permissions (not Viewer)`,
+                  `6. Make sure to click "Send" or "Done"`,
+                  `7. Wait 10-30 seconds for permissions to propagate`,
+                  `8. Try the test again`,
+                  ``,
+                  `Note: If this is a shared drive (Google Workspace), you may need to:`,
+                  `- Add the service account to the shared drive's members`,
+                  `- Or use domain-wide delegation (more complex setup)`,
+                ],
+              }
+              return NextResponse.json({ results }, { status: 500 })
+            }
           }
         } else if (error.code === 403) {
           results.step4_folder = {
