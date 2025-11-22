@@ -200,15 +200,15 @@ export async function GET(request: NextRequest) {
     
     // CRITICAL: Check if table is accessible and working
     // If we can't query the database properly, we should NOT generate
-    if (cacheError || recentError || allRecordsError) {
+    if (cacheError || recentHoroscopesError || allRecordsError) {
       console.error('❌ DATABASE ERROR: Cannot verify cache - DO NOT GENERATE')
       console.error('   Cache error:', cacheError?.message)
-      console.error('   Recent error:', recentError?.message)
+      console.error('   Recent error:', recentHoroscopesError?.message)
       console.error('   All records error:', allRecordsError?.message)
       return NextResponse.json(
         { 
           error: 'Database connection error. Cannot verify if horoscope already exists. Please try again or contact support.',
-          details: cacheError?.message || recentError?.message || allRecordsError?.message
+          details: cacheError?.message || recentHoroscopesError?.message || allRecordsError?.message
         },
         { status: 500 }
       )
