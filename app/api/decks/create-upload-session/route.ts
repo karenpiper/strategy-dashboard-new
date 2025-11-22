@@ -90,7 +90,8 @@ export async function POST(request: NextRequest) {
           parents: [folderId],
         },
         fields: 'id',
-      })
+        supportsAllDrives: true,
+      } as any)
 
       if (!emptyFile.data.id) {
         throw new Error('Failed to create empty file in Google Drive: no file ID returned')

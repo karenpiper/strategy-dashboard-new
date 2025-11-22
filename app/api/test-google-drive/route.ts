@@ -115,10 +115,12 @@ export async function GET(request: NextRequest) {
 
       // Step 4: Test folder access
       try {
+        // Try with supportsAllDrives in case it's a shared drive
         const folderInfo = await drive.files.get({
           fileId: folderId,
           fields: 'id, name, mimeType',
-        })
+          supportsAllDrives: true,
+        } as any)
 
         if (folderInfo.data.mimeType !== 'application/vnd.google-apps.folder') {
           results.step4_folder = {
@@ -137,25 +139,73 @@ export async function GET(request: NextRequest) {
           },
         }
       } catch (error: any) {
+        // Try again without supportsAllDrives to see if that helps
         if (error.code === 404) {
-          results.step4_folder = {
-            status: 'error',
-            message: `Folder not found: ${folderId}`,
-            fix: `Please verify the folder ID and ensure the service account (${clientEmail}) has been granted access to this folder in Google Drive. To grant access: Open the folder in Google Drive → Click "Share" → Add ${clientEmail} as Editor`,
+          try {
+            const folderInfoRetry = await drive.files.get({
+              fileId: folderId,
+              fields: 'id, name, mimeType',
+            })
+            // If this works, update the result
+            if (folderInfoRetry.data.mimeType === 'application/vnd.google-apps.folder') {
+              results.step4_folder = {
+                status: 'success',
+                message: 'Folder found and accessible (without supportsAllDrives)',
+                data: {
+                  folderName: folderInfoRetry.data.name,
+                  folderId: folderInfoRetry.data.id,
+                },
+              }
+            }
+          } catch (retryError: any) {
+            // Still 404, provide detailed instructions
+            results.step4_folder = {
+              status: 'error',
+              message: `Folder not found: ${folderId}`,
+              details: {
+                folderId: folderId,
+                serviceAccount: clientEmail,
+                errorCode: error.code,
+                errorMessage: error.message,
+              },
+              fix: [
+                `1. Verify the folder ID is correct: ${folderId}`,
+                `2. Open the folder in Google Drive: https://drive.google.com/drive/folders/${folderId}`,
+                `3. Click "Share" button`,
+                `4. Add this email: ${clientEmail}`,
+                `5. Give it "Editor" permissions`,
+                `6. Click "Send" or "Done"`,
+                `7. Wait a few seconds and try again`,
+              ],
+            }
+            return NextResponse.json({ results }, { status: 500 })
           }
         } else if (error.code === 403) {
           results.step4_folder = {
             status: 'error',
             message: `Permission denied accessing folder`,
-            fix: `The service account (${clientEmail}) does not have access to this folder. To grant access: Open the folder in Google Drive → Click "Share" → Add ${clientEmail} as Editor`,
+            fix: [
+              `The service account (${clientEmail}) does not have access to this folder.`,
+              `To grant access:`,
+              `1. Open the folder in Google Drive: https://drive.google.com/drive/folders/${folderId}`,
+              `2. Click "Share" button`,
+              `3. Add this email: ${clientEmail}`,
+              `4. Give it "Editor" permissions`,
+              `5. Click "Send" or "Done"`,
+            ],
           }
+          return NextResponse.json({ results }, { status: 500 })
         } else {
           results.step4_folder = {
             status: 'error',
             message: `Error accessing folder: ${error.message}`,
+            details: {
+              errorCode: error.code,
+              errorMessage: error.message,
+            },
           }
+          return NextResponse.json({ results }, { status: 500 })
         }
-        return NextResponse.json({ results }, { status: 500 })
       }
 
       // Step 5: Test file creation
@@ -167,7 +217,8 @@ export async function GET(request: NextRequest) {
             parents: [folderId],
           },
           fields: 'id',
-        })
+          supportsAllDrives: true,
+        } as any)
 
         if (!emptyFile.data.id) {
           throw new Error('No file ID returned')
