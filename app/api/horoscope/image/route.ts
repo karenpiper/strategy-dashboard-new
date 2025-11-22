@@ -148,6 +148,7 @@ export async function GET(request: NextRequest) {
         role: profile.role || null,
         hobbies: null, // TODO: Add hobbies field to profiles table if needed
         starSign: starSign,
+        element: userProfile.element,
       },
       userProfile.weekday,
       userProfile.season

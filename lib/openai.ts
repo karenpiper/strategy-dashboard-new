@@ -95,6 +95,7 @@ export async function generateHoroscopeImage(
     role?: string | null
     hobbies?: string[] | null
     starSign?: string
+    element?: string
   },
   weekday: string,
   season: string
@@ -108,6 +109,7 @@ export async function generateHoroscopeImage(
     role: userProfile.role || null,
     hobbies: userProfile.hobbies || null,
     starSign: userProfile.starSign,
+    element: userProfile.element,
   }
 
   const { prompt, slots } = await buildHoroscopePrompt(

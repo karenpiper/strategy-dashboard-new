@@ -146,6 +146,44 @@ function getSeasonalTheme(season: string): {
 }
 
 /**
+ * Get zodiac sign theme adjustments
+ * Influences subject_role, color_palette, and mood_vibe based on zodiac element
+ */
+function getZodiacTheme(starSign?: string, element?: string): {
+  subjectRoleWeight?: Record<string, number>
+  colorPaletteWeight?: Record<string, number>
+  moodVibeWeight?: Record<string, number>
+} {
+  if (!element) return {}
+
+  const elementLower = element.toLowerCase()
+  const themes: Record<string, any> = {
+    fire: {
+      subjectRoleWeight: { superhero: 1.3, rock_musician: 1.3, sci_fi_pilot: 1.2 },
+      colorPaletteWeight: { warm_oranges_and_reds: 1.5, neon_cyan_and_magenta: 1.2 },
+      moodVibeWeight: { energetic_and_chaotic: 1.4, epic_and_heroic: 1.3 },
+    },
+    water: {
+      subjectRoleWeight: { time_traveler: 1.3, space_explorer: 1.2 },
+      colorPaletteWeight: { cool_blues_and_greens: 1.5, jewel_tones: 1.2 },
+      moodVibeWeight: { mysterious_and_moody: 1.4, cozy_and_relaxed: 1.2 },
+    },
+    earth: {
+      subjectRoleWeight: { chef: 1.3, quirky_inventor: 1.2, detective: 1.2 },
+      colorPaletteWeight: { sepia_vintage_tones: 1.3, warm_oranges_and_reds: 1.2 },
+      moodVibeWeight: { cozy_and_relaxed: 1.4, playful_and_fun: 1.2 },
+    },
+    air: {
+      subjectRoleWeight: { fantasy_wizard: 1.3, hero_in_rpg: 1.2, quirky_inventor: 1.2 },
+      colorPaletteWeight: { pastel_candy_colors: 1.3, cool_blues_and_greens: 1.2 },
+      moodVibeWeight: { whimsical_and_surreal: 1.4, playful_and_fun: 1.3 },
+    },
+  }
+
+  return themes[elementLower] || {}
+}
+
+/**
  * Weighted random selection from catalog items
  */
 function selectFromCatalog(
@@ -326,6 +364,7 @@ export async function buildHoroscopePrompt(
   // Get themed weights
   const weekdayTheme = getWeekdayTheme(weekday)
   const seasonalTheme = getSeasonalTheme(season)
+  const zodiacTheme = getZodiacTheme(userProfile.starSign, userProfile.element)
 
   // Rule 2: Select style group with rotation
   const selectedStyleGroup = selectStyleGroup(
@@ -360,10 +399,15 @@ export async function buildHoroscopePrompt(
   }
 
   // Rule 5: Select other slots avoiding recent repeats
+  // Combine weekday and zodiac theme weights for subject role
+  const subjectRoleWeights = {
+    ...weekdayTheme.subjectRoleWeight,
+    ...zodiacTheme.subjectRoleWeight,
+  }
   const subjectRole = selectFromCatalog(
     rng,
     catalogs.subject_role,
-    weekdayTheme.subjectRoleWeight,
+    Object.keys(subjectRoleWeights).length > 0 ? subjectRoleWeights : undefined,
     userAvatarState.recent_subject_role_ids || []
   )
   if (!subjectRole) {
@@ -395,23 +439,31 @@ export async function buildHoroscopePrompt(
     throw new Error('No activity available')
   }
 
+  // Combine weekday, seasonal, and zodiac theme weights for mood
+  const moodVibeWeights = {
+    ...weekdayTheme.moodVibeWeight,
+    ...seasonalTheme.moodVibeWeight,
+    ...zodiacTheme.moodVibeWeight,
+  }
   const moodVibe = selectFromCatalog(
     rng,
     catalogs.mood_vibe,
-    {
-      ...weekdayTheme.moodVibeWeight,
-      ...seasonalTheme.moodVibeWeight,
-    },
+    Object.keys(moodVibeWeights).length > 0 ? moodVibeWeights : undefined,
     []
   )
   if (!moodVibe) {
     throw new Error('No mood vibe available')
   }
 
+  // Combine seasonal and zodiac theme weights for color palette
+  const colorPaletteWeights = {
+    ...seasonalTheme.colorPaletteWeight,
+    ...zodiacTheme.colorPaletteWeight,
+  }
   const colorPalette = selectFromCatalog(
     rng,
     catalogs.color_palette,
-    seasonalTheme.colorPaletteWeight,
+    Object.keys(colorPaletteWeights).length > 0 ? colorPaletteWeights : undefined,
     []
   )
   if (!colorPalette) {

@@ -204,17 +204,22 @@ export default function WorkSamplesPage() {
                   {/* Thumbnail */}
                   {sample.thumbnail_url ? (
                     <img 
-                      src={sample.thumbnail_url.startsWith('http') && sample.thumbnail_url.includes('supabase') 
-                        ? `/api/work-samples/thumbnail?url=${encodeURIComponent(sample.thumbnail_url)}`
-                        : sample.thumbnail_url} 
+                      src={sample.thumbnail_url} 
                       alt={sample.project_name}
                       className={`w-full aspect-video object-contain ${getRoundedClass('rounded-t-xl')} bg-gray-100`}
                       onError={(e) => {
+                        // Try proxy if direct URL fails
                         const target = e.target as HTMLImageElement
-                        target.style.display = 'none'
-                        const placeholder = target.nextElementSibling as HTMLElement
-                        if (placeholder) {
-                          placeholder.style.display = 'flex'
+                        const originalSrc = target.src
+                        if (originalSrc.includes('supabase') && !originalSrc.includes('/api/work-samples/thumbnail')) {
+                          target.src = `/api/work-samples/thumbnail?url=${encodeURIComponent(originalSrc)}`
+                        } else {
+                          // Hide broken image and show placeholder
+                          target.style.display = 'none'
+                          const placeholder = target.nextElementSibling as HTMLElement
+                          if (placeholder) {
+                            placeholder.style.display = 'flex'
+                          }
                         }
                       }}
                     />
