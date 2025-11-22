@@ -55,9 +55,23 @@ export async function POST(request: NextRequest) {
 
     // Handle different response statuses
     if (uploadResponse.status === 200 || uploadResponse.status === 201) {
-      // Upload complete
-      const result = await uploadResponse.json()
+      // Upload complete - get file ID from response
+      const responseText = await uploadResponse.text()
+      let result: any = {}
       
+      if (responseText) {
+        try {
+          result = JSON.parse(responseText)
+        } catch (e) {
+          console.warn('Failed to parse upload response as JSON:', responseText)
+        }
+      }
+
+      const fileId = result.id
+      if (!fileId) {
+        throw new Error(`Upload completed but no file ID in response: ${responseText}`)
+      }
+
       // Make file accessible
       try {
         const { google } = await import('googleapis')
@@ -82,21 +96,22 @@ export async function POST(request: NextRequest) {
 
         const drive = google.drive({ version: 'v3', auth })
         await drive.permissions.create({
-          fileId: result.id,
+          fileId: fileId,
           requestBody: {
             role: 'reader',
             type: 'anyone',
           },
         })
-      } catch (permError) {
-        console.warn('Failed to set file permissions:', permError)
+      } catch (permError: any) {
+        // Log but don't fail - permissions are optional
+        console.warn('Failed to set file permissions:', permError?.message || permError)
       }
 
       return NextResponse.json({
         success: true,
         complete: true,
-        fileId: result.id,
-        fileUrl: `https://drive.google.com/file/d/${result.id}/view`,
+        fileId: fileId,
+        fileUrl: `https://drive.google.com/file/d/${fileId}/view`,
       })
     }
 
