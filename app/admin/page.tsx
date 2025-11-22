@@ -32,7 +32,7 @@ import {
 import Link from 'next/link'
 
 export default function AdminDashboard() {
-  const { permissions } = usePermissions()
+  const { permissions, user: permissionsUser } = usePermissions()
   const { user } = useAuth()
   const { mode } = useMode()
   const router = useRouter()
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const roleDisplay = user ? `${user.baseRole.charAt(0).toUpperCase() + user.baseRole.slice(1)}` : 'User'
+  const roleDisplay = permissionsUser?.baseRole ? `${permissionsUser.baseRole.charAt(0).toUpperCase() + permissionsUser.baseRole.slice(1)}` : 'User'
   const accessLevel = permissions?.canManageUsers ? 'admin' : permissions?.canViewAdmin ? 'contributor' : 'user'
 
   return (

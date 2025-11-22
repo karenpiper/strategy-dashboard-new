@@ -290,14 +290,11 @@ export async function GET(request: NextRequest) {
       })
     
     if (upsertError) {
+      // Continue anyway - we still return the generated horoscope
       console.error('Error upserting horoscope text:', upsertError)
+      console.warn('Warning: Failed to save horoscope to database, but returning generated horoscope')
     } else {
       console.log('Successfully saved horoscope text for user', userId, 'on date', todayDate)
-    }
-    
-    if (saveError) {
-      // Continue anyway - we still return the generated horoscope
-      console.warn('Warning: Failed to save horoscope to database, but returning generated horoscope')
     }
     
     return NextResponse.json({

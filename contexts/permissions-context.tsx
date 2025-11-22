@@ -31,17 +31,19 @@ export function PermissionsProvider({ children }: { children: React.ReactNode })
 
       try {
         // Fetch user profile with role and special access
-        // TODO: Create a profiles table with base_role and special_access columns
-        // For now, we'll check if a profile exists, otherwise default to 'user'
+        // Handle missing columns gracefully - they may not exist in older databases
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('base_role, special_access')
           .eq('id', authUser.id)
           .single()
 
-        if (error && error.code !== 'PGRST116') {
+        if (error) {
           // PGRST116 is "not found" - that's okay, we'll use defaults
-          console.error('Error fetching user profile:', error)
+          // PGRST202 is "column not found" - also okay, use defaults
+          if (error.code !== 'PGRST116' && error.code !== 'PGRST202') {
+            console.error('Error fetching user profile:', error)
+          }
         }
 
         const userPermissions: UserPermissions = {
