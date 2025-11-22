@@ -253,8 +253,22 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     console.error('Error in horoscope image API:', error)
+    
+    // Provide more helpful error messages
+    let errorMessage = error.message || 'Failed to generate horoscope image'
+    
+    // Check if it's a database table missing error
+    if (error.message?.includes('relation') && error.message?.includes('does not exist')) {
+      errorMessage = 'Database tables not found. Please run the database migrations: create-prompt-slot-system.sql and seed-prompt-slot-catalogs.sql'
+    } else if (error.message?.includes('No style groups available') || error.message?.includes('No compatible style reference found')) {
+      errorMessage = 'Prompt slot catalogs not found. Please run the seed-prompt-slot-catalogs.sql migration.'
+    }
+    
     return NextResponse.json(
-      { error: error.message || 'Failed to generate horoscope image' },
+      { 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     )
   }

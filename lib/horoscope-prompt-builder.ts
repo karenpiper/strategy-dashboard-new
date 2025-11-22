@@ -435,14 +435,35 @@ export async function buildHoroscopePrompt(
   season: string
 ): Promise<{ prompt: string; slots: SelectedPromptSlots }> {
   // Fetch catalogs and style groups
-  const [catalogs, styleGroups, userAvatarState] = await Promise.all([
-    fetchAllPromptSlotCatalogs(supabase),
-    fetchStyleGroups(supabase),
-    fetchOrCreateUserAvatarState(supabase, userId),
-  ])
+  let catalogs: Record<string, PromptSlotCatalog[]>
+  let styleGroups: StyleGroup[]
+  let userAvatarState: UserAvatarState | null
+
+  try {
+    [catalogs, styleGroups, userAvatarState] = await Promise.all([
+      fetchAllPromptSlotCatalogs(supabase),
+      fetchStyleGroups(supabase),
+      fetchOrCreateUserAvatarState(supabase, userId),
+    ])
+  } catch (error: any) {
+    // Check if it's a missing table error
+    if (error.message?.includes('relation') && error.message?.includes('does not exist')) {
+      throw new Error('Database tables not found. Please run the migrations: create-prompt-slot-system.sql and seed-prompt-slot-catalogs.sql')
+    }
+    throw error
+  }
 
   if (!userAvatarState) {
     throw new Error('Failed to fetch or create user avatar state')
+  }
+
+  // Validate that we have the required data
+  if (styleGroups.length === 0) {
+    throw new Error('No style groups found. Please run the seed-prompt-slot-catalogs.sql migration.')
+  }
+
+  if (Object.keys(catalogs).length === 0 || catalogs.style_reference?.length === 0) {
+    throw new Error('No prompt slot catalogs found. Please run the seed-prompt-slot-catalogs.sql migration.')
   }
 
   // Generate deterministic seed
