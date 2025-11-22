@@ -136,32 +136,53 @@ export default function DeckAdmin() {
     setUploadStatus({ type: 'idle', message: '' })
 
     try {
-      // Step 1: Upload file to Google Drive
-      const uploadFormData = new FormData()
-      uploadFormData.append('file', selectedFile)
-
-      const uploadResponse = await fetch('/api/decks/upload-to-drive', {
+      // Step 1: Create resumable upload session in Google Drive
+      setUploadStatus({ type: 'idle', message: 'Creating upload session...' })
+      
+      const sessionResponse = await fetch('/api/decks/create-upload-session', {
         method: 'POST',
-        body: uploadFormData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: selectedFile.name,
+          mimeType: selectedFile.type || 'application/pdf',
+          fileSize: selectedFile.size,
+        }),
       })
 
-      const uploadResult = await uploadResponse.json()
+      const sessionResult = await sessionResponse.json()
 
-      if (!uploadResponse.ok) {
-        // If file is too large, suggest manual upload
-        if (uploadResponse.status === 413) {
-          setUploadStatus({
-            type: 'error',
-            message: `File is too large (${(selectedFile.size / 1024 / 1024).toFixed(2)}MB) for direct upload due to Vercel's 4.5MB limit. Please upload the file manually to Google Drive and paste the file ID below.`
-          })
-          setUseManualUpload(true)
-          setUploading(false)
-          return
-        }
-        throw new Error(uploadResult.error || 'Failed to upload file to Google Drive')
+      if (!sessionResponse.ok) {
+        throw new Error(sessionResult.error || 'Failed to create upload session')
       }
 
-      const fileId = uploadResult.fileId
+      const { uploadUrl } = sessionResult
+
+      // Step 2: Upload file directly to Google Drive using resumable URL
+      setUploadStatus({ type: 'idle', message: 'Uploading file to Google Drive...' })
+      
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: selectedFile,
+        headers: {
+          'Content-Type': selectedFile.type || 'application/pdf',
+          'Content-Length': selectedFile.size.toString(),
+        },
+      })
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text()
+        throw new Error(`Failed to upload file: ${uploadResponse.status} ${errorText}`)
+      }
+
+      // Step 3: Get file ID from upload response
+      const uploadResult = await uploadResponse.json()
+      const fileId = uploadResult.id
+      
+      if (!fileId) {
+        throw new Error('Failed to get file ID from upload response')
+      }
 
       // Step 2: Ingest the deck from Google Drive
       const ingestResponse = await fetch('/api/upload-deck', {
