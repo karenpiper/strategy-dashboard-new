@@ -136,7 +136,9 @@ export default function AdminDashboard() {
     }
   }
 
-  const roleDisplay = permissionsUser?.baseRole ? `${permissionsUser.baseRole.charAt(0).toUpperCase() + permissionsUser.baseRole.slice(1)}` : 'User'
+  const roleDisplay = permissionsUser?.baseRole && typeof permissionsUser.baseRole === 'string' && permissionsUser.baseRole.length > 0
+    ? `${permissionsUser.baseRole.charAt(0).toUpperCase() + permissionsUser.baseRole.slice(1)}`
+    : 'User'
   const accessLevel = permissions?.canManageUsers ? 'admin' : permissions?.canViewAdmin ? 'contributor' : 'user'
 
   return (
