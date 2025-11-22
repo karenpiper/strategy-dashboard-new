@@ -10,6 +10,7 @@ import { ModeSwitcher } from "@/components/mode-switcher"
 import { useMode } from "@/contexts/mode-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { getStarSignEmoji } from '@/lib/horoscope-utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -1264,7 +1265,23 @@ export default function TeamDashboard() {
               const textStyle = mode === 'chaos' ? 'text-white' : mode === 'chill' ? 'text-[#4A1818]' : 'text-[#FFFFFF]'
               return (
                 <div className="flex-1 p-6">
-                  <p className={`text-xs uppercase tracking-wider mb-4 font-black ${textStyle}`}>WORK SAMPLES</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <p className={`text-xs uppercase tracking-wider font-black ${textStyle}`}>WORK SAMPLES</p>
+                    <div className="flex items-center gap-3">
+                      <Link 
+                        href="/work-samples"
+                        className={`text-xs uppercase tracking-wider font-black ${textStyle} hover:opacity-70 transition-opacity`}
+                      >
+                        View All
+                      </Link>
+                      <Link 
+                        href="/work-samples?search="
+                        className={`text-xs uppercase tracking-wider font-black ${textStyle} hover:opacity-70 transition-opacity`}
+                      >
+                        Search
+                      </Link>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-3 gap-4">
                     {workSamples.length > 0 ? (
                       workSamples.map((sample) => (
@@ -1273,10 +1290,10 @@ export default function TeamDashboard() {
                             <img 
                               src={sample.thumbnail_url} 
                               alt={sample.project_name}
-                              className={`w-full aspect-square object-cover ${getRoundedClass('rounded-lg')} mb-2`}
+                              className={`w-full aspect-video object-contain ${getRoundedClass('rounded-lg')} mb-2 bg-gray-100`}
                             />
                           ) : (
-                            <div className={`w-full aspect-square ${getRoundedClass('rounded-lg')} mb-2 bg-gray-200 flex items-center justify-center`}>
+                            <div className={`w-full aspect-video ${getRoundedClass('rounded-lg')} mb-2 bg-gray-200 flex items-center justify-center`}>
                               <span className="text-gray-400 text-xs">No Image</span>
                             </div>
                           )}
