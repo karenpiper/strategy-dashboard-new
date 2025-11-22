@@ -47,7 +47,9 @@ export async function GET(request: NextRequest) {
     } else if (sortBy === 'author_id') {
       query = query.order('author_id', { ascending: sortOrder === 'asc' })
     } else if (sortBy === 'date') {
-      query = query.order('date', { ascending: sortOrder === 'asc' })
+      // Sort by date field - desc means newest first (ascending: false)
+      const isAscending = sortOrder?.toLowerCase() === 'asc'
+      query = query.order('date', { ascending: isAscending })
     } else if (sortBy === 'created_at') {
       query = query.order('created_at', { ascending: sortOrder === 'asc' })
     } else {
