@@ -43,7 +43,7 @@ export default function DeckAdmin() {
       return
     }
 
-    // Validate file size (100MB limit - files upload directly to Google Drive)
+    // Validate file size (100MB limit - same as work samples)
     const maxSize = 100 * 1024 * 1024 // 100MB
     if (file.size > maxSize) {
       setUploadStatus({
@@ -75,91 +75,24 @@ export default function DeckAdmin() {
     setUploadStatus({ type: 'idle', message: '' })
 
     try {
-      let fileId: string
-      let fileUrl: string
+      // Step 1: Upload file to Google Drive
+      const uploadFormData = new FormData()
+      uploadFormData.append('file', selectedFile)
 
-      // Try resumable upload for large files (>4MB)
-      if (selectedFile.size > 4 * 1024 * 1024) {
-        try {
-          // Step 1: Create resumable upload session
-          const sessionResponse = await fetch('/api/decks/create-upload-session', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              fileName: selectedFile.name,
-              mimeType: selectedFile.type || 'application/pdf',
-              fileSize: selectedFile.size,
-            }),
-          })
+      const uploadResponse = await fetch('/api/decks/upload-to-drive', {
+        method: 'POST',
+        body: uploadFormData,
+      })
 
-          const sessionResult = await sessionResponse.json()
+      const uploadResult = await uploadResponse.json()
 
-          if (!sessionResponse.ok) {
-            throw new Error(sessionResult.error || 'Failed to create upload session')
-          }
-
-          // Step 2: Upload file directly to Google Drive using resumable URL
-          const uploadResponse = await fetch(sessionResult.uploadUrl, {
-            method: 'PUT',
-            body: selectedFile,
-            headers: {
-              'Content-Type': sessionResult.mimeType,
-            },
-          })
-
-          if (!uploadResponse.ok) {
-            const errorText = await uploadResponse.text()
-            throw new Error(`Upload failed: ${uploadResponse.status}`)
-          }
-
-          // Parse response to get file ID
-          const uploadText = await uploadResponse.text()
-          let uploadResult: any
-          try {
-            uploadResult = JSON.parse(uploadText)
-          } catch {
-            // If response is not JSON, try to extract file ID from headers or use alternative method
-            throw new Error('Could not parse upload response. File may be too large for direct upload.')
-          }
-
-          fileId = uploadResult.id
-          fileUrl = `https://drive.google.com/file/d/${fileId}/view`
-        } catch (resumableError: any) {
-          // Fallback: Show instructions for manual upload
-          setUploadStatus({
-            type: 'error',
-            message: `File is too large (${(selectedFile.size / 1024 / 1024).toFixed(2)}MB) for direct upload. Please upload the file manually to Google Drive, then use the ingestion endpoint with the file ID. Error: ${resumableError.message}`
-          })
-          setUploading(false)
-          return
-        }
-      } else {
-        // For smaller files, use the standard upload endpoint
-        const uploadFormData = new FormData()
-        uploadFormData.append('file', selectedFile)
-
-        const uploadResponse = await fetch('/api/decks/upload-to-drive', {
-          method: 'POST',
-          body: uploadFormData,
-        })
-
-        const uploadResult = await uploadResponse.json()
-
-        if (!uploadResponse.ok) {
-          // If we get a 413, suggest manual upload
-          if (uploadResponse.status === 413) {
-            throw new Error('File is too large. Please upload manually to Google Drive and use the ingestion endpoint with the file ID.')
-          }
-          throw new Error(uploadResult.error || 'Failed to upload file to Google Drive')
-        }
-
-        fileId = uploadResult.fileId
-        fileUrl = uploadResult.fileUrl
+      if (!uploadResponse.ok) {
+        throw new Error(uploadResult.error || 'Failed to upload file to Google Drive')
       }
 
-      // Step 3: Ingest the deck from Google Drive
+      const fileId = uploadResult.fileId
+
+      // Step 2: Ingest the deck from Google Drive
       const ingestResponse = await fetch('/api/upload-deck', {
         method: 'POST',
         headers: {
