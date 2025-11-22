@@ -129,6 +129,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verify user exists in profiles table (required for foreign key)
+    const { data: profileCheck, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profileCheck) {
+      console.error('User profile not found:', profileError)
+      return NextResponse.json(
+        { error: 'User profile not found. Please complete your profile setup.', details: profileError?.message },
+        { status: 400 }
+      )
+    }
+
+    // Verify assigned_to user exists if specified
+    const assignedToId = (assigned_to && assigned_to.trim() !== '') ? assigned_to : user.id
+    if (assigned_to && assigned_to.trim() !== '' && assigned_to !== user.id) {
+      const { data: assignedProfile, error: assignedError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', assigned_to)
+        .single()
+
+      if (assignedError || !assignedProfile) {
+        return NextResponse.json(
+          { error: 'Assigned user profile not found', details: assignedError?.message },
+          { status: 400 }
+        )
+      }
+    }
+
     const { data, error } = await supabase
       .from('must_reads')
       .insert({
@@ -137,7 +169,7 @@ export async function POST(request: NextRequest) {
         notes: notes || null,
         pinned: pinned || false,
         submitted_by: user.id,
-        assigned_to: assigned_to || user.id, // Default to current user if not specified
+        assigned_to: assignedToId,
         updated_at: new Date().toISOString(),
       })
       .select(`
@@ -155,8 +187,15 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating must read:', error)
+      console.error('Error details:', JSON.stringify(error, null, 2))
       return NextResponse.json(
-        { error: 'Failed to create must read', details: error.message, code: error.code },
+        { 
+          error: 'Failed to create must read', 
+          details: error.message, 
+          code: error.code,
+          hint: error.hint,
+          fullError: error
+        },
         { status: 500 }
       )
     }

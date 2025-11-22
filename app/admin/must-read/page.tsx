@@ -188,11 +188,15 @@ export default function MustReadAdmin() {
         resetForm()
         fetchMustReads()
       } else {
-        alert(`Error: ${result.error}`)
+        const errorMsg = result.details 
+          ? `${result.error}\n\nDetails: ${result.details}${result.code ? `\nCode: ${result.code}` : ''}`
+          : result.error || 'Failed to add must read'
+        console.error('Error adding must read:', result)
+        alert(errorMsg)
       }
     } catch (error) {
       console.error('Error adding must read:', error)
-      alert('Failed to add must read')
+      alert(`Failed to add must read: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
