@@ -205,7 +205,7 @@ export default function MustReadAdmin() {
         body: JSON.stringify({
           ...restFormData,
           week_start_date: date, // Send date as week_start_date
-          submitted_by: formData.submitted_by || user?.id || null, // Default to logged-in user
+          submitted_by: formData.submitted_by || null, // Can be null/empty
           assigned_to: formData.assigned_to || null,
         }),
       })
@@ -238,7 +238,7 @@ export default function MustReadAdmin() {
       notes: item.notes || '',
       pinned: item.pinned,
       assigned_to: item.assigned_to || '',
-      submitted_by: item.submitted_by || user?.id || '',
+      submitted_by: item.submitted_by || '',
       date: item.week_start_date || getTodayDate(), // Use week_start_date or default to today
       category: item.category || '',
       source: item.source || '',
@@ -336,7 +336,7 @@ export default function MustReadAdmin() {
       notes: '',
       pinned: false,
       assigned_to: '',
-      submitted_by: user?.id || '', // Default to logged-in user
+      submitted_by: '', // Can be blank
       date: getTodayDate(), // Reset to current date
       category: '',
       source: '',

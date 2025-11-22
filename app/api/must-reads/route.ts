@@ -232,11 +232,11 @@ export async function POST(request: NextRequest) {
 
     console.log('Table access test passed')
 
-    // Set submitted_by to logged-in user (default)
-    const submittedById = submitted_by && submitted_by.trim() !== '' ? submitted_by : user.id
+    // Set submitted_by - can be null/empty if not specified
+    const submittedById = submitted_by && submitted_by.trim() !== '' ? submitted_by : null
 
     // Verify submitted_by user exists if specified
-    if (submitted_by && submitted_by.trim() !== '' && submitted_by !== user.id) {
+    if (submitted_by && submitted_by.trim() !== '') {
       const { data: submittedProfile, error: submittedError } = await supabase
         .from('profiles')
         .select('id')
