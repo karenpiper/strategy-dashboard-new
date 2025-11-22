@@ -127,7 +127,7 @@ export function AccountMenu() {
           </div>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-background border-border">
+      <DropdownMenuContent align="end" className="w-56 bg-background border border-border shadow-lg">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{displayName}</p>
