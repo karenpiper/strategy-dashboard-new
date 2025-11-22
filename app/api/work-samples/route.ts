@@ -42,18 +42,19 @@ export async function GET(request: NextRequest) {
       `)
 
     // Apply sorting
+    const isAscending = sortOrder?.toLowerCase() === 'asc'
+    
     if (sortBy === 'project_name') {
-      query = query.order('project_name', { ascending: sortOrder === 'asc' })
+      query = query.order('project_name', { ascending: isAscending })
     } else if (sortBy === 'author_id') {
-      query = query.order('author_id', { ascending: sortOrder === 'asc' })
+      query = query.order('author_id', { ascending: isAscending })
     } else if (sortBy === 'date') {
       // Sort by date field - desc means newest first (ascending: false)
-      const isAscending = sortOrder?.toLowerCase() === 'asc'
       query = query.order('date', { ascending: isAscending })
     } else if (sortBy === 'created_at') {
-      query = query.order('created_at', { ascending: sortOrder === 'asc' })
+      query = query.order('created_at', { ascending: isAscending })
     } else {
-      // Default sorting
+      // Default sorting - newest first
       query = query.order('date', { ascending: false })
     }
 
