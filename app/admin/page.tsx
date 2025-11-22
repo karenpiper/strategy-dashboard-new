@@ -1,160 +1,368 @@
 'use client'
 
+import { useState } from 'react'
 import { Card } from '@/components/ui/card'
-import { Music, Sparkles, Cloud, FileText, BarChart3, Settings, TrendingUp, Shield, Crown } from 'lucide-react'
-import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { usePermissions } from '@/contexts/permissions-context'
-import { getRoleDisplayName, getSpecialAccessDisplayName } from '@/lib/permissions'
+import { useAuth } from '@/contexts/auth-context'
+import { useRouter } from 'next/navigation'
+import { 
+  User, 
+  Lock, 
+  Music, 
+  FileText, 
+  FolderOpen, 
+  GitBranch, 
+  Video, 
+  Crown, 
+  HelpCircle, 
+  Bell, 
+  Users,
+  Shield,
+  Loader2,
+  CheckCircle2,
+  ShieldOff
+} from 'lucide-react'
+import Link from 'next/link'
 
 export default function AdminDashboard() {
-  const { user, permissions } = usePermissions()
-  const sections = [
-    {
-      title: 'Playlists',
-      description: 'Manage Spotify playlists and tracks',
-      icon: Music,
-      href: '/admin/playlists',
-      color: 'text-green-500',
-      bgColor: 'bg-green-500/10',
-    },
-    {
-      title: 'Horoscopes',
-      description: 'Configure horoscope settings and styles',
-      icon: Sparkles,
-      href: '/admin/horoscopes',
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
-    },
-    {
-      title: 'Weather',
-      description: 'Manage weather settings and location',
-      icon: Cloud,
-      href: '/admin/weather',
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
-    },
-    {
-      title: 'Content Cards',
-      description: 'Edit Friday Drop, Featured, Stats, and other cards',
-      icon: FileText,
-      href: '/admin/content',
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-500/10',
-    },
-    {
-      title: 'Stats & Metrics',
-      description: 'View and manage dashboard statistics',
-      icon: BarChart3,
-      href: '/admin/stats',
-      color: 'text-pink-500',
-      bgColor: 'bg-pink-500/10',
-    },
-    {
-      title: 'Settings',
-      description: 'General settings and configuration',
-      icon: Settings,
-      href: '/admin/settings',
-      color: 'text-gray-500',
-      bgColor: 'bg-gray-500/10',
-    },
-  ]
+  const { permissions } = usePermissions()
+  const { user } = useAuth()
+  const router = useRouter()
+  
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPasswordError(null)
+    setPasswordSuccess(false)
+    setPasswordLoading(true)
+
+    try {
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        setPasswordError('New passwords do not match')
+        setPasswordLoading(false)
+        return
+      }
+
+      if (passwordData.newPassword.length < 6) {
+        setPasswordError('Password must be at least 6 characters')
+        setPasswordLoading(false)
+        return
+      }
+
+      // Note: Supabase doesn't support password updates from client-side for OAuth users
+      // This would need to be handled via email reset or admin API
+      // For now, we'll show a message
+      setPasswordError('Password updates for OAuth users must be done through your Google account settings.')
+      setPasswordLoading(false)
+    } catch (err: any) {
+      setPasswordError(err.message || 'Failed to update password')
+      setPasswordLoading(false)
+    }
+  }
+
+  if (!permissions?.canViewAdmin) {
+    return (
+      <div>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-2">Admin Dashboard</h1>
+        </div>
+        <Card className="p-6">
+          <div className="flex items-center gap-3 text-destructive">
+            <ShieldOff className="w-5 h-5" />
+            <p>You don't have permission to view the admin dashboard.</p>
+          </div>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div>
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage all content and settings for the dashboard</p>
+        <h1 className="text-4xl font-bold text-foreground mb-2">Admin Dashboard</h1>
+        <p className="text-muted-foreground">Manage your account, content, and site settings</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Your Details Section */}
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <User className="w-5 h-5 text-primary" />
+            <h2 className="text-2xl font-bold text-foreground">Your Details</h2>
           </div>
-          {user && (
-            <Card className="p-4">
-              <div className="flex items-center gap-3">
-                <Shield className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {getRoleDisplayName(user.baseRole)}
-                  </p>
-                  {user.specialAccess.length > 0 && (
-                    <div className="flex items-center gap-1 mt-1">
-                      {user.specialAccess.map((access) => (
-                        <span
-                          key={access}
-                          className="text-xs px-2 py-0.5 bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 rounded flex items-center gap-1"
-                        >
-                          <Crown className="w-3 h-3" />
-                          {getSpecialAccessDisplayName(access)}
-                        </span>
-                      ))}
-                    </div>
+          
+          <div className="space-y-4">
+            {/* Update Password */}
+            <div className="border-b pb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Lock className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Update Password</Label>
+              </div>
+              <form onSubmit={handlePasswordUpdate} className="space-y-3">
+                <Input
+                  type="password"
+                  placeholder="Current password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                  disabled={passwordLoading}
+                />
+                <Input
+                  type="password"
+                  placeholder="New password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  disabled={passwordLoading}
+                />
+                <Input
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  disabled={passwordLoading}
+                />
+                {passwordError && (
+                  <p className="text-sm text-destructive">{passwordError}</p>
+                )}
+                {passwordSuccess && (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Password updated successfully!</span>
+                  </div>
+                )}
+                <Button type="submit" disabled={passwordLoading} size="sm">
+                  {passwordLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Password'
                   )}
-                </div>
-              </div>
-            </Card>
-          )}
-        </div>
-      </div>
+                </Button>
+              </form>
+            </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sections.map((section) => {
-          const Icon = section.icon
-          return (
-            <Link key={section.href} href={section.href}>
-              <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer h-full">
-                <div className={`w-12 h-12 ${section.bgColor} ${section.color} rounded-lg flex items-center justify-center mb-4`}>
-                  <Icon className="w-6 h-6" />
-                </div>
-                <h2 className="text-xl font-semibold text-foreground mb-2">{section.title}</h2>
-                <p className="text-sm text-muted-foreground">{section.description}</p>
-              </Card>
-            </Link>
-          )
-        })}
-      </div>
+            {/* Update Profile */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <User className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Update Profile</Label>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Manage your profile information, photo, and preferences
+              </p>
+              <Link href="/profile">
+                <Button variant="outline" size="sm">
+                  Go to Profile
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
 
-      {/* Quick Stats */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-semibold text-foreground mb-4">Quick Stats</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active Playlists</p>
-                <p className="text-2xl font-bold text-foreground">1</p>
+        {/* Submit Content Section */}
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <FileText className="w-5 h-5 text-primary" />
+            <h2 className="text-2xl font-bold text-foreground">Submit Content</h2>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Music className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Add Music Read</Label>
               </div>
-              <TrendingUp className="w-8 h-8 text-green-500" />
+              <p className="text-sm text-muted-foreground mb-3">
+                Submit a music recommendation or reading
+              </p>
+              <Button variant="outline" size="sm" disabled>
+                Coming Soon
+              </Button>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Add Work Sample</Label>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Share your work samples and portfolio pieces
+              </p>
+              <Button variant="outline" size="sm" disabled>
+                Coming Soon
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Content Section */}
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <FolderOpen className="w-5 h-5 text-primary" />
+            <h2 className="text-2xl font-bold text-foreground">Content</h2>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <FolderOpen className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Resources</Label>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Manage shared resources and documents
+              </p>
+              <Link href="/admin/content">
+                <Button variant="outline" size="sm">
+                  Manage Resources
+                </Button>
+              </Link>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <GitBranch className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Pipeline</Label>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                View and manage work pipeline
+              </p>
+              <Button variant="outline" size="sm" disabled>
+                Coming Soon
+              </Button>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Video className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Meeting Recordings</Label>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Access and manage meeting recordings
+              </p>
+              <Button variant="outline" size="sm" disabled>
+                Coming Soon
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Curation Section */}
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <Crown className="w-5 h-5 text-primary" />
+            <h2 className="text-2xl font-bold text-foreground">Curation</h2>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Crown className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Beast Babe</Label>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Pass the Beast Babe torch to the next person
+              </p>
+              {permissions?.canPassBeastBabe ? (
+                <Link href="/admin/beast-babe">
+                  <Button variant="outline" size="sm">
+                    Manage Beast Babe
+                  </Button>
+                </Link>
+              ) : (
+                <Button variant="outline" size="sm" disabled>
+                  Permission Required
+                </Button>
+              )}
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Weekly Question</Label>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Create and manage weekly questions
+              </p>
+              <Button variant="outline" size="sm" disabled>
+                Coming Soon
+              </Button>
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Music className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Playlist</Label>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Manage featured playlists
+              </p>
+              {permissions?.canManagePlaylists ? (
+                <Link href="/admin/playlists">
+                  <Button variant="outline" size="sm">
+                    Manage Playlists
+                  </Button>
+                </Link>
+              ) : (
+                <Button variant="outline" size="sm" disabled>
+                  Permission Required
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* Admin Section */}
+        {permissions?.canManageUsers && (
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-6">
+              <Shield className="w-5 h-5 text-primary" />
+              <h2 className="text-2xl font-bold text-foreground">Admin</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Bell className="w-4 h-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium">Push Notifications</Label>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Send push notifications to users
+                </p>
+                <Button variant="outline" size="sm" disabled>
+                  Coming Soon
+                </Button>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium">Set Curator</Label>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Assign curator roles to users
+                </p>
+                <Link href="/admin/users">
+                  <Button variant="outline" size="sm">
+                    Manage Users
+                  </Button>
+                </Link>
+              </div>
             </div>
           </Card>
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Horoscope Configs</p>
-                <p className="text-2xl font-bold text-foreground">-</p>
-              </div>
-              <Sparkles className="w-8 h-8 text-purple-500" />
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Content Cards</p>
-                <p className="text-2xl font-bold text-foreground">6+</p>
-              </div>
-              <FileText className="w-8 h-8 text-orange-500" />
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Last Updated</p>
-                <p className="text-sm font-medium text-foreground">Today</p>
-              </div>
-              <Settings className="w-8 h-8 text-gray-500" />
-            </div>
-          </Card>
-        </div>
+        )}
       </div>
     </div>
   )
 }
-
