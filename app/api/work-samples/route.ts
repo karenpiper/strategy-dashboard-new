@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const typeId = searchParams.get('type_id')
     const authorId = searchParams.get('author_id')
+    const sortBy = searchParams.get('sortBy') || 'created_at'
+    const sortOrder = searchParams.get('sortOrder') || 'desc'
 
     // Build query - fetch base data first, then enrich with related data
     let query = supabase
@@ -38,8 +40,18 @@ export async function GET(request: NextRequest) {
         file_link,
         file_name
       `)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false })
+
+    // Apply sorting
+    if (sortBy === 'project_name') {
+      query = query.order('project_name', { ascending: sortOrder === 'asc' })
+    } else if (sortBy === 'author_id') {
+      query = query.order('author_id', { ascending: sortOrder === 'asc' })
+    } else if (sortBy === 'created_at' || sortBy === 'date') {
+      query = query.order('created_at', { ascending: sortOrder === 'asc' })
+    } else {
+      // Default sorting
+      query = query.order('created_at', { ascending: false })
+    }
 
     // Apply filters
     if (typeId) {
@@ -120,6 +132,16 @@ export async function GET(request: NextRequest) {
         item.description?.toLowerCase().includes(searchLower) ||
         item.client?.toLowerCase().includes(searchLower)
       )
+    }
+
+    // Apply client-side sorting for author (since it's a foreign key relationship)
+    if (sortBy === 'author_id') {
+      filteredData.sort((a: any, b: any) => {
+        const authorA = a.author?.full_name || a.author?.email || ''
+        const authorB = b.author?.full_name || b.author?.email || ''
+        const comparison = authorA.localeCompare(authorB)
+        return sortOrder === 'asc' ? comparison : -comparison
+      })
     }
 
     return NextResponse.json({ data: filteredData })

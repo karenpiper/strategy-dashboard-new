@@ -64,6 +64,8 @@ export default function WorkSampleAdmin() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterTypeId, setFilterTypeId] = useState<string | null>(null)
   const [filterAuthorId, setFilterAuthorId] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<string>('created_at')
+  const [sortOrder, setSortOrder] = useState<string>('desc')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [editingItem, setEditingItem] = useState<WorkSample | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -158,6 +160,8 @@ export default function WorkSampleAdmin() {
       if (searchQuery) params.append('search', searchQuery)
       if (filterTypeId) params.append('type_id', filterTypeId)
       if (filterAuthorId) params.append('author_id', filterAuthorId)
+      if (sortBy) params.append('sortBy', sortBy)
+      if (sortOrder) params.append('sortOrder', sortOrder)
 
       const response = await fetch(`/api/work-samples?${params.toString()}`)
       const result = await response.json()
@@ -176,26 +180,54 @@ export default function WorkSampleAdmin() {
     }
   }
 
-  // Fetch types and users
+  // Extract unique types and authors from work samples
   useEffect(() => {
-    fetchTypes()
-    fetchUsers()
+    // Extract unique types that have work samples
+    const uniqueTypes = new Map<string, WorkSampleType>()
+    workSamples.forEach(sample => {
+      if (sample.type && sample.type_id) {
+        uniqueTypes.set(sample.type_id, sample.type)
+      }
+    })
+    setTypes(Array.from(uniqueTypes.values()).sort((a, b) => a.name.localeCompare(b.name)))
+
+    // Extract unique authors that have work samples
+    const uniqueAuthors = new Map<string, User>()
+    workSamples.forEach(sample => {
+      if (sample.author && sample.author_id) {
+        uniqueAuthors.set(sample.author_id, sample.author)
+      }
+    })
+    setUsers(Array.from(uniqueAuthors.values()).sort((a, b) => {
+      const nameA = a.full_name || a.email || ''
+      const nameB = b.full_name || b.email || ''
+      return nameA.localeCompare(nameB)
+    }))
+  }, [workSamples])
+
+  // Fetch all types for the add/edit dialogs (where we need all types, not just ones with samples)
+  const [allTypes, setAllTypes] = useState<WorkSampleType[]>([])
+  const [allUsers, setAllUsers] = useState<User[]>([])
+
+  useEffect(() => {
+    fetchAllTypes()
+    fetchAllUsers()
     fetchWorkSamples()
   }, [])
 
-  const fetchTypes = async () => {
+  const fetchAllTypes = async () => {
     try {
       const response = await fetch('/api/work-sample-types')
       const result = await response.json()
       if (response.ok) {
-        setTypes(result.data || [])
+        setAllTypes(result.data || [])
       }
     } catch (error) {
       console.error('Error fetching types:', error)
     }
   }
 
-  const fetchUsers = async () => {
+  const fetchAllUsers = async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -203,7 +235,7 @@ export default function WorkSampleAdmin() {
         .order('full_name', { ascending: true })
 
       if (!error && data) {
-        setUsers(data)
+        setAllUsers(data)
       }
     } catch (error) {
       console.error('Error fetching users:', error)
@@ -217,7 +249,7 @@ export default function WorkSampleAdmin() {
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [searchQuery, filterTypeId, filterAuthorId])
+  }, [searchQuery, filterTypeId, filterAuthorId, sortBy, sortOrder])
 
   // Handle thumbnail upload
   const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -347,7 +379,7 @@ export default function WorkSampleAdmin() {
       const result = await response.json()
       
       if (response.ok) {
-        await fetchTypes()
+        await fetchAllTypes()
         setFormData({ ...formData, type_id: result.data.id })
         setNewTypeName('')
         setShowAddTypeDialog(false)
@@ -540,10 +572,10 @@ export default function WorkSampleAdmin() {
   }
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === workSamples.length && workSamples.length > 0) {
+    if (selectedIds.size === filteredWorkSamples.length && filteredWorkSamples.length > 0) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(workSamples.map(item => item.id)))
+      setSelectedIds(new Set(filteredWorkSamples.map(item => item.id)))
     }
   }
 
@@ -581,227 +613,231 @@ export default function WorkSampleAdmin() {
                 Add New
               </Button>
             </DialogTrigger>
-            <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border max-h-[90vh] overflow-y-auto`}>
+            <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border max-w-4xl max-h-[90vh] overflow-y-auto`}>
               <DialogHeader>
                 <DialogTitle className={cardStyle.text}>Add New Work Sample</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label className={cardStyle.text}>Project Name *</Label>
-                  <Input
-                    value={formData.project_name}
-                    onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                    placeholder="Enter project name"
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Left Column */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className={cardStyle.text}>Project Name *</Label>
+                    <Input
+                      value={formData.project_name}
+                      onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="Enter project name"
+                    />
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Description *</Label>
+                    <Textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="Describe the work..."
+                      rows={4}
+                    />
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Type (optional)</Label>
+                    <div className="flex gap-2">
+                      <select
+                        value={formData.type_id}
+                        onChange={(e) => setFormData({ ...formData, type_id: e.target.value })}
+                        className={`flex-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                      >
+                        <option value="">No Type</option>
+                        {allTypes.map(type => (
+                          <option key={type.id} value={type.id}>
+                            {type.name}
+                          </option>
+                        ))}
+                      </select>
+                      <Dialog open={showAddTypeDialog} onOpenChange={setShowAddTypeDialog}>
+                        <DialogTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className={`${cardStyle.border} border ${cardStyle.text}`}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border`}>
+                          <DialogHeader>
+                            <DialogTitle className={cardStyle.text}>Add New Type</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label className={cardStyle.text}>Type Name</Label>
+                              <Input
+                                value={newTypeName}
+                                onChange={(e) => setNewTypeName(e.target.value)}
+                                className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
+                                placeholder="Enter type name"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    handleAddType()
+                                  }
+                                }}
+                              />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                onClick={() => setShowAddTypeDialog(false)}
+                                variant="outline"
+                                className={`${cardStyle.border} border ${cardStyle.text}`}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                onClick={handleAddType}
+                                disabled={!newTypeName.trim()}
+                                className={`${getRoundedClass('rounded-lg')} ${
+                                  mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
+                                  mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
+                                  'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
+                                } font-black uppercase tracking-wider`}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Client (optional)</Label>
+                    <Input
+                      value={formData.client}
+                      onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="Enter client name..."
+                    />
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Date</Label>
+                    <Input
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label className={cardStyle.text}>Description *</Label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                    placeholder="Describe the work..."
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Type (Optional)</Label>
-                  <div className="flex gap-2 mt-1">
+
+                {/* Right Column */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className={cardStyle.text}>Author</Label>
                     <select
-                      value={formData.type_id}
-                      onChange={(e) => setFormData({ ...formData, type_id: e.target.value })}
-                      className={`flex-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                      value={formData.author_id}
+                      onChange={(e) => setFormData({ ...formData, author_id: e.target.value })}
+                      className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                     >
-                      <option value="">No Type</option>
-                      {types.map(type => (
-                        <option key={type.id} value={type.id}>
-                          {type.name}
+                      {allUsers.map(u => (
+                        <option key={u.id} value={u.id}>
+                          {u.full_name || u.email}
                         </option>
                       ))}
                     </select>
-                    <Dialog open={showAddTypeDialog} onOpenChange={setShowAddTypeDialog}>
-                      <DialogTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className={`${cardStyle.border} border ${cardStyle.text}`}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border`}>
-                        <DialogHeader>
-                          <DialogTitle className={cardStyle.text}>Add New Type</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label className={cardStyle.text}>Type Name</Label>
-                            <Input
-                              value={newTypeName}
-                              onChange={(e) => setNewTypeName(e.target.value)}
-                              className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                              placeholder="Enter type name"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault()
-                                  handleAddType()
-                                }
-                              }}
-                            />
-                          </div>
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              onClick={() => setShowAddTypeDialog(false)}
-                              variant="outline"
-                              className={`${cardStyle.border} border ${cardStyle.text}`}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              onClick={handleAddType}
-                              disabled={!newTypeName.trim()}
-                              className={`${getRoundedClass('rounded-lg')} ${
-                                mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
-                                mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
-                                'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
-                              } font-black uppercase tracking-wider`}
-                            >
-                              Add
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
                   </div>
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Client (Optional)</Label>
-                  <Input
-                    value={formData.client}
-                    onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                    placeholder="Enter client name..."
-                  />
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Author</Label>
-                  <select
-                    value={formData.author_id}
-                    onChange={(e) => setFormData({ ...formData, author_id: e.target.value })}
-                    className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')} mt-1`}
-                  >
-                    {users.map(u => (
-                      <option key={u.id} value={u.id}>
-                        {u.full_name || u.email} {u.full_name ? `(${u.email})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Submitted By (Optional)</Label>
-                  <select
-                    value={formData.submitted_by}
-                    onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
-                    className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')} mt-1`}
-                  >
-                    <option value="">Leave Blank</option>
-                    {users.map(u => (
-                      <option key={u.id} value={u.id}>
-                        {u.full_name || u.email} {u.full_name ? `(${u.email})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                    Defaults to your account if left blank
-                  </p>
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                  />
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Thumbnail Image (Optional)</Label>
-                  <div className="mt-1">
-                    {thumbnailPreview && (
-                      <div className="mb-2">
-                        <img 
-                          src={thumbnailPreview} 
-                          alt="Thumbnail preview" 
-                          className="w-32 h-32 object-cover rounded"
-                        />
-                      </div>
-                    )}
+                  <div>
+                    <Label className={cardStyle.text}>Submitted By</Label>
+                    <select
+                      value={formData.submitted_by || ''}
+                      onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
+                      className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                    >
+                      <option value="">None</option>
+                      {allUsers.map(u => (
+                        <option key={u.id} value={u.id}>
+                          {u.full_name || u.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>File Link (optional)</Label>
+                    <Input
+                      type="url"
+                      value={formData.file_link}
+                      onChange={(e) => setFormData({ ...formData, file_link: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="https://example.com/file"
+                    />
+                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                      Alternative to file upload - provide a link to the file
+                    </p>
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Thumbnail Image (optional)</Label>
+                    <div>
+                      {thumbnailPreview && (
+                        <div className="mb-2">
+                          <img 
+                            src={thumbnailPreview} 
+                            alt="Thumbnail preview" 
+                            className="w-32 h-32 object-cover rounded"
+                          />
+                        </div>
+                      )}
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleThumbnailUpload}
+                        disabled={uploadingThumbnail}
+                        className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      />
+                      {uploadingThumbnail && <p className={`text-xs ${cardStyle.text}/70 mt-1`}>Uploading...</p>}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>File Upload (optional)</Label>
+                    <p className={`text-xs ${cardStyle.text}/70 mb-1`}>PDF, Keynote, ZIP, PPT, DOC (max 100MB)</p>
                     <Input
                       type="file"
-                      accept="image/*"
-                      onChange={handleThumbnailUpload}
-                      disabled={uploadingThumbnail}
+                      accept=".pdf,.zip,.ppt,.pptx,.doc,.docx,.key"
+                      onChange={handleFileUpload}
+                      disabled={uploadingFile}
                       className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                     />
-                    {uploadingThumbnail && <p className={`text-xs ${cardStyle.text}/70 mt-1`}>Uploading...</p>}
+                    {selectedFile && (
+                      <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                        Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
+                    {formData.file_name && !selectedFile && (
+                      <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                        Current file: {formData.file_name}
+                      </p>
+                    )}
+                    {uploadingFile && <p className={`text-xs ${cardStyle.text}/70 mt-1`}>Uploading to Google Drive...</p>}
                   </div>
                 </div>
-                <div>
-                  <Label className={cardStyle.text}>File Upload (Optional)</Label>
-                  <p className={`text-xs ${cardStyle.text}/70 mb-1`}>PDF, Keynote, ZIP, PPT, DOC (max 100MB)</p>
-                  <Input
-                    type="file"
-                    accept=".pdf,.zip,.ppt,.pptx,.doc,.docx,.key"
-                    onChange={handleFileUpload}
-                    disabled={uploadingFile}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                  />
-                  {selectedFile && (
-                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                      Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                    </p>
-                  )}
-                  {formData.file_name && !selectedFile && (
-                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                      Current file: {formData.file_name}
-                    </p>
-                  )}
-                  {uploadingFile && <p className={`text-xs ${cardStyle.text}/70 mt-1`}>Uploading to Google Drive...</p>}
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>File Link (Optional)</Label>
-                  <Input
-                    type="url"
-                    value={formData.file_link}
-                    onChange={(e) => setFormData({ ...formData, file_link: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                    placeholder="https://example.com/file"
-                  />
-                  <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                    Alternative to file upload - provide a link to the file
-                  </p>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    onClick={() => setIsAddDialogOpen(false)}
-                    variant="outline"
-                    className={`${cardStyle.border} border ${cardStyle.text}`}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleAdd}
-                    disabled={!formData.project_name || !formData.description}
-                    className={`${getRoundedClass('rounded-lg')} ${
-                      mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
-                      mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
-                      'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
-                    } font-black uppercase tracking-wider`}
-                  >
-                    Add
-                  </Button>
-                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button
+                  onClick={() => setIsAddDialogOpen(false)}
+                  variant="outline"
+                  className={`${cardStyle.border} border ${cardStyle.text}`}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAdd}
+                  disabled={!formData.project_name || !formData.description}
+                  className={`${getRoundedClass('rounded-lg')} ${
+                    mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
+                    mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
+                    'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
+                  } font-black uppercase tracking-wider`}
+                >
+                  Add
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -824,13 +860,13 @@ export default function WorkSampleAdmin() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by project name, description, or client..."
+                placeholder="Search all fields..."
                 className={`pl-10 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
               />
             </div>
           </div>
 
-          {/* Filters */}
+          {/* Filter */}
           <div className="flex items-center gap-2">
             <Filter className={`w-4 h-4 ${getTextClass()}/50`} />
             <select
@@ -856,6 +892,26 @@ export default function WorkSampleAdmin() {
                   {u.full_name || u.email}
                 </option>
               ))}
+            </select>
+          </div>
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <select
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [by, order] = e.target.value.split('-')
+                setSortBy(by)
+                setSortOrder(order)
+              }}
+              className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+            >
+              <option value="created_at-desc">Date (Newest)</option>
+              <option value="created_at-asc">Date (Oldest)</option>
+              <option value="project_name-asc">Project Name (A-Z)</option>
+              <option value="project_name-desc">Project Name (Z-A)</option>
+              <option value="author_id-asc">Author (A-Z)</option>
+              <option value="author_id-desc">Author (Z-A)</option>
             </select>
           </div>
         </div>
@@ -894,31 +950,30 @@ export default function WorkSampleAdmin() {
                     onChange={() => toggleSelect(item.id)}
                     className="w-4 h-4 mt-1"
                   />
-                  {item.thumbnail_url && (
-                    <div className="flex-shrink-0">
-                      <img 
-                        src={item.thumbnail_url} 
-                        alt={item.project_name}
-                        className="w-24 h-24 object-cover rounded"
-                      />
-                    </div>
-                  )}
                   <div className="flex-1">
-                    <div className="flex items-start justify-between gap-4 mb-2">
+                    <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <h3 className={`text-xl font-black uppercase ${cardStyle.text} mb-1`}>
+                        <h3 className={`text-xl font-black uppercase ${cardStyle.text} mb-2`}>
                           {item.project_name}
                         </h3>
-                        {item.type && (
-                          <span className={`text-xs ${cardStyle.text}/70 font-bold`}>
-                            {item.type.name}
+                        <div className={`flex items-center gap-4 text-sm ${cardStyle.text}/70 font-bold`}>
+                          <span>
+                            Author: {item.author?.full_name || item.author?.email || 'Unknown'}
                           </span>
-                        )}
-                        {item.client && (
-                          <span className={`text-xs ${cardStyle.text}/70 font-bold ml-2`}>
-                            • {item.client}
+                          {item.type && (
+                            <span>
+                              Type: {item.type.name}
+                            </span>
+                          )}
+                          {item.client && (
+                            <span>
+                              Client: {item.client}
+                            </span>
+                          )}
+                          <span>
+                            Created: {new Date(item.created_at).toLocaleDateString()}
                           </span>
-                        )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -938,31 +993,6 @@ export default function WorkSampleAdmin() {
                         </Button>
                       </div>
                     </div>
-                    <p className={`text-sm ${cardStyle.text}/70 mb-2 font-medium`}>{item.description}</p>
-                    {(item.file_url || item.file_link) && (
-                      <div className="mb-2">
-                        <a
-                          href={item.file_url || item.file_link || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`text-sm ${cardStyle.text}/70 hover:${cardStyle.text} flex items-center gap-1 font-bold`}
-                        >
-                          {item.file_name || 'View File'}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                    )}
-                    <div className={`flex items-center gap-4 text-xs ${cardStyle.text}/50 font-bold`}>
-                      <span>
-                        Author: {item.author?.full_name || item.author?.email || 'Unknown'}
-                      </span>
-                      <span>
-                        Created: {new Date(item.created_at).toLocaleDateString()}
-                      </span>
-                      <span>
-                        Date: {new Date(item.date).toLocaleDateString()}
-                      </span>
-                    </div>
                   </div>
                 </div>
               </Card>
@@ -971,154 +1001,165 @@ export default function WorkSampleAdmin() {
         )}
 
         {/* Edit Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border max-h-[90vh] overflow-y-auto`}>
+        <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+          setIsEditDialogOpen(open)
+          if (!open) {
+            setEditingItem(null)
+            resetForm()
+          }
+        }}>
+          <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border max-w-4xl max-h-[90vh] overflow-y-auto`}>
             <DialogHeader>
               <DialogTitle className={cardStyle.text}>Edit Work Sample</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label className={cardStyle.text}>Project Name *</Label>
-                <Input
-                  value={formData.project_name}
-                  onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
-                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                  placeholder="Enter project name"
-                />
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Description *</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                  placeholder="Describe the work..."
-                  rows={4}
-                />
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Type (Optional)</Label>
-                <select
-                  value={formData.type_id}
-                  onChange={(e) => setFormData({ ...formData, type_id: e.target.value })}
-                  className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')} mt-1`}
-                >
-                  <option value="">No Type</option>
-                  {types.map(type => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Client (Optional)</Label>
-                <Input
-                  value={formData.client}
-                  onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                  placeholder="Enter client name..."
-                />
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Author</Label>
-                <select
-                  value={formData.author_id}
-                  onChange={(e) => setFormData({ ...formData, author_id: e.target.value })}
-                  className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')} mt-1`}
-                >
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.full_name || u.email} {u.full_name ? `(${u.email})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Submitted By (Optional)</Label>
-                <select
-                  value={formData.submitted_by}
-                  onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
-                  className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')} mt-1`}
-                >
-                  <option value="">Leave Blank</option>
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.full_name || u.email} {u.full_name ? `(${u.email})` : ''}
-                    </option>
-                  ))}
-                </select>
-                <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                  Defaults to your account if left blank
-                </p>
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Date</Label>
-                <Input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                />
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Thumbnail Image (Optional)</Label>
-                <div className="mt-1">
-                  {thumbnailPreview && (
-                    <div className="mb-2">
-                      <img 
-                        src={thumbnailPreview} 
-                        alt="Thumbnail preview" 
-                        className="w-32 h-32 object-cover rounded"
-                      />
-                    </div>
-                  )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left Column */}
+              <div className="space-y-4">
+                <div>
+                  <Label className={cardStyle.text}>Project Name *</Label>
                   <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleThumbnailUpload}
-                    disabled={uploadingThumbnail}
+                    value={formData.project_name}
+                    onChange={(e) => setFormData({ ...formData, project_name: e.target.value })}
+                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    placeholder="Enter project name"
+                  />
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Description *</Label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    placeholder="Describe the work..."
+                    rows={4}
+                  />
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Type (optional)</Label>
+                  <select
+                    value={formData.type_id}
+                    onChange={(e) => setFormData({ ...formData, type_id: e.target.value })}
+                    className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                  >
+                    <option value="">No Type</option>
+                    {allTypes.map(type => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Client (optional)</Label>
+                  <Input
+                    value={formData.client}
+                    onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    placeholder="Enter client name..."
+                  />
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Date</Label>
+                  <Input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                   />
-                  {uploadingThumbnail && <p className={`text-xs ${cardStyle.text}/70 mt-1`}>Uploading...</p>}
                 </div>
               </div>
-              <div>
-                <Label className={cardStyle.text}>File Upload (Optional)</Label>
-                <p className={`text-xs ${cardStyle.text}/70 mb-1`}>PDF, Keynote, ZIP, PPT, DOC (max 100MB)</p>
-                <Input
-                  type="file"
-                  accept=".pdf,.zip,.ppt,.pptx,.doc,.docx,.key"
-                  onChange={handleFileUpload}
-                  disabled={uploadingFile}
-                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                />
-                {selectedFile && (
+
+              {/* Right Column */}
+              <div className="space-y-4">
+                <div>
+                  <Label className={cardStyle.text}>Author</Label>
+                  <select
+                    value={formData.author_id}
+                    onChange={(e) => setFormData({ ...formData, author_id: e.target.value })}
+                    className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                  >
+                    {allUsers.map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name || u.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Submitted By</Label>
+                  <select
+                    value={formData.submitted_by || ''}
+                    onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
+                    className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                  >
+                    <option value="">None</option>
+                    {allUsers.map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name || u.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>File Link (optional)</Label>
+                  <Input
+                    type="url"
+                    value={formData.file_link}
+                    onChange={(e) => setFormData({ ...formData, file_link: e.target.value })}
+                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    placeholder="https://example.com/file"
+                  />
                   <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                    Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                    Alternative to file upload - provide a link to the file
                   </p>
-                )}
-                {formData.file_name && !selectedFile && (
-                  <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                    Current file: {formData.file_name}
-                  </p>
-                )}
-                {uploadingFile && <p className={`text-xs ${cardStyle.text}/70 mt-1`}>Uploading to Google Drive...</p>}
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Thumbnail Image (optional)</Label>
+                  <div>
+                    {thumbnailPreview && (
+                      <div className="mb-2">
+                        <img 
+                          src={thumbnailPreview} 
+                          alt="Thumbnail preview" 
+                          className="w-32 h-32 object-cover rounded"
+                        />
+                      </div>
+                    )}
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleThumbnailUpload}
+                      disabled={uploadingThumbnail}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    />
+                    {uploadingThumbnail && <p className={`text-xs ${cardStyle.text}/70 mt-1`}>Uploading...</p>}
+                  </div>
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>File Upload (optional)</Label>
+                  <p className={`text-xs ${cardStyle.text}/70 mb-1`}>PDF, Keynote, ZIP, PPT, DOC (max 100MB)</p>
+                  <Input
+                    type="file"
+                    accept=".pdf,.zip,.ppt,.pptx,.doc,.docx,.key"
+                    onChange={handleFileUpload}
+                    disabled={uploadingFile}
+                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                  />
+                  {selectedFile && (
+                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                      Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                  )}
+                  {formData.file_name && !selectedFile && (
+                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                      Current file: {formData.file_name}
+                    </p>
+                  )}
+                  {uploadingFile && <p className={`text-xs ${cardStyle.text}/70 mt-1`}>Uploading to Google Drive...</p>}
+                </div>
               </div>
-              <div>
-                <Label className={cardStyle.text}>File Link (Optional)</Label>
-                <Input
-                  type="url"
-                  value={formData.file_link}
-                  onChange={(e) => setFormData({ ...formData, file_link: e.target.value })}
-                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                  placeholder="https://example.com/file"
-                />
-                <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                  Alternative to file upload - provide a link to the file
-                </p>
-              </div>
-              <div className="flex justify-end gap-2">
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
                 <Button
                   onClick={() => {
                     setIsEditDialogOpen(false)
