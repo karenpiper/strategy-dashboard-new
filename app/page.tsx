@@ -1240,19 +1240,58 @@ export default function TeamDashboard() {
                       style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
                 >
                   <h2 className={`text-3xl font-black mb-6 uppercase leading-tight ${style.text}`}>WEEKLY REPORT</h2>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-8">
                     {[
                       { value: '5', label: 'new business' },
                       { value: '8', label: 'pitches shipped' },
                       { value: '12', label: 'placeholder' },
                       { value: '3', label: 'placeholder' },
-                    ].map((stat) => (
-                      <div key={stat.label} className="flex items-baseline gap-2">
-                        <span className={`text-2xl font-black ${style.text}`}>{stat.value}</span>
-                        <span className={`text-sm font-medium uppercase tracking-wide ${style.text}/80`}>{stat.label}</span>
+                    ].map((stat, index) => (
+                      <div 
+                        key={stat.label} 
+                        className="relative group"
+                        style={{
+                          animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
+                        }}
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-baseline gap-3 mb-1">
+                            <span 
+                              className={`text-6xl font-black ${style.text} leading-none`}
+                              style={{
+                                textShadow: mode === 'chaos' ? '3px 3px 6px rgba(0,0,0,0.4)' : mode === 'chill' ? '3px 3px 6px rgba(74,24,24,0.3)' : '3px 3px 6px rgba(0,0,0,0.6)',
+                                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+                              }}
+                            >
+                              {stat.value}
+                            </span>
+                          </div>
+                          <span className={`text-lg font-black uppercase tracking-widest ${style.text} leading-tight`}>
+                            {stat.label}
+                          </span>
+                        </div>
+                        <div 
+                          className="absolute -inset-1 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                          style={{
+                            background: mode === 'chaos' ? 'rgba(0,0,0,0.1)' : mode === 'chill' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.1)',
+                            borderRadius: '4px'
+                          }}
+                        />
                       </div>
                     ))}
                   </div>
+                  <style jsx>{`
+                    @keyframes fadeInUp {
+                      from {
+                        opacity: 0;
+                        transform: translateY(15px);
+                      }
+                      to {
+                        opacity: 1;
+                        transform: translateY(0);
+                      }
+                    }
+                  `}</style>
                 </Card>
               )
             })()}
