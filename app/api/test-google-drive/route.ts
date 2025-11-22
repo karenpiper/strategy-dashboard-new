@@ -116,30 +116,33 @@ export async function GET(request: NextRequest) {
 
       // Step 4: Test folder access
       // First, let's see what folders the service account can access
+      let folderListInfo: any = null
       try {
         console.log('Attempting to list accessible files/folders...')
         const listResponse = await drive.files.list({
           q: "mimeType='application/vnd.google-apps.folder'",
           fields: 'files(id, name)',
-          pageSize: 10,
+          pageSize: 20,
           supportsAllDrives: true,
           includeItemsFromAllDrives: true,
         } as any)
         
-        results.step4_folder = {
-          status: 'info',
+        folderListInfo = {
+          status: 'success',
           message: `Service account can see ${listResponse.data.files?.length || 0} folders`,
-          data: {
-            accessibleFolders: listResponse.data.files?.map((f: any) => ({
-              id: f.id,
-              name: f.name,
-              matches: f.id === folderId || f.id === folderId.replace(/\.+$/, ''),
-            })) || [],
-            targetFolderId: folderId,
-          },
+          accessibleFolders: listResponse.data.files?.map((f: any) => ({
+            id: f.id,
+            name: f.name,
+            matches: f.id === folderId || f.id === folderId.replace(/\.+$/, ''),
+          })) || [],
+          targetFolderId: folderId,
         }
       } catch (listError: any) {
-        console.log('Could not list folders:', listError.message)
+        folderListInfo = {
+          status: 'error',
+          message: `Could not list folders: ${listError.message}`,
+          errorCode: listError.code,
+        }
       }
 
       // Now try to access the specific folder
@@ -165,6 +168,7 @@ export async function GET(request: NextRequest) {
           data: {
             folderName: folderInfo.data.name,
             folderId: folderInfo.data.id,
+            folderListInfo: folderListInfo,
           },
         }
       } catch (error: any) {
@@ -228,6 +232,7 @@ export async function GET(request: NextRequest) {
                   errorCode: finalError.code,
                   errorMessage: finalError.message,
                   note: 'The service account cannot see this folder. It needs to be explicitly shared.',
+                  folderListInfo: folderListInfo, // Include what folders the service account CAN see
                 },
                 fix: [
                   `1. Verify the folder ID is correct: ${folderId}`,
@@ -240,7 +245,9 @@ export async function GET(request: NextRequest) {
                   `8. Try the test again`,
                   ``,
                   `Note: If this is a shared drive (Google Workspace), you may need to:`,
-                  `- Add the service account to the shared drive's members`,
+                  `- Add the service account to the shared drive's members (not just the folder)`,
+                  `- Go to the shared drive settings → Members → Add ${clientEmail}`,
+                  `- Give it "Content Manager" or "Manager" role`,
                   `- Or use domain-wide delegation (more complex setup)`,
                 ],
               }
