@@ -206,6 +206,7 @@ export default function MustReadAdmin() {
           ...restFormData,
           week_start_date: date, // Send date as week_start_date
           submitted_by: formData.submitted_by || user?.id || null, // Default to logged-in user
+          assigned_to: formData.assigned_to || null,
         }),
       })
 
@@ -260,6 +261,7 @@ export default function MustReadAdmin() {
           ...restFormData,
           week_start_date: date, // Send date as week_start_date
           submitted_by: formData.submitted_by || null,
+          assigned_to: formData.assigned_to || null,
         }),
       })
 
@@ -670,6 +672,21 @@ export default function MustReadAdmin() {
                       ))}
                     </select>
                   </div>
+                  <div>
+                    <Label className={cardStyle.text}>Assigned To</Label>
+                    <select
+                      value={formData.assigned_to}
+                      onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                      className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                    >
+                      <option value="">None</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.id}>
+                          {u.full_name || u.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
@@ -999,6 +1016,21 @@ export default function MustReadAdmin() {
                   <select
                     value={formData.submitted_by}
                     onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
+                    className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                  >
+                    <option value="">None</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.full_name || u.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Assigned To</Label>
+                  <select
+                    value={formData.assigned_to}
+                    onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
                     className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                   >
                     <option value="">None</option>
