@@ -141,9 +141,8 @@ export async function generateHoroscopeImage(
   const recentSettingPlaceIds = avatarState?.recent_setting_place_ids || []
 
   // Add new selections to recent history (keep last 7)
-  const newStyleGroupId = selectedStyleGroup?.id
-  const updatedStyleGroupIds = newStyleGroupId
-    ? [...recentStyleGroupIds.filter((id) => id !== newStyleGroupId), newStyleGroupId].slice(-7)
+  const updatedStyleGroupIds = selectedStyleGroupId
+    ? [...recentStyleGroupIds.filter((id) => id !== selectedStyleGroupId), selectedStyleGroupId].slice(-7)
     : recentStyleGroupIds
 
   const updatedStyleReferenceIds = [
