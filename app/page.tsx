@@ -1263,6 +1263,17 @@ export default function TeamDashboard() {
             {/* Work Samples - 3/4 width, fills remaining height, right under Friday Drop */}
             {(() => {
               const textStyle = mode === 'chaos' ? 'text-white' : mode === 'chill' ? 'text-[#4A1818]' : 'text-[#FFFFFF]'
+              const [searchQuery, setSearchQuery] = useState('')
+              
+              const handleSearchSubmit = (e: React.FormEvent) => {
+                e.preventDefault()
+                if (searchQuery.trim()) {
+                  router.push(`/work-samples?search=${encodeURIComponent(searchQuery.trim())}`)
+                } else {
+                  router.push('/work-samples')
+                }
+              }
+              
               return (
                 <div className="flex-1 p-6">
                   <div className="flex items-center justify-between mb-6">
@@ -1274,12 +1285,18 @@ export default function TeamDashboard() {
                       >
                         View All
                       </Link>
-                      <Link 
-                        href="/work-samples?search="
-                        className={`text-xs uppercase tracking-wider font-black ${textStyle} hover:opacity-70 transition-opacity`}
-                      >
-                        Search
-                      </Link>
+                      <form onSubmit={handleSearchSubmit} className="flex items-center">
+                        <div className="relative">
+                          <Search className={`absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 ${textStyle}/50`} />
+                          <Input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search..."
+                            className={`pl-8 h-8 w-48 text-xs ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818] placeholder:text-gray-400' : 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500'}`}
+                          />
+                        </div>
+                      </form>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-8">
