@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
         pinned,
         submitted_by,
         assigned_to,
+        week_start_date,
         created_at,
         updated_at
       `)
@@ -198,7 +199,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Use the column names that exist in the table
-    // Based on the error, the table has 'title' and likely 'url' columns
+    // Based on the error, the table has 'title', 'url', and 'week_start_date' columns
+    // Calculate week_start_date (Monday of current week)
+    const today = new Date()
+    const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, etc.
+    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek // If Sunday, go back 6 days; otherwise go to Monday
+    const weekStart = new Date(today)
+    weekStart.setDate(today.getDate() + daysToMonday)
+    weekStart.setHours(0, 0, 0, 0) // Start of day
+    
     const insertData: any = {
       title: article_title,  // Map article_title to title column
       url: article_url,      // Map article_url to url column (assuming it exists)
@@ -206,6 +215,7 @@ export async function POST(request: NextRequest) {
       pinned: pinned || false,
       submitted_by: user.id,
       assigned_to: assignedToId,
+      week_start_date: weekStart.toISOString().split('T')[0], // Format as YYYY-MM-DD
       updated_at: new Date().toISOString(),
     }
 
@@ -220,6 +230,7 @@ export async function POST(request: NextRequest) {
         pinned,
         submitted_by,
         assigned_to,
+        week_start_date,
         created_at,
         updated_at
       `)
@@ -310,6 +321,7 @@ export async function PUT(request: NextRequest) {
         pinned,
         submitted_by,
         assigned_to,
+        week_start_date,
         created_at,
         updated_at
       `)
