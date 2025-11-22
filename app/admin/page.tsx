@@ -10,8 +10,6 @@ import { useAuth } from '@/contexts/auth-context'
 import { useMode } from '@/contexts/mode-context'
 import { useRouter } from 'next/navigation'
 import { 
-  User, 
-  Lock, 
   FileText, 
   Newspaper, 
   Briefcase, 
@@ -165,18 +163,6 @@ export default function AdminDashboard() {
             <h3 className={`text-xl font-bold ${getCardStyle('purple').text} mb-4`}>PROFILE MANAGEMENT</h3>
             <ul className={`space-y-3 ${getCardStyle('purple').text}/90`}>
               <li className="flex items-start gap-2">
-                <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <div>
-                  <strong>Update Password:</strong> Change your login credentials for security.
-                </div>
-              </li>
-              <li className="flex items-start gap-2">
-                <User className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <div>
-                  <strong>Update Profile:</strong> Update your photo, birthday, and profile information.
-                </div>
-              </li>
-              <li className="flex items-start gap-2">
                 <Shield className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <div>
                   <strong>View Permissions:</strong> See your current access level and capabilities.
@@ -286,30 +272,6 @@ export default function AdminDashboard() {
       <div className="mb-8">
         <h2 className={`text-2xl font-bold ${getTextClass()} mb-4`}>Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
-          <Link href="/admin/password">
-            <Button 
-              className={`${getRoundedClass('rounded-lg')} ${
-                mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
-                mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
-                'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
-              }`}
-            >
-              <Lock className="w-4 h-4 mr-2" />
-              Update Password
-            </Button>
-          </Link>
-          <Link href="/profile">
-            <Button 
-              className={`${getRoundedClass('rounded-lg')} ${
-                mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
-                mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
-                'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
-              }`}
-            >
-              <User className="w-4 h-4 mr-2" />
-              Update Profile
-            </Button>
-          </Link>
           <Link href="/admin/must-read">
             <Button 
               className={`${getRoundedClass('rounded-lg')} ${
