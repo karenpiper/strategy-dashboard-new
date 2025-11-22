@@ -191,21 +191,59 @@ export async function GET(request: NextRequest) {
     // Save image URL and prompt to database (upsert horoscope record)
     // This ensures we only generate once per user per day
     // Historical images are preserved - each day gets its own row
-    const { error: saveError } = await supabaseAdmin
+    // First check if a record exists, then update only image fields to preserve horoscope_text
+    const { data: existingHoroscope } = await supabaseAdmin
       .from('horoscopes')
-      .upsert({
-        user_id: userId,
-        star_sign: starSign,
-        image_url: imageUrl,
-        image_prompt: prompt,
-        style_key: resolvedChoices.styleKey,
-        style_label: resolvedChoices.styleLabel,
-        character_type: resolvedChoices.characterType,
-        date: todayDate, // Use today's date as the cache key
-        generated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,date', // Unique constraint ensures one image per user per day
-      })
+      .select('horoscope_text, horoscope_dos, horoscope_donts')
+      .eq('user_id', userId)
+      .eq('date', todayDate)
+      .maybeSingle()
+    
+    // If horoscope text exists, update only image fields to preserve text
+    if (existingHoroscope?.horoscope_text) {
+      const { error: updateError } = await supabaseAdmin
+        .from('horoscopes')
+        .update({
+          image_url: imageUrl,
+          image_prompt: prompt,
+          style_key: resolvedChoices.styleKey,
+          style_label: resolvedChoices.styleLabel,
+          character_type: resolvedChoices.characterType,
+          generated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId)
+        .eq('date', todayDate)
+      
+      if (updateError) {
+        console.error('Error updating horoscope image:', updateError)
+        throw updateError
+      }
+    } else {
+      // No existing record, create new one with image
+      const { error: insertError } = await supabaseAdmin
+        .from('horoscopes')
+        .insert({
+          user_id: userId,
+          star_sign: starSign,
+          horoscope_text: '', // Will be filled by text endpoint
+          horoscope_dos: [],
+          horoscope_donts: [],
+          image_url: imageUrl,
+          image_prompt: prompt,
+          style_key: resolvedChoices.styleKey,
+          style_label: resolvedChoices.styleLabel,
+          character_type: resolvedChoices.characterType,
+          date: todayDate,
+          generated_at: new Date().toISOString(),
+        })
+      
+      if (insertError) {
+        console.error('Error inserting horoscope image:', insertError)
+        throw insertError
+      }
+    }
+    
+    const saveError = null // No error if we got here
     
     if (saveError) {
       console.error('Error saving horoscope image:', saveError)

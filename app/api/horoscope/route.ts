@@ -257,32 +257,70 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Save horoscope text to database (upsert horoscope record)
-    // This ensures we only generate once per user per day
-    // Historical horoscopes are preserved - each day gets its own row
-    const { error: saveError } = await supabaseAdmin
+    // Save horoscope text to database
+    // Check if record exists first, then update or insert accordingly
+    // This preserves image_url if it was already generated
+    const { data: existingRecord } = await supabaseAdmin
       .from('horoscopes')
-      .upsert({
-        user_id: userId,
-        star_sign: starSign,
-        horoscope_text: horoscopeText,
-        horoscope_dos: horoscopeDos,
-        horoscope_donts: horoscopeDonts,
-        image_url: imageUrl, // May be empty if image hasn't been generated yet
-        style_key: resolvedChoices.styleKey,
-        style_label: resolvedChoices.styleLabel,
-        character_type: resolvedChoices.characterType,
-        date: todayDate, // Use today's date as the cache key
-        generated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,date', // Unique constraint ensures one horoscope per user per day
-      })
+      .select('image_url, image_prompt')
+      .eq('user_id', userId)
+      .eq('date', todayDate)
+      .maybeSingle()
+    
+    let saveError = null
+    
+    if (existingRecord) {
+      // Record exists - update only text fields to preserve image
+      const { error: updateError } = await supabaseAdmin
+        .from('horoscopes')
+        .update({
+          star_sign: starSign,
+          horoscope_text: horoscopeText,
+          horoscope_dos: horoscopeDos,
+          horoscope_donts: horoscopeDonts,
+          style_key: resolvedChoices.styleKey,
+          style_label: resolvedChoices.styleLabel,
+          character_type: resolvedChoices.characterType,
+          generated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId)
+        .eq('date', todayDate)
+      
+      saveError = updateError
+      if (saveError) {
+        console.error('Error updating horoscope text:', saveError)
+      } else {
+        console.log('Successfully updated horoscope text for user', userId, 'on date', todayDate)
+      }
+    } else {
+      // No record exists - insert new one
+      const { error: insertError } = await supabaseAdmin
+        .from('horoscopes')
+        .insert({
+          user_id: userId,
+          star_sign: starSign,
+          horoscope_text: horoscopeText,
+          horoscope_dos: horoscopeDos,
+          horoscope_donts: horoscopeDonts,
+          image_url: imageUrl || '', // May be empty if image hasn't been generated yet
+          style_key: resolvedChoices.styleKey,
+          style_label: resolvedChoices.styleLabel,
+          character_type: resolvedChoices.characterType,
+          date: todayDate,
+          generated_at: new Date().toISOString(),
+        })
+      
+      saveError = insertError
+      if (saveError) {
+        console.error('Error inserting horoscope text:', saveError)
+      } else {
+        console.log('Successfully inserted horoscope text for user', userId, 'on date', todayDate)
+      }
+    }
     
     if (saveError) {
-      console.error('Error saving horoscope:', saveError)
       // Continue anyway - we still return the generated horoscope
-    } else {
-      console.log('Successfully saved horoscope for user', userId, 'on date', todayDate)
+      console.warn('Warning: Failed to save horoscope to database, but returning generated horoscope')
     }
     
     return NextResponse.json({
