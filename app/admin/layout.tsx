@@ -17,13 +17,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const { user: authUser, signOut } = useAuth()
   const { user, permissions, isLoading } = usePermissions()
 
-  // Redirect if no access
-  useEffect(() => {
-    if (!isLoading && (!permissions || !permissions.canViewAdmin)) {
-      router.push('/')
-    }
-  }, [permissions, isLoading, router])
-
+  // Allow all users to access admin - access control handled within pages
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -33,10 +27,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     )
-  }
-
-  if (!permissions || !permissions.canViewAdmin) {
-    return null
   }
 
   const navItems = [
@@ -96,8 +86,12 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     },
   ]
 
-  // Filter nav items based on permissions
-  const visibleNavItems = navItems.filter(item => permissions[item.permission])
+  // Filter nav items based on permissions - show all items but pages will handle access control
+  // Show Dashboard to everyone, other items based on permissions
+  const visibleNavItems = navItems.filter(item => {
+    if (item.href === '/admin') return true // Dashboard accessible to all
+    return permissions?.[item.permission] || false
+  })
 
   return (
     <div className="min-h-screen bg-background">

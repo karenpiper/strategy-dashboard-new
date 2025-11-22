@@ -71,21 +71,7 @@ export default function AdminDashboard() {
     }
   }
 
-  if (!permissions?.canViewAdmin) {
-    return (
-      <div>
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Admin Dashboard</h1>
-        </div>
-        <Card className="p-6">
-          <div className="flex items-center gap-3 text-destructive">
-            <ShieldOff className="w-5 h-5" />
-            <p>You don't have permission to view the admin dashboard.</p>
-          </div>
-        </Card>
-      </div>
-    )
-  }
+  // Show dashboard to all users - sections will show/hide based on permissions
 
   return (
     <div>
