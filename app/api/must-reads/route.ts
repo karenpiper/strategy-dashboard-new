@@ -139,9 +139,9 @@ export async function POST(request: NextRequest) {
     console.log('User authenticated:', user.id)
 
     const body = await request.json()
-    const { article_title, article_url, notes, pinned, assigned_to } = body
+    const { article_title, article_url, notes, pinned, assigned_to, week_start_date } = body
 
-    console.log('Request body:', { article_title, article_url, notes, pinned, assigned_to })
+    console.log('Request body:', { article_title, article_url, notes, pinned, assigned_to, week_start_date })
 
     if (!article_title || !article_url) {
       return NextResponse.json(
@@ -206,13 +206,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Calculate week_start_date (Monday of current week)
-    const today = new Date()
-    const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, etc.
-    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek // If Sunday, go back 6 days; otherwise go to Monday
-    const weekStart = new Date(today)
-    weekStart.setDate(today.getDate() + daysToMonday)
-    weekStart.setHours(0, 0, 0, 0) // Start of day
+    // Use provided week_start_date or calculate it (Monday of current week)
+    let finalWeekStartDate = week_start_date
+    if (!finalWeekStartDate) {
+      const today = new Date()
+      const dayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, etc.
+      const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek // If Sunday, go back 6 days; otherwise go to Monday
+      const weekStart = new Date(today)
+      weekStart.setDate(today.getDate() + daysToMonday)
+      weekStart.setHours(0, 0, 0, 0) // Start of day
+      finalWeekStartDate = weekStart.toISOString().split('T')[0] // Format as YYYY-MM-DD
+    }
     
     // Build insert data with ALL possible required fields
     // Based on errors, the table uses: article_title, article_url, week_start_date, created_by
@@ -228,7 +232,7 @@ export async function POST(request: NextRequest) {
       created_by: user.id,   // Required - who created the record
       submitted_by: user.id, // May also be required
       // Required date fields
-      week_start_date: weekStart.toISOString().split('T')[0], // Required - Monday of current week
+      week_start_date: finalWeekStartDate, // Use provided date or calculated Monday
       // Optional fields
       notes: notes || null,
       pinned: pinned || false,
@@ -307,7 +311,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, article_title, article_url, notes, pinned, assigned_to } = body
+    const { id, article_title, article_url, notes, pinned, assigned_to, week_start_date } = body
 
     if (!id) {
       return NextResponse.json(
@@ -333,6 +337,11 @@ export async function PUT(request: NextRequest) {
       notes: notes || null,
       pinned: pinned || false,
       updated_at: new Date().toISOString(),
+    }
+
+    // Include week_start_date if provided
+    if (week_start_date) {
+      updateData.week_start_date = week_start_date
     }
 
     if (assigned_to !== undefined) {

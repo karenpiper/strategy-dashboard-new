@@ -30,6 +30,7 @@ interface MustRead {
   pinned: boolean
   submitted_by: string
   assigned_to: string | null
+  week_start_date?: string
   created_at: string
   updated_at: string
   submitted_by_profile?: {
@@ -57,13 +58,19 @@ export default function MustReadAdmin() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [users, setUsers] = useState<Array<{ id: string; email: string; full_name: string | null }>>([])
   
-  // Form state
+  // Form state - default date to today
+  const getTodayDate = () => {
+    const today = new Date()
+    return today.toISOString().split('T')[0] // Format as YYYY-MM-DD
+  }
+
   const [formData, setFormData] = useState({
     article_title: '',
     article_url: '',
     notes: '',
     pinned: false,
     assigned_to: '',
+    date: getTodayDate(), // Default to current date
   })
 
   // Theme-aware styling helpers
@@ -172,11 +179,13 @@ export default function MustReadAdmin() {
   // Handle add
   const handleAdd = async () => {
     try {
+      const { date, ...restFormData } = formData
       const response = await fetch('/api/must-reads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          ...restFormData,
+          week_start_date: date, // Send date as week_start_date
           assigned_to: formData.assigned_to || user?.id,
         }),
       })
@@ -209,6 +218,7 @@ export default function MustReadAdmin() {
       notes: item.notes || '',
       pinned: item.pinned,
       assigned_to: item.assigned_to || user?.id || '',
+      date: item.week_start_date || getTodayDate(), // Use week_start_date or default to today
     })
     setIsEditDialogOpen(true)
   }
@@ -217,12 +227,14 @@ export default function MustReadAdmin() {
     if (!editingItem) return
 
     try {
+      const { date, ...restFormData } = formData
       const response = await fetch('/api/must-reads', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: editingItem.id,
-          ...formData,
+          ...restFormData,
+          week_start_date: date, // Send date as week_start_date
           assigned_to: formData.assigned_to || null,
         }),
       })
@@ -298,6 +310,7 @@ export default function MustReadAdmin() {
       notes: '',
       pinned: false,
       assigned_to: user?.id || '',
+      date: getTodayDate(), // Reset to current date
     })
   }
 
@@ -388,6 +401,15 @@ export default function MustReadAdmin() {
                     className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                     placeholder="Add any notes about this article"
                     rows={3}
+                  />
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Date</Label>
+                  <Input
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -610,6 +632,15 @@ export default function MustReadAdmin() {
                   className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                   placeholder="Add any notes about this article"
                   rows={3}
+                />
+              </div>
+              <div>
+                <Label className={cardStyle.text}>Date</Label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                 />
               </div>
               <div className="flex items-center gap-2">
