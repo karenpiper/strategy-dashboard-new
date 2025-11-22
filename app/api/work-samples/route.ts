@@ -252,7 +252,6 @@ export async function POST(request: NextRequest) {
         type:work_sample_types(id, name),
         author:profiles!author_id(id, email, full_name),
         created_by_profile:profiles!created_by(id, email, full_name),
-        submitted_by_profile:profiles!submitted_by(id, email, full_name)
       `)
       .single()
 
@@ -372,7 +371,6 @@ export async function PUT(request: NextRequest) {
         type:work_sample_types(id, name),
         author:profiles!author_id(id, email, full_name),
         created_by_profile:profiles!created_by(id, email, full_name),
-        submitted_by_profile:profiles!submitted_by(id, email, full_name)
       `)
       .single()
 
