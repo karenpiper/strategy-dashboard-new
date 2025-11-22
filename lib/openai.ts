@@ -80,7 +80,7 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
 }
 
 import { buildHoroscopePrompt, type UserProfile as PromptUserProfile } from './horoscope-prompt-builder'
-import { updateUserAvatarState, fetchStyleGroups } from './horoscope-catalogs'
+import { updateUserAvatarState } from './horoscope-catalogs'
 
 /**
  * Generate a fun, illustrative portrait for the horoscope using the new slot-based prompt system

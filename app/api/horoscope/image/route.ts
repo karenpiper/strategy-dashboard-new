@@ -1,15 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateHoroscopeImage } from '@/lib/openai'
-import {
-  buildUserProfile,
-  fetchSegmentsForProfile,
-  fetchRulesForSegments,
-  fetchCurrentThemes,
-  fetchThemeRules,
-  fetchActiveStyles,
-  resolveConfig,
-  makeResolvedChoices,
-} from '@/lib/horoscope-engine'
 import { fetchHoroscopeConfig } from '@/lib/horoscope-config'
 import { createClient } from '@/lib/supabase/server'
 
@@ -50,11 +40,12 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = user.id
+    const userEmail = user.email
 
-    // Fetch user profile to get birthday, discipline, and role
+    // Fetch user profile to get birthday, discipline, role, name, and hobbies
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('birthday, discipline, role')
+      .select('birthday, discipline, role, full_name')
       .eq('id', userId)
       .single()
 
@@ -107,7 +98,7 @@ export async function GET(request: NextRequest) {
     
     const { data: cachedHoroscope, error: cacheError } = await supabaseAdmin
       .from('horoscopes')
-      .select('image_url, image_prompt, style_key, style_label, character_type, setting_hint, date, generated_at')
+      .select('image_url, image_prompt, prompt_slots_json, date, generated_at')
       .eq('user_id', userId)
       .eq('date', todayDate)
       .maybeSingle()
@@ -135,66 +126,31 @@ export async function GET(request: NextRequest) {
     // If we have a cached image for today, return it immediately (don't regenerate)
     if (cachedHoroscope && cachedHoroscope.image_url && cachedHoroscope.image_url.trim() !== '') {
       console.log('✅ Returning cached image for user', userId, 'on date', todayDate)
-      // For cached horoscopes, rebuild the config to get all the data (prompt tags, theme, etc.)
-      // This ensures we have complete information even for cached images
-      const config = await fetchHoroscopeConfig(
-        supabaseAdmin,
-        birthdayMonth,
-        birthdayDay,
-        profile.discipline,
-        profile.role
-      )
-      const { userProfile: rebuiltProfile, resolvedChoices: rebuiltChoices } = config
       
       return NextResponse.json({
         image_url: cachedHoroscope.image_url,
         image_prompt: cachedHoroscope.image_prompt || null,
+        prompt_slots: cachedHoroscope.prompt_slots_json || null,
         cached: true,
-        config: {
-          userProfile: {
-            sign: starSign,
-            element: rebuiltProfile.element,
-            modality: rebuiltProfile.modality,
-            discipline: profile.discipline || null,
-            roleLevel: rebuiltProfile.roleLevel || null,
-            weekday: rebuiltProfile.weekday,
-            season: rebuiltProfile.season,
-          },
-          resolvedChoices: {
-            styleKey: cachedHoroscope.style_key || rebuiltChoices.styleKey,
-            styleLabel: cachedHoroscope.style_label || rebuiltChoices.styleLabel,
-            characterType: cachedHoroscope.character_type || rebuiltChoices.characterType,
-            settingHint: cachedHoroscope.setting_hint || null,
-            promptTags: rebuiltChoices.promptTags || [],
-            themeSnippet: rebuiltChoices.themeSnippet || null,
-          },
-          matchedSegments: config.matchedSegments || [],
-          appliedRules: config.appliedRules || [],
-          themes: config.themes || [],
-        },
       })
     }
     
     // Only generate new image if we don't have one cached for today
     console.log('No cached image found for user', userId, 'on date', todayDate, '- generating new image')
     
-    // Generate new image with full user profile context
-    const { imageUrl, prompt } = await generateHoroscopeImage(
-      starSign,
+    // Generate new image with new slot-based prompt system
+    const { imageUrl, prompt, slots } = await generateHoroscopeImage(
+      supabaseAdmin,
+      userId,
+      todayDate,
       {
-        characterType: resolvedChoices.characterType,
-        styleLabel: resolvedChoices.styleLabel,
-        promptTags: resolvedChoices.promptTags,
-        themeSnippet: resolvedChoices.themeSnippet,
+        name: profile.full_name || userEmail || 'User',
+        role: profile.role || null,
+        hobbies: null, // TODO: Add hobbies field to profiles table if needed
+        starSign: starSign,
       },
-      {
-        element: userProfile.element,
-        modality: userProfile.modality,
-        discipline: profile.discipline || null,
-        roleLevel: userProfile.roleLevel || null,
-        weekday: userProfile.weekday,
-        season: userProfile.season,
-      }
+      userProfile.weekday,
+      userProfile.season
     )
     
     // Save image URL and prompt to database (upsert horoscope record)
@@ -214,9 +170,7 @@ export async function GET(request: NextRequest) {
       star_sign: starSign,
       image_url: imageUrl,
       image_prompt: prompt,
-      style_key: resolvedChoices.styleKey,
-      style_label: resolvedChoices.styleLabel,
-      character_type: resolvedChoices.characterType,
+      prompt_slots_json: slots, // Store selected slot IDs
       date: todayDate, // Explicitly set date to ensure consistency
       generated_at: new Date().toISOString(),
     }
@@ -247,41 +201,11 @@ export async function GET(request: NextRequest) {
       console.log('Successfully saved horoscope image for user', userId, 'on date', todayDate)
     }
     
-    // Get additional config data for display
-    const fullConfig = await fetchHoroscopeConfig(
-      supabaseAdmin,
-      birthdayMonth,
-      birthdayDay,
-      profile.discipline,
-      profile.role
-    )
-    
     return NextResponse.json({
       image_url: imageUrl,
       image_prompt: prompt,
+      prompt_slots: slots,
       cached: false,
-      config: {
-        userProfile: {
-          sign: starSign,
-          element: userProfile.element,
-          modality: userProfile.modality,
-          discipline: profile.discipline || null,
-          roleLevel: userProfile.roleLevel || null,
-          weekday: userProfile.weekday,
-          season: userProfile.season,
-        },
-        resolvedChoices: {
-          styleKey: resolvedChoices.styleKey,
-          styleLabel: resolvedChoices.styleLabel,
-          characterType: resolvedChoices.characterType,
-          promptTags: resolvedChoices.promptTags || [],
-          themeSnippet: resolvedChoices.themeSnippet || null,
-          settingHint: resolvedChoices.settingHint || null,
-        },
-        matchedSegments: fullConfig.matchedSegments || [],
-        appliedRules: fullConfig.appliedRules || [],
-        themes: fullConfig.themes || [],
-      },
     })
   } catch (error: any) {
     console.error('Error in horoscope image API:', error)

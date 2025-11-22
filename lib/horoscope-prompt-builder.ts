@@ -87,7 +87,7 @@ function getWeekdayTheme(weekday: string): {
     },
     thursday: {
       subjectRoleWeight: { gamer_in_tournament: 1.5, dj: 1.3, street_artist: 1.3 },
-      settingPlaceWeight: { retro_80s_arcade: 1.5, 90s_lan_party: 1.5, busy_train_station: 1.3 },
+      settingPlaceWeight: { retro_80s_arcade: 1.5, '90s_lan_party': 1.5, busy_train_station: 1.3 },
       moodVibeWeight: { energetic_and_chaotic: 1.5, playful_and_fun: 1.3 },
     },
     friday: {
@@ -265,7 +265,7 @@ function buildPromptString(
     .filter((c) => c !== null) as PromptSlotCatalog[]
 
   // Build subject clause
-  let subjectClause = `portrait of ${userProfile.name}`
+  let subjectClause = userProfile.name
   if (userProfile.role) {
     subjectClause += `, a ${userProfile.role.toLowerCase()}`
   }
@@ -279,18 +279,20 @@ function buildPromptString(
     subjectClause += ` ${subjectTwist.label.toLowerCase()}`
   }
 
-  // Build prompt
+  // Build prompt following the example format
   const styleText = styleReference
-    ? `${styleReference.label}. ${styleMedium?.label || ''}`
+    ? `${styleReference.label}${styleMedium ? `. ${styleMedium.label}` : ''}`
     : styleMedium?.label || ''
 
-  const prompt = `${styleText}. ${cameraFrame?.label || 'Portrait'} of ${subjectClause}${
-    activity ? ` ${activity.label.toLowerCase()}` : ''
-  }. They are in ${settingPlace?.label.toLowerCase() || 'a setting'} at ${
-    settingTime?.label.toLowerCase() || 'a time'
-  }. ${moodVibe?.label || 'Moody'} mood, ${colorPalette?.label.toLowerCase() || 'colorful'} palette, ${
-    lightingStyle?.label.toLowerCase() || 'natural lighting'
-  }. ${constraints.map((c) => c.label).join(', ')}.`
+  const activityText = activity ? ` ${activity.label.toLowerCase()}` : ''
+  const settingText = settingPlace?.label.toLowerCase() || 'a setting'
+  const timeText = settingTime?.label.toLowerCase() || 'a time'
+  const moodText = moodVibe?.label.toLowerCase() || 'moody'
+  const colorText = colorPalette?.label.toLowerCase() || 'colorful'
+  const lightingText = lightingStyle?.label.toLowerCase() || 'natural lighting'
+  const constraintsText = constraints.map((c) => c.label.toLowerCase()).join(', ')
+
+  const prompt = `${styleText}. ${cameraFrame?.label || 'Portrait'} of ${subjectClause}${activityText}. They are in ${settingText} at ${timeText}. ${moodText} mood, ${colorText} palette, ${lightingText}. ${constraintsText}.`
 
   return prompt.trim()
 }
