@@ -118,9 +118,10 @@ export async function GET(request: NextRequest) {
     const today = new Date()
     const todayDate = today.toISOString().split('T')[0] // YYYY-MM-DD format
     
-    console.log('Checking for cached horoscope - user:', userId, 'date:', todayDate)
+    console.log('Checking for cached horoscope - user:', userId, 'date:', todayDate, 'UTC time:', today.toISOString())
     
     // Check for cached horoscope for today - return immediately if found
+    // Use gte and lt to handle any timezone edge cases, but primarily use exact match
     const { data: cachedHoroscope, error: cacheError } = await supabaseAdmin
       .from('horoscopes')
       .select('star_sign, horoscope_text, horoscope_dos, horoscope_donts, image_url, date, generated_at')
@@ -132,15 +133,24 @@ export async function GET(request: NextRequest) {
       console.error('Error checking cache:', cacheError)
     }
     
+    // Also check if there are any recent horoscopes for debugging
+    const { data: recentHoroscopes } = await supabaseAdmin
+      .from('horoscopes')
+      .select('date, horoscope_text, generated_at')
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .limit(5)
+    
     console.log('Cache check result:', {
       found: !!cachedHoroscope,
       hasText: !!cachedHoroscope?.horoscope_text,
       date: cachedHoroscope?.date,
-      expectedDate: todayDate
+      expectedDate: todayDate,
+      recentHoroscopes: recentHoroscopes?.map(h => ({ date: h.date, hasText: !!h.horoscope_text }))
     })
     
     // If we have a cached horoscope for today with text, return it immediately (don't regenerate)
-    if (cachedHoroscope && cachedHoroscope.horoscope_text) {
+    if (cachedHoroscope && cachedHoroscope.horoscope_text && cachedHoroscope.horoscope_text.trim() !== '') {
       console.log('✅ Returning cached horoscope for user', userId, 'on date', todayDate)
       return NextResponse.json({
         star_sign: cachedHoroscope.star_sign,
@@ -258,64 +268,31 @@ export async function GET(request: NextRequest) {
     }
     
     // Save horoscope text to database
-    // Check if record exists first, then update or insert accordingly
-    // This preserves image_url if it was already generated
-    const { data: existingRecord } = await supabaseAdmin
+    // Use upsert to handle both insert and update in one operation
+    // This ensures the date is always set correctly and avoids race conditions
+    const { error: upsertError } = await supabaseAdmin
       .from('horoscopes')
-      .select('image_url, image_prompt')
-      .eq('user_id', userId)
-      .eq('date', todayDate)
-      .maybeSingle()
+      .upsert({
+        user_id: userId,
+        star_sign: starSign,
+        horoscope_text: horoscopeText,
+        horoscope_dos: horoscopeDos,
+        horoscope_donts: horoscopeDonts,
+        image_url: imageUrl || '', // Preserve existing image_url if present
+        style_key: resolvedChoices.styleKey,
+        style_label: resolvedChoices.styleLabel,
+        character_type: resolvedChoices.characterType,
+        date: todayDate, // Explicitly set date to ensure consistency
+        generated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,date', // Use the unique constraint
+        ignoreDuplicates: false // Update existing records
+      })
     
-    let saveError = null
-    
-    if (existingRecord) {
-      // Record exists - update only text fields to preserve image
-      const { error: updateError } = await supabaseAdmin
-        .from('horoscopes')
-        .update({
-          star_sign: starSign,
-          horoscope_text: horoscopeText,
-          horoscope_dos: horoscopeDos,
-          horoscope_donts: horoscopeDonts,
-          style_key: resolvedChoices.styleKey,
-          style_label: resolvedChoices.styleLabel,
-          character_type: resolvedChoices.characterType,
-          generated_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId)
-        .eq('date', todayDate)
-      
-      saveError = updateError
-      if (saveError) {
-        console.error('Error updating horoscope text:', saveError)
-      } else {
-        console.log('Successfully updated horoscope text for user', userId, 'on date', todayDate)
-      }
+    if (upsertError) {
+      console.error('Error upserting horoscope text:', upsertError)
     } else {
-      // No record exists - insert new one
-      const { error: insertError } = await supabaseAdmin
-        .from('horoscopes')
-        .insert({
-          user_id: userId,
-          star_sign: starSign,
-          horoscope_text: horoscopeText,
-          horoscope_dos: horoscopeDos,
-          horoscope_donts: horoscopeDonts,
-          image_url: imageUrl || '', // May be empty if image hasn't been generated yet
-          style_key: resolvedChoices.styleKey,
-          style_label: resolvedChoices.styleLabel,
-          character_type: resolvedChoices.characterType,
-          date: todayDate,
-          generated_at: new Date().toISOString(),
-        })
-      
-      saveError = insertError
-      if (saveError) {
-        console.error('Error inserting horoscope text:', saveError)
-      } else {
-        console.log('Successfully inserted horoscope text for user', userId, 'on date', todayDate)
-      }
+      console.log('Successfully saved horoscope text for user', userId, 'on date', todayDate)
     }
     
     if (saveError) {
