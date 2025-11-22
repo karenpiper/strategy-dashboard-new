@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
     yesterday.setDate(yesterday.getDate() - 1)
     const yesterdayDate = yesterday.toISOString().split('T')[0]
     
-    const { data: recentRecords, error: recentError } = await supabaseAdmin
+    const { data: recentRecords, error: recentRecordsError } = await supabaseAdmin
       .from('horoscopes')
       .select('date, horoscope_text, image_url, generated_at')
       .eq('user_id', userId)
@@ -163,8 +163,8 @@ export async function GET(request: NextRequest) {
       .order('date', { ascending: false })
       .limit(2)
     
-    if (recentError) {
-      console.error('⚠️ Error checking recent records:', recentError)
+    if (recentRecordsError) {
+      console.error('⚠️ Error checking recent records:', recentRecordsError)
     }
     
     // If we found records for today or yesterday, log them
@@ -179,15 +179,15 @@ export async function GET(request: NextRequest) {
     
     // Also check if there are any recent horoscopes for debugging
     // This helps identify if records exist but with different dates
-    const { data: recentHoroscopes, error: recentError } = await supabaseAdmin
+    const { data: recentHoroscopes, error: recentHoroscopesError } = await supabaseAdmin
       .from('horoscopes')
       .select('date, horoscope_text, generated_at, image_url')
       .eq('user_id', userId)
       .order('date', { ascending: false })
       .limit(5)
     
-    if (recentError) {
-      console.error('❌ Error fetching recent horoscopes:', recentError)
+    if (recentHoroscopesError) {
+      console.error('❌ Error fetching recent horoscopes:', recentHoroscopesError)
       console.error('   This might indicate a database connection or permission issue')
     }
     
@@ -230,7 +230,10 @@ export async function GET(request: NextRequest) {
         hasImage: !!h.image_url
       })),
       anyRecordsForUser: !!allUserRecords && allUserRecords.length > 0,
-      recentRecordsCount: recentRecords?.length || 0
+      recentRecordsCount: recentRecords?.length || 0,
+      recentRecordsError: recentRecordsError?.message,
+      recentHoroscopesError: recentHoroscopesError?.message,
+      allRecordsError: allRecordsError?.message
     })
     
     // IMPORTANT: Only regenerate if there's NO cached text at all
