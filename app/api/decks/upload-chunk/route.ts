@@ -6,7 +6,8 @@ export const maxDuration = 300
 
 /**
  * Step 2: Upload file chunk to Google Drive using resumable URL
- * This endpoint proxies the upload to Google Drive to avoid CORS issues
+ * This endpoint proxies chunked uploads to Google Drive to avoid CORS issues
+ * Supports resumable upload protocol with Content-Range headers
  */
 export async function POST(request: NextRequest) {
   try {
@@ -22,33 +23,28 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const uploadUrl = formData.get('uploadUrl') as string
-    const file = formData.get('file') as File
-    const startByte = formData.get('startByte') as string
-    const endByte = formData.get('endByte') as string
+    const chunk = formData.get('chunk') as File | Blob
+    const startByte = parseInt(formData.get('startByte') as string, 10)
+    const endByte = parseInt(formData.get('endByte') as string, 10)
+    const fileSize = parseInt(formData.get('fileSize') as string, 10)
+    const mimeType = formData.get('mimeType') as string
 
-    if (!uploadUrl || !file) {
+    if (!uploadUrl || !chunk || isNaN(startByte) || isNaN(endByte) || isNaN(fileSize)) {
       return NextResponse.json(
-        { error: 'uploadUrl and file are required' },
+        { error: 'uploadUrl, chunk, startByte, endByte, and fileSize are required' },
         { status: 400 }
       )
     }
 
-    // Convert file to buffer
-    const arrayBuffer = await file.arrayBuffer()
+    // Convert chunk to buffer
+    const arrayBuffer = await chunk.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // Upload to Google Drive using resumable URL
+    // Upload chunk to Google Drive with Content-Range header
     const headers: HeadersInit = {
-      'Content-Type': file.type || 'application/pdf',
-    }
-
-    // If this is a chunked upload, add Content-Range header
-    if (startByte && endByte) {
-      const fileSize = formData.get('fileSize') as string
-      headers['Content-Range'] = `bytes ${startByte}-${endByte}/${fileSize}`
-    } else {
-      // Full file upload
-      headers['Content-Length'] = buffer.length.toString()
+      'Content-Type': mimeType || 'application/pdf',
+      'Content-Range': `bytes ${startByte}-${endByte}/${fileSize}`,
+      'Content-Length': buffer.length.toString(),
     }
 
     const uploadResponse = await fetch(uploadUrl, {
@@ -57,23 +53,55 @@ export async function POST(request: NextRequest) {
       body: buffer,
     })
 
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text()
-      throw new Error(`Google Drive upload failed: ${uploadResponse.status} ${errorText}`)
-    }
-
-    // If upload is complete (status 200 or 201), return the file ID
+    // Handle different response statuses
     if (uploadResponse.status === 200 || uploadResponse.status === 201) {
+      // Upload complete
       const result = await uploadResponse.json()
+      
+      // Make file accessible
+      try {
+        const { google } = await import('googleapis')
+        const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+        let clientEmail: string
+        let privateKey: string
+        
+        if (serviceAccountJson) {
+          const parsed = JSON.parse(serviceAccountJson)
+          clientEmail = parsed.client_email
+          privateKey = parsed.private_key
+        } else {
+          clientEmail = process.env.GOOGLE_DRIVE_CLIENT_EMAIL || ''
+          privateKey = process.env.GOOGLE_DRIVE_PRIVATE_KEY?.replace(/\\n/g, '\n') || ''
+        }
+
+        const auth = new google.auth.JWT({
+          email: clientEmail,
+          key: privateKey,
+          scopes: ['https://www.googleapis.com/auth/drive.file'],
+        })
+
+        const drive = google.drive({ version: 'v3', auth })
+        await drive.permissions.create({
+          fileId: result.id,
+          requestBody: {
+            role: 'reader',
+            type: 'anyone',
+          },
+        })
+      } catch (permError) {
+        console.warn('Failed to set file permissions:', permError)
+      }
+
       return NextResponse.json({
         success: true,
+        complete: true,
         fileId: result.id,
         fileUrl: `https://drive.google.com/file/d/${result.id}/view`,
       })
     }
 
-    // If upload is in progress (status 308), return the range that was uploaded
     if (uploadResponse.status === 308) {
+      // Upload in progress - get the range that was successfully uploaded
       const range = uploadResponse.headers.get('Range')
       return NextResponse.json({
         success: true,
@@ -82,9 +110,9 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({
-      success: true,
-    })
+    // Error response
+    const errorText = await uploadResponse.text()
+    throw new Error(`Google Drive upload failed: ${uploadResponse.status} ${errorText}`)
   } catch (error: any) {
     console.error('Error uploading chunk to Google Drive:', error)
     return NextResponse.json(
