@@ -1153,7 +1153,7 @@ export default function TeamDashboard() {
           )}
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           {/* Playlist */}
           {(() => {
             const [isPlaying, setIsPlaying] = useState(false)
@@ -1193,71 +1193,47 @@ export default function TeamDashboard() {
             )
           })()}
 
-          {/* Friday Drop */}
+          {/* Friday Drop - 3/4 width, 1 row high */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('friday-drop') : getCardStyle('work')
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+              <Card className={`${style.bg} ${style.border} p-4 col-span-1 md:col-span-3 ${getRoundedClass('rounded-[2.5rem]')}`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>WEEKLY REPORT</p>
-                <h2 className={`text-3xl font-black mb-6 uppercase leading-tight ${style.text}`}>THE FRIDAY DROP</h2>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { value: '5', label: 'NEW' },
-                    { value: '8', label: 'SHIPPED' },
-                    { value: '12', label: 'IN QA' },
-                  ].map((stat) => (
-                    <div key={stat.label} className={`bg-black/30 ${getRoundedClass('rounded-lg')} p-3 text-center`}>
-                      <p className={`text-2xl font-black mb-1 ${style.text}`}>{stat.value}</p>
-                      <p className={`text-xs font-bold uppercase tracking-wide ${style.text}`}>{stat.label}</p>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-xs uppercase tracking-wider mb-2 font-black ${style.text}`}>WEEKLY REPORT</p>
+                    <h2 className={`text-2xl font-black uppercase leading-tight ${style.text}`}>THE FRIDAY DROP</h2>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: '5', label: 'NEW' },
+                      { value: '8', label: 'SHIPPED' },
+                      { value: '12', label: 'IN QA' },
+                    ].map((stat) => (
+                      <div key={stat.label} className={`bg-black/30 ${getRoundedClass('rounded-lg')} p-2 text-center`}>
+                        <p className={`text-xl font-black mb-1 ${style.text}`}>{stat.value}</p>
+                        <p className={`text-xs font-bold uppercase tracking-wide ${style.text}`}>{stat.label}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </Card>
             )
           })()}
+        </div>
 
-          {/* Brand Redesign */}
+        {/* New card row - 3/4 width */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('brand-redesign') : getCardStyle('vibes')
+            const style = mode === 'chaos' ? getCardStyle('work') : getCardStyle('work')
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden`}
+              <Card className={`${style.bg} ${style.border} p-6 col-span-1 md:col-span-3 ${getRoundedClass('rounded-[2.5rem]')}`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                <p className={`text-xs uppercase tracking-wider mb-2 font-black ${style.text}`}>FEATURED</p>
-                <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}/70`}>ACTIVE DROP</p>
-                <h2 className={`text-3xl font-black mb-3 uppercase leading-tight ${style.text}`}>BRAND REDESIGN</h2>
-                <p className={`text-sm font-medium ${style.text}/70`}>Branding</p>
-                <div className="absolute bottom-4 right-4 text-4xl">🎨</div>
-              </Card>
-            )
-          })()}
-
-          {/* Stats */}
-          {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('stats') : getCardStyle('team')
-            const growthColor = mode === 'chaos' ? '#00FF87' : mode === 'chill' ? '#C8D961' : '#FFFFFF'
-            return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-              >
-                <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}/80`}>THIS MONTH</p>
-                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>STATS</h2>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className={`text-sm font-black uppercase ${style.text}`}>TEAM</p>
-                    <p className={`text-2xl font-black ${style.text}`}>24</p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className={`text-sm font-black uppercase ${style.text}`}>SNAPS</p>
-                    <p className={`text-2xl font-black ${style.text}`}>247</p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className={`text-sm font-black uppercase ${style.text}`}>GROWTH</p>
-                    <p className="text-2xl font-black" style={{ color: growthColor }}>+15%</p>
-                  </div>
-                </div>
+                <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>NEW CARD</p>
+                <h2 className={`text-3xl font-black mb-6 uppercase leading-tight ${style.text}`}>PLACEHOLDER</h2>
+                <p className={`text-sm font-medium ${style.text}/70`}>Content goes here</p>
               </Card>
             )
           })()}
