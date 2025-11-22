@@ -71,10 +71,40 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
       donts: parsed.donts,
     }
   } catch (error: any) {
-    console.error('Error transforming horoscope:', error)
+    console.error('❌ Error transforming horoscope:', error)
+    
+    // Handle specific OpenAI API errors
     if (error.response) {
-      console.error('OpenAI API error response:', error.response.status, error.response.data)
+      const status = error.response.status
+      const errorData = error.response.data
+      const errorMessage = errorData?.error?.message || error.message || 'OpenAI API error'
+      
+      console.error('OpenAI API error response:', {
+        status,
+        errorData,
+        errorMessage
+      })
+      
+      // Check for billing/quota errors - fail immediately, don't retry
+      if (status === 400 || status === 429) {
+        const lowerMessage = errorMessage.toLowerCase()
+        if (lowerMessage.includes('billing') || 
+            lowerMessage.includes('quota') ||
+            lowerMessage.includes('hard billing limit') ||
+            lowerMessage.includes('usage limit') ||
+            lowerMessage.includes('exceeded your current quota')) {
+          const billingError = 'OpenAI billing/quota limit reached. Please check your OpenAI account billing settings and add payment method if needed.'
+          console.error('🚫 BILLING/QUOTA LIMIT REACHED:', billingError)
+          throw new Error(billingError)
+        }
+      }
+      
+      // Rate limit (429) - but not quota-related
+      if (status === 429) {
+        throw new Error('OpenAI API rate limit exceeded. Please try again in a few minutes.')
+      }
     }
+    
     throw error
   }
 }
@@ -194,32 +224,32 @@ export async function generateHoroscopeImage(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       console.log(`🔄 Attempting OpenAI DALL-E API call (attempt ${attempt + 1}/${maxRetries + 1})...`)
-      
-      const response = await openai.images.generate({
-        model: 'dall-e-3',
-        prompt: prompt,
-        size: '1024x1024', // Square format for portrait/avatar use
-        quality: 'standard',
-        n: 1,
-      })
+    
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: prompt,
+      size: '1024x1024', // Square format for portrait/avatar use
+      quality: 'standard',
+      n: 1,
+    })
 
       // Note: Rate limit headers are not directly accessible in OpenAI SDK response
       // They would need to be accessed from the raw HTTP response if needed
       // For now, we rely on error responses to detect rate limits
 
       const imageUrl = response.data?.[0]?.url
-      if (!imageUrl) {
-        throw new Error('Failed to generate horoscope image - empty response')
-      }
+    if (!imageUrl) {
+      throw new Error('Failed to generate horoscope image - empty response')
+    }
 
       console.log('✅ OpenAI DALL-E API call successful')
       return { imageUrl, prompt, slots, reasoning }
-    } catch (error: any) {
+  } catch (error: any) {
       lastError = error
       console.error(`❌ Error generating horoscope image (attempt ${attempt + 1}/${maxRetries + 1}):`, error)
       
       // Handle specific OpenAI API errors
-      if (error.response) {
+    if (error.response) {
         const status = error.response.status
         const errorData = error.response.data
         const errorMessage = errorData?.error?.message || error.message || 'OpenAI API error'
@@ -271,8 +301,8 @@ export async function generateHoroscopeImage(
       }
       
       // If no response object, don't retry
-      throw error
-    }
+    throw error
+  }
   }
   
   // If we exhausted all retries, throw the last error
