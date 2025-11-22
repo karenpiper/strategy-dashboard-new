@@ -42,8 +42,11 @@ export async function GET(request: NextRequest) {
     const pinned = searchParams.get('pinned')
     const submittedBy = searchParams.get('submitted_by')
     const assignedTo = searchParams.get('assigned_to')
+    const sortBy = searchParams.get('sortBy') || 'created_at'
+    const sortOrder = searchParams.get('sortOrder') || 'desc'
 
     // Build query - select all possible columns to handle schema variations
+    // Join with profiles to get submitted_by profile info
     let query = supabase
       .from('must_reads')
       .select(`
@@ -63,10 +66,10 @@ export async function GET(request: NextRequest) {
         summary,
         tags,
         created_at,
-        updated_at
+        updated_at,
+        submitted_by_profile:profiles!submitted_by(id, email, full_name),
+        assigned_to_profile:profiles!assigned_to(id, email, full_name)
       `)
-      .order('pinned', { ascending: false })
-      .order('created_at', { ascending: false })
 
     // Apply filters
     if (pinned === 'true') {
@@ -81,6 +84,21 @@ export async function GET(request: NextRequest) {
 
     if (assignedTo) {
       query = query.eq('assigned_to', assignedTo)
+    }
+
+    // Apply sorting - always prioritize pinned items first
+    query = query.order('pinned', { ascending: false })
+    
+    if (sortBy === 'article_title' || sortBy === 'title') {
+      query = query.order('article_title', { ascending: sortOrder === 'asc' })
+    } else if (sortBy === 'submitted_by') {
+      // For submitted_by, we'll sort by profile name in memory after fetching
+      query = query.order('submitted_by', { ascending: sortOrder === 'asc' })
+    } else if (sortBy === 'created_at' || sortBy === 'date') {
+      query = query.order('created_at', { ascending: sortOrder === 'asc' })
+    } else {
+      // Default: pinned first (already set), then by created_at
+      query = query.order('created_at', { ascending: sortOrder === 'asc' })
     }
 
     const { data, error } = await query
@@ -105,15 +123,36 @@ export async function GET(request: NextRequest) {
       submitted_by: item.submitted_by || item.created_by,
     }))
 
-    // Apply search filter in memory (for title and notes)
+    // Apply search filter in memory (search all fields)
     let filteredData = mappedData
     if (search) {
       const searchLower = search.toLowerCase()
-      filteredData = filteredData.filter((item: any) => 
-        item.article_title?.toLowerCase().includes(searchLower) ||
-        item.notes?.toLowerCase().includes(searchLower) ||
-        item.article_url?.toLowerCase().includes(searchLower)
-      )
+      filteredData = filteredData.filter((item: any) => {
+        const titleMatch = item.article_title?.toLowerCase().includes(searchLower)
+        const urlMatch = item.article_url?.toLowerCase().includes(searchLower)
+        const notesMatch = item.notes?.toLowerCase().includes(searchLower)
+        const categoryMatch = item.category?.toLowerCase().includes(searchLower)
+        const sourceMatch = item.source?.toLowerCase().includes(searchLower)
+        const summaryMatch = item.summary?.toLowerCase().includes(searchLower)
+        const tagsMatch = Array.isArray(item.tags) && item.tags.some((tag: string) => 
+          tag.toLowerCase().includes(searchLower)
+        )
+        const submittedByName = item.submitted_by_profile?.full_name?.toLowerCase().includes(searchLower)
+        const submittedByEmail = item.submitted_by_profile?.email?.toLowerCase().includes(searchLower)
+        
+        return titleMatch || urlMatch || notesMatch || categoryMatch || sourceMatch || 
+               summaryMatch || tagsMatch || submittedByName || submittedByEmail
+      })
+    }
+
+    // Apply sorting for submitted_by (by profile name) if needed
+    if (sortBy === 'submitted_by') {
+      filteredData.sort((a: any, b: any) => {
+        const aName = a.submitted_by_profile?.full_name || a.submitted_by_profile?.email || ''
+        const bName = b.submitted_by_profile?.full_name || b.submitted_by_profile?.email || ''
+        const comparison = aName.localeCompare(bName)
+        return sortOrder === 'asc' ? comparison : -comparison
+      })
     }
 
     return NextResponse.json({ data: filteredData })
@@ -143,9 +182,9 @@ export async function POST(request: NextRequest) {
     console.log('User authenticated:', user.id)
 
     const body = await request.json()
-    const { article_title, article_url, notes, pinned, assigned_to, week_start_date, category, source, summary, tags } = body
+    const { article_title, article_url, notes, pinned, assigned_to, submitted_by, week_start_date, category, source, summary, tags } = body
 
-    console.log('Request body:', { article_title, article_url, notes, pinned, assigned_to, week_start_date, category, source, summary, tags })
+    console.log('Request body:', { article_title, article_url, notes, pinned, assigned_to, submitted_by, week_start_date, category, source, summary, tags })
 
     if (!article_title || !article_url) {
       return NextResponse.json(
@@ -193,9 +232,28 @@ export async function POST(request: NextRequest) {
 
     console.log('Table access test passed')
 
+    // Set submitted_by to logged-in user (default)
+    const submittedById = submitted_by && submitted_by.trim() !== '' ? submitted_by : user.id
+
+    // Verify submitted_by user exists if specified
+    if (submitted_by && submitted_by.trim() !== '' && submitted_by !== user.id) {
+      const { data: submittedProfile, error: submittedError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', submitted_by)
+        .single()
+
+      if (submittedError || !submittedProfile) {
+        return NextResponse.json(
+          { error: 'Submitted by user profile not found', details: submittedError?.message },
+          { status: 400 }
+        )
+      }
+    }
+
     // Verify assigned_to user exists if specified
-    const assignedToId = (assigned_to && assigned_to.trim() !== '') ? assigned_to : user.id
-    if (assigned_to && assigned_to.trim() !== '' && assigned_to !== user.id) {
+    const assignedToId = (assigned_to && assigned_to.trim() !== '') ? assigned_to : null
+    if (assigned_to && assigned_to.trim() !== '') {
       const { data: assignedProfile, error: assignedError } = await supabase
         .from('profiles')
         .select('id')
@@ -234,7 +292,7 @@ export async function POST(request: NextRequest) {
       url: article_url,
       // Required user fields
       created_by: user.id,   // Required - who created the record
-      submitted_by: user.id, // May also be required
+      submitted_by: submittedById, // Default to logged-in user
       // Required date fields
       week_start_date: finalWeekStartDate, // Use provided date or calculated Monday
       // Optional fields
@@ -324,7 +382,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, article_title, article_url, notes, pinned, assigned_to, week_start_date, category, source, summary, tags } = body
+    const { id, article_title, article_url, notes, pinned, assigned_to, submitted_by, week_start_date, category, source, summary, tags } = body
 
     if (!id) {
       return NextResponse.json(
@@ -333,7 +391,10 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    if (!article_title || !article_url) {
+    // If only pinned is being updated (pin toggle), allow it without requiring title/url
+    const isPinOnlyUpdate = pinned !== undefined && article_title === undefined && article_url === undefined
+
+    if (!isPinOnlyUpdate && (!article_title || !article_url)) {
       return NextResponse.json(
         { error: 'Article title and URL are required' },
         { status: 400 }
@@ -341,15 +402,26 @@ export async function PUT(request: NextRequest) {
     }
 
     const updateData: any = {
-      // Use article_title/article_url as primary (what table actually uses)
-      article_title: article_title,
-      article_url: article_url,
-      // Also include title/url in case table has both
-      title: article_title,
-      url: article_url,
-      notes: notes || null,
-      pinned: pinned || false,
       updated_at: new Date().toISOString(),
+    }
+
+    // Only update fields that are provided
+    if (article_title !== undefined) {
+      updateData.article_title = article_title
+      updateData.title = article_title
+    }
+    if (article_url !== undefined) {
+      updateData.article_url = article_url
+      updateData.url = article_url
+    }
+    if (notes !== undefined) {
+      updateData.notes = notes || null
+    }
+    if (pinned !== undefined) {
+      updateData.pinned = pinned || false
+    }
+    if (submitted_by !== undefined) {
+      updateData.submitted_by = submitted_by || null
     }
 
     // Include week_start_date if provided
@@ -396,7 +468,9 @@ export async function PUT(request: NextRequest) {
         summary,
         tags,
         created_at,
-        updated_at
+        updated_at,
+        submitted_by_profile:profiles!submitted_by(id, email, full_name),
+        assigned_to_profile:profiles!assigned_to(id, email, full_name)
       `)
       .single()
 

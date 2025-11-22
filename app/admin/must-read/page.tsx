@@ -56,6 +56,8 @@ export default function MustReadAdmin() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterPinned, setFilterPinned] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<string>('created_at')
+  const [sortOrder, setSortOrder] = useState<string>('desc')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [editingItem, setEditingItem] = useState<MustRead | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -145,6 +147,8 @@ export default function MustReadAdmin() {
       const params = new URLSearchParams()
       if (searchQuery) params.append('search', searchQuery)
       if (filterPinned !== null) params.append('pinned', filterPinned)
+      if (sortBy) params.append('sortBy', sortBy)
+      if (sortOrder) params.append('sortOrder', sortOrder)
 
       const response = await fetch(`/api/must-reads?${params.toString()}`)
       const result = await response.json()
@@ -182,14 +186,14 @@ export default function MustReadAdmin() {
     fetchUsers()
   }, [])
 
-  // Debounce search
+  // Debounce search and refetch on sort/filter changes
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchMustReads()
     }, 300) // 300ms debounce
 
     return () => clearTimeout(timer)
-  }, [searchQuery, filterPinned])
+  }, [searchQuery, filterPinned, sortBy, sortOrder])
 
   // Handle add
   const handleAdd = async () => {
@@ -201,8 +205,7 @@ export default function MustReadAdmin() {
         body: JSON.stringify({
           ...restFormData,
           week_start_date: date, // Send date as week_start_date
-          assigned_to: formData.assigned_to || user?.id || null,
-          submitted_by: formData.submitted_by || null, // Can be blank/null
+          submitted_by: formData.submitted_by || user?.id || null, // Default to logged-in user
         }),
       })
 
@@ -233,8 +236,8 @@ export default function MustReadAdmin() {
       article_url: item.article_url,
       notes: item.notes || '',
       pinned: item.pinned,
-      assigned_to: item.assigned_to || user?.id || '',
-      submitted_by: item.submitted_by || '',
+      assigned_to: item.assigned_to || '',
+      submitted_by: item.submitted_by || user?.id || '',
       date: item.week_start_date || getTodayDate(), // Use week_start_date or default to today
       category: item.category || '',
       source: item.source || '',
@@ -256,8 +259,7 @@ export default function MustReadAdmin() {
           id: editingItem.id,
           ...restFormData,
           week_start_date: date, // Send date as week_start_date
-          assigned_to: formData.assigned_to || null,
-          submitted_by: formData.submitted_by || null, // Can be blank/null
+          submitted_by: formData.submitted_by || null,
         }),
       })
 
@@ -331,14 +333,39 @@ export default function MustReadAdmin() {
       article_url: '',
       notes: '',
       pinned: false,
-      assigned_to: user?.id || '',
-      submitted_by: '', // Can be blank
+      assigned_to: '',
+      submitted_by: user?.id || '', // Default to logged-in user
       date: getTodayDate(), // Reset to current date
       category: '',
       source: '',
       summary: '',
       tags: [],
     })
+  }
+
+  // Handle pin toggle
+  const handleTogglePin = async (id: string, currentPinned: boolean) => {
+    try {
+      const response = await fetch('/api/must-reads', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          pinned: !currentPinned,
+        }),
+      })
+
+      const result = await response.json()
+      
+      if (response.ok) {
+        fetchMustReads()
+      } else {
+        alert(`Error: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Error toggling pin:', error)
+      alert('Failed to toggle pin')
+    }
   }
 
   // Extract source (domain) from URL
@@ -467,9 +494,6 @@ export default function MustReadAdmin() {
             setIsAddDialogOpen(open)
             if (open) {
               resetForm()
-              if (user?.id) {
-                setFormData(prev => ({ ...prev, assigned_to: user.id }))
-              }
             }
           }}>
             <DialogTrigger asChild>
@@ -484,10 +508,352 @@ export default function MustReadAdmin() {
                 Add New
               </Button>
             </DialogTrigger>
-            <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border`}>
+            <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border max-w-4xl max-h-[90vh] overflow-y-auto`}>
               <DialogHeader>
                 <DialogTitle className={cardStyle.text}>Add New Must Read</DialogTitle>
               </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Left Column */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className={cardStyle.text}>Article Title *</Label>
+                    <Input
+                      value={formData.article_title}
+                      onChange={(e) => setFormData({ ...formData, article_title: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="Enter article title"
+                    />
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Article URL *</Label>
+                    <Input
+                      value={formData.article_url}
+                      onChange={(e) => setFormData({ ...formData, article_url: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="https://example.com/article"
+                      type="url"
+                    />
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Category (optional)</Label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                    >
+                      <option value="">No Category</option>
+                      <option value="Technology">Technology</option>
+                      <option value="Culture">Culture</option>
+                      <option value="Fun">Fun</option>
+                      <option value="Industry">Industry</option>
+                      <option value="Craft">Craft</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Source (optional)</Label>
+                    <Input
+                      value={formData.source}
+                      onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="Auto-extracted from URL"
+                    />
+                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                      Source is automatically extracted from the URL, but you can edit it
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className={cardStyle.text}>Summary (optional)</Label>
+                    <div className="flex gap-2">
+                      <Textarea
+                        value={formData.summary}
+                        onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                        className={`flex-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                        placeholder="AI-generated summary will appear here..."
+                        rows={3}
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleGenerateSummary}
+                        disabled={!formData.article_url || generatingSummary}
+                        variant="outline"
+                        className={`${cardStyle.border} border ${cardStyle.text} whitespace-nowrap`}
+                      >
+                        {generatingSummary ? 'Generating...' : 'Generate'}
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Tags (optional)</Label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 flex flex-wrap gap-2">
+                        {formData.tags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} px-2 py-1 ${getRoundedClass('rounded-md')} text-sm flex items-center gap-1`}
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newTags = formData.tags.filter((_, i) => i !== index)
+                                setFormData({ ...formData, tags: newTags })
+                              }}
+                              className="hover:opacity-70"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                        {formData.tags.length === 0 && (
+                          <span className={`${cardStyle.text}/50 text-sm`}>No tags yet</span>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={handleGenerateTags}
+                        disabled={!formData.article_url || generatingTags}
+                        variant="outline"
+                        className={`${cardStyle.border} border ${cardStyle.text} whitespace-nowrap`}
+                      >
+                        {generatingTags ? 'Generating...' : 'Generate'}
+                      </Button>
+                    </div>
+                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                      AI will generate up to 3 relevant tags from the article
+                    </p>
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Notes (optional)</Label>
+                    <Textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="Add any notes about this article"
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Date</Label>
+                    <Input
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="pinned-add"
+                      checked={formData.pinned}
+                      onChange={(e) => setFormData({ ...formData, pinned: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="pinned-add" className={cardStyle.text}>Pinned</Label>
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Submitted By</Label>
+                    <select
+                      value={formData.submitted_by}
+                      onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
+                      className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                    >
+                      <option value="">None</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.id}>
+                          {u.full_name || u.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                  <Button
+                    onClick={() => setIsAddDialogOpen(false)}
+                    variant="outline"
+                    className={`${cardStyle.border} border ${cardStyle.text}`}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleAdd}
+                    disabled={!formData.article_title || !formData.article_url}
+                    className={`${getRoundedClass('rounded-lg')} ${
+                      mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
+                      mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
+                      'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
+                    } font-black uppercase tracking-wider`}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {selectedIds.size > 0 && (
+            <Button
+              onClick={handleBulkDelete}
+              variant="destructive"
+              className={`${getRoundedClass('rounded-lg')} font-black uppercase tracking-wider`}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Selected ({selectedIds.size})
+            </Button>
+          )}
+
+          {/* Search */}
+          <div className="flex-1 min-w-[200px]">
+            <div className="relative">
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${getTextClass()}/50`} />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search all fields..."
+                className={`pl-10 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+              />
+            </div>
+          </div>
+
+          {/* Filter */}
+          <div className="flex items-center gap-2">
+            <Filter className={`w-4 h-4 ${getTextClass()}/50`} />
+            <select
+              value={filterPinned || 'all'}
+              onChange={(e) => setFilterPinned(e.target.value === 'all' ? null : e.target.value)}
+              className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+            >
+              <option value="all">All</option>
+              <option value="true">Pinned Only</option>
+              <option value="false">Not Pinned</option>
+            </select>
+          </div>
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <select
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [by, order] = e.target.value.split('-')
+                setSortBy(by)
+                setSortOrder(order)
+              }}
+              className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+            >
+              <option value="created_at-desc">Date (Newest)</option>
+              <option value="created_at-asc">Date (Oldest)</option>
+              <option value="article_title-asc">Article Name (A-Z)</option>
+              <option value="article_title-desc">Article Name (Z-A)</option>
+              <option value="submitted_by-asc">Submitted By (A-Z)</option>
+              <option value="submitted_by-desc">Submitted By (Z-A)</option>
+            </select>
+          </div>
+        </div>
+
+        {/* List */}
+        {loading ? (
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
+            <p className={cardStyle.text}>Loading...</p>
+          </Card>
+        ) : filteredMustReads.length === 0 ? (
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
+            <p className={cardStyle.text}>No must reads found.</p>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {/* Select All */}
+            <div className="flex items-center gap-2 mb-4">
+              <input
+                type="checkbox"
+                checked={selectedIds.size === filteredMustReads.length && filteredMustReads.length > 0}
+                onChange={toggleSelectAll}
+                className="w-4 h-4"
+              />
+              <Label className={cardStyle.text}>Select All</Label>
+            </div>
+
+            {filteredMustReads.map((item) => (
+              <Card
+                key={item.id}
+                className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')} ${
+                  item.pinned ? 'ring-2' : ''
+                }`}
+                style={item.pinned ? { ringColor: cardStyle.accent } : {}}
+              >
+                <div className="flex items-start gap-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(item.id)}
+                    onChange={() => toggleSelect(item.id)}
+                    className="w-4 h-4 mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          {item.pinned && (
+                            <Pin className={`w-4 h-4`} style={{ color: cardStyle.accent }} />
+                          )}
+                          <h3 className={`text-xl font-black uppercase ${cardStyle.text}`}>
+                            {item.article_title}
+                          </h3>
+                        </div>
+                        <div className={`flex items-center gap-4 text-sm ${cardStyle.text}/70 font-bold`}>
+                          <span>
+                            Submitted by: {item.submitted_by_profile?.full_name || item.submitted_by_profile?.email || 'Unknown'}
+                          </span>
+                          <span>
+                            Created: {new Date(item.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => handleTogglePin(item.id, item.pinned)}
+                          size="sm"
+                          variant="outline"
+                          className={`${cardStyle.border} border ${cardStyle.text}`}
+                          title={item.pinned ? 'Unpin' : 'Pin'}
+                        >
+                          <Pin className={`w-4 h-4 ${item.pinned ? 'fill-current' : ''}`} />
+                        </Button>
+                        <Button
+                          onClick={() => handleEdit(item)}
+                          size="sm"
+                          variant="outline"
+                          className={`${cardStyle.border} border ${cardStyle.text}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => handleDelete(item.id)}
+                          size="sm"
+                          variant="destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border max-w-4xl max-h-[90vh] overflow-y-auto`}>
+            <DialogHeader>
+              <DialogTitle className={cardStyle.text}>Edit Must Read</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left Column */}
               <div className="space-y-4">
                 <div>
                   <Label className={cardStyle.text}>Article Title *</Label>
@@ -535,6 +901,10 @@ export default function MustReadAdmin() {
                     Source is automatically extracted from the URL, but you can edit it
                   </p>
                 </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-4">
                 <div>
                   <Label className={cardStyle.text}>Summary (optional)</Label>
                   <div className="flex gap-2">
@@ -618,20 +988,21 @@ export default function MustReadAdmin() {
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    id="pinned-add"
+                    id="pinned-edit"
                     checked={formData.pinned}
                     onChange={(e) => setFormData({ ...formData, pinned: e.target.checked })}
                     className="w-4 h-4"
                   />
-                  <Label htmlFor="pinned-add" className={cardStyle.text}>Pinned</Label>
+                  <Label htmlFor="pinned-edit" className={cardStyle.text}>Pinned</Label>
                 </div>
                 <div>
-                  <Label className={cardStyle.text}>Assigned To</Label>
+                  <Label className={cardStyle.text}>Submitted By</Label>
                   <select
-                    value={formData.assigned_to}
-                    onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                    value={formData.submitted_by}
+                    onChange={(e) => setFormData({ ...formData, submitted_by: e.target.value })}
                     className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                   >
+                    <option value="">None</option>
                     {users.map(u => (
                       <option key={u.id} value={u.id}>
                         {u.full_name || u.email}
@@ -639,327 +1010,9 @@ export default function MustReadAdmin() {
                     ))}
                   </select>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    onClick={() => setIsAddDialogOpen(false)}
-                    variant="outline"
-                    className={`${cardStyle.border} border ${cardStyle.text}`}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleAdd}
-                    disabled={!formData.article_title || !formData.article_url}
-                    className={`${getRoundedClass('rounded-lg')} ${
-                      mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
-                      mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
-                      'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
-                    } font-black uppercase tracking-wider`}
-                  >
-                    Add
-                  </Button>
-                </div>
               </div>
-            </DialogContent>
-          </Dialog>
-
-          {selectedIds.size > 0 && (
-            <Button
-              onClick={handleBulkDelete}
-              variant="destructive"
-              className={`${getRoundedClass('rounded-lg')} font-black uppercase tracking-wider`}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Selected ({selectedIds.size})
-            </Button>
-          )}
-
-          {/* Search */}
-          <div className="flex-1 min-w-[200px]">
-            <div className="relative">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${getTextClass()}/50`} />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by title, URL, or notes..."
-                className={`pl-10 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-              />
             </div>
-          </div>
-
-          {/* Filter */}
-          <div className="flex items-center gap-2">
-            <Filter className={`w-4 h-4 ${getTextClass()}/50`} />
-            <select
-              value={filterPinned || 'all'}
-              onChange={(e) => setFilterPinned(e.target.value === 'all' ? null : e.target.value)}
-              className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
-            >
-              <option value="all">All</option>
-              <option value="true">Pinned Only</option>
-              <option value="false">Not Pinned</option>
-            </select>
-          </div>
-        </div>
-
-        {/* List */}
-        {loading ? (
-          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
-            <p className={cardStyle.text}>Loading...</p>
-          </Card>
-        ) : filteredMustReads.length === 0 ? (
-          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
-            <p className={cardStyle.text}>No must reads found.</p>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {/* Select All */}
-            <div className="flex items-center gap-2 mb-4">
-              <input
-                type="checkbox"
-                checked={selectedIds.size === filteredMustReads.length && filteredMustReads.length > 0}
-                onChange={toggleSelectAll}
-                className="w-4 h-4"
-              />
-              <Label className={cardStyle.text}>Select All</Label>
-            </div>
-
-            {filteredMustReads.map((item) => (
-              <Card
-                key={item.id}
-                className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')} ${
-                  item.pinned ? 'ring-2' : ''
-                }`}
-                style={item.pinned ? { ringColor: cardStyle.accent } : {}}
-              >
-                <div className="flex items-start gap-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(item.id)}
-                    onChange={() => toggleSelect(item.id)}
-                    className="w-4 h-4 mt-1"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          {item.pinned && (
-                            <Pin className={`w-4 h-4`} style={{ color: cardStyle.accent }} />
-                          )}
-                          <h3 className={`text-xl font-black uppercase ${cardStyle.text}`}>
-                            {item.article_title}
-                          </h3>
-                        </div>
-                        <a
-                          href={item.article_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`text-sm ${cardStyle.text}/70 hover:${cardStyle.text} flex items-center gap-1 font-bold`}
-                        >
-                          {item.article_url}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => handleEdit(item)}
-                          size="sm"
-                          variant="outline"
-                          className={`${cardStyle.border} border ${cardStyle.text}`}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          onClick={() => handleDelete(item.id)}
-                          size="sm"
-                          variant="destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    {item.notes && (
-                      <p className={`text-sm ${cardStyle.text}/70 mb-2 font-medium`}>{item.notes}</p>
-                    )}
-                    <div className={`flex items-center gap-4 text-xs ${cardStyle.text}/50 font-bold`}>
-                      <span>
-                        Submitted by: {item.submitted_by_profile?.full_name || item.submitted_by_profile?.email || 'Unknown'}
-                      </span>
-                      {item.assigned_to_profile && (
-                        <span>
-                          Assigned to: {item.assigned_to_profile.full_name || item.assigned_to_profile.email}
-                        </span>
-                      )}
-                      <span>
-                        Created: {new Date(item.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Edit Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border`}>
-            <DialogHeader>
-              <DialogTitle className={cardStyle.text}>Edit Must Read</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label className={cardStyle.text}>Article Title *</Label>
-                <Input
-                  value={formData.article_title}
-                  onChange={(e) => setFormData({ ...formData, article_title: e.target.value })}
-                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                  placeholder="Enter article title"
-                />
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Article URL *</Label>
-                <Input
-                  value={formData.article_url}
-                  onChange={(e) => setFormData({ ...formData, article_url: e.target.value })}
-                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                  placeholder="https://example.com/article"
-                  type="url"
-                />
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Category (optional)</Label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
-                >
-                  <option value="">No Category</option>
-                  <option value="Technology">Technology</option>
-                  <option value="Culture">Culture</option>
-                  <option value="Fun">Fun</option>
-                  <option value="Industry">Industry</option>
-                  <option value="Craft">Craft</option>
-                </select>
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Source (optional)</Label>
-                <Input
-                  value={formData.source}
-                  onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                  placeholder="Auto-extracted from URL"
-                />
-                <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                  Source is automatically extracted from the URL, but you can edit it
-                </p>
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Summary (optional)</Label>
-                <div className="flex gap-2">
-                  <Textarea
-                    value={formData.summary}
-                    onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                    className={`flex-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder="AI-generated summary will appear here..."
-                    rows={3}
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleGenerateSummary}
-                    disabled={!formData.article_url || generatingSummary}
-                    variant="outline"
-                    className={`${cardStyle.border} border ${cardStyle.text} whitespace-nowrap`}
-                  >
-                    {generatingSummary ? 'Generating...' : 'Generate'}
-                  </Button>
-                </div>
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Tags (optional)</Label>
-                <div className="flex gap-2">
-                  <div className="flex-1 flex flex-wrap gap-2">
-                    {formData.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} px-2 py-1 ${getRoundedClass('rounded-md')} text-sm flex items-center gap-1`}
-                      >
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newTags = formData.tags.filter((_, i) => i !== index)
-                            setFormData({ ...formData, tags: newTags })
-                          }}
-                          className="hover:opacity-70"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                    {formData.tags.length === 0 && (
-                      <span className={`${cardStyle.text}/50 text-sm`}>No tags yet</span>
-                    )}
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={handleGenerateTags}
-                    disabled={!formData.article_url || generatingTags}
-                    variant="outline"
-                    className={`${cardStyle.border} border ${cardStyle.text} whitespace-nowrap`}
-                  >
-                    {generatingTags ? 'Generating...' : 'Generate'}
-                  </Button>
-                </div>
-                <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                  AI will generate up to 3 relevant tags from the article
-                </p>
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Notes (optional)</Label>
-                <Textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                  placeholder="Add any notes about this article"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Date</Label>
-                <Input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="pinned-edit"
-                  checked={formData.pinned}
-                  onChange={(e) => setFormData({ ...formData, pinned: e.target.checked })}
-                  className="w-4 h-4"
-                />
-                <Label htmlFor="pinned-edit" className={cardStyle.text}>Pinned</Label>
-              </div>
-              <div>
-                <Label className={cardStyle.text}>Assigned To</Label>
-                <select
-                  value={formData.assigned_to}
-                  onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                  className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
-                >
-                  <option value="">None</option>
-                  {users.map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.full_name || u.email}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 mt-4">
                 <Button
                   onClick={() => {
                     setIsEditDialogOpen(false)
