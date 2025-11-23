@@ -2083,6 +2083,15 @@ export default function TeamDashboard() {
               const inProgressProjects = pipelineData.filter(p => p.status === 'In Progress')
               const completedProjects = pipelineData.filter(p => p.status === completedFilter)
               
+              // Calculate counts for all statuses
+              const statusCounts = {
+                'In Progress': pipelineData.filter(p => p.status === 'In Progress').length,
+                'Pending Decision': pipelineData.filter(p => p.status === 'Pending Decision').length,
+                'Long Lead': pipelineData.filter(p => p.status === 'Long Lead').length,
+                'Won': pipelineData.filter(p => p.status === 'Won').length,
+                'Lost': pipelineData.filter(p => p.status === 'Lost').length,
+              }
+              
               const formatDate = (dateString: string | null) => {
                 if (!dateString) return null
                 const date = new Date(dateString)
@@ -2140,10 +2149,45 @@ export default function TeamDashboard() {
                       borderWidth: '2px',
                     }}
                   >
-                    <h2 className={`${eventsExpanded ? 'text-xl mb-3' : 'text-3xl mb-4'} font-black uppercase text-white transition-all duration-300`}>PIPELINE</h2>
+                    <h2 className={`${eventsExpanded ? 'text-xl mb-2' : 'text-3xl mb-3'} font-black uppercase text-white transition-all duration-300`}>PIPELINE</h2>
                     
-                    {/* Split in half */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 divide-x" style={{ borderColor: `${borderColor}40` }}>
+                    {eventsExpanded ? (
+                      /* Stats view when events expanded */
+                      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                        <div className="text-center">
+                          <div className={`text-2xl font-black ${getTextClass()}`}>
+                            {pipelineLoading ? '0' : statusCounts['In Progress']}
+                          </div>
+                          <div className="text-xs text-white/60 mt-1">In Progress</div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-2xl font-black ${getTextClass()}`}>
+                            {pipelineLoading ? '0' : statusCounts['Pending Decision']}
+                          </div>
+                          <div className="text-xs text-white/60 mt-1">Pending</div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-2xl font-black ${getTextClass()}`}>
+                            {pipelineLoading ? '0' : statusCounts['Long Lead']}
+                          </div>
+                          <div className="text-xs text-white/60 mt-1">Long Lead</div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-2xl font-black ${getTextClass()}`}>
+                            {pipelineLoading ? '0' : statusCounts['Won']}
+                          </div>
+                          <div className="text-xs text-white/60 mt-1">Won</div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-2xl font-black ${getTextClass()}`}>
+                            {pipelineLoading ? '0' : statusCounts['Lost']}
+                          </div>
+                          <div className="text-xs text-white/60 mt-1">Lost</div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Full view when events not expanded */
+                      <div className="grid grid-cols-1 lg:grid-cols-2 divide-x" style={{ borderColor: `${borderColor}40` }}>
                       {/* Left Half - IN PROGRESS */}
                       <div className="flex flex-col pr-4">
                         <div className="flex items-center gap-3 mb-4">
@@ -2161,8 +2205,8 @@ export default function TeamDashboard() {
                           </Badge>
                         </div>
                         
-                        {/* Scrollable list */}
-                        <div className="flex-1 overflow-y-auto max-h-[400px]">
+                        {/* Scrollable list - Fixed height to align bottoms */}
+                        <div className="overflow-y-auto" style={{ height: '400px' }}>
                           <div className="space-y-1">
                             {!pipelineLoading && inProgressProjects.length > 0 ? (
                               inProgressProjects.map((project, index) => 
@@ -2182,7 +2226,7 @@ export default function TeamDashboard() {
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-lg font-semibold text-white">COMPLETED</h3>
                           
-                          {/* Tabs - Right aligned */}
+                          {/* Tabs - Right aligned and in line with COMPLETED */}
                           <div className="flex flex-wrap gap-2">
                             {(['Pending Decision', 'Long Lead', 'Won', 'Lost'] as const).map((status) => (
                               <Button
@@ -2203,12 +2247,12 @@ export default function TeamDashboard() {
                           </div>
                         </div>
                         
-                        {/* Scrollable list */}
-                        <div className="flex-1 overflow-y-auto max-h-[400px]">
+                        {/* Scrollable list - Fixed height to align bottoms, show one less item */}
+                        <div className="overflow-y-auto" style={{ height: '400px' }}>
                           <div className="space-y-1">
                             {!pipelineLoading && completedProjects.length > 0 ? (
-                              completedProjects.map((project, index) => 
-                                renderProjectItem(project, index, completedProjects.length)
+                              completedProjects.slice(0, Math.max(0, completedProjects.length - 1)).map((project, index) => 
+                                renderProjectItem(project, index, completedProjects.length - 1)
                               )
                             ) : (
                               <div className="text-white/60 text-sm py-4">
@@ -2219,6 +2263,7 @@ export default function TeamDashboard() {
                         </div>
                       </div>
                     </div>
+                    )}
                   </Card>
 
                   {/* Project Details Dialog */}
