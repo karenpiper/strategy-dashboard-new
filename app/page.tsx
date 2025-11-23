@@ -2693,7 +2693,7 @@ export default function TeamDashboard() {
                         </div>
                         
                         {/* Scrollable list - Fixed height to align bottoms */}
-                        <div className="overflow-y-auto" style={{ height: '400px' }}>
+                        <div className="overflow-y-auto" style={{ height: '300px' }}>
                           <div className="space-y-1">
                             {!pipelineLoading && inProgressProjects.length > 0 ? (
                               inProgressProjects.map((project, index) => 
@@ -2735,7 +2735,7 @@ export default function TeamDashboard() {
                         </div>
                         
                         {/* Scrollable list - Fixed height to align bottoms, show one less item */}
-                        <div className="overflow-y-auto" style={{ height: '400px' }}>
+                        <div className="overflow-y-auto" style={{ height: '300px' }}>
                           <div className="space-y-1">
                             {!pipelineLoading && completedProjects.length > 0 ? (
                               completedProjects.slice(0, Math.max(0, completedProjects.length - 1)).map((project, index) => 
