@@ -275,7 +275,7 @@ export function TeamPulseCard() {
     const overallInterpretation = getScoreInterpretation(overallTeamMood)
     
     return (
-      <Card className={`${style.bg} ${style.border} !rounded-[2.5rem] flex flex-col overflow-hidden relative`}>
+      <Card className={`${style.bg} ${style.border} !rounded-[2.5rem] flex flex-col overflow-hidden relative h-full`}>
         {/* Subtle gradient background based on overall mood */}
         <div 
           className="absolute inset-0 opacity-5 pointer-events-none transition-opacity duration-1000"
@@ -395,7 +395,7 @@ export function TeamPulseCard() {
   // Show survey
   if (questions.length === 0) {
     return (
-      <Card className={`${style.bg} ${style.border} !rounded-[2.5rem] flex items-center justify-center`}>
+      <Card className={`${style.bg} ${style.border} !rounded-[2.5rem] flex items-center justify-center h-full`}>
         <div className={`text-center ${style.text}/70`}>
           <p className="text-base font-black uppercase tracking-wider">Loading questions...</p>
         </div>
@@ -438,7 +438,7 @@ export function TeamPulseCard() {
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), 0 0 0 3px ${mode === 'chaos' ? 'rgba(255,255,255,0.4)' : mode === 'chill' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.2)'} !important;
         }
       `}</style>
-      <Card className={`${style.bg} ${style.border} !rounded-[2.5rem] flex flex-col overflow-hidden`}>
+      <Card className={`${style.bg} ${style.border} !rounded-[2.5rem] flex flex-col overflow-hidden h-full`}>
         <div className="p-6 pb-4 flex-shrink-0">
           {/* Header matching horoscope header style */}
           <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.secondary }}>PULSE<br/>CHECK</h2>

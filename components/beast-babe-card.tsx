@@ -51,7 +51,7 @@ export function BeastBabeCard() {
   const currentBeastBabe = beastBabeData?.currentBeastBabe
 
   return (
-    <Card className="relative overflow-hidden bg-gradient-to-br from-[#047857] via-[#10B981] to-[#1A5D52] border-0 rounded-[2.5rem] min-h-[600px] glitch-container">
+    <Card className="relative overflow-hidden bg-gradient-to-br from-[#047857] via-[#10B981] to-[#1A5D52] border-0 rounded-[2.5rem] min-h-[600px] h-full flex flex-col glitch-container">
       {/* Decorative background elements - GREEN SYSTEM with magenta */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Animated gradient overlay */}
@@ -147,7 +147,7 @@ export function BeastBabeCard() {
       </div>
 
       {/* Content below avatar */}
-      <div className="relative z-10 px-6 pb-6">
+      <div className="relative z-10 px-6 pb-6 flex-1 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 mt-4">
           <div className="flex items-center gap-2 glitch-text">
