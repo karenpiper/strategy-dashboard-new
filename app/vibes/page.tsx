@@ -8,7 +8,7 @@ import { useMode } from '@/contexts/mode-context'
 import { AccountMenu } from '@/components/account-menu'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Trophy, Music, MessageCircle, Play } from 'lucide-react'
+import { Trophy, Music, MessageCircle, Play, Star } from 'lucide-react'
 import Link from 'next/link'
 import { PlaylistCard } from '@/components/playlist-card'
 import { Footer } from '@/components/footer'
@@ -171,15 +171,20 @@ export default function VibesPage() {
       setLoading(true)
       
       try {
-        // TODO: Fetch Beast Babe from beast_babe table when it's created
-        // For now, using placeholder data
+        // Fetch Beast Babe from API
+        const beastBabeResponse = await fetch('/api/beast-babe')
+        if (beastBabeResponse.ok) {
+          const beastBabeData = await beastBabeResponse.json()
+          if (beastBabeData?.currentBeastBabe) {
         setBeastBabe({
-          id: 'placeholder',
-          full_name: 'Sarah J.',
-          email: null,
-          avatar_url: null,
-          snaps_count: 42
-        })
+              id: beastBabeData.currentBeastBabe.id,
+              full_name: beastBabeData.currentBeastBabe.full_name,
+              email: beastBabeData.currentBeastBabe.email,
+              avatar_url: beastBabeData.currentBeastBabe.avatar_url,
+              snaps_count: 0 // This would need to come from the API if available
+            })
+          }
+        }
 
         // Fetch Question of the Week (placeholder - you'll need to create a questions table)
         setQuestionOfWeek("What's one thing you learned this week?")
@@ -327,29 +332,140 @@ export default function VibesPage() {
           {/* Beast Babe Card */}
           {(() => {
             const style = getBeastBabeCardStyle()
+            // RED SYSTEM colors for chaos mode: Coral Red #FF4C4C, Crimson #C41E3A, Peach #FFD4C4, Ocean Blue #00A3E0
+            const redColors = mode === 'chaos' ? {
+              primary: '#FF4C4C',
+              accent: '#C41E3A',
+              secondary: '#FFD4C4',
+              tertiary: '#00A3E0'
+            } : {
+              primary: '#4A1818',
+              accent: '#FFB5D8',
+              secondary: '#F5E6D3',
+              tertiary: '#FFFFFF'
+            }
             return (
-              <Card className={`${style.bg} ${mode === 'chill' || mode === 'code' ? style.border || '' : 'border-0'} ${getRoundedClass('rounded-[2.5rem]')} p-6`}>
-                <p className={`text-xs uppercase tracking-wider font-black mb-2 ${style.text}`} style={{ opacity: 0.8 }}>THIS WEEK'S</p>
-                <h2 className={`text-4xl font-black mb-6 uppercase ${style.text}`}>BEAST<br/>BABE</h2>
-                <div className="flex items-center justify-center mb-4">
-                  <div className={`w-20 h-20 ${getRoundedClass('rounded-full')} flex items-center justify-center`} style={{ 
-                    backgroundColor: mode === 'chill' ? '#4A1818' : mode === 'code' ? '#FFFFFF' : mode === 'chaos' ? '#0EA5E9' : '#000000' // Ocean Blue from RED SYSTEM
-                  }}>
-                    <Trophy className="w-10 h-10" style={{ color: style.accent }} />
+              <Card className={`${style.bg} ${mode === 'chill' || mode === 'code' ? style.border || '' : 'border-0'} ${getRoundedClass('rounded-[2.5rem]')} p-6 relative overflow-hidden glitch-container min-h-[400px]`}>
+                {/* Decorative background elements - RED SYSTEM */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  {/* Animated gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br opacity-20 animate-pulse glitch-shift" style={{
+                    background: mode === 'chaos' 
+                      ? `linear-gradient(135deg, ${redColors.primary}20, ${redColors.accent}30, ${redColors.tertiary}20)`
+                      : `linear-gradient(135deg, ${redColors.primary}15, ${redColors.accent}25, ${redColors.secondary}15)`
+                  }}></div>
+                  
+                  {/* Wavy lines */}
+                  <div className="absolute top-0 left-0 w-40 h-40 opacity-40 animate-bounce-slow glitch-shift">
+                    <svg className="w-full h-full animate-pulse" viewBox="0 0 100 100" fill="none" style={{ color: redColors.accent }}>
+                      <path d="M0,50 Q25,30 50,50 T100,50" stroke="currentColor" strokeWidth="2" fill="none" />
+                    </svg>
+                  </div>
+                  <div className="absolute bottom-0 right-0 w-48 h-48 opacity-30 animate-bounce-slow glitch-shift" style={{ animationDelay: '1s' }}>
+                    <svg className="w-full h-full animate-pulse" viewBox="0 0 100 100" fill="none" style={{ color: redColors.primary, animationDelay: '0.5s' }}>
+                      <path d="M0,50 Q25,70 50,50 T100,50" stroke="currentColor" strokeWidth="2" fill="none" />
+                    </svg>
+                  </div>
+                  
+                  {/* Triangles */}
+                  <div className="absolute left-4 top-1/2 w-20 h-20 opacity-30 animate-spin-slow glitch-shift">
+                    <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[35px]" style={{ borderBottomColor: redColors.accent }}></div>
+                  </div>
+                  <div className="absolute left-8 top-1/3 w-16 h-16 opacity-40 animate-spin-slow glitch-shift" style={{ animationDelay: '1.5s', animationDirection: 'reverse' }}>
+                    <div className="w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-b-[28px]" style={{ borderBottomColor: redColors.primary }}></div>
+                  </div>
+                  
+                  {/* Circles */}
+                  <div className="absolute top-4 right-8 w-16 h-16 opacity-40 animate-ping glitch-shift">
+                    <div className="w-full h-full rounded-full" style={{ backgroundColor: redColors.accent }}></div>
+                  </div>
+                  <div className="absolute right-4 top-1/2 w-20 h-20 opacity-30 animate-pulse glitch-shift" style={{ animationDelay: '1s' }}>
+                    <div className="w-full h-full rounded-full border-2 border-dashed" style={{ borderColor: redColors.primary }}></div>
+                  </div>
+                  
+                  {/* Stars */}
+                  <div className="absolute top-8 right-12 opacity-50 animate-pulse glitch-shift" style={{ animationDelay: '0.3s' }}>
+                    <Star className="w-8 h-8" style={{ color: redColors.accent, fill: redColors.accent }} />
+                  </div>
+                  <div className="absolute bottom-12 right-8 opacity-40 animate-pulse glitch-shift" style={{ animationDelay: '0.7s' }}>
+                    <Star className="w-6 h-6" style={{ color: redColors.primary, fill: redColors.primary }} />
+                  </div>
+                  
+                  {/* Glitch lines */}
+                  <div className="absolute inset-0 glitch-lines"></div>
+                </div>
+
+                {/* Content */}
+                <div className="relative z-10">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2 glitch-text">
+                      <Trophy className="w-7 h-7 animate-bounce glitch-shift" style={{ color: redColors.accent, animationDuration: '1.5s' }} />
+                      <h2 className={`text-5xl font-black uppercase tracking-tight glitch-text ${style.text}`}>BEAST BABE</h2>
+                    </div>
+                  </div>
+
+                  {/* Profile Section */}
+                  <div className="flex flex-col items-center mb-6">
+                    {/* Profile Picture with Gradient Ring */}
+                    <div className="relative mb-4 flex items-center justify-center">
+                      {/* Multiple glowing effects behind profile - RED SYSTEM */}
+                      <div className="absolute w-64 h-64 rounded-full blur-2xl animate-pulse glitch-shift" style={{ backgroundColor: `${redColors.accent}40`, animationDelay: '0.3s' }}></div>
+                      <div className="absolute w-56 h-56 rounded-full blur-xl animate-pulse glitch-shift" style={{ backgroundColor: `${redColors.primary}30`, animationDelay: '0.6s' }}></div>
+                      <div className="absolute w-52 h-52 rounded-full blur-lg animate-pulse glitch-shift" style={{ backgroundColor: `${redColors.tertiary}25`, animationDelay: '0.9s' }}></div>
+                      
+                      {/* Gradient Ring Container - RED SYSTEM */}
+                      <div className="relative w-56 h-56">
+                        {/* Animated Gradient Ring - Fast spin with RED SYSTEM colors */}
+                        <div 
+                          className="absolute inset-0 rounded-full animate-spin-fast glitch-shift"
+                          style={{
+                            background: mode === 'chaos'
+                              ? `conic-gradient(from 0deg, ${redColors.accent} 0%, ${redColors.primary} 20%, ${redColors.tertiary} 40%, ${redColors.secondary} 60%, ${redColors.accent} 80%, ${redColors.primary} 100%)`
+                              : `conic-gradient(from 0deg, ${redColors.accent} 0%, ${redColors.primary} 20%, ${redColors.secondary} 40%, ${redColors.accent} 60%, ${redColors.primary} 80%, ${redColors.accent} 100%)`,
+                          }}
+                        >
+                          <div className="absolute inset-[3px] rounded-full" style={{
+                            background: mode === 'chaos'
+                              ? `linear-gradient(to bottom right, ${redColors.primary}, ${redColors.accent}, ${redColors.primary})`
+                              : `linear-gradient(to bottom right, ${redColors.primary}, ${redColors.accent})`
+                          }}></div>
+                        </div>
+                        
+                        {/* Profile Picture - No glitch effects */}
+                        <div className="absolute inset-[3px] rounded-full overflow-hidden z-10">
+                          {beastBabe?.avatar_url ? (
+                            <img
+                              src={beastBabe.avatar_url}
+                              alt={beastBabe.full_name || 'Beast Babe'}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: redColors.primary }}>
+                              <Trophy className="w-24 h-24" style={{ color: redColors.accent }} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Name */}
+                    <h3 className={`text-3xl font-black mb-1 text-center glitch-text ${style.text}`}>
+                      {beastBabe?.full_name || beastBabe?.email || 'No Beast Babe Yet'}
+                    </h3>
+                    
+                    {/* Snaps count */}
+                    {beastBabe && (
+                      <p className={`text-sm ${style.text}`} style={{ opacity: 0.8 }}>
+                        {beastBabe.snaps_count || 0} Snaps Received
+                      </p>
+                    )}
                   </div>
                 </div>
-                {beastBabe ? (
-                  <>
-                    <p className={`text-2xl font-black text-center mb-1 ${style.text}`}>
-                      {beastBabe.full_name || 'Anonymous'}
-                    </p>
-                    <p className={`text-sm font-medium text-center ${style.text}`} style={{ opacity: 0.8 }}>
-                      {beastBabe.snaps_count} Snaps Received
-                    </p>
-                  </>
-                ) : (
-                  <p className={`text-sm font-medium text-center ${style.text}`} style={{ opacity: 0.8 }}>No data yet</p>
-                )}
+
+                {/* Glowing border effect - RED SYSTEM */}
+                <div className="absolute inset-0 rounded-[2.5rem] border-2 pointer-events-none animate-pulse glitch-border" style={{ borderColor: `${redColors.accent}30` }}></div>
+                <div className="absolute inset-0 rounded-[2.5rem] border pointer-events-none animate-pulse glitch-shift" style={{ borderColor: `${redColors.primary}20`, animationDelay: '0.5s' }}></div>
               </Card>
             )
           })()}

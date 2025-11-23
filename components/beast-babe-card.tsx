@@ -126,15 +126,15 @@ export function BeastBabeCard() {
           {/* Profile Picture with Gradient Ring */}
           <div className="relative mb-4 flex items-center justify-center">
             {/* Multiple glowing effects behind profile - GREEN SYSTEM + Magenta */}
-            <div className="absolute w-40 h-40 rounded-full bg-[#84CC16]/40 blur-2xl animate-pulse" style={{ animationDelay: '0.3s' }}></div>
-            <div className="absolute w-36 h-36 rounded-full bg-[#EC4899]/30 blur-xl animate-pulse" style={{ animationDelay: '0.6s' }}></div>
-            <div className="absolute w-32 h-32 rounded-full bg-[#FF8C42]/25 blur-lg animate-pulse" style={{ animationDelay: '0.9s' }}></div>
+            <div className="absolute w-64 h-64 rounded-full bg-[#84CC16]/40 blur-2xl animate-pulse glitch-shift" style={{ animationDelay: '0.3s' }}></div>
+            <div className="absolute w-56 h-56 rounded-full bg-[#EC4899]/30 blur-xl animate-pulse glitch-shift" style={{ animationDelay: '0.6s' }}></div>
+            <div className="absolute w-52 h-52 rounded-full bg-[#FF8C42]/25 blur-lg animate-pulse glitch-shift" style={{ animationDelay: '0.9s' }}></div>
             
             {/* Gradient Ring Container - GREEN SYSTEM + Magenta */}
-            <div className="relative w-32 h-32 glitch-shift">
+            <div className="relative w-56 h-56">
               {/* Animated Gradient Ring - Fast spin with GREEN SYSTEM colors + magenta */}
               <div 
-                className="absolute inset-0 rounded-full animate-spin-fast"
+                className="absolute inset-0 rounded-full animate-spin-fast glitch-shift"
                 style={{
                   background: 'conic-gradient(from 0deg, #EC4899 0%, #84CC16 20%, #10B981 40%, #FF8C42 60%, #EC4899 80%, #84CC16 100%)',
                 }}
@@ -142,7 +142,7 @@ export function BeastBabeCard() {
                 <div className="absolute inset-[3px] rounded-full bg-gradient-to-br from-[#047857] via-[#10B981] to-[#1A5D52]"></div>
               </div>
               
-              {/* Profile Picture */}
+              {/* Profile Picture - No glitch effects */}
               <div className="absolute inset-[3px] rounded-full overflow-hidden z-10">
                 {currentBeastBabe?.avatar_url ? (
                   <img
@@ -152,7 +152,7 @@ export function BeastBabeCard() {
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-[#10B981] to-[#047857] flex items-center justify-center">
-                    <Trophy className="w-16 h-16 text-white" />
+                    <Trophy className="w-24 h-24 text-white" />
                   </div>
                 )}
               </div>
