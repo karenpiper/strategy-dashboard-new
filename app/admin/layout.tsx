@@ -80,6 +80,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
   const getRoundedClass = (base: string) => {
     if (mode === 'code') return 'rounded-none'
+    // For rounded-[2.5rem] or similar, keep it to match the rest of the site (like snaps page)
+    if (base.includes('rounded-[')) {
+      return base // Keep the original rounded class to match site styling
+    }
+    // For simple 'rounded' classes, do the replacement
     if (mode === 'chaos') return base.replace('rounded', 'rounded-[1.5rem]')
     if (mode === 'chill') return base.replace('rounded', 'rounded-2xl')
     return base

@@ -182,9 +182,9 @@ export default function BeastBabeAdmin() {
   const currentBeastBabe = beastBabeData?.currentBeastBabe
   const history = beastBabeData?.history || []
 
-  // Filter users based on search query
+  // Filter users based on search query - only show results when searching
   const filteredUsers = allUsers.filter(user => {
-    if (!searchQuery.trim()) return true
+    if (!searchQuery.trim()) return false // Don't show any users until user searches
     const query = searchQuery.toLowerCase()
     return (
       user.full_name?.toLowerCase().includes(query) ||
@@ -322,7 +322,9 @@ export default function BeastBabeAdmin() {
               </div>
             ) : (
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {filteredUsers.length === 0 ? (
+                {!searchQuery.trim() ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">Start typing to search for team members, or click "Browse Team" to see everyone</p>
+                ) : filteredUsers.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-4 text-center">No users found</p>
                 ) : (
                   filteredUsers.map((user) => (
@@ -476,7 +478,7 @@ export default function BeastBabeAdmin() {
 
       {/* Browse Team Dialog */}
       <Dialog open={showBrowseDialog} onOpenChange={setShowBrowseDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col bg-background">
           <DialogHeader>
             <DialogTitle>Browse Team</DialogTitle>
             <DialogDescription>

@@ -206,46 +206,92 @@ export default function TeamDashboard() {
   
   // Detect user timezone and calculate timezone times
   useEffect(() => {
-    // Detect user's timezone
-    try {
-      const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
-      // Map common timezone names to our timezone labels
-      const tzMap: Record<string, string> = {
-        'America/Los_Angeles': 'PST',
-        'America/Denver': 'MST',
-        'America/Chicago': 'CST',
-        'America/New_York': 'EST',
-        'Europe/London': 'GMT',
-        'Asia/Kolkata': 'IST',
-        'Asia/Manila': 'PHT',
-      }
+    async function detectTimezone() {
+      let detectedTz: string | null = null
       
-      // Find matching timezone
-      for (const [tz, label] of Object.entries(tzMap)) {
-        if (userTz.includes(tz.split('/')[1]) || userTz === tz) {
-          setUserTimeZone(label)
-          break
+      // First, try to get timezone from profile (fallback)
+      if (user) {
+        try {
+          const supabase = createClient()
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('timezone')
+            .eq('id', user.id)
+            .maybeSingle()
+          
+          if (profile?.timezone) {
+            // Map profile timezone to our labels
+            const tzMap: Record<string, string> = {
+              'America/Los_Angeles': 'PST',
+              'America/Denver': 'MST',
+              'America/Chicago': 'CST',
+              'America/New_York': 'EST',
+              'Europe/London': 'GMT',
+              'Asia/Kolkata': 'IST',
+              'Asia/Manila': 'PHT',
+            }
+            
+            for (const [tz, label] of Object.entries(tzMap)) {
+              if (profile.timezone.includes(tz.split('/')[1]) || profile.timezone === tz) {
+                detectedTz = label
+                break
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching profile timezone:', error)
         }
       }
       
-      // If no exact match, try to infer from offset
-      const now = new Date()
-      const userOffset = -now.getTimezoneOffset() / 60 // Convert to hours
-      const offsetMap: Record<string, string> = {
-        '-8': 'PST', '-7': 'MST', '-6': 'CST', '-5': 'EST', '0': 'GMT', '5.5': 'IST', '8': 'PHT'
+      // If no profile timezone, use browser timezone
+      if (!detectedTz) {
+        try {
+          const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+          // Map common timezone names to our timezone labels
+          const tzMap: Record<string, string> = {
+            'America/Los_Angeles': 'PST',
+            'America/Denver': 'MST',
+            'America/Chicago': 'CST',
+            'America/New_York': 'EST',
+            'Europe/London': 'GMT',
+            'Asia/Kolkata': 'IST',
+            'Asia/Manila': 'PHT',
+          }
+          
+          // Find matching timezone
+          for (const [tz, label] of Object.entries(tzMap)) {
+            if (userTz.includes(tz.split('/')[1]) || userTz === tz) {
+              detectedTz = label
+              break
+            }
+          }
+          
+          // If no exact match, try to infer from offset
+          if (!detectedTz) {
+            const now = new Date()
+            const userOffset = -now.getTimezoneOffset() / 60 // Convert to hours
+            const offsetMap: Record<string, string> = {
+              '-8': 'PST', '-7': 'MST', '-6': 'CST', '-5': 'EST', '0': 'GMT', '5.5': 'IST', '8': 'PHT'
+            }
+            // Find closest match
+            const closest = Object.entries(offsetMap).reduce((prev, [offset, label]) => {
+              const diff = Math.abs(parseFloat(offset) - userOffset)
+              const prevDiff = Math.abs(parseFloat(prev[0]) - userOffset)
+              return diff < prevDiff ? [offset, label] : prev
+            }, ['0', 'GMT'])
+            detectedTz = closest[1]
+          }
+        } catch (error) {
+          console.error('Error detecting timezone:', error)
+        }
       }
-      // Find closest match
-      const closest = Object.entries(offsetMap).reduce((prev, [offset, label]) => {
-        const diff = Math.abs(parseFloat(offset) - userOffset)
-        const prevDiff = Math.abs(parseFloat(prev[0]) - userOffset)
-        return diff < prevDiff ? [offset, label] : prev
-      }, ['0', 'GMT'])
-      if (!userTimeZone) {
-        setUserTimeZone(closest[1])
+      
+      if (detectedTz) {
+        setUserTimeZone(detectedTz)
       }
-    } catch (error) {
-      console.error('Error detecting timezone:', error)
     }
+    
+    detectTimezone()
     
     // Calculate times for each timezone
     const timeZonesData = [
@@ -282,7 +328,7 @@ export default function TeamDashboard() {
     const interval = setInterval(updateTimes, 60000) // Update every minute
     
     return () => clearInterval(interval)
-  }, [userTimeZone])
+  }, [userTimeZone, user])
   
   // Check if profile needs to be set up (only for users missing required details)
   useEffect(() => {
@@ -1599,11 +1645,12 @@ export default function TeamDashboard() {
         <section className="mb-6">
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('timezones') : getCardStyle('team')
-            const timeZoneColors = mode === 'chaos' 
-              ? ['#00A3E0', '#1B4D7C', '#7DD3F0', '#00A3E0', '#1B4D7C', '#7DD3F0', '#00A3E0'] // Team palette: Ocean, Navy, Sky (BLUE SYSTEM)
+            // Get the hero gradient for the user's timezone card
+            const heroGradient = mode === 'chaos' 
+              ? getTimeBasedGradient()
               : mode === 'chill'
-              ? ['#C8D961', '#4A9BFF', '#00D4FF', '#9D4EFF', '#FFB84D', '#FFD93D', '#A8E6CF']
-              : ['#cccccc', '#e5e5e5', '#999999', '#cccccc', '#b3b3b3', '#d9d9d9', '#e5e5e5']
+              ? getTimeBasedGradientChill()
+              : { bg: 'bg-gradient-to-br from-[#6B2E8C] via-[#1B4D7C] to-[#0F172A]', text: 'text-white', accent: '#6B2E8C' }
             
             const emojiMap: Record<string, string> = {
               'PST': '🌉',
@@ -1626,43 +1673,40 @@ export default function TeamDashboard() {
                       <div 
                         key={tz.label} 
                         className={`flex items-center gap-2 flex-1 min-w-[100px] p-2 ${getRoundedClass('rounded-lg')} transition-all ${
-                          isUserTz 
-                            ? mode === 'chaos' 
-                              ? 'ring-2 ring-[#0EA5E9] ring-offset-2 ring-offset-black' 
-                              : mode === 'chill'
-                              ? 'ring-2 ring-[#FFC043] ring-offset-2 ring-offset-[#F5E6D3]'
-                              : 'ring-2 ring-[#FFFFFF] ring-offset-2 ring-offset-black'
-                            : ''
+                          isUserTz ? heroGradient.bg : ''
                         }`}
-                        style={{
-                          backgroundColor: isUserTz ? timeZoneColors[idx] : '#333333',
-                          boxShadow: isUserTz 
-                            ? mode === 'chaos' 
-                              ? '0 0 10px rgba(14, 165, 233, 0.5)' 
-                              : mode === 'chill'
-                              ? '0 0 10px rgba(255, 192, 67, 0.5)'
-                              : '0 0 10px rgba(0, 255, 0, 0.5)'
-                            : 'none',
+                        style={isUserTz ? {} : {
+                          backgroundColor: '#333333',
                         } as React.CSSProperties}
                       >
                         <span className="text-2xl flex-shrink-0">{emojiMap[tz.label] || '🌍'}</span>
                         <div className="flex-1 min-w-0">
                           <p className={`font-black text-xs truncate ${
                             isUserTz 
-                              ? mode === 'chaos' ? 'text-black' : 'text-white'
+                              ? heroGradient.text
                               : 'text-white'
                           }`}>
                             {tz.label}
                           </p>
                           <p className={`text-xs font-medium truncate ${
                             isUserTz 
-                              ? mode === 'chaos' ? 'text-black/70' : 'text-white/80'
+                              ? mode === 'chaos' 
+                                ? 'text-black/70' 
+                                : mode === 'chill'
+                                ? 'text-[#4A1818]/80'
+                                : 'text-white/80'
                               : 'text-white/80'
                           }`}>
                             {tz.time}
                           </p>
                           {isUserTz && (
-                            <p className={`text-[10px] font-bold mt-0.5 ${mode === 'chaos' ? 'text-black/80' : 'text-white/90'}`}>
+                            <p className={`text-[10px] font-bold mt-0.5 ${
+                              mode === 'chaos' 
+                                ? 'text-black/80' 
+                                : mode === 'chill'
+                                ? 'text-[#4A1818]/90'
+                                : 'text-white/90'
+                            }`}>
                               YOU
                             </p>
                           )}
