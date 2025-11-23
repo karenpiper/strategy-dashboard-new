@@ -20,6 +20,7 @@ import { AudioEQ } from '@/components/audio-eq'
 import { PlaylistData } from '@/lib/spotify-player-types'
 import { ProfileSetupModal } from '@/components/profile-setup-modal'
 import { createClient } from '@/lib/supabase/client'
+import { AddSnapDialog } from '@/components/add-snap-dialog'
 
 // Force dynamic rendering to avoid SSR issues with context
 export const dynamic = 'force-dynamic'
@@ -92,6 +93,21 @@ export default function TeamDashboard() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [profileChecked, setProfileChecked] = useState(false)
+  const [snaps, setSnaps] = useState<Array<{
+    id: string
+    date: string
+    snap_content: string
+    mentioned: string | null
+    submitted_by_profile: {
+      full_name: string | null
+      email: string | null
+    } | null
+    mentioned_user_profile: {
+      full_name: string | null
+      email: string | null
+    } | null
+  }>>([])
+  const [showAddSnapDialog, setShowAddSnapDialog] = useState(false)
 
   // Format today's date in user's timezone
   useEffect(() => {
@@ -290,6 +306,44 @@ export default function TeamDashboard() {
     
     fetchWorkSamples()
   }, [user])
+
+  // Fetch recent snaps
+  useEffect(() => {
+    async function fetchSnaps() {
+      if (!user) return
+      
+      try {
+        const response = await fetch('/api/snaps?limit=3')
+        if (response.ok) {
+          const result = await response.json()
+          if (result.data && Array.isArray(result.data)) {
+            setSnaps(result.data)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching snaps:', error)
+      }
+    }
+    
+    fetchSnaps()
+  }, [user])
+
+  const handleSnapAdded = async () => {
+    // Refresh snaps list
+    if (!user) return
+    
+    try {
+      const response = await fetch('/api/snaps?limit=3')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.data && Array.isArray(result.data)) {
+          setSnaps(result.data)
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing snaps:', error)
+    }
+  }
   
   // Fetch horoscope text and image on mount - only fetches today's data
   // Historical horoscopes are stored in the database but only today's is displayed
@@ -1638,39 +1692,57 @@ export default function TeamDashboard() {
               : mode === 'chill'
               ? ['#4A9BFF', '#8B4444', '#FFB5D8']
               : ['#cccccc', '#999999', '#e5e5e5']
-            const snaps = [
-              { from: 'Alex', to: 'Jamie', message: 'Amazing presentation! The client loved it', emoji: '👍' },
-              { from: 'Sarah', to: 'Mike', message: 'Thanks for the code review help today', emoji: '🙌' },
-              { from: 'Chris', to: 'Taylor', message: 'Great design work on the new landing page', emoji: '⭐' },
-            ]
+            const emojis = ['👍', '🙌', '⭐', '🎉', '🔥']
             return (
               <Card className={`lg:col-span-2 ${style.bg} ${style.border} p-8 ${getRoundedClass('rounded-[2.5rem]')}`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
-              <Sparkles className="w-4 h-4" />
-                  <span className="uppercase tracking-wider font-black text-xs">Recent Recognition</span>
-            </div>
-                <h2 className="text-6xl font-black mb-8 uppercase" style={{ color: style.accent }}>SNAPS</h2>
-            <div className="space-y-3 mb-6">
-                  {snaps.map((snap, idx) => (
-                    <div key={idx} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-5 border-2 transition-all hover:opacity-80`} style={{ borderColor: `${style.accent}66` }}>
-                <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style={{ backgroundColor: snapColors[idx] }}>{snap.emoji}</div>
-                  <div className="flex-1">
-                          <p className={`font-black text-sm mb-1 ${style.text}`}>
-                            <span className="font-black">{snap.from}</span> <span className={`${style.text}/50`}>→</span> <span className="font-black">{snap.to}</span>
-                    </p>
-                          <p className={`text-sm leading-relaxed ${style.text}/80`}>{snap.message}</p>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2 text-sm" style={{ color: style.accent }}>
+                    <Sparkles className="w-4 h-4" />
+                    <span className="uppercase tracking-wider font-black text-xs">Recent Recognition</span>
                   </div>
+                  <Button 
+                    onClick={() => setShowAddSnapDialog(true)}
+                    className={`${mode === 'chaos' ? 'bg-gradient-to-r from-[#00FF87] to-[#00E676] hover:from-[#00FF87] hover:to-[#00FF87] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-10 px-6 text-sm uppercase`}
+                  >
+                    + GIVE A SNAP
+                  </Button>
                 </div>
-              </div>
-                  ))}
-                  </div>
-                <Button className={`w-full ${mode === 'chaos' ? 'bg-gradient-to-r from-[#00FF87] to-[#00E676] hover:from-[#00FF87] hover:to-[#00FF87] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-14 text-base uppercase`}>
-              + GIVE A SNAP
-            </Button>
-          </Card>
+                <h2 className="text-6xl font-black mb-8 uppercase" style={{ color: style.accent }}>SNAPS</h2>
+                <div className="space-y-3 mb-6">
+                  {snaps.length === 0 ? (
+                    <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-5 border-2`} style={{ borderColor: `${style.accent}66` }}>
+                      <p className={`text-sm ${style.text}/80 text-center`}>No snaps yet. Be the first to recognize someone!</p>
+                    </div>
+                  ) : (
+                    snaps.map((snap, idx) => {
+                      const fromName = snap.submitted_by_profile?.full_name || snap.submitted_by_profile?.email || 'Anonymous'
+                      const toName = snap.mentioned_user_profile?.full_name || snap.mentioned_user_profile?.email || snap.mentioned || 'Team'
+                      return (
+                        <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-5 border-2 transition-all hover:opacity-80`} style={{ borderColor: `${style.accent}66` }}>
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style={{ backgroundColor: snapColors[idx % snapColors.length] }}>
+                              {emojis[idx % emojis.length]}
+                            </div>
+                            <div className="flex-1">
+                              <p className={`font-black text-sm mb-1 ${style.text}`}>
+                                <span className="font-black">{fromName}</span> <span className={`${style.text}/50`}>→</span> <span className="font-black">{toName}</span>
+                              </p>
+                              <p className={`text-sm leading-relaxed ${style.text}/80`}>{snap.snap_content}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+                <Link href="/vibes">
+                  <Button className={`w-full ${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 border-2 border-[#E8FF00] text-[#E8FF00]' : mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/50 border-2 border-[#FFB5D8] text-[#4A1818]' : 'bg-black/40 hover:bg-black/60 border-2 border-white text-white'} font-black rounded-full h-14 text-base uppercase`}>
+                    VIEW ALL SNAPS
+                  </Button>
+                </Link>
+              </Card>
             )
           })()}
 
@@ -2057,6 +2129,13 @@ export default function TeamDashboard() {
           // Refresh horoscope data after profile is completed
           window.location.reload()
         }}
+      />
+
+      {/* Add Snap Dialog */}
+      <AddSnapDialog
+        open={showAddSnapDialog}
+        onOpenChange={setShowAddSnapDialog}
+        onSuccess={handleSnapAdded}
       />
     </div>
   )
