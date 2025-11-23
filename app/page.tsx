@@ -1756,7 +1756,7 @@ export default function TeamDashboard() {
                     </Button>
                   </Link>
                 </div>
-                <div className="space-y-3 mb-6">
+                <div className="space-y-[22px] mb-6 mt-2">
                   {snaps.length === 0 ? (
                     <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-5 border-2`} style={{ borderColor: `${style.accent}66` }}>
                       <p className={`text-sm ${style.text}/80 text-center`}>No snaps yet. Be the first to recognize someone!</p>
