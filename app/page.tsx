@@ -1416,7 +1416,7 @@ export default function TeamDashboard() {
         </div>
       </header>
 
-      <main className="max-w-[1200px] mx-auto px-6 py-4 flex-1 pb-0 pt-20">
+      <main className="max-w-[1200px] mx-auto px-6 py-4 flex-1 pb-0 pt-28">
         {/* Hero Section - Full Width */}
         <section className="mb-12">
           {(() => {
@@ -2159,38 +2159,38 @@ export default function TeamDashboard() {
             }
 
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} ${eventsExpanded ? 'md:col-span-2' : 'md:col-span-1'}`}
+              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} ${eventsExpanded ? 'md:col-span-2' : 'md:col-span-1'} flex flex-col`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : { borderColor: style.accent }}
               >
-                {/* White Container */}
-                <div className="bg-white rounded-[2rem] p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <p className={`text-xs uppercase tracking-wider font-black`} style={{ color: mintColor }}>
-                      {eventsExpanded ? 'THIS WEEK' : 'TODAY'}
-                    </p>
-                    <button
-                      onClick={() => setEventsExpanded(!eventsExpanded)}
-                      className={`${getRoundedClass('rounded-lg')} px-3 py-1.5 flex items-center gap-1 text-xs font-black transition-all`}
-                      style={{ 
-                        backgroundColor: style.accent,
-                        color: mode === 'chaos' ? '#000000' : mode === 'chill' ? '#4A1818' : '#FFFFFF'
-                      }}
-                    >
-                      {eventsExpanded ? (
-                        <>
-                          <ChevronUp className="w-3 h-3" />
-                          Collapse
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown className="w-3 h-3" />
-                          Expand
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <h2 className={`text-3xl font-black mb-6 uppercase text-black`}>EVENTS</h2>
-                  
+                <div className="flex items-center justify-between mb-4">
+                  <p className={`text-xs uppercase tracking-wider font-black`} style={{ color: mintColor }}>
+                    {eventsExpanded ? 'THIS WEEK' : 'TODAY'}
+                  </p>
+                  <button
+                    onClick={() => setEventsExpanded(!eventsExpanded)}
+                    className={`${getRoundedClass('rounded-lg')} px-3 py-1.5 flex items-center gap-1 text-xs font-black transition-all`}
+                    style={{ 
+                      backgroundColor: style.accent,
+                      color: mode === 'chaos' ? '#000000' : mode === 'chill' ? '#4A1818' : '#FFFFFF'
+                    }}
+                  >
+                    {eventsExpanded ? (
+                      <>
+                        <ChevronUp className="w-3 h-3" />
+                        Collapse
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-3 h-3" />
+                        Expand
+                      </>
+                    )}
+                  </button>
+                </div>
+                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>EVENTS</h2>
+                
+                {/* White Container - wraps calendar and key only */}
+                <div className="bg-white rounded-[2rem] p-6 flex-1 flex flex-col">
                   {calendarLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin text-black" />
@@ -2287,7 +2287,7 @@ export default function TeamDashboard() {
                   </div>
                 ) : eventsExpanded ? (
                   // Week view - Gantt chart style
-                  <div className="space-y-4">
+                  <div className="space-y-4 flex-1 flex flex-col">
                     {/* Key/Legend */}
                     <div className={`${getRoundedClass('rounded-lg')} p-3 mb-4`} style={{ backgroundColor: `${mintColor}22` }}>
                       <p className="text-xs font-black uppercase mb-2 text-black">Key:</p>
@@ -2399,7 +2399,7 @@ export default function TeamDashboard() {
                   </div>
                 ) : (
                   // Today view
-                  <div className="space-y-4">
+                  <div className="space-y-4 flex-1 flex flex-col">
                     {/* OOO People List */}
                     {(() => {
                       const oooEventsToday = calendarEvents.filter(event => {
