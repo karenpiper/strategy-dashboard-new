@@ -585,20 +585,6 @@ export default function SnapsPage() {
                   const toName = getDisplayName(snap.mentioned_user_profile) || snap.mentioned || 'Team'
                   const isAnonymous = !snap.submitted_by_profile
                   
-                  // Determine display format based on active filter
-                  let headerText = ''
-                  let subText = ''
-                  
-                  if (activeFilter === 'all') {
-                    headerText = `To ${toName} / snap / from ${fromName}`
-                  } else if (activeFilter === 'about-me') {
-                    // Just show snap, with "From [name]" below
-                    subText = `From ${fromName}`
-                  } else if (activeFilter === 'i-gave') {
-                    // Just show snap, with "To [recipient]" below
-                    subText = `To ${toName}`
-                  }
-                  
                   return (
                     <Card
                       key={snap.id}
@@ -614,12 +600,12 @@ export default function SnapsPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           {activeFilter === 'all' && (
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-sm font-black text-black">
-                                {headerText}
+                            <>
+                              <p className={`text-xs mb-1 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
+                                To: {toName}
                               </p>
                               {isAnonymous && (
-                                <span className={`px-2 py-1 ${getRoundedClass('rounded-full')} text-xs font-black uppercase flex items-center gap-1`} style={{ 
+                                <span className={`px-2 py-1 ${getRoundedClass('rounded-full')} text-xs font-black uppercase flex items-center gap-1 mb-2 inline-block`} style={{ 
                                   backgroundColor: style.accent,
                                   color: mode === 'chaos' || mode === 'code' ? '#000000' : mode === 'chill' ? '#4A1818' : '#000000'
                                 }}>
@@ -627,14 +613,24 @@ export default function SnapsPage() {
                                   Anonymous
                                 </span>
                               )}
-                            </div>
+                            </>
                           )}
                           <p className={`text-lg mb-2 leading-relaxed ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
                             {snap.snap_content}
                           </p>
-                          {subText && (
+                          {activeFilter === 'all' && (
                             <p className={`text-xs ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
-                              {subText}
+                              From: {fromName}
+                            </p>
+                          )}
+                          {activeFilter === 'about-me' && (
+                            <p className={`text-xs ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
+                              From {fromName}
+                            </p>
+                          )}
+                          {activeFilter === 'i-gave' && (
+                            <p className={`text-xs ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
+                              To {toName}
                             </p>
                           )}
                         </div>
