@@ -12,15 +12,13 @@ When you upload a deck, here's what happens step-by-step:
 
 ### Step 2: Ingestion Processing (`/api/upload-deck`)
 
-#### 2.1 Download & Extract
-- Downloads the PDF from Google Drive using the file ID
-- Extracts text from each slide using `pdf-parse`
-- Validates file size and page count (max 100 pages by default)
+#### 2.1 Elvex Processing
+- System sends Google Drive file ID to Elvex assistant
+- **Elvex extracts PDF text**: Reads PDF from Google Drive and extracts text from each slide
+- **Elvex performs LLM analysis**: Analyzes the extracted text to generate:
 
-#### 2.2 LLM Analysis (3 separate calls)
-
-**a) Deck-Level Metadata** (`generateDeckMetadata`)
-- Analyzes the entire deck text
+**a) Deck-Level Metadata**
+- Analyzes the entire deck
 - Generates:
   - `deck_title`: Cleaned title
   - `deck_summary`: 2-4 sentence overview
@@ -28,7 +26,7 @@ When you upload a deck, here's what happens step-by-step:
   - `primary_audiences`: Target audiences
   - `use_cases`: When this deck could be reused
 
-**b) Topic Segmentation** (`generateTopics`)
+**b) Topic Segmentation**
 - Analyzes the full deck to identify logical sections
 - Creates 5-12 topic segments, each with:
   - `topic_title`: Short name
@@ -38,7 +36,7 @@ When you upload a deck, here's what happens step-by-step:
   - `reuse_suggestions`: How to reuse this topic
   - `slide_numbers`: Which slides belong to this topic
 
-**c) Slide Labeling** (`labelSlide`)
+**c) Slide Labeling**
 - Analyzes each slide individually
 - For each slide, generates:
   - `slide_caption`: Brief description

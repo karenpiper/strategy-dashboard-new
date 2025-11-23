@@ -27,8 +27,11 @@ The system now uses Elvex assistant to process decks uploaded to Google Drive. E
    - Grant Elvex access to your Google Drive folder
    - The folder should match `GOOGLE_DRIVE_FOLDER_ID`
 4. Configure the assistant to:
-   - Process PDF files
-   - Extract deck metadata, topics, and slide information
+   - **Extract text from PDF files** (PDF parsing/extraction)
+   - **Perform LLM analysis** on the extracted text:
+     - Generate deck-level metadata (title, summary, themes, audiences, use cases)
+     - Segment into topics (5-12 logical sections)
+     - Label each slide (type, caption, topics, reusable flag)
    - Return structured JSON (see schema below)
 
 ### Step 2: Get Elvex API Credentials
@@ -94,9 +97,13 @@ Your Elvex assistant should return JSON in this format:
 
 1. **User uploads PDF** → File is uploaded to Google Drive
 2. **System calls Elvex** → Sends Google Drive file ID to Elvex assistant
-3. **Elvex processes file** → Elvex reads from Google Drive and extracts information
-4. **Elvex returns results** → Structured JSON with metadata, topics, slides
-5. **System stores in database** → Results are saved to Supabase with embeddings
+3. **Elvex extracts PDF** → Elvex reads PDF from Google Drive and extracts text from each slide
+4. **Elvex performs LLM analysis** → Elvex analyzes the extracted text to generate:
+   - Deck metadata (title, summary, themes, audiences, use cases)
+   - Topic segmentation (5-12 logical sections)
+   - Slide labels (type, caption, topics, reusable flag)
+5. **Elvex returns results** → Structured JSON with all extracted and analyzed data
+6. **System stores in database** → Results are saved to Supabase with embeddings
 
 ## Embeddings
 

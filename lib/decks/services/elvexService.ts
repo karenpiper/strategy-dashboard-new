@@ -62,6 +62,10 @@ function getElvexConfig(): ElvexConfig {
 
 /**
  * Process a deck file using Elvex assistant
+ * Elvex will:
+ * 1. Extract text from the PDF in Google Drive
+ * 2. Analyze the content with LLM
+ * 3. Return structured metadata, topics, and slide information
  * 
  * @param gdriveFileId - Google Drive file ID to process
  * @param fileName - Optional file name for context
@@ -75,7 +79,7 @@ export async function processDeckWithElvex(
 
   try {
     // Call Elvex assistant API to process the file
-    // Elvex should have access to Google Drive and can process the file directly
+    // Elvex will extract PDF text and perform LLM analysis
     const response = await fetch(`${config.baseUrl}/v1/assistants/${config.assistantId}/process`, {
       method: 'POST',
       headers: {
@@ -86,18 +90,42 @@ export async function processDeckWithElvex(
         file_id: gdriveFileId,
         file_source: 'google_drive',
         file_name: fileName,
-        // Request structured output matching our schema
-        output_format: {
-          deck_metadata: {
-            deck_title: 'string',
-            deck_summary: 'string',
-            main_themes: 'array of strings',
-            primary_audiences: 'array of strings',
-            use_cases_for_other_presentations: 'array of strings',
+        instructions: `Please extract text from this PDF presentation deck and analyze it. 
+        
+        Steps:
+        1. Extract all text from each slide in the PDF
+        2. Analyze the deck to generate metadata, topics, and slide labels
+        3. Return structured JSON matching the required format
+        
+        Return a JSON object with this exact structure:
+        {
+          "deck_metadata": {
+            "deck_title": "cleaned up title",
+            "deck_summary": "2-4 sentence overview",
+            "main_themes": ["theme1", "theme2"],
+            "primary_audiences": ["audience1", "audience2"],
+            "use_cases_for_other_presentations": ["use case 1", "use case 2"]
           },
-          topics: 'array of objects with: topic_title, topic_summary, story_context, topics, reuse_suggestions, slide_numbers',
-          slides: 'array of objects with: slide_number, slide_type, slide_caption, topics, reusable',
-        },
+          "topics": [
+            {
+              "topic_title": "short name",
+              "topic_summary": "3-5 sentence description",
+              "story_context": "one of: credibility, market_problem, solution_vision, implementation, results, other",
+              "topics": ["keyword1", "keyword2"],
+              "reuse_suggestions": ["suggestion1"],
+              "slide_numbers": [1, 2, 3]
+            }
+          ],
+          "slides": [
+            {
+              "slide_number": 1,
+              "slide_type": "one of: case_study, vision, market_context, data_chart, model, process, roadmap, cover, credits, other",
+              "slide_caption": "one sentence description",
+              "topics": ["keyword1"],
+              "reusable": "yes or no or needs_edit"
+            }
+          ]
+        }`,
       }),
     })
 
@@ -151,7 +179,7 @@ function mapElvexResponse(elvexResponse: any): ElvexProcessingResult {
 
 /**
  * Alternative: Use Elvex chat completion API if assistant API doesn't exist
- * This sends a prompt to Elvex to process the file
+ * This sends a prompt to Elvex to extract PDF text and perform LLM analysis
  */
 export async function processDeckWithElvexChat(
   gdriveFileId: string,
@@ -159,7 +187,12 @@ export async function processDeckWithElvexChat(
 ): Promise<ElvexProcessingResult> {
   const config = getElvexConfig()
 
-  const prompt = `Please analyze the presentation deck from Google Drive file ID: ${gdriveFileId}
+  const prompt = `Please extract text from and analyze the presentation deck from Google Drive file ID: ${gdriveFileId}
+  
+  Steps:
+  1. Extract all text from each slide in the PDF
+  2. Analyze the deck content to generate metadata, topics, and slide labels
+  3. Return structured JSON matching the required format
 
 Extract and return a JSON object with this exact structure:
 {
