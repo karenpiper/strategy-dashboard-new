@@ -1698,17 +1698,9 @@ export default function TeamDashboard() {
               <Card className={`lg:col-span-2 ${style.bg} ${style.border} p-8 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2 text-sm" style={{ color: style.accent }}>
-                    <Sparkles className="w-4 h-4" />
-                    <span className="uppercase tracking-wider font-black text-xs">Recent Recognition</span>
-                  </div>
-                  <Button 
-                    onClick={() => setShowAddSnapDialog(true)}
-                    className={`${mode === 'chaos' ? 'bg-gradient-to-r from-[#00FF87] to-[#00E676] hover:from-[#00FF87] hover:to-[#00FF87] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-10 px-6 text-sm uppercase`}
-                  >
-                    + GIVE A SNAP
-                  </Button>
+                <div className="flex items-center gap-2 text-sm mb-6" style={{ color: style.accent }}>
+                  <Sparkles className="w-4 h-4" />
+                  <span className="uppercase tracking-wider font-black text-xs">Recent Recognition</span>
                 </div>
                 <h2 className="text-6xl font-black mb-4 uppercase" style={{ color: style.accent }}>Your Snaps</h2>
                 <div className="flex items-center justify-between mb-6">
@@ -1750,11 +1742,19 @@ export default function TeamDashboard() {
                       Given
                     </button>
                   </div>
-                  <Link href="/vibes">
-                    <Button className={`${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 border-2 border-[#E8FF00] text-[#E8FF00]' : mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/50 border-2 border-[#FFB5D8] text-[#4A1818]' : 'bg-black/40 hover:bg-black/60 border-2 border-white text-white'} font-black rounded-full h-10 px-6 text-sm uppercase`}>
-                      VIEW ALL
+                  <div className="flex items-center gap-2">
+                    <Link href="/vibes">
+                      <Button className={`${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 border-2 border-[#E8FF00] text-[#E8FF00]' : mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/50 border-2 border-[#FFB5D8] text-[#4A1818]' : 'bg-black/40 hover:bg-black/60 border-2 border-white text-white'} font-black rounded-full h-10 px-6 text-sm uppercase`}>
+                        VIEW ALL
+                      </Button>
+                    </Link>
+                    <Button 
+                      onClick={() => setShowAddSnapDialog(true)}
+                      className={`${mode === 'chaos' ? 'bg-gradient-to-r from-[#00FF87] to-[#00E676] hover:from-[#00FF87] hover:to-[#00FF87] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-10 px-6 text-sm uppercase`}
+                    >
+                      + GIVE A SNAP
                     </Button>
-                  </Link>
+                  </div>
                 </div>
                 <div className="space-y-[22px] mb-6 mt-2">
                   {snaps.length === 0 ? (
