@@ -116,3 +116,4 @@ After setting up environment variables:
 - Verify CORS is configured in n8n if needed
 
 
+

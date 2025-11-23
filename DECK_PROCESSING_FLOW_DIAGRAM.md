@@ -200,3 +200,4 @@ For a typical 30-slide deck:
 **Chat queries**: ~$0.01-0.02 per query
 
 
+

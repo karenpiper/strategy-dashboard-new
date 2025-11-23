@@ -53,3 +53,4 @@ COMMENT ON COLUMN public.pipeline_projects.tier IS 'Project tier: 0, 1, 2, or 3'
 COMMENT ON COLUMN public.pipeline_projects.lead IS 'Comma-separated list of lead names';
 COMMENT ON COLUMN public.pipeline_projects.team IS 'Comma-separated list of team member names';
 
+

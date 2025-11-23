@@ -186,14 +186,26 @@ export default function VibesPage() {
         ])
 
         // Fetch playlists from database
-        const { data: playlists, error: playlistsError } = await supabase
-          .from('playlists')
-          .select('*')
-          .order('date', { ascending: false })
+        // First try with refresh to get Spotify metadata if missing
+        const playlistsResponse = await fetch('/api/playlists?refresh=true')
+        let playlists = null
+        if (playlistsResponse.ok) {
+          playlists = await playlistsResponse.json()
+        } else {
+          // Fallback to direct Supabase query if API fails
+          const { data, error: playlistsError } = await supabase
+            .from('playlists')
+            .select('*')
+            .order('date', { ascending: false })
+          
+          if (playlistsError) {
+            console.error('Error fetching playlists:', playlistsError)
+          } else {
+            playlists = data
+          }
+        }
 
-        if (playlistsError) {
-          console.error('Error fetching playlists:', playlistsError)
-        } else if (playlists && playlists.length > 0) {
+        if (playlists && playlists.length > 0) {
           // Set the most recent playlist as weekly playlist
           const mostRecent = playlists[0]
           setWeeklyPlaylist({

@@ -29,3 +29,4 @@ CREATE INDEX IF NOT EXISTS topics_embedding_idx ON topics USING ivfflat (embeddi
 CREATE INDEX IF NOT EXISTS slides_embedding_idx ON slides USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 
+

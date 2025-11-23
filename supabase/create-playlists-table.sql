@@ -81,3 +81,4 @@ CREATE TRIGGER update_playlists_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.update_playlists_updated_at();
 
+

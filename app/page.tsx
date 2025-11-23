@@ -352,7 +352,8 @@ export default function TeamDashboard() {
       
       try {
         setPlaylistLoading(true)
-        const response = await fetch('/api/playlists')
+        // Try with refresh to get Spotify metadata if missing
+        const response = await fetch('/api/playlists?refresh=true')
         if (response.ok) {
           const playlists = await response.json()
           if (playlists && playlists.length > 0) {
@@ -710,25 +711,38 @@ export default function TeamDashboard() {
   const getSpecificCardStyle = (cardName: SpecificCard): { bg: string; border: string; glow: string; text: string; accent: string } => {
     if (mode === 'chaos') {
       const chaosCardStyles: Record<SpecificCard, { bg: string; border: string; glow: string; text: string; accent: string }> = {
+        // Hero - keep current gradient
         'hero-large': { bg: 'bg-gradient-to-br from-[#FFE500] via-[#FF8C00] to-[#FF6B6B]', border: 'border-0', glow: '', text: 'text-black', accent: '#FFE500' },
+        
+        // Recognition & Culture - Success Pairing (Bright Mint #34D399 + Forest Green #047857) + Golden Yellow #EAB308 + Black/White/Grey
+        'beast-babe': { bg: 'bg-[#34D399]', border: 'border-0', glow: '', text: 'text-black', accent: '#047857' }, // Bright Mint bg with Forest Green accent
+        'wins-wall': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#EAB308' }, // Black bg with Golden Yellow accent
+        'snaps': { bg: 'bg-[#1E293B]', border: 'border-2', glow: '', text: 'text-white', accent: '#34D399' }, // Slate Grey bg with Bright Mint accent and border
+        
+        // Work - Accent Pairing (Violet #A78BFA + Deep Violet #6D28D9) + Electric Teal #1488A6 + Black/White/Grey
+        'events': { bg: 'bg-[#000000]', border: 'border-2', glow: '', text: 'text-white', accent: '#A78BFA' }, // Black bg with Violet border and accent
+        'pipeline': { bg: 'bg-[#6D28D9]', border: 'border-0', glow: '', text: 'text-white', accent: '#1488A6' }, // Deep Violet bg with Electric Teal accent
+        'friday-drop': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#A78BFA' }, // Zinc (light grey) bg with Violet accent
+        'who-needs-what': { bg: 'bg-[#A78BFA]', border: 'border-0', glow: '', text: 'text-black', accent: '#6D28D9' }, // Violet bg with Deep Violet accent
+        
+        // Team - Info Pairing (Ocean Blue #0EA5E9 + Deep Ocean #0369A1) + Bright Mint #34D399 + Black/White/Grey
+        'timezones': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#0EA5E9' }, // Black bg with Ocean Blue accent
+        'team-pulse': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#0369A1' }, // Zinc bg with Deep Ocean accent
+        'loom-standup': { bg: 'bg-[#0EA5E9]', border: 'border-0', glow: '', text: 'text-black', accent: '#34D399' }, // Ocean Blue bg with Bright Mint accent
+        
+        // Vibes - Creative Pairing (Rich Purple #7C3AED + Golden Yellow #EAB308) + Deep Magenta #A21CAF + Black/White/Grey
+        'horoscope': { bg: 'bg-[#7C3AED]', border: 'border-0', glow: '', text: 'text-white', accent: '#EAB308' }, // Rich Purple bg with Golden Yellow accent
+        'playlist': { bg: 'bg-[#000000]', border: 'border-2', glow: '', text: 'text-white', accent: '#A21CAF' }, // Black bg with Deep Magenta border and accent
+        
+        // Community - Energy Pairing (Electric Teal #1488A6 + Deep Magenta #A21CAF) + Rich Purple #7C3AED + Black/White/Grey
+        'ask-hive': { bg: 'bg-[#1488A6]', border: 'border-0', glow: '', text: 'text-white', accent: '#7C3AED' }, // Electric Teal bg with Rich Purple accent
+        
+        // Other cards - keeping existing or using appropriate section colors
         'launch-pad': { bg: 'bg-gradient-to-br from-[#9D4EFF] to-[#6B2C91]', border: 'border-0', glow: '', text: 'text-white', accent: '#C4F500' },
-        'horoscope': { bg: 'bg-[#6B2C91]', border: 'border-0', glow: '', text: 'text-white', accent: '#FFE500' },
-        'timezones': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#00D4FF' },
-        'playlist': { bg: 'bg-gradient-to-br from-[#FF6B00] to-[#FF8A00]', border: 'border-0', glow: '', text: 'text-white', accent: '#FF00FF' },
-        'friday-drop': { bg: 'bg-[#40E0D0]', border: 'border-0', glow: '', text: 'text-black', accent: '#000000' }, // Turquoise with black
-        'brand-redesign': { bg: 'bg-[#FF69B4]', border: 'border-0', glow: '', text: 'text-black', accent: '#000000' }, // Pink with black
-        'stats': { bg: 'bg-white', border: 'border-0', glow: '', text: 'text-black', accent: '#00FF87' }, // White with black and mint highlight
-        'events': { bg: 'bg-[#000000]', border: 'border-2', glow: '', text: 'text-white', accent: '#00FF87' }, // Black with mint and outline
-        'pipeline': { bg: 'bg-[#00FF87]', border: 'border-0', glow: '', text: 'text-black', accent: '#000000' }, // Mint with black
-        'who-needs-what': { bg: 'bg-[#E8FF00]', border: 'border-0', glow: '', text: 'text-black', accent: '#000000' }, // Yellow with black
-        'snaps': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#E8FF00' },
-        'beast-babe': { bg: 'bg-gradient-to-br from-[#FF0055] to-[#FF4081]', border: 'border-0', glow: '', text: 'text-white', accent: '#E8FF00' },
-        'wins-wall': { bg: 'bg-gradient-to-br from-[#00B8D4] to-[#0066CC]', border: 'border-0', glow: '', text: 'text-white', accent: '#00D4FF' },
-        'ask-hive': { bg: 'bg-gradient-to-br from-[#9D4EFF] to-[#7B2CBE]', border: 'border-0', glow: '', text: 'text-white', accent: '#9D4EFF' },
-        'team-pulse': { bg: 'bg-white', border: 'border-0', glow: '', text: 'text-black', accent: '#00FF87' },
-        'loom-standup': { bg: 'bg-gradient-to-br from-[#2979FF] to-[#7B1FA2]', border: 'border-0', glow: '', text: 'text-white', accent: '#00D4FF' },
-        'inspiration-war': { bg: 'bg-[#E8FF00]', border: 'border-0', glow: '', text: 'text-black', accent: '#C4F500' },
-        'search': { bg: 'bg-[#000000]', border: 'border border-[#E8FF00]', glow: '', text: 'text-white', accent: '#E8FF00' },
+        'brand-redesign': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#7C3AED' }, // Zinc bg with Rich Purple accent (vibes section)
+        'stats': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#34D399' }, // Zinc bg with Bright Mint accent (recognition section)
+        'inspiration-war': { bg: 'bg-[#EAB308]', border: 'border-0', glow: '', text: 'text-black', accent: '#7C3AED' }, // Golden Yellow bg with Rich Purple accent (vibes section)
+        'search': { bg: 'bg-[#000000]', border: 'border border-[#EAB308]', glow: '', text: 'text-white', accent: '#EAB308' }, // Black bg with Golden Yellow border
       }
       return chaosCardStyles[cardName] || chaosCardStyles['hero-large']
     } else {
@@ -748,15 +762,15 @@ export default function TeamDashboard() {
   
   const getCardStyle = (section: CardSection): { bg: string; border: string; glow: string; text: string; accent: string } => {
     if (mode === 'chaos') {
-      // Fallback for section-based styling in chaos mode
+      // Fallback for section-based styling in chaos mode - using new color palette
       const chaosColors: Record<CardSection, { bg: string; border: string; glow: string; text: string; accent: string }> = {
-        hero: { bg: 'bg-gradient-to-br from-[#FFB84D] via-[#FFE500] to-[#FFE500]', border: 'border-0', glow: '', text: 'text-black', accent: '#C4F500' },
-        recognition: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#00FF87' },
-        work: { bg: 'bg-gradient-to-br from-[#00B8D4] to-[#0066CC]', border: 'border-0', glow: '', text: 'text-white', accent: '#FF6B00' },
-        team: { bg: 'bg-gradient-to-br from-[#00B8D4] to-[#0066CC]', border: 'border-0', glow: '', text: 'text-white', accent: '#00D4FF' },
-        vibes: { bg: 'bg-gradient-to-br from-[#9D4EFF] to-[#6B2C91]', border: 'border-0', glow: '', text: 'text-white', accent: '#FF00FF' },
-        community: { bg: 'bg-gradient-to-br from-[#FF4081] to-[#E91E63]', border: 'border-0', glow: '', text: 'text-white', accent: '#9D4EFF' },
-        default: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#C4F500' },
+        hero: { bg: 'bg-gradient-to-br from-[#FFB84D] via-[#FFE500] to-[#FFE500]', border: 'border-0', glow: '', text: 'text-black', accent: '#C4F500' }, // Keep hero gradient
+        recognition: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#34D399' }, // Success Pairing - Bright Mint accent
+        work: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#A78BFA' }, // Accent Pairing - Violet accent
+        team: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#0EA5E9' }, // Info Pairing - Ocean Blue accent
+        vibes: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#7C3AED' }, // Creative Pairing - Rich Purple accent
+        community: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#1488A6' }, // Energy Pairing - Electric Teal accent
+        default: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#34D399' },
       }
       return chaosColors[section] || chaosColors.default
     } else if (mode === 'chill') {
@@ -1199,7 +1213,7 @@ export default function TeamDashboard() {
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('timezones') : getCardStyle('team')
             const timeZoneColors = mode === 'chaos' 
-              ? ['#00FF87', '#4A9BFF', '#00D4FF', '#9D4EFF', '#FF6B6B', '#FFD93D', '#6BCF7F']
+              ? ['#0EA5E9', '#0369A1', '#34D399', '#0EA5E9', '#0369A1', '#34D399', '#0EA5E9'] // Team palette: Ocean Blue, Deep Ocean, Bright Mint
               : mode === 'chill'
               ? ['#C8D961', '#4A9BFF', '#00D4FF', '#9D4EFF', '#FFB84D', '#FFD93D', '#A8E6CF']
               : ['#cccccc', '#e5e5e5', '#999999', '#cccccc', '#b3b3b3', '#d9d9d9', '#e5e5e5']
@@ -1227,7 +1241,7 @@ export default function TeamDashboard() {
                         className={`flex items-center gap-2 flex-1 min-w-[100px] p-2 ${getRoundedClass('rounded-lg')} transition-all ${
                           isUserTz 
                             ? mode === 'chaos' 
-                              ? 'ring-2 ring-[#C4F500] ring-offset-2 ring-offset-black' 
+                              ? 'ring-2 ring-[#0EA5E9] ring-offset-2 ring-offset-black' 
                               : mode === 'chill'
                               ? 'ring-2 ring-[#FFC043] ring-offset-2 ring-offset-[#F5E6D3]'
                               : 'ring-2 ring-[#FFFFFF] ring-offset-2 ring-offset-black'
@@ -1237,7 +1251,7 @@ export default function TeamDashboard() {
                           backgroundColor: isUserTz ? timeZoneColors[idx] : '#333333',
                           boxShadow: isUserTz 
                             ? mode === 'chaos' 
-                              ? '0 0 10px rgba(196, 245, 0, 0.5)' 
+                              ? '0 0 10px rgba(14, 165, 233, 0.5)' 
                               : mode === 'chill'
                               ? '0 0 10px rgba(255, 192, 67, 0.5)'
                               : '0 0 10px rgba(0, 255, 0, 0.5)'
@@ -1492,7 +1506,7 @@ export default function TeamDashboard() {
                   </div>
                     ))}
                 </div>
-                  <Button className={`w-full mt-auto ${mode === 'chaos' ? 'bg-black text-[#00FF87] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-12 uppercase`}>
+                  <Button className={`w-full mt-auto ${mode === 'chaos' ? 'bg-black text-[#EAB308] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-12 uppercase`}>
                 Share Win
               </Button>
             </Card>
