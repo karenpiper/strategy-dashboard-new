@@ -87,10 +87,12 @@ export default function TeamDashboard() {
     submitted_by_profile: {
       full_name: string | null
       email: string | null
+      avatar_url: string | null
     } | null
     mentioned_user_profile: {
       full_name: string | null
       email: string | null
+      avatar_url: string | null
     } | null
   }>>([])
   const [snapViewType, setSnapViewType] = useState<'received' | 'given'>('received')
@@ -1535,20 +1537,49 @@ export default function TeamDashboard() {
                     snaps.map((snap, idx) => {
                       const senderName = snap.submitted_by_profile?.full_name || snap.submitted_by_profile?.email || null
                       const recipientName = snap.mentioned_user_profile?.full_name || snap.mentioned_user_profile?.email || snap.mentioned || 'Team'
+                      
+                      // Determine which avatar to show
+                      let profilePicture: string | null = null
+                      let avatarName: string | null = null
+                      if (snapViewType === 'received') {
+                        profilePicture = snap.submitted_by_profile?.avatar_url || null
+                        avatarName = senderName
+                      } else {
+                        profilePicture = snap.mentioned_user_profile?.avatar_url || null
+                        avatarName = recipientName
+                      }
+                      
                       return (
-                        <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-3 border-2 transition-all hover:opacity-80 relative`} style={{ borderColor: `${style.accent}66`, borderLeftWidth: '10px', borderLeftColor: style.accent }}>
-                          <div className="flex-1">
-                            <p className={`text-lg mb-2 leading-relaxed ${style.text}`}>{snap.snap_content}</p>
-                            {snapViewType === 'received' && senderName && (
-                              <p className={`text-xs ${style.text}/60`}>
-                                From: {senderName}
-                              </p>
-                            )}
-                            {snapViewType === 'given' && (
-                              <p className={`text-xs ${style.text}/60`}>
-                                To: {recipientName}
-                              </p>
-                            )}
+                        <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-[10px] border-2 transition-all hover:opacity-80 relative`} style={{ borderColor: `${style.accent}66` }}>
+                          <div className="flex items-start gap-4">
+                            <div className="flex-shrink-0" style={{ padding: '10px', width: '100px', height: '100px' }}>
+                              {profilePicture ? (
+                                <img 
+                                  src={profilePicture} 
+                                  alt={avatarName || 'User'}
+                                  className={`rounded-lg w-full h-full object-cover`}
+                                />
+                              ) : (
+                                <div className="w-full h-full rounded-full flex items-center justify-center" style={{ 
+                                  backgroundColor: style.accent
+                                }}>
+                                  <User className={`w-10 h-10 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-lg mb-2 leading-relaxed ${style.text}`}>{snap.snap_content}</p>
+                              {snapViewType === 'received' && senderName && (
+                                <p className={`text-xs ${style.text}/60`}>
+                                  From: {senderName}
+                                </p>
+                              )}
+                              {snapViewType === 'given' && (
+                                <p className={`text-xs ${style.text}/60`}>
+                                  To: {recipientName}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )
@@ -1590,14 +1621,14 @@ export default function TeamDashboard() {
             // Filter events and deduplicate
             const filteredEvents = calendarEvents
               .filter(event => {
-                const eventStart = event.start.dateTime 
-                  ? new Date(event.start.dateTime)
-                  : event.start.date 
-                    ? new Date(event.start.date)
-                    : null
-                
-                if (!eventStart) return false
-                
+              const eventStart = event.start.dateTime 
+                ? new Date(event.start.dateTime)
+                : event.start.date 
+                  ? new Date(event.start.date)
+                  : null
+              
+              if (!eventStart) return false
+              
                 // For week view, include events that overlap with the week
                 if (eventsExpanded) {
                   const eventEnd = event.end.dateTime 
@@ -1646,7 +1677,7 @@ export default function TeamDashboard() {
                 const aStart = a.start.dateTime ? new Date(a.start.dateTime) : new Date(a.start.date || 0)
                 const bStart = b.start.dateTime ? new Date(b.start.dateTime) : new Date(b.start.date || 0)
                 return aStart.getTime() - bStart.getTime()
-              })
+            })
 
             // Format time for display
             const formatEventTime = (event: typeof calendarEvents[0]) => {
@@ -1856,7 +1887,7 @@ export default function TeamDashboard() {
                         </ol>
                       </div>
                     ) : (
-                      <p className={`text-xs ${style.text}/80`}>{calendarError}</p>
+                    <p className={`text-xs ${style.text}/80`}>{calendarError}</p>
                     )}
                   </div>
                 ) : eventsExpanded ? (
@@ -1891,7 +1922,7 @@ export default function TeamDashboard() {
                         const isToday = day.toDateString() === now.toDateString()
                         const dayName = day.toLocaleDateString('en-US', { weekday: 'short' })
                         const dayNumber = day.getDate()
-                        return (
+                      return (
                           <div key={index} className="text-center">
                             <p className={`text-xs font-black uppercase ${style.text} mb-1`} style={{ color: isToday ? mintColor : style.text }}>
                               {isToday ? 'TODAY' : dayName}
@@ -1905,12 +1936,12 @@ export default function TeamDashboard() {
                     {/* Events as Gantt bars */}
                     <div className="space-y-2">
                       {filteredEvents.map((event) => {
-                        const eventColor = getEventColor(event)
+                            const eventColor = getEventColor(event)
                         const span = getEventSpan(event)
                         const colSpan = span.endDay - span.startDay + 1
                         const startCol = span.startDay + 1
                         
-                        return (
+                            return (
                           <div key={event.id} className="relative mb-2">
                             {/* Event bar spanning days - merged boxes */}
                             <div className="flex">
@@ -1933,21 +1964,21 @@ export default function TeamDashboard() {
                                     }}
                                   >
                                     {isStart && (
-                                      <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0">
                                         <p className={`text-xs font-black ${style.text} truncate`}>{event.summary}</p>
                                         <p className={`text-[10px] ${style.text}/70`}>{formatEventTime(event)}</p>
-                                      </div>
+                                </div>
                                     )}
-                                  </div>
-                                )
-                              })}
+                              </div>
+                            )
+                          })}
                             </div>
-                          </div>
-                        )
-                      })}
+                        </div>
+                      )
+                    })}
                       {filteredEvents.length === 0 && (
-                        <p className={`text-sm ${style.text}/80 text-center py-4`}>No events this week</p>
-                      )}
+                      <p className={`text-sm ${style.text}/80 text-center py-4`}>No events this week</p>
+                    )}
                     </div>
                   </div>
                 ) : (
@@ -2020,23 +2051,23 @@ export default function TeamDashboard() {
                     })()}
                     
                     {/* Other Events */}
-                    <div className="space-y-2">
-                      {filteredEvents.length > 0 ? (
-                        filteredEvents.map((event) => {
-                          const eventColor = getEventColor(event)
-                          return (
-                            <div key={event.id} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`} style={{ backgroundColor: `${eventColor}33` }}>
-                              <Clock className="w-4 h-4" style={{ color: eventColor }} />
-                              <div className="flex-1 min-w-0">
-                                <p className={`text-sm font-black ${style.text} truncate`}>{event.summary}</p>
-                                <p className={`text-xs ${style.text}/60`}>{formatEventTime(event)}</p>
-                              </div>
+                  <div className="space-y-2">
+                    {filteredEvents.length > 0 ? (
+                      filteredEvents.map((event) => {
+                        const eventColor = getEventColor(event)
+                        return (
+                          <div key={event.id} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`} style={{ backgroundColor: `${eventColor}33` }}>
+                            <Clock className="w-4 h-4" style={{ color: eventColor }} />
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-black ${style.text} truncate`}>{event.summary}</p>
+                              <p className={`text-xs ${style.text}/60`}>{formatEventTime(event)}</p>
                             </div>
-                          )
-                        })
-                      ) : (
-                        <p className={`text-sm ${style.text}/80 text-center py-4`}>No events today</p>
-                      )}
+                          </div>
+                        )
+                      })
+                    ) : (
+                      <p className={`text-sm ${style.text}/80 text-center py-4`}>No events today</p>
+                    )}
                     </div>
                   </div>
                 )}
@@ -2084,25 +2115,25 @@ export default function TeamDashboard() {
                     <div className="flex items-center justify-between gap-6 h-full">
                       <h2 className={`text-3xl font-black uppercase leading-none ${style.text} whitespace-nowrap`}>THIS WEEK</h2>
                       <div className="flex gap-4 items-center">
-                        {stats.map((stat, index) => (
-                          <div 
-                            key={stat.label} 
+                      {stats.map((stat, index) => (
+                        <div 
+                          key={stat.label} 
                             className={`flex flex-row items-center justify-center px-4 py-3 gap-3 ${getRoundedClass('rounded-2xl')} transition-all duration-300`}
-                            style={{
-                              backgroundColor: mode === 'chaos' ? 'rgba(0,0,0,0.2)' : mode === 'chill' ? 'rgba(74,24,24,0.15)' : 'rgba(0,0,0,0.25)',
-                              animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
-                            }}
-                          >
+                          style={{
+                            backgroundColor: mode === 'chaos' ? 'rgba(0,0,0,0.2)' : mode === 'chill' ? 'rgba(74,24,24,0.15)' : 'rgba(0,0,0,0.25)',
+                            animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
+                          }}
+                        >
                             <span className={`text-3xl font-black ${style.text} leading-none transition-all duration-300`}>
-                              {stat.value}
-                            </span>
+                            {stat.value}
+                          </span>
                             <span className={`text-xs font-black uppercase tracking-wider ${style.text} transition-opacity duration-300 whitespace-nowrap`}>
                               {stat.label}
                             </span>
-                          </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
+                  </div>
                   )}
                   <style jsx>{`
                     @keyframes fadeInUp {
@@ -2151,7 +2182,7 @@ export default function TeamDashboard() {
                 const date = formatDate(project.due_date)
                 const displayText = project.type || project.description || 'Unknown'
                 
-                return (
+              return (
                   <div key={project.id} className="flex items-start gap-3 py-2">
                     {/* Plus button on the left */}
                     <Button
@@ -2174,7 +2205,7 @@ export default function TeamDashboard() {
                 )
               }
               
-              return (
+                      return (
                 <>
                   <Card 
                     className={`${eventsExpanded ? 'p-6 flex-[2]' : 'p-6'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 overflow-hidden`}
@@ -2278,7 +2309,7 @@ export default function TeamDashboard() {
                             ) : (
                               <div className="text-white/60 text-sm py-4">
                                 No projects in progress
-                              </div>
+                  </div>
                             )}
                           </div>
                         </div>
@@ -2327,7 +2358,7 @@ export default function TeamDashboard() {
                       </div>
                     </div>
                     )}
-                  </Card>
+                </Card>
 
                   {/* Project Details Dialog */}
                   <Dialog open={isPipelineDialogOpen} onOpenChange={setIsPipelineDialogOpen}>
