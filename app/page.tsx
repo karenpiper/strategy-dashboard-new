@@ -1385,7 +1385,7 @@ export default function TeamDashboard() {
               >
                 {/* Black masked section on the right with transform/rotation - contains horoscope image */}
                 {mode === 'chaos' && (
-                  <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-[45%] aspect-[5/4] ${getBgClass()} ${getRoundedClass('rounded-[2.5rem]')} transform translate-x-[10%] -rotate-12 overflow-hidden`}>
+                  <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-[40%] aspect-[5/4] ${getBgClass()} ${getRoundedClass('rounded-[2.5rem]')} transform translate-x-[-15%] -rotate-12 overflow-hidden`}>
                     {horoscopeImageLoading ? (
                       <div className="w-full h-full flex items-center justify-center">
                         <Loader2 className="w-8 h-8 animate-spin text-white" />
@@ -1419,7 +1419,7 @@ export default function TeamDashboard() {
                   </div>
                 )}
                 {mode !== 'chaos' && (
-                  <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-[50%] aspect-[5/4] ${getBgClass()} overflow-hidden`} 
+                  <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-[45%] aspect-[5/4] ${getBgClass()} transform translate-x-[-10%] overflow-hidden`} 
                        style={{ clipPath: 'polygon(8% 0, 100% 0, 100% 100%, 0% 100%)' }} 
                   >
                     {horoscopeImageLoading ? (
