@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Trophy, Music, MessageCircle, Play } from 'lucide-react'
 import Link from 'next/link'
 import { PlaylistCard } from '@/components/playlist-card'
+import { Footer } from '@/components/footer'
 
 interface BeastBabe {
   id: string
@@ -266,7 +267,7 @@ export default function VibesPage() {
   }
 
   return (
-    <div className={`min-h-screen ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
+    <div className={`min-h-screen flex flex-col ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       <header className={`border-b ${getBorderClass()} px-6 py-4`}>
         <div className="max-w-[1600px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-8">
@@ -293,7 +294,7 @@ export default function VibesPage() {
         </div>
       </header>
 
-      <main className="max-w-[1600px] mx-auto px-6 py-10">
+      <main className="max-w-[1600px] mx-auto px-6 py-10 flex-1">
         {/* Header */}
         <h1 className={`text-5xl font-black mb-8 ${getTextClass()}`}>Vibes</h1>
 
@@ -436,6 +437,8 @@ export default function VibesPage() {
             <p className={`text-lg ${getTextClass()} opacity-60`}>No archived playlists yet</p>
           )}
         </div>
+        
+        <Footer />
       </main>
     </div>
   )

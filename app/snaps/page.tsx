@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Loader2, Plus, Users, TrendingUp, Calendar, ChevronDown, Sparkles, ArrowUp } from 'lucide-react'
 import Link from 'next/link'
 import { AddSnapDialog } from '@/components/add-snap-dialog'
+import { Footer } from '@/components/footer'
 
 interface Snap {
   id: string
@@ -356,7 +357,7 @@ export default function SnapsPage() {
   }
 
   return (
-    <div className={`min-h-screen ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
+    <div className={`min-h-screen flex flex-col ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       <header className={`border-b ${getBorderClass()} px-6 py-4`}>
         <div className="max-w-[1600px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-8">
@@ -383,7 +384,7 @@ export default function SnapsPage() {
         </div>
       </header>
 
-      <main className="max-w-[1600px] mx-auto px-6 py-10">
+      <main className="max-w-[1600px] mx-auto px-6 py-10 flex-1">
         <div className="flex gap-6">
           {/* Left Sidebar Card */}
           <Card className={`w-80 ${mode === 'chaos' ? 'bg-[#10B981]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`} style={{ 
@@ -651,6 +652,8 @@ export default function SnapsPage() {
             </div>
           </div>
         </div>
+        
+        <Footer />
       </main>
 
       <AddSnapDialog

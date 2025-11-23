@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { AccountMenu } from '@/components/account-menu'
 import { ModeSwitcher } from '@/components/mode-switcher'
+import { Footer } from '@/components/footer'
 
 interface WorkSample {
   id: string
@@ -201,7 +202,7 @@ export default function WorkSamplesPage() {
   }
 
   return (
-    <div className={`min-h-screen ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
+    <div className={`min-h-screen flex flex-col ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       <header className={`border-b ${getBorderClass()} px-6 py-4`}>
         <div className="max-w-[1600px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-8">
@@ -228,7 +229,7 @@ export default function WorkSamplesPage() {
         </div>
       </header>
 
-      <main className="max-w-[1600px] mx-auto px-6 py-10">
+      <main className="max-w-[1600px] mx-auto px-6 py-10 flex-1">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -550,6 +551,8 @@ export default function WorkSamplesPage() {
             </p>
           </div>
         )}
+        
+        <Footer />
       </main>
     </div>
   )
