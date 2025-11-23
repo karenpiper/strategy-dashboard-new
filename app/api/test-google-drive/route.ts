@@ -360,19 +360,21 @@ export async function GET(request: NextRequest) {
         // Step 6: Test resumable upload URL
         try {
           const tokenResponse = await auth.getAccessToken()
-          const updateResponse = await fetch(
-            `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=resumable`,
-            {
-              method: 'PATCH',
-              headers: {
-                'Authorization': `Bearer ${tokenResponse.token}`,
-                'Content-Type': 'application/json; charset=UTF-8',
-                'X-Upload-Content-Type': 'text/plain',
-                'X-Upload-Content-Length': '10',
-              },
-              body: JSON.stringify({}),
-            }
-          )
+          // For shared drives, include supportsAllDrives in the query
+          const updateUrl = new URL(`https://www.googleapis.com/upload/drive/v3/files/${fileId}`)
+          updateUrl.searchParams.set('uploadType', 'resumable')
+          updateUrl.searchParams.set('supportsAllDrives', 'true')
+          
+          const updateResponse = await fetch(updateUrl.toString(), {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${tokenResponse.token}`,
+              'Content-Type': 'application/json; charset=UTF-8',
+              'X-Upload-Content-Type': 'text/plain',
+              'X-Upload-Content-Length': '10',
+            },
+            body: JSON.stringify({}),
+          })
 
           if (!updateResponse.ok) {
             const errorText = await updateResponse.text()

@@ -119,19 +119,21 @@ export async function POST(request: NextRequest) {
 
     // Initialize resumable upload for the existing file
     // Use raw fetch to get the Location header with the resumable upload URL
-    const updateResponse = await fetch(
-      `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=resumable`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${authClient.token}`,
-          'Content-Type': 'application/json; charset=UTF-8',
-          'X-Upload-Content-Type': mimeType,
-          'X-Upload-Content-Length': fileSize.toString(),
-        },
-        body: JSON.stringify({}), // Empty body, we're just getting the upload URL
-      }
-    )
+    // For shared drives, we need to include the driveId in the query
+    const updateUrl = new URL(`https://www.googleapis.com/upload/drive/v3/files/${fileId}`)
+    updateUrl.searchParams.set('uploadType', 'resumable')
+    updateUrl.searchParams.set('supportsAllDrives', 'true')
+    
+    const updateResponse = await fetch(updateUrl.toString(), {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${authClient.token}`,
+        'Content-Type': 'application/json; charset=UTF-8',
+        'X-Upload-Content-Type': mimeType,
+        'X-Upload-Content-Length': fileSize.toString(),
+      },
+      body: JSON.stringify({}), // Empty body, we're just getting the upload URL
+    })
 
     if (!updateResponse.ok) {
       const errorText = await updateResponse.text()
