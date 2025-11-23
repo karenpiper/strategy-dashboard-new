@@ -1653,10 +1653,10 @@ export default function TeamDashboard() {
                       <h2 className={`text-3xl font-black uppercase leading-none ${style.text} whitespace-nowrap`}>THIS WEEK</h2>
                     )}
                     <div className={`flex ${eventsExpanded ? 'gap-2' : 'gap-4'}`}>
-                      {stats.slice(0, eventsExpanded ? 2 : 3).map((stat, index) => (
+                      {stats.map((stat, index) => (
                         <div 
                           key={stat.label} 
-                          className={`flex flex-col items-center justify-center ${eventsExpanded ? 'px-2 py-1.5' : 'px-4 py-3'} ${getRoundedClass('rounded-2xl')} transition-all duration-300`}
+                          className={`flex flex-row items-center justify-center ${eventsExpanded ? 'px-3 py-1.5 gap-2' : 'px-4 py-3 gap-3'} ${getRoundedClass('rounded-2xl')} transition-all duration-300`}
                           style={{
                             backgroundColor: mode === 'chaos' ? 'rgba(0,0,0,0.2)' : mode === 'chill' ? 'rgba(74,24,24,0.15)' : 'rgba(0,0,0,0.25)',
                             animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
@@ -1666,7 +1666,7 @@ export default function TeamDashboard() {
                             {stat.value}
                           </span>
                           {!eventsExpanded && (
-                            <span className={`text-xs font-black uppercase tracking-wider ${style.text} mt-1 transition-opacity duration-300`}>
+                            <span className={`text-xs font-black uppercase tracking-wider ${style.text} transition-opacity duration-300 whitespace-nowrap`}>
                               {stat.label}
                             </span>
                           )}
