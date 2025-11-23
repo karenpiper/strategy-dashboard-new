@@ -127,6 +127,7 @@ export default function TeamDashboard() {
     team: string | null
     url: string | null
     tier: number | null
+    updated_at: string | null
   }>>([])
   const [pipelineLoading, setPipelineLoading] = useState(true)
   const [selectedPipelineProject, setSelectedPipelineProject] = useState<typeof pipelineData[0] | null>(null)
@@ -2621,13 +2622,32 @@ export default function TeamDashboard() {
               const inProgressProjects = pipelineData.filter(p => p.status === 'In Progress')
               const completedProjects = pipelineData.filter(p => p.status === completedFilter)
               
-              // Calculate counts for all statuses
+              // Calculate last month date range
+              const now = new Date()
+              const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+              const firstDayOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+              
+              // Filter Won and Lost projects from last month only
+              const wonLastMonth = pipelineData.filter(p => {
+                if (p.status !== 'Won') return false
+                if (!p.updated_at) return false
+                const updatedDate = new Date(p.updated_at)
+                return updatedDate >= firstDayOfLastMonth && updatedDate < firstDayOfThisMonth
+              })
+              
+              const lostLastMonth = pipelineData.filter(p => {
+                if (p.status !== 'Lost') return false
+                if (!p.updated_at) return false
+                const updatedDate = new Date(p.updated_at)
+                return updatedDate >= firstDayOfLastMonth && updatedDate < firstDayOfThisMonth
+              })
+              
+              // Calculate counts for displayed statuses
               const statusCounts = {
                 'In Progress': pipelineData.filter(p => p.status === 'In Progress').length,
                 'Pending Decision': pipelineData.filter(p => p.status === 'Pending Decision').length,
-                'Long Lead': pipelineData.filter(p => p.status === 'Long Lead').length,
-                'Won': pipelineData.filter(p => p.status === 'Won').length,
-                'Lost': pipelineData.filter(p => p.status === 'Lost').length,
+                'Won (Last Month)': wonLastMonth.length,
+                'Lost (Last Month)': lostLastMonth.length,
               }
               
               const formatDate = (dateString: string | null) => {
@@ -2686,7 +2706,7 @@ export default function TeamDashboard() {
                       <div className="flex flex-col gap-2 h-full">
                         <h2 className={`text-2xl mb-3 font-black uppercase ${pipelineStyle.text}`}>PIPELINE</h2>
                         <div className="flex items-center justify-between">
-                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>In Progress</div>
+                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>In Progress (all)</div>
                           <div 
                             className={`text-5xl font-black ${pipelineStyle.text} px-4 py-2 rounded-lg`}
                             style={{
@@ -2697,7 +2717,7 @@ export default function TeamDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>Pending</div>
+                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>Pending Decision (all)</div>
                           <div 
                             className={`text-5xl font-black ${pipelineStyle.text} px-4 py-2 rounded-lg`}
                             style={{
@@ -2708,36 +2728,25 @@ export default function TeamDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>Long Lead</div>
+                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>Won (last month)</div>
                           <div 
                             className={`text-5xl font-black ${pipelineStyle.text} px-4 py-2 rounded-lg`}
                             style={{
                               backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
                             }}
                           >
-                            {pipelineLoading ? '0' : statusCounts['Long Lead']}
+                            {pipelineLoading ? '0' : statusCounts['Won (Last Month)']}
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>Won</div>
+                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>Lost (last month)</div>
                           <div 
                             className={`text-5xl font-black ${pipelineStyle.text} px-4 py-2 rounded-lg`}
                             style={{
                               backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
                             }}
                           >
-                            {pipelineLoading ? '0' : statusCounts['Won']}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>Lost</div>
-                          <div 
-                            className={`text-5xl font-black ${pipelineStyle.text} px-4 py-2 rounded-lg`}
-                            style={{
-                              backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
-                            }}
-                          >
-                            {pipelineLoading ? '0' : statusCounts['Lost']}
+                            {pipelineLoading ? '0' : statusCounts['Lost (Last Month)']}
                           </div>
                         </div>
                       </div>
