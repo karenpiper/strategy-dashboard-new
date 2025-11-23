@@ -80,9 +80,6 @@
   /* Updated fonts to use Raleway only */
   --font-sans: var(--font-raleway), system-ui, -apple-system, sans-serif;
   
-  /* Scale base font size to 80% */
-  --font-size-base: 12.8px; /* 80% of 16px */
-  
   --color-background: 0 0% 0%;
   --color-foreground: 0 0% 100%;
   
@@ -123,25 +120,28 @@
 }
 
 /* Added smooth scroll behavior and refined base styles */
-/* Scale entire site to 80% by setting root font-size */
+/* Scale entire site to 80% using CSS transform - matches browser zoom effect */
 html {
   scroll-behavior: smooth;
-  font-size: 12.8px !important; /* 80% of default 16px = 12.8px - scales all rem units */
+  font-size: 16px; /* Reset to default, transform will scale everything */
+  width: 125vw; /* 100% / 0.8 = 125% to maintain full viewport coverage */
+  height: 125vh;
+  transform: scale(0.8);
+  transform-origin: top left;
+  overflow-x: hidden; /* Prevent horizontal scrollbar */
 }
 
 /* Ensure body and all elements use rem-based sizing */
 body {
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-  font-size: 1rem; /* Use rem so it scales with html */
+  font-size: 1rem;
+  width: 100%;
+  min-height: 100%;
 }
 
 /* Force rem-based scaling for common Tailwind utilities */
 * {
   box-sizing: border-box;
-}
-
-body {
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 @supports (font-variation-settings: normal) {
