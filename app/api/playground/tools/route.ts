@@ -64,9 +64,116 @@ export async function GET(request: NextRequest) {
     tools?.forEach(tool => {
       if (!tool.likes_count) tool.likes_count = 0
       if (!tool.user_liked) tool.user_liked = false
+      if (!tool.view_count) tool.view_count = 0
     })
 
-    return NextResponse.json({ data: tools || [] })
+    // Get recently viewed tools for the user
+    let recentlyViewed: any[] = []
+    if (user) {
+      const { data: views } = await supabase
+        .from('playground_tool_views')
+        .select(`
+          tool_id,
+          viewed_at,
+          playground_tools:playground_tools!inner(
+            *,
+            submitter:profiles!playground_tools_submitted_by_fkey(
+              id,
+              full_name,
+              email,
+              avatar_url
+            )
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('viewed_at', { ascending: false })
+        .limit(5)
+
+      if (views) {
+        recentlyViewed = views
+          .map((v: any) => v.playground_tools)
+          .filter(Boolean)
+        
+        // Add likes data to recently viewed
+        if (recentlyViewed.length > 0) {
+          const recentlyViewedIds = recentlyViewed.map((t: any) => t.id)
+          const { data: recentlyViewedLikes } = await supabase
+            .from('playground_tool_likes')
+            .select('tool_id, user_id')
+            .in('tool_id', recentlyViewedIds)
+
+          if (recentlyViewedLikes) {
+            const likesByTool = recentlyViewedLikes.reduce((acc, like) => {
+              if (!acc[like.tool_id]) {
+                acc[like.tool_id] = { count: 0, userLiked: false }
+              }
+              acc[like.tool_id].count++
+              if (like.user_id === user.id) {
+                acc[like.tool_id].userLiked = true
+              }
+              return acc
+            }, {} as Record<string, { count: number; userLiked: boolean }>)
+
+            recentlyViewed.forEach((tool: any) => {
+              const likeData = likesByTool[tool.id] || { count: 0, userLiked: false }
+              tool.likes_count = likeData.count
+              tool.user_liked = likeData.userLiked
+              if (!tool.view_count) tool.view_count = 0
+            })
+          }
+        }
+      }
+    }
+
+    // Get most used tools (by view count)
+    const { data: mostUsed } = await supabase
+      .from('playground_tools')
+      .select(`
+        *,
+        submitter:profiles!playground_tools_submitted_by_fkey(
+          id,
+          full_name,
+          email,
+          avatar_url
+        )
+      `)
+      .order('view_count', { ascending: false })
+      .limit(5)
+
+    // Add likes data to most used
+    if (mostUsed && mostUsed.length > 0) {
+      const mostUsedIds = mostUsed.map(t => t.id)
+      const { data: mostUsedLikes } = await supabase
+        .from('playground_tool_likes')
+        .select('tool_id, user_id')
+        .in('tool_id', mostUsedIds)
+
+      if (mostUsedLikes) {
+        const likesByTool = mostUsedLikes.reduce((acc, like) => {
+          if (!acc[like.tool_id]) {
+            acc[like.tool_id] = { count: 0, userLiked: false }
+          }
+          acc[like.tool_id].count++
+          if (like.user_id === user.id) {
+            acc[like.tool_id].userLiked = true
+          }
+          return acc
+        }, {} as Record<string, { count: number; userLiked: boolean }>)
+
+        mostUsed.forEach(tool => {
+          const likeData = likesByTool[tool.id] || { count: 0, userLiked: false }
+          tool.likes_count = likeData.count
+          tool.user_liked = likeData.userLiked
+          if (!tool.view_count) tool.view_count = 0
+        })
+      }
+    }
+
+    return NextResponse.json({ 
+      data: tools || [],
+      recentlyViewed: recentlyViewed || [],
+      mostUsed: mostUsed || []
+    })
   } catch (error: any) {
     console.error('Error in GET /api/playground/tools:', error)
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })

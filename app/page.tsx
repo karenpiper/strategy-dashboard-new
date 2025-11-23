@@ -2540,6 +2540,7 @@ export default function TeamDashboard() {
             {/* This Week Stats Bar */}
             {(() => {
               const style = mode === 'chaos' ? getSpecificCardStyle('friday-drop') : getCardStyle('work')
+              const mintColor = mode === 'chaos' ? '#00A3E0' : '#00FF87' // Work section uses Ocean from BLUE SYSTEM
               const stats = [
                 { value: pipelineStatsLoading ? '...' : (pipelineStats?.activeProjects?.toString() || '0'), label: 'active projects' },
                 { value: pipelineStatsLoading ? '...' : (pipelineStats?.newBusiness?.toString() || '0'), label: 'new business' },
@@ -2547,12 +2548,16 @@ export default function TeamDashboard() {
               ]
               return (
                 <Card 
-                  className={`${style.bg} ${style.border} ${eventsExpanded ? 'p-6 flex-[0_0_auto]' : 'py-3 px-6 flex-[0_0_auto]'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 h-full flex flex-col`} 
-                  style={eventsExpanded ? { minHeight: '0' } : { height: '80px', maxHeight: '80px', minHeight: '80px' }}
+                  className={`${style.bg} ${style.border} ${eventsExpanded ? 'p-6 flex-[0_0_auto]' : 'p-6 flex-[0_0_auto]'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 h-full flex flex-col`} 
+                  style={eventsExpanded ? { minHeight: '0' } : { height: 'auto', minHeight: '80px' }}
                 >
                   {eventsExpanded ? (
                     /* Vertical stats view when expanded - Bold and clean */
                     <div className="flex flex-col gap-2 h-full">
+                      {/* Small label to match Events spacing */}
+                      <p className={`text-xs uppercase tracking-wider font-black mb-4`} style={{ color: mintColor }}>
+                        STATS
+                      </p>
                       <h2 className={`text-2xl font-black uppercase leading-none ${style.text} mb-3`}>THIS WEEK</h2>
                       {stats.map((stat, index) => (
                         <div key={stat.label} className="flex items-center justify-between">
@@ -2572,8 +2577,13 @@ export default function TeamDashboard() {
                     </div>
                   ) : (
                     /* Horizontal banner view when not expanded */
-                    <div className="flex items-center justify-between gap-6 h-full">
-                      <h2 className={`text-3xl font-black uppercase leading-none ${style.text} whitespace-nowrap`}>THIS WEEK</h2>
+                    <div className="flex flex-col h-full">
+                      {/* Small label to match Events spacing */}
+                      <p className={`text-xs uppercase tracking-wider font-black mb-4`} style={{ color: mintColor }}>
+                        STATS
+                      </p>
+                      <div className="flex items-center justify-between gap-6 flex-1">
+                        <h2 className={`text-3xl font-black uppercase leading-none ${style.text} whitespace-nowrap`}>THIS WEEK</h2>
                       <div className="flex gap-4 items-center">
                       {stats.map((stat, index) => (
                         <div 
@@ -2592,8 +2602,9 @@ export default function TeamDashboard() {
                             </span>
                         </div>
                       ))}
+                      </div>
+                      </div>
                     </div>
-                  </div>
                   )}
                   <style jsx>{`
                     @keyframes fadeInUp {
@@ -2615,6 +2626,9 @@ export default function TeamDashboard() {
             {(() => {
               const pipelineStyle = mode === 'chaos' ? getSpecificCardStyle('pipeline') : getCardStyle('work')
               const borderColor = pipelineStyle.accent
+              
+              const inProgressProjects = pipelineData.filter(p => p.status === 'In Progress')
+              const completedProjects = pipelineData.filter(p => p.status === completedFilter)
               
               // Calculate last month date range
               const now = new Date()
