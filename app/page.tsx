@@ -1825,46 +1825,9 @@ export default function TeamDashboard() {
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 items-stretch">
-          <div className="flex flex-col h-full space-y-6">
+          <div className="flex flex-col h-full">
             {/* Beast Babe */}
             <BeastBabeCard />
-
-            {/* Wins Wall */}
-            {(() => {
-              const style = getSpecificCardStyle('wins-wall')
-              const wins = [
-                { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '🎉' },
-                { name: 'Jamie Park', win: 'Shipped v2.0!', emoji: '🚀' },
-                { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '⭐' },
-              ]
-              return (
-                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} flex-1 flex flex-col min-h-0`}
-                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-                >
-                  <div className="flex items-center gap-2 text-sm mb-2" style={{ color: style.accent }}>
-                <Trophy className="w-4 h-4" />
-                    <span className="uppercase tracking-wider font-black text-xs">Celebrate</span>
-              </div>
-                  <h2 className={`text-4xl font-black mb-4 uppercase ${style.text}`}>WINS<br/>WALL</h2>
-              <div className="space-y-2 mb-4 flex-1">
-                    {wins.map((win, idx) => (
-                      <div key={idx} className={`${mode === 'chaos' ? 'bg-black/40' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-3 border-2`} style={{ borderColor: `${style.accent}66` }}>
-                        <div className="flex items-center justify-between">
-                  <div>
-                            <p className={`text-sm font-black ${style.text}`}>{win.name}</p>
-                            <p className={`text-xs font-medium ${style.text}/70`}>{win.win}</p>
-                  </div>
-                          <span className="text-2xl">{win.emoji}</span>
-                </div>
-                  </div>
-                    ))}
-                </div>
-                  <Button className={`w-full mt-auto ${mode === 'chaos' ? 'bg-black text-[#84CC16] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-12 uppercase`}>
-                Share Win
-              </Button>
-            </Card>
-              )
-            })()}
           </div>
 
           {/* Snaps */}

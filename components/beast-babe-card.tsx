@@ -43,7 +43,7 @@ export function BeastBabeCard() {
 
   if (loading) {
     return (
-      <Card className="relative overflow-hidden bg-gradient-to-br from-[#047857] via-[#10B981] to-[#1A5D52] border-0 rounded-[2.5rem] p-6 min-h-[400px] flex items-center justify-center">
+      <Card className="relative overflow-hidden bg-gradient-to-br from-[#047857] via-[#10B981] to-[#1A5D52] border-0 rounded-[2.5rem] min-h-[600px] flex items-center justify-center">
         <div className="animate-pulse text-white/60">Loading...</div>
       </Card>
     )
@@ -52,7 +52,7 @@ export function BeastBabeCard() {
   const currentBeastBabe = beastBabeData?.currentBeastBabe
 
   return (
-    <Card className="relative overflow-hidden bg-gradient-to-br from-[#047857] via-[#10B981] to-[#1A5D52] border-0 rounded-[2.5rem] p-6 min-h-[400px] glitch-container">
+    <Card className="relative overflow-hidden bg-gradient-to-br from-[#047857] via-[#10B981] to-[#1A5D52] border-0 rounded-[2.5rem] min-h-[600px] glitch-container">
       {/* Decorative background elements - GREEN SYSTEM with magenta */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Animated gradient overlay */}
@@ -107,10 +107,36 @@ export function BeastBabeCard() {
         <div className="absolute inset-0 glitch-lines"></div>
       </div>
 
-      {/* Content */}
-      <div className="relative z-10">
+      {/* Avatar - Full bleed at top with 10px border */}
+      <div className="relative w-full pt-[10px] px-[10px] flex justify-center">
+        <div className="relative w-[calc(100%-20px)] aspect-square max-w-[400px] overflow-hidden rounded-full">
+          {/* Multiple glowing effects behind avatar - GREEN SYSTEM + Magenta */}
+          <div className="absolute inset-0 bg-[#84CC16]/40 blur-2xl animate-pulse glitch-shift" style={{ animationDelay: '0.3s' }}></div>
+          <div className="absolute inset-0 bg-[#EC4899]/30 blur-xl animate-pulse glitch-shift" style={{ animationDelay: '0.6s' }}></div>
+          <div className="absolute inset-0 bg-[#FF8C42]/25 blur-lg animate-pulse glitch-shift" style={{ animationDelay: '0.9s' }}></div>
+          
+          {/* Avatar Image */}
+          {currentBeastBabe?.avatar_url ? (
+            <img
+              src={currentBeastBabe.avatar_url}
+              alt={currentBeastBabe.full_name || 'Beast Babe'}
+              className="w-full h-full object-cover relative z-10 rounded-full"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-[#10B981] to-[#047857] flex items-center justify-center relative z-10 rounded-full">
+              <Trophy className="w-32 h-32 text-white" />
+            </div>
+          )}
+          
+          {/* Gradient overlay on avatar */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#047857]/60 z-20 pointer-events-none rounded-full"></div>
+        </div>
+      </div>
+
+      {/* Content below avatar */}
+      <div className="relative z-10 px-6 pb-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4 mt-4">
           <div className="flex items-center gap-2 glitch-text">
             <Trophy className="w-7 h-7 text-[#84CC16] animate-bounce" style={{ animationDuration: '1.5s' }} />
             <h2 className="text-5xl font-black text-white uppercase tracking-tight glitch-text">BEAST BABE</h2>
@@ -121,58 +147,22 @@ export function BeastBabeCard() {
           </div>
         </div>
 
-        {/* Profile Section */}
-        <div className="flex flex-col items-center mb-6">
-          {/* Profile Picture with Gradient Ring */}
-          <div className="relative mb-4 flex items-center justify-center">
-            {/* Multiple glowing effects behind profile - GREEN SYSTEM + Magenta */}
-            <div className="absolute w-64 h-64 rounded-full bg-[#84CC16]/40 blur-2xl animate-pulse glitch-shift" style={{ animationDelay: '0.3s' }}></div>
-            <div className="absolute w-56 h-56 rounded-full bg-[#EC4899]/30 blur-xl animate-pulse glitch-shift" style={{ animationDelay: '0.6s' }}></div>
-            <div className="absolute w-52 h-52 rounded-full bg-[#FF8C42]/25 blur-lg animate-pulse glitch-shift" style={{ animationDelay: '0.9s' }}></div>
-            
-            {/* Gradient Ring Container - GREEN SYSTEM + Magenta */}
-            <div className="relative w-56 h-56">
-              {/* Animated Gradient Ring - Fast spin with GREEN SYSTEM colors + magenta */}
-              <div 
-                className="absolute inset-0 rounded-full animate-spin-fast glitch-shift"
-                style={{
-                  background: 'conic-gradient(from 0deg, #EC4899 0%, #84CC16 20%, #10B981 40%, #FF8C42 60%, #EC4899 80%, #84CC16 100%)',
-                }}
-              >
-                <div className="absolute inset-[3px] rounded-full bg-gradient-to-br from-[#047857] via-[#10B981] to-[#1A5D52]"></div>
-              </div>
-              
-              {/* Profile Picture - No glitch effects */}
-              <div className="absolute inset-[3px] rounded-full overflow-hidden z-10">
-                {currentBeastBabe?.avatar_url ? (
-                  <img
-                    src={currentBeastBabe.avatar_url}
-                    alt={currentBeastBabe.full_name || 'Beast Babe'}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#10B981] to-[#047857] flex items-center justify-center">
-                    <Trophy className="w-24 h-24 text-white" />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Name */}
-          <h3 className="text-3xl font-black text-white mb-1 text-center glitch-text">
-            {currentBeastBabe?.full_name || currentBeastBabe?.email || 'No Beast Babe Yet'}
-          </h3>
-          
-          {/* Role/Level */}
-          {currentBeastBabe?.role && (
-            <p className="text-sm text-white/80 mb-4">{currentBeastBabe.role}</p>
-          )}
-        </div>
+        {/* Name */}
+        <h3 className="text-4xl font-black text-white mb-2 text-left glitch-text">
+          {currentBeastBabe?.full_name || currentBeastBabe?.email || 'No Beast Babe Yet'}
+        </h3>
+        
+        {/* Role/Discipline */}
+        {currentBeastBabe?.role && (
+          <p className="text-lg text-white/80 mb-2 glitch-text">{currentBeastBabe.role}</p>
+        )}
+        {currentBeastBabe?.discipline && (
+          <p className="text-base text-white/70 mb-4 glitch-text">{currentBeastBabe.discipline}</p>
+        )}
 
         {/* Achievement Description */}
         {currentBeastBabe?.history?.achievement && (
-          <div className="relative bg-black/30 backdrop-blur-sm rounded-2xl p-5 border-2 border-[#84CC16]/40 glitch-border">
+          <div className="relative bg-black/30 backdrop-blur-sm rounded-2xl p-5 border-2 border-[#84CC16]/40 glitch-border mt-4">
             {/* Decorative elements in corners - GREEN SYSTEM + Magenta */}
             <div className="absolute bottom-2 left-2 w-10 h-10 opacity-50 animate-spin-slow">
               <div className="w-full h-full bg-gradient-to-br from-[#EC4899] to-[#84CC16] rounded-sm transform rotate-45"></div>
@@ -186,7 +176,7 @@ export function BeastBabeCard() {
               <Star className="w-full h-full text-[#EC4899] fill-[#EC4899]" />
             </div>
             
-            <p className="text-sm text-white/95 leading-relaxed italic relative z-10 glitch-text">
+            <p className="text-base text-white/95 leading-relaxed italic relative z-10 glitch-text">
               "{currentBeastBabe.history.achievement}"
             </p>
           </div>
