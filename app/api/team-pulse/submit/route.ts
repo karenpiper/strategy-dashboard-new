@@ -17,31 +17,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }
 
-    // Get current week start (Monday)
+    // Get current week start (Monday) - kept for data organization
     const now = new Date()
     const dayOfWeek = now.getDay()
     const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) // Adjust to Monday
     const weekStart = new Date(now.setDate(diff))
     weekStart.setHours(0, 0, 0, 0)
     const weekKey = weekStart.toISOString().split('T')[0]
-
-    // Check if user already submitted this week
-    const { data: existing, error: checkError } = await supabase
-      .from('team_pulse_responses')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('week_key', weekKey)
-      .limit(1)
-
-    // If there's an error other than "not found", log it
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Error checking existing submission:', checkError)
-    }
-
-    // If user already submitted, return error
-    if (existing && existing.length > 0) {
-      return NextResponse.json({ error: 'Already submitted this week' }, { status: 400 })
-    }
 
     // Validate response data
     const responseData = responses.map((r: any) => {

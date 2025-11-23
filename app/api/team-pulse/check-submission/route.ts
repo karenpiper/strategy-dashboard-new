@@ -18,19 +18,21 @@ export async function GET() {
     weekStart.setHours(0, 0, 0, 0)
     const weekKey = weekStart.toISOString().split('T')[0]
 
+    // Check if user has submitted at least once this week (unlimited submissions allowed)
     const { data, error } = await supabase
       .from('team_pulse_responses')
       .select('id')
       .eq('user_id', user.id)
       .eq('week_key', weekKey)
-      .single()
+      .limit(1)
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+    if (error) {
       console.error('Error checking submission:', error)
       return NextResponse.json({ hasSubmitted: false })
     }
 
-    return NextResponse.json({ hasSubmitted: !!data })
+    // Return true if user has submitted at least once this week
+    return NextResponse.json({ hasSubmitted: !!data && data.length > 0 })
   } catch (error) {
     console.error('Error in check-submission:', error)
     return NextResponse.json({ hasSubmitted: false })

@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS public.team_pulse_responses (
   question_key TEXT NOT NULL, -- e.g., 'week', 'priorities', 'workload'
   score INTEGER NOT NULL CHECK (score >= 0 AND score <= 100),
   comment TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
-  UNIQUE(user_id, week_key, question_key) -- One response per question per user per week
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+  -- Note: Multiple submissions per user per week per question are allowed
 );
 
 -- Enable Row Level Security
