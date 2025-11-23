@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { ModeSwitcher } from "@/components/mode-switcher"
 import { useMode } from "@/contexts/mode-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from 'next/navigation'
@@ -1368,7 +1367,6 @@ export default function TeamDashboard() {
                 </div>
               </TooltipProvider>
             )}
-            <ModeSwitcher />
             {user && (
               <AccountMenu />
             )}

@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/auth-context'
 import { useMode } from '@/contexts/mode-context'
 import { AccountMenu } from '@/components/account-menu'
-import { ModeSwitcher } from '@/components/mode-switcher'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Trophy, Music, MessageCircle, Play } from 'lucide-react'
@@ -312,7 +311,6 @@ export default function VibesPage() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <ModeSwitcher />
             {user && (
               <AccountMenu />
             )}
