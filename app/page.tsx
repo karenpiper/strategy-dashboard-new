@@ -938,7 +938,7 @@ export default function TeamDashboard() {
         // Recognition & Culture - GREEN SYSTEM: Emerald, Forest Green, Lime Green, Orange
         'beast-babe': { bg: 'bg-[#10B981]', border: 'border-0', glow: '', text: 'text-black', accent: '#047857' }, // Emerald bg with Forest Green accent
         'wins-wall': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#84CC16' }, // Black bg with Lime Green accent
-        'snaps': { bg: 'bg-[#1E293B]', border: 'border-2', glow: '', text: 'text-white', accent: '#10B981' }, // Slate Grey bg with Emerald accent and border
+        'snaps': { bg: 'bg-[#1E293B]', border: 'border-0', glow: '', text: 'text-white', accent: '#10B981' }, // Slate Grey bg with Emerald accent
         
         // Work - BLUE SYSTEM: Ocean (#00A3E0), Navy (#1B4D7C), Sky (#7DD3F0), Golden Yellow (#FFD700)
         'events': { bg: 'bg-[#00A3E0]', border: 'border-0', glow: '', text: 'text-black', accent: '#1B4D7C' }, // Ocean bg with Navy accent
