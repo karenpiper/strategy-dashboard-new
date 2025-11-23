@@ -437,7 +437,7 @@ export function TeamPulseCard() {
       `}</style>
       <Card className={`${style.bg} ${style.border} !rounded-[2.5rem] flex flex-col overflow-hidden`}>
         <div className="p-6 pb-4 flex-shrink-0">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Lock className={`w-3 h-3 ${style.text}/60`} />
               <p className={`text-xs ${style.text}/60`}>Your response is private and only added to the group average</p>
@@ -462,9 +462,24 @@ export function TeamPulseCard() {
             )}
           </div>
           
-          <h2 className={`text-2xl font-black mb-4 uppercase ${style.text} tracking-tighter`}>Team Pulse</h2>
+          {/* Header matching section header style */}
+          <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
+            {mode === 'code' ? (
+              <>
+                <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
+                <span className="text-[#808080]">TEAM PULSE</span>
+                <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
+              </>
+            ) : (
+              <>
+                <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
+                Team Pulse
+              </>
+            )}
+          </p>
+          
           {hasSubmitted && (
-            <div className={`mb-3 p-2.5 ${getRoundedClass('rounded-lg')} ${
+            <div className={`mb-4 p-2 ${getRoundedClass('rounded-lg')} ${
               mode === 'chaos' 
                 ? 'bg-[#EAB308]/10 border border-[#EAB308]/20' 
                 : mode === 'chill'
@@ -478,8 +493,8 @@ export function TeamPulseCard() {
           )}
         </div>
         
-        <div className="flex-1 px-6 pb-4 overflow-y-auto">
-          <div className="space-y-5">
+        <div className="flex-1 px-6 pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {questions.map((question, index) => {
               const response = responses[question.question_key]
               const score = response?.score ?? 50
@@ -488,62 +503,53 @@ export function TeamPulseCard() {
               const scoreInterpretation = getScoreInterpretation(score)
               
               return (
-                <div key={question.question_key} className="space-y-4">
-                  <div>
-                    <p className={`text-lg font-black mb-4 text-center ${style.text} tracking-tight`}>
-                      {question.question_text}
-                    </p>
-                    <div className="px-2">
-                      <div className="mb-4">
-                        <div className={`text-center mb-4`}>
-                          <span 
-                            className={`text-4xl font-black ${scoreInterpretation.color} drop-shadow-lg`}
-                            style={{ 
-                              textShadow: mode === 'code' ? 'none' : '0 2px 8px rgba(0,0,0,0.1)'
-                            }}
-                          >
-                            {score}
-                          </span>
-                          <div className="mt-1">
-                            <span className={`text-xs font-black ${scoreInterpretation.color} uppercase tracking-wider`}>
-                              {scoreInterpretation.label}
-                            </span>
-                          </div>
-                        </div>
-                        <div 
-                          className="pulse-slider-wrapper"
-                          data-score={score}
-                          style={{
-                            '--slider-gradient': getSliderColor(score)
-                          } as React.CSSProperties}
-                        >
-                          <Slider
-                            value={[score]}
-                            onValueChange={(value) => handleScoreChange(question.question_key, value)}
-                            min={0}
-                            max={100}
-                            step={1}
-                            className="w-full"
-                          />
-                        </div>
+                <div key={question.question_key} className="space-y-2">
+                  <p className={`text-sm font-black ${style.text} leading-tight`}>
+                    {question.question_text}
+                  </p>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0">
+                      <span 
+                        className={`text-2xl font-black ${scoreInterpretation.color}`}
+                      >
+                        {score}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <div 
+                        className="pulse-slider-wrapper"
+                        data-score={score}
+                        style={{
+                          '--slider-gradient': getSliderColor(score)
+                        } as React.CSSProperties}
+                      >
+                        <Slider
+                          value={[score]}
+                          onValueChange={(value) => handleScoreChange(question.question_key, value)}
+                          min={0}
+                          max={100}
+                          step={1}
+                          className="w-full"
+                        />
                       </div>
-                      <div className="flex justify-between mt-2">
-                        <span className={`text-xs font-black ${style.text}/70 uppercase tracking-wider`}>Low</span>
-                        <span className={`text-xs font-black ${style.text}/70 uppercase tracking-wider`}>High</span>
+                      <div className="flex justify-between mt-1">
+                        <span className={`text-[10px] font-black ${style.text}/70 uppercase tracking-wider`}>Low</span>
+                        <span className={`text-[10px] font-black ${style.text}/70 uppercase tracking-wider`}>High</span>
                       </div>
                     </div>
                   </div>
                   
                   {/* Optional comment */}
                   <div>
-                    <label className={`text-xs font-black mb-2 block ${style.text} uppercase tracking-wider`}>
-                      Optional comment
+                    <label className={`text-[10px] font-black mb-1 block ${style.text} uppercase tracking-wider`}>
+                      Comment
                     </label>
                     <Textarea
                       value={comment}
                       onChange={(e) => handleCommentChange(question.question_key, e.target.value)}
                       placeholder="Share your thoughts..."
-                      className={`${getRoundedClass('rounded-xl')} min-h-[60px] resize-none font-medium text-sm ${
+                      className={`${getRoundedClass('rounded-lg')} min-h-[40px] resize-none font-medium text-xs p-2 ${
                         mode === 'chaos' 
                           ? 'bg-white border-2 border-black/30 text-black placeholder:text-black/50 focus:border-black/50 focus:ring-2 focus:ring-black/20' 
                           : mode === 'chill' 
@@ -552,10 +558,6 @@ export function TeamPulseCard() {
                       }`}
                     />
                   </div>
-                  
-                  {index < questions.length - 1 && (
-                    <div className={`h-0.5 ${mode === 'chaos' ? 'bg-black/20' : mode === 'chill' ? 'bg-[#4A1818]/20' : 'bg-white/20'}`} />
-                  )}
                 </div>
               )
             })}
