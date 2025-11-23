@@ -1703,58 +1703,58 @@ export default function TeamDashboard() {
                     <Sparkles className="w-4 h-4" />
                     <span className="uppercase tracking-wider font-black text-xs">Recent Recognition</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Link href="/vibes">
-                      <Button className={`${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 border-2 border-[#E8FF00] text-[#E8FF00]' : mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/50 border-2 border-[#FFB5D8] text-[#4A1818]' : 'bg-black/40 hover:bg-black/60 border-2 border-white text-white'} font-black rounded-full h-10 px-6 text-sm uppercase`}>
-                        VIEW ALL
-                      </Button>
-                    </Link>
-                    <Button 
-                      onClick={() => setShowAddSnapDialog(true)}
-                      className={`${mode === 'chaos' ? 'bg-gradient-to-r from-[#00FF87] to-[#00E676] hover:from-[#00FF87] hover:to-[#00FF87] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-10 px-6 text-sm uppercase`}
-                    >
-                      + GIVE A SNAP
-                    </Button>
-                  </div>
+                  <Button 
+                    onClick={() => setShowAddSnapDialog(true)}
+                    className={`${mode === 'chaos' ? 'bg-gradient-to-r from-[#00FF87] to-[#00E676] hover:from-[#00FF87] hover:to-[#00FF87] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-10 px-6 text-sm uppercase`}
+                  >
+                    + GIVE A SNAP
+                  </Button>
                 </div>
                 <h2 className="text-6xl font-black mb-4 uppercase" style={{ color: style.accent }}>Your Snaps</h2>
-                <div className="flex gap-2 mb-6">
-                  <button
-                    onClick={() => setSnapViewType('received')}
-                    className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
-                      snapViewType === 'received'
-                        ? mode === 'chaos'
-                          ? 'bg-[#E8FF00] text-black'
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSnapViewType('received')}
+                      className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
+                        snapViewType === 'received'
+                          ? mode === 'chaos'
+                            ? 'bg-[#E8FF00] text-black'
+                            : mode === 'chill'
+                            ? 'bg-[#FFB5D8] text-[#4A1818]'
+                            : 'bg-white text-black'
+                          : mode === 'chaos'
+                          ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
                           : mode === 'chill'
-                          ? 'bg-[#FFB5D8] text-[#4A1818]'
-                          : 'bg-white text-black'
-                        : mode === 'chaos'
-                        ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
-                        : mode === 'chill'
-                        ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
-                        : 'bg-black/40 text-white/60 border border-white/40'
-                    }`}
-                  >
-                    Received
-                  </button>
-                  <button
-                    onClick={() => setSnapViewType('given')}
-                    className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
-                      snapViewType === 'given'
-                        ? mode === 'chaos'
-                          ? 'bg-[#E8FF00] text-black'
+                          ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
+                          : 'bg-black/40 text-white/60 border border-white/40'
+                      }`}
+                    >
+                      Received
+                    </button>
+                    <button
+                      onClick={() => setSnapViewType('given')}
+                      className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
+                        snapViewType === 'given'
+                          ? mode === 'chaos'
+                            ? 'bg-[#E8FF00] text-black'
+                            : mode === 'chill'
+                            ? 'bg-[#FFB5D8] text-[#4A1818]'
+                            : 'bg-white text-black'
+                          : mode === 'chaos'
+                          ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
                           : mode === 'chill'
-                          ? 'bg-[#FFB5D8] text-[#4A1818]'
-                          : 'bg-white text-black'
-                        : mode === 'chaos'
-                        ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
-                        : mode === 'chill'
-                        ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
-                        : 'bg-black/40 text-white/60 border border-white/40'
-                    }`}
-                  >
-                    Given
-                  </button>
+                          ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
+                          : 'bg-black/40 text-white/60 border border-white/40'
+                      }`}
+                    >
+                      Given
+                    </button>
+                  </div>
+                  <Link href="/vibes">
+                    <Button className={`${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 border-2 border-[#E8FF00] text-[#E8FF00]' : mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/50 border-2 border-[#FFB5D8] text-[#4A1818]' : 'bg-black/40 hover:bg-black/60 border-2 border-white text-white'} font-black rounded-full h-10 px-6 text-sm uppercase`}>
+                      VIEW ALL
+                    </Button>
+                  </Link>
                 </div>
                 <div className="space-y-2 mb-6">
                   {snaps.length === 0 ? (
@@ -1765,16 +1765,23 @@ export default function TeamDashboard() {
                     snaps.map((snap, idx) => {
                       const senderName = snap.submitted_by_profile?.full_name || snap.submitted_by_profile?.email || 'Anonymous'
                       const recipientName = snap.mentioned_user_profile?.full_name || snap.mentioned_user_profile?.email || snap.mentioned || 'Team'
-                      const displayName = snapViewType === 'given' ? recipientName : senderName
                       return (
                         <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-4 border-2 transition-all hover:opacity-80`} style={{ borderColor: `${style.accent}66` }}>
                           <div className="flex items-start gap-3">
                             <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: style.accent }}></div>
                             <div className="flex-1">
-                              <p className={`text-base mb-2 leading-relaxed ${style.text}`}>{snap.snap_content}</p>
-                              <p className={`text-xs ${style.text}/60`}>
-                                {displayName}
-                              </p>
+                              {snapViewType === 'given' ? (
+                                <p className={`text-base leading-relaxed ${style.text}`}>
+                                  <span className="font-semibold">{recipientName}:</span> {snap.snap_content}
+                                </p>
+                              ) : (
+                                <>
+                                  <p className={`text-base mb-2 leading-relaxed ${style.text}`}>{snap.snap_content}</p>
+                                  <p className={`text-xs ${style.text}/60`}>
+                                    {senderName}
+                                  </p>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
