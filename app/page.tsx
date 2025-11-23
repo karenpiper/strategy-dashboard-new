@@ -1641,30 +1641,35 @@ export default function TeamDashboard() {
             {/* This Week Stats Bar */}
             {(() => {
               const style = mode === 'chaos' ? getSpecificCardStyle('friday-drop') : getCardStyle('work')
+              const stats = [
+                { value: '5', label: 'new business' },
+                { value: '8', label: 'pitches shipped' },
+                { value: '12', label: 'placeholder' },
+              ]
               return (
-                <Card className={`${style.bg} ${style.border} py-4 px-6 flex-[0_0_auto] ${getRoundedClass('rounded-[2.5rem]')}`}>
-                  <div className="flex items-center justify-between gap-6">
-                    <h2 className={`text-3xl font-black uppercase leading-none ${style.text} whitespace-nowrap`}>THIS WEEK</h2>
-                    <div className="flex gap-4">
-                      {[
-                        { value: '5', label: 'new business' },
-                        { value: '8', label: 'pitches shipped' },
-                        { value: '12', label: 'placeholder' },
-                      ].map((stat, index) => (
+                <Card className={`${style.bg} ${style.border} ${eventsExpanded ? 'py-3 px-4' : 'py-4 px-6'} flex-[0_0_auto] ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300`}>
+                  <div className={`flex items-center ${eventsExpanded ? 'justify-center gap-2' : 'justify-between gap-6'}`}>
+                    {!eventsExpanded && (
+                      <h2 className={`text-3xl font-black uppercase leading-none ${style.text} whitespace-nowrap`}>THIS WEEK</h2>
+                    )}
+                    <div className={`flex ${eventsExpanded ? 'gap-2' : 'gap-4'}`}>
+                      {stats.slice(0, eventsExpanded ? 2 : 3).map((stat, index) => (
                         <div 
                           key={stat.label} 
-                          className={`flex flex-col items-center justify-center px-4 py-3 ${getRoundedClass('rounded-2xl')}`}
+                          className={`flex flex-col items-center justify-center ${eventsExpanded ? 'px-2 py-1.5' : 'px-4 py-3'} ${getRoundedClass('rounded-2xl')} transition-all duration-300`}
                           style={{
                             backgroundColor: mode === 'chaos' ? 'rgba(0,0,0,0.2)' : mode === 'chill' ? 'rgba(74,24,24,0.15)' : 'rgba(0,0,0,0.25)',
                             animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
                           }}
                         >
-                          <span className={`text-4xl font-black ${style.text} leading-none`}>
+                          <span className={`${eventsExpanded ? 'text-2xl' : 'text-4xl'} font-black ${style.text} leading-none transition-all duration-300`}>
                             {stat.value}
                           </span>
-                          <span className={`text-xs font-black uppercase tracking-wider ${style.text} mt-1`}>
-                            {stat.label}
-                          </span>
+                          {!eventsExpanded && (
+                            <span className={`text-xs font-black uppercase tracking-wider ${style.text} mt-1 transition-opacity duration-300`}>
+                              {stat.label}
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1695,21 +1700,23 @@ export default function TeamDashboard() {
                 { label: 'Completed', count: '24', icon: CheckCircle, iconColor: mintColor }, // Green
               ]
               return (
-                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+                <Card className={`${style.bg} ${style.border} ${eventsExpanded ? 'p-4' : 'p-6'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300`}
                       style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
                 >
-                  <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>WORK</p>
-                  <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>PIPELINE</h2>
-                  <div className="space-y-2">
+                  {!eventsExpanded && (
+                    <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text} transition-opacity duration-300`}>WORK</p>
+                  )}
+                  <h2 className={`${eventsExpanded ? 'text-xl mb-3' : 'text-3xl mb-6'} font-black uppercase ${style.text} transition-all duration-300`}>PIPELINE</h2>
+                  <div className={`${eventsExpanded ? 'space-y-1.5' : 'space-y-2'} transition-all duration-300`}>
                     {pipelineItems.map((item) => {
                       const IconComponent = item.icon
                       return (
-                        <div key={item.label} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center justify-between`} style={{ backgroundColor: `${mintColor}33` }}>
-                          <div className="flex items-center gap-2">
-                            <IconComponent className="w-4 h-4" style={{ color: item.iconColor }} />
-                            <span className={`text-sm font-black ${style.text}`}>{item.label}</span>
+                        <div key={item.label} className={`${getRoundedClass('rounded-lg')} ${eventsExpanded ? 'p-2' : 'p-3'} flex items-center justify-between transition-all duration-300`} style={{ backgroundColor: `${mintColor}33` }}>
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <IconComponent className={`${eventsExpanded ? 'w-3 h-3 flex-shrink-0' : 'w-4 h-4'} transition-all duration-300`} style={{ color: item.iconColor }} />
+                            <span className={`${eventsExpanded ? 'text-xs' : 'text-sm'} font-black ${style.text} truncate transition-all duration-300`}>{item.label}</span>
                           </div>
-                          <span className={`text-lg font-black ${style.text}`}>{item.count}</span>
+                          <span className={`${eventsExpanded ? 'text-base' : 'text-lg'} font-black ${style.text} flex-shrink-0 ml-2 transition-all duration-300`}>{item.count}</span>
                         </div>
                       )
                     })}
