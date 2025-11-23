@@ -23,6 +23,7 @@ import { ProfileSetupModal } from '@/components/profile-setup-modal'
 import { createClient } from '@/lib/supabase/client'
 import { AddSnapDialog } from '@/components/add-snap-dialog'
 import { useGoogleCalendarToken } from '@/hooks/useGoogleCalendarToken'
+import { TeamPulseCard } from '@/components/team-pulse-card'
 
 // Force dynamic rendering to avoid SSR issues with context
 export const dynamic = 'force-dynamic'
@@ -1550,9 +1551,9 @@ export default function TeamDashboard() {
                       }
                       
                       return (
-                        <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-[10px] border-2 transition-all hover:opacity-80 relative`} style={{ borderColor: `${style.accent}66` }}>
-                          <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0" style={{ padding: '10px', width: '100px', height: '100px' }}>
+                        <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-3 border-2 transition-all hover:opacity-80 relative`} style={{ borderColor: `${style.accent}66` }}>
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0" style={{ padding: '5px', width: '50px', height: '50px' }}>
                               {profilePicture ? (
                                 <img 
                                   src={profilePicture} 
@@ -1563,7 +1564,7 @@ export default function TeamDashboard() {
                                 <div className="w-full h-full rounded-full flex items-center justify-center" style={{ 
                                   backgroundColor: style.accent
                                 }}>
-                                  <User className={`w-10 h-10 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
+                                  <User className={`w-5 h-5 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
                                 </div>
                               )}
                             </div>
@@ -2648,55 +2649,7 @@ export default function TeamDashboard() {
           })()}
 
           {/* Team Pulse */}
-          {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('team-pulse') : getCardStyle('team')
-            const barColor = mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#ffffff'
-            const barColor2 = mode === 'chaos' ? '#FF6B00' : mode === 'chill' ? '#FF6B35' : '#cccccc'
-            return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-              >
-                <Badge className={`${mode === 'chaos' ? 'bg-[#00FF87] text-black' : mode === 'chill' ? 'bg-[#C8D961] text-[#4A1818]' : 'bg-white text-black'} border-0 font-black mb-4 text-xs`}>+85%</Badge>
-                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>Team Pulse</h2>
-            <div className="space-y-4 mb-6">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                      <p className={`text-sm font-black ${style.text}`}>Happiness</p>
-                      <p className={`text-2xl font-black ${style.text}`}>85</p>
-                </div>
-                    <div className={`w-full rounded-full h-2 ${mode === 'chaos' ? 'bg-black/40' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'}`}>
-                      <div className="h-2 rounded-full" style={{ width: '85%', backgroundColor: barColor }} />
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                      <p className={`text-sm font-black ${style.text}`}>Energy</p>
-                      <p className={`text-2xl font-black ${style.text}`}>72</p>
-                </div>
-                    <div className={`w-full rounded-full h-2 ${mode === 'chaos' ? 'bg-black/40' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'}`}>
-                      <div className="h-2 rounded-full" style={{ width: '72%', backgroundColor: barColor2 }} />
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                  <div className={`${mode === 'chaos' ? 'bg-black/40' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-3 border-2`} style={{ borderColor: `${style.accent}40` }}>
-                    <p className={`text-xs font-black uppercase tracking-wider mb-1 ${style.text}`}>Excitements</p>
-                    <ul className={`text-xs space-y-1 ${style.text}/80`}>
-                  <li>• New project kick-off</li>
-                  <li>• Team offsite soon</li>
-                </ul>
-              </div>
-                  <div className={`${mode === 'chaos' ? 'bg-black/40' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-3 border-2`} style={{ borderColor: `${style.accent}40` }}>
-                    <p className={`text-xs font-black uppercase tracking-wider mb-1 ${style.text}`}>Frustrations</p>
-                    <ul className={`text-xs space-y-1 ${style.text}/80`}>
-                  <li>• Too many meetings</li>
-                  <li>• Unclear priorities</li>
-                </ul>
-              </div>
-            </div>
-          </Card>
-            )
-          })()}
+          <TeamPulseCard />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
