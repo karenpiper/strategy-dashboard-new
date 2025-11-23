@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     // Create slides
     const slideRecords = await createSlidesForDeck({
       deckId: deckRecord.id,
-      slides: labeledSlides,
+      slides: slides,
     })
 
     return NextResponse.json({
