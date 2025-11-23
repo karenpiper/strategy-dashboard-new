@@ -1188,7 +1188,7 @@ export default function TeamDashboard() {
             }
             
             return (
-              <div className="border-l border-white pl-6">
+              <div className="border-l border-white pl-[54px]">
                 <SpotifyPlayer
                   playlist={playlistData}
                   isPlaying={isPlaying}

@@ -112,8 +112,18 @@ export default function WorkSamplesPage() {
   }
 
   const getRoundedClass = (base: string) => {
-    if (mode === 'chaos') return base.replace('rounded', 'rounded-[1.5rem]')
-    if (mode === 'chill') return base.replace('rounded', 'rounded-2xl')
+    if (mode === 'chaos') {
+      // Replace rounded classes, preserving direction (t, b, l, r, tl, tr, bl, br)
+      return base.replace(/rounded(-[tblr]{1,2})?(-\w+)?/g, (match, direction) => {
+        return direction ? `rounded${direction}-[1.5rem]` : 'rounded-[1.5rem]'
+      })
+    }
+    if (mode === 'chill') {
+      // Replace rounded classes, preserving direction
+      return base.replace(/rounded(-[tblr]{1,2})?(-\w+)?/g, (match, direction) => {
+        return direction ? `rounded${direction}-2xl` : 'rounded-2xl'
+      })
+    }
     return base
   }
 
