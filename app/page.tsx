@@ -2111,19 +2111,22 @@ export default function TeamDashboard() {
                 
                 return (
                   <div key={project.id} className="relative flex items-start gap-2 py-1">
-                    {/* Dot */}
-                    <div className="relative z-10 mt-1.5 size-1.5 rounded-full shrink-0" style={{ backgroundColor: style.text === 'text-black' ? '#000' : '#fff' }} />
-                    {/* Dotted line connector */}
-                    {index < total - 1 && (
-                      <div className="absolute left-0.5 top-3 bottom-0 w-px border-l border-dashed opacity-30" style={{ borderColor: style.text === 'text-black' ? '#000' : '#fff' }} />
-                    )}
+                    {/* Left side with dot and connector line */}
+                    <div className="relative flex flex-col items-center shrink-0">
+                      {/* Dot */}
+                      <div className="relative z-10 mt-1.5 size-1.5 rounded-full shrink-0" style={{ backgroundColor: '#000' }} />
+                      {/* Dotted line connector */}
+                      {index < total - 1 && (
+                        <div className="absolute left-0.5 top-3 bottom-0 w-px border-l border-dashed opacity-30" style={{ borderColor: '#000' }} />
+                      )}
+                    </div>
                     {/* Content */}
                     <div className="flex-1 min-w-0 text-xs">
                       {date && (
-                        <div className="opacity-60 mb-0.5" style={{ color: style.text === 'text-black' ? '#000' : '#fff' }}>{date}</div>
+                        <div className="text-gray-600 mb-0.5">{date}</div>
                       )}
-                      <div className={`font-semibold ${style.text} truncate`}>{project.name}</div>
-                      <div className="opacity-60 truncate" style={{ color: style.text === 'text-black' ? '#000' : '#fff' }}>{displayText}</div>
+                      <div className="font-bold text-black truncate">{project.name}</div>
+                      <div className="text-gray-600 truncate">{displayText}</div>
                     </div>
                   </div>
                 )
@@ -2181,22 +2184,23 @@ export default function TeamDashboard() {
                         <span className={`${eventsExpanded ? 'text-xs' : 'text-sm'} font-black ${style.text}`}>Completed</span>
                         <span className={`${eventsExpanded ? 'text-sm' : 'text-base'} font-black ${style.text}`}>{pipelineLoading ? '0' : completedCount}</span>
                       </div>
-                      {!pipelineLoading && completedProjects.length > 0 && (
+                      {!pipelineLoading && completedProjects.length > 0 ? (
                         <div className="space-y-0.5 pl-3">
                           {completedProjects.map((project, index) => 
                             renderProjectPreview(project, index, completedProjects.length)
                           )}
                         </div>
+                      ) : (
+                        !pipelineLoading && (
+                          <div className="pl-3">
+                            <Link href="/admin/pipeline" className="inline-flex items-center gap-1 text-xs font-black text-black hover:opacity-70 transition-opacity">
+                              View All <ChevronRight className="w-3 h-3" />
+                            </Link>
+                          </div>
+                        )
                       )}
                     </div>
                   </div>
-                  
-                  {/* Link to full pipeline page */}
-                  <Link href="/admin/pipeline" className="mt-4 block">
-                    <div className={`text-xs font-black ${style.text} opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1`}>
-                      View All <ChevronRight className="w-3 h-3" />
-                    </div>
-                  </Link>
                 </Card>
               )
             })()}
