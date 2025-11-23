@@ -236,8 +236,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       {/* Main Content Area - Centered */}
       <main className="max-w-[1200px] mx-auto px-6 py-10 mt-20">
         <div className="flex gap-6">
-          {/* Left Sidebar Card - 1/4 width - Fixed */}
-          <Card className={`w-1/4 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-4 flex flex-col sticky top-24 h-[calc(100vh-8rem)] overflow-y-auto`} style={{ 
+          {/* Left Sidebar Card - 1/4 width - Fixed height, doesn't scroll */}
+          <Card className={`w-1/4 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-4 flex flex-col sticky top-24 h-fit`} style={{ 
             borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#FFFFFF',
             borderWidth: mode === 'chaos' ? '2px' : '0px'
           }}>
@@ -247,9 +247,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
             {/* User Profile Section */}
             {authUser && (
-              <div className={`mb-4 p-2 ${getRoundedClass('rounded-lg')} border ${getBorderClass()}`}>
+              <div className={`mb-4 p-2 ${getRoundedClass('rounded-lg')}`}>
                 <div className="flex items-center gap-2 mb-1">
-                  <AccountMenu />
+                  <div className="[&>button]:bg-transparent [&>button]:border-0 [&>button]:p-0 [&>button]:shadow-none [&>button]:ring-0 [&>button]:ring-offset-0 [&>button]:hover:bg-transparent [&>button]:focus:bg-transparent [&>button]:focus:ring-0">
+                    <AccountMenu />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <Shield className="w-2.5 h-2.5" />

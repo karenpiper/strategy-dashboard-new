@@ -317,6 +317,12 @@ export default function PipelinePage() {
       .sort((a, b) => a.name.localeCompare(b.name))
   }
 
+  const getTotalRevenue = (projectList: PipelineProject[]) => {
+    return projectList.reduce((sum, project) => {
+      return sum + (project.revenue || 0)
+    }, 0)
+  }
+
   const wonProjects = getProjectsByStatus('Won')
   const lostProjects = getProjectsByStatus('Lost')
 
@@ -551,6 +557,9 @@ export default function PipelinePage() {
                 <p className="text-sm text-black opacity-60">
                   {columnProjects.length} {columnProjects.length === 1 ? 'project' : 'projects'}
                 </p>
+                <p className="text-sm font-semibold text-black mt-1">
+                  {formatCurrency(getTotalRevenue(columnProjects))}
+                </p>
               </div>
 
               {/* Column Content - Scrollable */}
@@ -657,6 +666,9 @@ export default function PipelinePage() {
               <p className="text-sm text-black opacity-60">
                 {wonProjects.length} {wonProjects.length === 1 ? 'project' : 'projects'}
               </p>
+              <p className="text-sm font-semibold text-black mt-1">
+                {formatCurrency(getTotalRevenue(wonProjects))}
+              </p>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {wonProjects.map((project) => {
@@ -729,6 +741,9 @@ export default function PipelinePage() {
               </h2>
               <p className="text-sm text-black opacity-60">
                 {lostProjects.length} {lostProjects.length === 1 ? 'project' : 'projects'}
+              </p>
+              <p className="text-sm font-semibold text-black mt-1">
+                {formatCurrency(getTotalRevenue(lostProjects))}
               </p>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
