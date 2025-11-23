@@ -74,6 +74,7 @@ export default function WorkSampleAdmin() {
   const [newTypeName, setNewTypeName] = useState('')
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<string>('')
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const supabase = createClient()
@@ -303,7 +304,7 @@ export default function WorkSampleAdmin() {
     }
   }
 
-  // Handle file upload to Google Drive
+  // Handle file upload to Google Drive (chunked upload)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -335,31 +336,98 @@ export default function WorkSampleAdmin() {
     setSelectedFile(file)
 
     try {
-      const uploadFormData = new FormData()
-      uploadFormData.append('file', file)
-
-      const response = await fetch('/api/work-samples/upload-to-drive', {
+      // Step 1: Create upload session (creates empty file and gets upload URL)
+      const sessionResponse = await fetch('/api/work-samples/create-upload-session', {
         method: 'POST',
-        body: uploadFormData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          fileSize: file.size,
+        }),
       })
 
-      const result = await response.json()
+      const sessionResult = await sessionResponse.json()
 
-      if (response.ok) {
-        setFormData(prev => ({
-          ...prev,
-          file_url: result.fileUrl,
-          file_name: result.fileName,
-        }))
-      } else {
-        throw new Error(result.error || 'Failed to upload file')
+      if (!sessionResponse.ok) {
+        throw new Error(sessionResult.error || 'Failed to create upload session')
+      }
+
+      const { fileId, uploadUrl } = sessionResult
+
+      if (!fileId || !uploadUrl) {
+        throw new Error('Failed to get file ID and upload URL from session')
+      }
+
+      // Step 2: Upload file in chunks to Google Drive via our server
+      const CHUNK_SIZE = 2 * 1024 * 1024 // 2MB chunks (safe for Vercel's 4.5MB limit)
+      const fileSize = file.size
+      let uploadedBytes = 0
+
+      // Upload file in chunks
+      while (uploadedBytes < fileSize) {
+        const chunkEnd = Math.min(uploadedBytes + CHUNK_SIZE - 1, fileSize - 1)
+        const chunk = file.slice(uploadedBytes, chunkEnd + 1)
+        
+        // Update progress
+        const progress = Math.round((uploadedBytes / fileSize) * 100)
+        setUploadProgress(`Uploading... ${progress}%`)
+
+        const uploadFormData = new FormData()
+        uploadFormData.append('uploadUrl', uploadUrl)
+        uploadFormData.append('fileId', fileId)
+        uploadFormData.append('chunk', chunk)
+        uploadFormData.append('startByte', uploadedBytes.toString())
+        uploadFormData.append('endByte', chunkEnd.toString())
+        uploadFormData.append('fileSize', fileSize.toString())
+        uploadFormData.append('mimeType', file.type || 'application/octet-stream')
+
+        const uploadResponse = await fetch('/api/work-samples/upload-chunk', {
+          method: 'POST',
+          body: uploadFormData,
+        })
+
+        const uploadResult = await uploadResponse.json()
+
+        if (!uploadResponse.ok) {
+          throw new Error(uploadResult.error || 'Failed to upload chunk to Google Drive')
+        }
+
+        // Check if upload is complete
+        if (uploadResult.complete && uploadResult.fileId) {
+          // Upload complete - update form data
+          setUploadProgress('Upload complete!')
+          setFormData(prev => ({
+            ...prev,
+            file_url: uploadResult.fileUrl || `https://drive.google.com/file/d/${uploadResult.fileId}/view`,
+            file_name: file.name,
+          }))
+          break
+        }
+
+        // Update uploaded bytes based on response
+        if (uploadResult.range) {
+          // Parse range header (e.g., "bytes=0-2097151")
+          const match = uploadResult.range.match(/bytes=0-(\d+)/)
+          if (match) {
+            uploadedBytes = parseInt(match[1], 10) + 1
+          } else {
+            uploadedBytes = chunkEnd + 1
+          }
+        } else {
+          uploadedBytes = chunkEnd + 1
+        }
       }
     } catch (err: any) {
       console.error('Error uploading file:', err)
+      setUploadProgress('')
       alert(err.message || 'Failed to upload file')
       setSelectedFile(null)
     } finally {
       setUploadingFile(false)
+      setUploadProgress('')
     }
   }
 
@@ -393,6 +461,16 @@ export default function WorkSampleAdmin() {
   const handleAdd = async () => {
     if (!formData.project_name || !formData.description) {
       alert('Project name and description are required')
+      return
+    }
+
+    if (!formData.file_url && !formData.file_link) {
+      alert('Either a file upload or file link is required')
+      return
+    }
+
+    if (!formData.thumbnail_url) {
+      alert('Thumbnail image is required')
       return
     }
 
@@ -750,20 +828,34 @@ export default function WorkSampleAdmin() {
                     </select>
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>File Link (optional)</Label>
+                    <Label className={cardStyle.text}>File Upload <span className="text-red-500">*</span></Label>
+                    <p className={`text-xs ${cardStyle.text}/70 mb-1`}>PDF, Keynote, ZIP, PPT, DOC (max 100MB)</p>
                     <Input
-                      type="url"
-                      value={formData.file_link}
-                      onChange={(e) => setFormData({ ...formData, file_link: e.target.value })}
+                      type="file"
+                      accept=".pdf,.zip,.ppt,.pptx,.doc,.docx,.key"
+                      onChange={handleFileUpload}
+                      disabled={uploadingFile}
+                      required
                       className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="https://example.com/file"
                     />
-                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                      Alternative to file upload - provide a link to the file
-                    </p>
+                    {selectedFile && (
+                      <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                        Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
+                    {formData.file_name && !selectedFile && (
+                      <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                        Current file: {formData.file_name}
+                      </p>
+                    )}
+                    {uploadingFile && (
+                      <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                        {uploadProgress || 'Uploading to Google Drive...'}
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>Thumbnail Image (optional)</Label>
+                    <Label className={cardStyle.text}>Thumbnail <span className="text-red-500">*</span></Label>
                     <div>
                       {thumbnailPreview && (
                         <div className="mb-2">
@@ -779,32 +871,24 @@ export default function WorkSampleAdmin() {
                         accept="image/*"
                         onChange={handleThumbnailUpload}
                         disabled={uploadingThumbnail}
+                        required
                         className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                       />
                       {uploadingThumbnail && <p className={`text-xs ${cardStyle.text}/70 mt-1`}>Uploading...</p>}
                     </div>
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>File Upload (optional)</Label>
-                    <p className={`text-xs ${cardStyle.text}/70 mb-1`}>PDF, Keynote, ZIP, PPT, DOC (max 100MB)</p>
+                    <Label className={cardStyle.text}>Link (Figma or Keynote) (optional)</Label>
                     <Input
-                      type="file"
-                      accept=".pdf,.zip,.ppt,.pptx,.doc,.docx,.key"
-                      onChange={handleFileUpload}
-                      disabled={uploadingFile}
+                      type="url"
+                      value={formData.file_link}
+                      onChange={(e) => setFormData({ ...formData, file_link: e.target.value })}
                       className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="https://example.com/file"
                     />
-                    {selectedFile && (
-                      <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                        Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                      </p>
-                    )}
-                    {formData.file_name && !selectedFile && (
-                      <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                        Current file: {formData.file_name}
-                      </p>
-                    )}
-                    {uploadingFile && <p className={`text-xs ${cardStyle.text}/70 mt-1`}>Uploading to Google Drive...</p>}
+                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                      Link Figma or Keynote file here (optional)
+                    </p>
                   </div>
                 </div>
               </div>
