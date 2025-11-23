@@ -236,7 +236,7 @@ export default function WorkSamplesPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search work samples..."
-                  className={`pl-10 h-12 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818] placeholder:text-gray-400' : 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500'}`}
+                  className={`pl-10 h-12 ${getRoundedClass('rounded-xl')} ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818] placeholder:text-gray-400' : 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500'}`}
                 />
               </div>
             </form>
@@ -249,7 +249,7 @@ export default function WorkSamplesPage() {
               <select
                 value={filterAuthorId || 'all'}
                 onChange={(e) => setFilterAuthorId(e.target.value === 'all' ? null : e.target.value)}
-                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-lg')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
+                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-xl')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
               >
                 <option value="all">All Authors</option>
                 {uniqueAuthors.map(author => (
@@ -263,7 +263,7 @@ export default function WorkSamplesPage() {
               <select
                 value={filterTypeId || 'all'}
                 onChange={(e) => setFilterTypeId(e.target.value === 'all' ? null : e.target.value)}
-                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-lg')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
+                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-xl')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
               >
                 <option value="all">All Types</option>
                 {uniqueTypes.map(type => (
@@ -277,7 +277,7 @@ export default function WorkSamplesPage() {
               <select
                 value={filterClient || 'all'}
                 onChange={(e) => setFilterClient(e.target.value === 'all' ? null : e.target.value)}
-                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-lg')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
+                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-xl')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
               >
                 <option value="all">All Clients</option>
                 {uniqueClients.map(client => (
@@ -292,14 +292,14 @@ export default function WorkSamplesPage() {
             <div className="flex items-center gap-2 border-l pl-4 ml-4">
               <button
                 onClick={() => setViewMode('thumbnails')}
-                className={`h-12 px-4 ${mode === 'chaos' ? viewMode === 'thumbnails' ? 'bg-[#C4F500] text-black border-[#C4F500]' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50' : mode === 'chill' ? viewMode === 'thumbnails' ? 'bg-[#FFC043] text-[#4A1818] border-[#FFC043]' : 'bg-white border-gray-300 text-[#4A1818] hover:bg-gray-50' : viewMode === 'thumbnails' ? 'bg-white text-black border-white' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50'} border ${getRoundedClass('rounded-lg')} flex items-center justify-center transition-colors`}
+                className={`h-12 px-4 ${mode === 'chaos' ? viewMode === 'thumbnails' ? 'bg-[#C4F500] text-black border-[#C4F500]' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50' : mode === 'chill' ? viewMode === 'thumbnails' ? 'bg-[#FFC043] text-[#4A1818] border-[#FFC043]' : 'bg-white border-gray-300 text-[#4A1818] hover:bg-gray-50' : viewMode === 'thumbnails' ? 'bg-white text-black border-white' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50'} border ${getRoundedClass('rounded-xl')} flex items-center justify-center transition-colors`}
                 title="Thumbnail View"
               >
                 <Grid3x3 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`h-12 px-4 ${mode === 'chaos' ? viewMode === 'list' ? 'bg-[#C4F500] text-black border-[#C4F500]' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50' : mode === 'chill' ? viewMode === 'list' ? 'bg-[#FFC043] text-[#4A1818] border-[#FFC043]' : 'bg-white border-gray-300 text-[#4A1818] hover:bg-gray-50' : viewMode === 'list' ? 'bg-white text-black border-white' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50'} border ${getRoundedClass('rounded-lg')} flex items-center justify-center transition-colors`}
+                className={`h-12 px-4 ${mode === 'chaos' ? viewMode === 'list' ? 'bg-[#C4F500] text-black border-[#C4F500]' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50' : mode === 'chill' ? viewMode === 'list' ? 'bg-[#FFC043] text-[#4A1818] border-[#FFC043]' : 'bg-white border-gray-300 text-[#4A1818] hover:bg-gray-50' : viewMode === 'list' ? 'bg-white text-black border-white' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50'} border ${getRoundedClass('rounded-xl')} flex items-center justify-center transition-colors`}
                 title="List View"
               >
                 <List className="w-4 h-4" />
@@ -312,7 +312,7 @@ export default function WorkSamplesPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-lg')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
+                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818]' : 'bg-black/30 border-gray-600 text-white'} border ${getRoundedClass('rounded-xl')} text-sm font-medium focus:outline-none focus:ring-2 ${mode === 'chaos' ? 'focus:ring-[#C4F500]' : mode === 'chill' ? 'focus:ring-[#FFC043]' : 'focus:ring-white'}`}
               >
                 <option value="date">Date</option>
                 <option value="name">Name</option>
@@ -320,7 +320,7 @@ export default function WorkSamplesPage() {
               </select>
               <button
                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white hover:bg-black/50' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818] hover:bg-gray-50' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50'} border ${getRoundedClass('rounded-lg')} flex items-center justify-center transition-colors`}
+                className={`h-12 px-4 ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white hover:bg-black/50' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818] hover:bg-gray-50' : 'bg-black/30 border-gray-600 text-white hover:bg-black/50'} border ${getRoundedClass('rounded-xl')} flex items-center justify-center transition-colors`}
                 title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
               >
                 {sortOrder === 'asc' ? (
@@ -356,7 +356,7 @@ export default function WorkSamplesPage() {
                             : sample.thumbnail_url
                         }
                         alt={sample.project_name}
-                        className={`w-full aspect-video object-cover ${getRoundedClass('rounded-t-xl')}`}
+                        className={`w-full aspect-video object-cover ${getRoundedClass('rounded-t-2xl')}`}
                         onError={(e) => {
                           // Try proxy if direct URL fails (for Supabase URLs)
                           const target = e.target as HTMLImageElement
@@ -374,7 +374,7 @@ export default function WorkSamplesPage() {
                         }}
                       />
                     ) : null}
-                    <div className={`w-full aspect-video ${getRoundedClass('rounded-t-xl')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''}`}>
+                    <div className={`w-full aspect-video ${getRoundedClass('rounded-t-2xl')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''}`}>
                       <span className="text-gray-400 text-xs">No Image</span>
                     </div>
 
@@ -452,7 +452,7 @@ export default function WorkSamplesPage() {
                               : sample.thumbnail_url
                           }
                           alt={sample.project_name}
-                          className={`w-full h-32 md:h-full object-cover ${getRoundedClass('rounded-lg')}`}
+                          className={`w-full h-32 md:h-full object-cover ${getRoundedClass('rounded-xl')}`}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement
                             const originalSrc = target.src
@@ -468,7 +468,7 @@ export default function WorkSamplesPage() {
                           }}
                         />
                       ) : null}
-                      <div className={`w-full h-32 md:h-full ${getRoundedClass('rounded-lg')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''}`}>
+                      <div className={`w-full h-32 md:h-full ${getRoundedClass('rounded-xl')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''}`}>
                         <span className="text-gray-400 text-xs">No Image</span>
                       </div>
                     </div>

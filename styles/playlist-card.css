@@ -78,7 +78,7 @@
 .playlist-card .artists.clamp { display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden; }
 
 /* Enhanced EQ animation (16 bars) */
-.playlist-card .eq-container { display: flex; justify-content: center; margin-top: 1rem; }
+.playlist-card .eq-container { display: flex; justify-content: flex-start; margin-top: 1rem; }
 .playlist-card .eq { 
   display: flex; 
   align-items: flex-end; 
@@ -86,7 +86,7 @@
   height: 24px; 
   opacity: 0.8; 
   width: min(400px, 100%); 
-  justify-content: center; 
+  justify-content: flex-start; 
 }
 .playlist-card .eq-bar { 
   width: 4px; 
@@ -112,7 +112,7 @@
 }
 
 /* utilities */
-.playlist-card .media { overflow: visible; position: relative; display:flex; justify-content:center; }
+.playlist-card .media { overflow: visible; position: relative; display:flex; justify-content:flex-start; }
 .playlist-card .mediaGroup{ position: relative; width: calc(var(--cover) + var(--visible)); overflow: visible; }
 .playlist-card .mediaGroup img{ display:block; }
 .playlist-card .control-btn{ width:48px; height:48px; border-radius:9999px !important; display:inline-flex; align-items:center; justify-content:center; appearance:none; }

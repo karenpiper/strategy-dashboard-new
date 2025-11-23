@@ -1188,7 +1188,7 @@ export default function TeamDashboard() {
             }
             
             return (
-              <div>
+              <div className="border-l border-white pl-6">
                 <SpotifyPlayer
                   playlist={playlistData}
                   isPlaying={isPlaying}
@@ -1555,7 +1555,7 @@ export default function TeamDashboard() {
                       </form>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-8">
+                  <div className="grid grid-cols-4 gap-8">
                     {workSamples.length > 0 ? (
                       workSamples.map((sample) => (
                         <div key={sample.id} className="flex flex-col">
@@ -1569,7 +1569,7 @@ export default function TeamDashboard() {
                                   : sample.thumbnail_url
                               }
                               alt={sample.project_name}
-                              className={`w-full aspect-video object-cover ${getRoundedClass('rounded-lg')} mb-3`}
+                              className={`w-full aspect-video object-cover ${getRoundedClass('rounded-xl')} mb-3 border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'}`}
                               onError={(e) => {
                                 // Try proxy if direct URL fails (for Supabase URLs)
                                 const target = e.target as HTMLImageElement
@@ -1587,7 +1587,7 @@ export default function TeamDashboard() {
                               }}
                             />
                           ) : null}
-                          <div className={`w-full aspect-video ${getRoundedClass('rounded-lg')} mb-3 bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''}`}>
+                          <div className={`w-full aspect-video ${getRoundedClass('rounded-xl')} mb-3 bg-gray-200 flex items-center justify-center border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${sample.thumbnail_url ? 'hidden' : ''}`}>
                             <span className="text-gray-400 text-xs">No Image</span>
                           </div>
                           <div className="flex flex-col gap-2">
@@ -1636,7 +1636,7 @@ export default function TeamDashboard() {
                         </div>
                       ))
                     ) : (
-                      <p className={`text-sm col-span-3 ${textStyle}/70`}>No work samples available</p>
+                      <p className={`text-sm col-span-4 ${textStyle}/70`}>No work samples available</p>
                     )}
                   </div>
                 </div>
