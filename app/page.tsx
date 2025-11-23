@@ -25,6 +25,7 @@ import { AddSnapDialog } from '@/components/add-snap-dialog'
 import { useGoogleCalendarToken } from '@/hooks/useGoogleCalendarToken'
 import { TeamPulseCard } from '@/components/team-pulse-card'
 import { Footer } from '@/components/footer'
+import { BeastBabeCard } from '@/components/beast-babe-card'
 
 // Force dynamic rendering to avoid SSR issues with context
 export const dynamic = 'force-dynamic'
@@ -1496,6 +1497,7 @@ export default function TeamDashboard() {
                       return (
                         <Button 
                           key={label} 
+                          onClick={label === 'Give Snap' ? () => setShowAddSnapDialog(true) : undefined}
                           className={`${buttonClasses} font-semibold ${getRoundedClass('rounded-full')} py-3 md:py-4 px-6 md:px-8 text-base md:text-lg tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
                           style={buttonStyle}
                         >
@@ -1764,24 +1766,7 @@ export default function TeamDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 items-stretch">
           <div className="flex flex-col h-full space-y-6">
             {/* Beast Babe */}
-            {(() => {
-              const style = mode === 'chaos' ? getSpecificCardStyle('beast-babe') : getCardStyle('recognition')
-              return (
-                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} flex-shrink-0`}
-                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-                >
-                  <p className="text-xs uppercase tracking-wider mb-2 font-black" style={{ color: style.accent }}>This Week's</p>
-                  <h2 className={`text-4xl font-black mb-6 uppercase ${style.text}`}>BEAST<br/>BABE</h2>
-              <div className="flex items-center justify-center mb-4">
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: style.accent }}>
-                      <Trophy className={`w-10 h-10 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
-                </div>
-              </div>
-                  <p className={`text-2xl font-black text-center ${style.text}`}>Sarah J.</p>
-                  <p className={`text-sm text-center font-medium ${style.text}/80`}>42 Snaps Received</p>
-            </Card>
-              )
-            })()}
+            <BeastBabeCard />
 
             {/* Wins Wall */}
             {(() => {
