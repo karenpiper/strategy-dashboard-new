@@ -116,7 +116,7 @@ export function TeamPulseCard() {
   const [highestQuestion, setHighestQuestion] = useState<QuestionSummary | null>(null)
   const [lowestQuestion, setLowestQuestion] = useState<QuestionSummary | null>(null)
 
-  // Load 2 random questions on mount - always get fresh questions
+  // Load 1 random question on mount - always get fresh questions
   useEffect(() => {
     async function loadQuestions() {
       try {
@@ -124,10 +124,12 @@ export function TeamPulseCard() {
         const response = await fetch(`/api/team-pulse/questions?t=${Date.now()}`)
         if (response.ok) {
           const data = await response.json()
-          setQuestions(data.questions || [])
+          // Limit to 1 question
+          const questions = data.questions || []
+          setQuestions(questions.slice(0, 1))
           // Initialize responses with default score of 50
           const initialResponses: Record<string, PulseResponse> = {}
-          data.questions?.forEach((q: PulseQuestion) => {
+          questions.slice(0, 1).forEach((q: PulseQuestion) => {
             initialResponses[q.question_key] = {
               questionKey: q.question_key,
               score: 50,
@@ -254,15 +256,16 @@ export function TeamPulseCard() {
     return base
   }
 
+  // PURPLE SYSTEM: Purple (#9333EA), Deep Purple (#7C3AED), Lavender (#C084FC), Lime Green (#84CC16)
   const style = mode === 'chaos' 
-    ? { bg: 'bg-white', border: 'border-0', text: 'text-black', accent: '#00FF87' }
+    ? { bg: 'bg-[#9333EA]', border: 'border-0', text: 'text-white', accent: '#C084FC' } // Purple bg with Lavender accent
     : mode === 'chill'
-    ? { bg: 'bg-white', border: 'border-0', text: 'text-[#4A1818]', accent: '#C8D961' }
-    : { bg: 'bg-black', border: 'border-0', text: 'text-white', accent: '#ffffff' }
+    ? { bg: 'bg-white', border: 'border-0', text: 'text-[#4A1818]', accent: '#C084FC' }
+    : { bg: 'bg-black', border: 'border-0', text: 'text-white', accent: '#C084FC' }
 
-  const barColor = mode === 'chaos' ? '#00FF87' : mode === 'chill' ? '#C8D961' : '#ffffff'
-  const trackBg = mode === 'chaos' ? 'rgba(0, 0, 0, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.2)'
-  const thumbBorder = mode === 'chaos' ? '#000' : mode === 'chill' ? '#4A1818' : '#fff'
+  const barColor = mode === 'chaos' ? '#C084FC' : mode === 'chill' ? '#C084FC' : '#C084FC'
+  const trackBg = mode === 'chaos' ? 'rgba(255, 255, 255, 0.2)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.2)'
+  const thumbBorder = mode === 'chaos' ? '#fff' : mode === 'chill' ? '#4A1818' : '#fff'
 
   // Show results if submitted
   if (currentStep === 'results' && hasSubmitted) {
@@ -285,16 +288,16 @@ export function TeamPulseCard() {
         <div className="p-4 pb-3 flex-shrink-0 relative z-10">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className={`p-1.5 rounded-lg ${mode === 'chaos' ? 'bg-[#00FF87]/20' : mode === 'chill' ? 'bg-[#C8D961]/20' : 'bg-white/20'}`}>
+              <div className={`p-1.5 rounded-lg ${mode === 'chaos' ? 'bg-[#C084FC]/20' : mode === 'chill' ? 'bg-[#C084FC]/20' : 'bg-white/20'}`}>
                 <TrendingUp className={`w-4 h-4 ${style.text}`} />
               </div>
               <div>
-                <h2 className={`text-xl font-black uppercase ${style.text} tracking-tighter`}>Team Pulse</h2>
+                <h2 className={`text-xl font-black uppercase ${style.text} tracking-tighter`}>Pulse Check</h2>
                 <p className={`text-xs font-bold ${style.text}/70 mt-0.5 uppercase tracking-wider`}>This week's results</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge className={`${mode === 'chaos' ? 'bg-[#00FF87] text-black' : mode === 'chill' ? 'bg-[#C8D961] text-[#4A1818]' : 'bg-white text-black'} border-0 font-black text-xs px-2 py-0.5`}>
+              <Badge className={`${mode === 'chaos' ? 'bg-[#C084FC] text-black' : mode === 'chill' ? 'bg-[#C084FC] text-[#4A1818]' : 'bg-white text-black'} border-0 font-black text-xs px-2 py-0.5`}>
                 {totalResponses} {totalResponses === 1 ? 'response' : 'responses'}
               </Badge>
               <Button
@@ -303,9 +306,10 @@ export function TeamPulseCard() {
                   fetch(`/api/team-pulse/questions?t=${Date.now()}`)
                     .then(res => res.json())
                     .then(data => {
-                      setQuestions(data.questions || [])
+                      const questions = data.questions || []
+                      setQuestions(questions.slice(0, 1))
                       const initialResponses: Record<string, PulseResponse> = {}
-                      data.questions?.forEach((q: PulseQuestion) => {
+                      questions.slice(0, 1).forEach((q: PulseQuestion) => {
                         initialResponses[q.question_key] = {
                           questionKey: q.question_key,
                           score: 50,
@@ -317,13 +321,12 @@ export function TeamPulseCard() {
                     })
                     .catch(err => console.error('Error loading questions:', err))
                 }}
-                variant="outline"
-                className={`${getRoundedClass('rounded-lg')} text-xs h-7 px-3 ${
+                className={`${getRoundedClass('rounded-full')} text-xs h-7 px-3 backdrop-blur-md shadow-lg transition-all ${
                   mode === 'chaos' 
-                    ? 'bg-black/10 border-black/20 text-black hover:bg-black/20' 
+                    ? 'bg-white/20 text-white hover:bg-white/30 hover:shadow-xl border-0' 
                     : mode === 'chill'
-                    ? 'bg-[#4A1818]/10 border-[#4A1818]/20 text-[#4A1818] hover:bg-[#4A1818]/20'
-                    : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                    ? 'bg-white/30 text-[#4A1818] hover:bg-white/40 hover:shadow-xl border-0'
+                    : 'bg-white/20 text-white hover:bg-white/30 hover:shadow-xl border-0'
                 }`}
               >
                 New Questions
@@ -448,13 +451,12 @@ export function TeamPulseCard() {
                   loadAggregatedData()
                   setCurrentStep('results')
                 }}
-                variant="outline"
-                className={`${getRoundedClass('rounded-lg')} text-xs h-8 px-4 ${
+                className={`${getRoundedClass('rounded-full')} text-xs h-8 px-4 backdrop-blur-md shadow-lg transition-all ${
                   mode === 'chaos' 
-                    ? 'bg-black/10 border-black/20 text-black hover:bg-black/20' 
+                    ? 'bg-white/20 text-white hover:bg-white/30 hover:shadow-xl border-0' 
                     : mode === 'chill'
-                    ? 'bg-[#4A1818]/10 border-[#4A1818]/20 text-[#4A1818] hover:bg-[#4A1818]/20'
-                    : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                    ? 'bg-white/30 text-[#4A1818] hover:bg-white/40 hover:shadow-xl border-0'
+                    : 'bg-white/20 text-white hover:bg-white/30 hover:shadow-xl border-0'
                 }`}
               >
                 View Results
@@ -462,21 +464,12 @@ export function TeamPulseCard() {
             )}
           </div>
           
-          {/* Header matching section header style */}
-          <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
-            {mode === 'code' ? (
-              <>
-                <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
-                <span className="text-[#808080]">TEAM PULSE</span>
-                <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
-              </>
-            ) : (
-              <>
-                <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
-                Team Pulse
-              </>
-            )}
-          </p>
+          {/* Header matching horoscope header style */}
+          <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
+            <TrendingUp className="w-4 h-4" />
+            <span className="uppercase tracking-wider font-black text-xs">Pulse Check</span>
+          </div>
+          <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.accent }}>PULSE<br/>CHECK</h2>
           
           {hasSubmitted && (
             <div className={`mb-4 p-2 ${getRoundedClass('rounded-lg')} ${
@@ -494,7 +487,7 @@ export function TeamPulseCard() {
         </div>
         
         <div className="flex-1 px-6 pb-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             {questions.map((question, index) => {
               const response = responses[question.question_key]
               const score = response?.score ?? 50
@@ -568,10 +561,10 @@ export function TeamPulseCard() {
           <Button
             onClick={handleSubmit}
             disabled={!allAnswered || isSubmitting}
-            className={`w-full ${getRoundedClass('rounded-lg')} h-10 ${
-              mode === 'chaos' ? 'bg-[#00FF87] text-black hover:bg-[#00FF87]/80' :
-              mode === 'chill' ? 'bg-[#C8D961] text-[#4A1818] hover:bg-[#C8D961]/80' :
-              'bg-white text-black hover:bg-white/80'
+            className={`w-full ${getRoundedClass('rounded-full')} h-10 ${
+              mode === 'chaos' ? 'bg-[#C084FC] text-black hover:bg-[#C084FC]/80' :
+              mode === 'chill' ? 'bg-[#C084FC] text-[#4A1818] hover:bg-[#C084FC]/80' :
+              'bg-[#C084FC] text-black hover:bg-[#C084FC]/80'
             } font-black uppercase tracking-wider text-sm ${mode === 'code' ? 'font-mono' : ''} disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {isSubmitting ? 'Submitting...' : 'Submit'}

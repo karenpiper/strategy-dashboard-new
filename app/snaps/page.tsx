@@ -387,13 +387,13 @@ export default function SnapsPage() {
       <main className="max-w-[1600px] mx-auto px-6 py-10 flex-1">
         <div className="flex gap-6">
           {/* Left Sidebar Card */}
-          <Card className={`w-80 ${mode === 'chaos' ? 'bg-[#10B981]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`} style={{ 
-            borderColor: mode === 'chaos' ? '#047857' : mode === 'chill' ? '#C8D961' : '#FFFFFF',
+          <Card className={`w-80 ${mode === 'chaos' ? 'bg-[#047857]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`} style={{ 
+            borderColor: mode === 'chaos' ? '#10B981' : mode === 'chill' ? '#C8D961' : '#FFFFFF',
             borderWidth: mode === 'chaos' ? '2px' : '0px'
           }}>
           {/* Filters Section */}
           <div className="mb-6">
-            <h3 className={`text-xs uppercase tracking-wider font-black mb-4 ${mode === 'chill' ? 'text-[#4A1818]' : mode === 'chaos' ? 'text-black' : 'text-white'}`}>
+            <h3 className={`text-xs uppercase tracking-wider font-black mb-4 ${mode === 'chill' ? 'text-[#4A1818]' : mode === 'chaos' ? 'text-[#10B981]' : 'text-white'}`}>
               ▼ FILTERS
             </h3>
             <div className="space-y-2">
@@ -402,12 +402,12 @@ export default function SnapsPage() {
                 className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
                   activeFilter === 'all'
                     ? mode === 'chaos'
-                      ? 'bg-[#84CC16] text-black'
+                      ? 'bg-[#10B981] text-black'
                       : mode === 'chill'
                       ? 'bg-[#C8D961] text-[#4A1818]'
                       : 'bg-white text-black'
                     : mode === 'chaos'
-                    ? 'bg-[#047857]/30 text-black/80 hover:bg-[#047857]/50 text-black'
+                    ? 'bg-[#10B981]/30 text-black/80 hover:bg-[#10B981]/50 text-black'
                     : mode === 'chill'
                     ? 'bg-white/30 text-[#4A1818]/60 hover:bg-white/50 text-[#4A1818]'
                     : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
@@ -421,12 +421,12 @@ export default function SnapsPage() {
                 className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
                   activeFilter === 'about-me'
                     ? mode === 'chaos'
-                      ? 'bg-[#84CC16] text-black'
+                      ? 'bg-[#10B981] text-black'
                       : mode === 'chill'
                       ? 'bg-[#C8D961] text-[#4A1818]'
                       : 'bg-white text-black'
                     : mode === 'chaos'
-                    ? 'bg-[#047857]/30 text-black/80 hover:bg-[#047857]/50 text-black'
+                    ? 'bg-[#10B981]/30 text-black/80 hover:bg-[#10B981]/50 text-black'
                     : mode === 'chill'
                     ? 'bg-white/30 text-[#4A1818]/60 hover:bg-white/50 text-[#4A1818]'
                     : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
@@ -440,12 +440,12 @@ export default function SnapsPage() {
                 className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
                   activeFilter === 'i-gave'
                     ? mode === 'chaos'
-                      ? 'bg-[#84CC16] text-black'
+                      ? 'bg-[#10B981] text-black'
                       : mode === 'chill'
                       ? 'bg-[#C8D961] text-[#4A1818]'
                       : 'bg-white text-black'
                     : mode === 'chaos'
-                    ? 'bg-[#047857]/30 text-black/80 hover:bg-[#047857]/50 text-black'
+                    ? 'bg-[#10B981]/30 text-black/80 hover:bg-[#10B981]/50 text-black'
                     : mode === 'chill'
                     ? 'bg-white/30 text-[#4A1818]/60 hover:bg-white/50 text-[#4A1818]'
                     : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
@@ -458,11 +458,11 @@ export default function SnapsPage() {
           </div>
 
           {/* Divider */}
-          <div className={`h-px mb-6 ${mode === 'chaos' ? 'bg-[#047857]/40' : mode === 'chill' ? 'bg-[#4A1818]/20' : 'bg-white/20'}`}></div>
+          <div className={`h-px mb-6 ${mode === 'chaos' ? 'bg-[#10B981]/40' : mode === 'chill' ? 'bg-[#4A1818]/20' : 'bg-white/20'}`}></div>
 
           {/* Time Filter */}
           <div className="mb-6">
-            <h3 className={`text-xs uppercase tracking-wider font-black mb-3 ${mode === 'chill' ? 'text-[#4A1818]' : mode === 'chaos' ? 'text-black' : 'text-white'}`}>
+            <h3 className={`text-xs uppercase tracking-wider font-black mb-3 ${mode === 'chill' ? 'text-[#4A1818]' : mode === 'chaos' ? 'text-[#10B981]' : 'text-white'}`}>
               Time Filter
             </h3>
             <div className="relative">
@@ -470,13 +470,13 @@ export default function SnapsPage() {
                 onClick={() => setShowTimeDropdown(!showTimeDropdown)}
                 className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} ${
                   mode === 'chaos'
-                    ? 'bg-[#047857]/40 text-black'
+                    ? 'bg-[#10B981]/40 text-black'
                     : mode === 'chill'
                     ? 'bg-white text-[#4A1818]'
                     : 'bg-black/40 text-white'
                 } flex items-center justify-between border`}
                 style={{
-                  borderColor: mode === 'chaos' ? 'rgba(4,120,87,0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.2)' : 'rgba(255,255,255,0.2)'
+                  borderColor: mode === 'chaos' ? 'rgba(16,185,129,0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.2)' : 'rgba(255,255,255,0.2)'
                 }}
               >
                 <span className="font-black uppercase text-sm">
@@ -489,7 +489,7 @@ export default function SnapsPage() {
               {showTimeDropdown && (
                 <div className={`absolute top-full left-0 right-0 mt-2 ${getRoundedClass('rounded-xl')} overflow-hidden z-10 ${
                   mode === 'chaos'
-                    ? 'bg-black border border-white/20'
+                    ? 'bg-black border border-[#10B981]/30'
                     : mode === 'chill'
                     ? 'bg-white border border-[#C8D961]/30'
                     : 'bg-black border border-white/20'
@@ -504,11 +504,15 @@ export default function SnapsPage() {
                       className={`w-full text-left px-4 py-2 hover:opacity-80 transition-all ${
                         timeFilter === filter
                           ? mode === 'chaos'
-                            ? 'bg-[#84CC16] text-black'
+                            ? 'bg-[#10B981] text-black'
                             : mode === 'chill'
                             ? 'bg-[#C8D961] text-[#4A1818]'
                             : 'bg-white text-black'
-                          : style.text
+                          : mode === 'chaos'
+                          ? 'text-white'
+                          : mode === 'chill'
+                          ? 'text-[#4A1818]'
+                          : 'text-white'
                       }`}
                     >
                       <span className="font-black uppercase text-sm">
