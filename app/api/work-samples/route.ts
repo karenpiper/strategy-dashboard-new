@@ -430,6 +430,73 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    // First, fetch the work samples to get their file URLs before deleting
+    let workSamplesToDelete: any[] = []
+    
+    if (ids) {
+      // Bulk delete - fetch all work samples
+      const idArray = ids.split(',').map(id => id.trim())
+      const { data, error: fetchError } = await supabase
+        .from('work_samples')
+        .select('id, file_url')
+        .in('id', idArray)
+      
+      if (fetchError) {
+        console.error('Error fetching work samples for deletion:', fetchError)
+      } else {
+        workSamplesToDelete = data || []
+      }
+    } else if (id) {
+      // Single delete - fetch the work sample
+      const { data, error: fetchError } = await supabase
+        .from('work_samples')
+        .select('id, file_url')
+        .eq('id', id)
+        .single()
+      
+      if (fetchError) {
+        console.error('Error fetching work sample for deletion:', fetchError)
+      } else if (data) {
+        workSamplesToDelete = [data]
+      }
+    }
+
+    // Delete files from Google Drive if file_url exists
+    if (workSamplesToDelete.length > 0) {
+      const { getGoogleDriveClient } = await import('@/lib/decks/config/googleDriveClient')
+      
+      try {
+        const { drive } = getGoogleDriveClient()
+        
+        for (const workSample of workSamplesToDelete) {
+          if (workSample.file_url) {
+            // Extract Google Drive file ID from URL
+            // Format: https://drive.google.com/file/d/{fileId}/view
+            const fileIdMatch = workSample.file_url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+            
+            if (fileIdMatch && fileIdMatch[1]) {
+              const fileId = fileIdMatch[1]
+              
+              try {
+                await drive.files.delete({
+                  fileId: fileId,
+                  supportsAllDrives: true,
+                } as any)
+                console.log(`Deleted Google Drive file: ${fileId} for work sample ${workSample.id}`)
+              } catch (driveError: any) {
+                // Log but don't fail - file might already be deleted or inaccessible
+                console.warn(`Failed to delete Google Drive file ${fileId}:`, driveError.message)
+              }
+            }
+          }
+        }
+      } catch (driveError: any) {
+        // Log but don't fail - continue with database deletion even if Drive deletion fails
+        console.warn('Error deleting files from Google Drive:', driveError.message)
+      }
+    }
+
+    // Now delete from database
     let query = supabase.from('work_samples').delete()
 
     if (ids) {
