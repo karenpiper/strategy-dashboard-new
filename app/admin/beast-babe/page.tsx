@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { usePermissions } from '@/contexts/permissions-context'
+import { useMode } from '@/contexts/mode-context'
 import { Crown, ShieldOff, Users, ArrowRight, Loader2, History, Calendar, Search } from 'lucide-react'
 
 interface User {
@@ -38,6 +39,7 @@ interface BeastBabeData {
 
 export default function BeastBabeAdmin() {
   const { permissions, user } = usePermissions()
+  const { mode } = useMode()
   const [selectedUserId, setSelectedUserId] = useState<string>('')
   const [achievement, setAchievement] = useState<string>('')
   const [loading, setLoading] = useState(true)
@@ -317,11 +319,11 @@ export default function BeastBabeAdmin() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
+            ) : !searchQuery.trim() ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">Start typing to search for team members, or click "Browse Team" to see everyone</p>
             ) : (
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {!searchQuery.trim() ? (
-                  <p className="text-sm text-muted-foreground py-4 text-center">Start typing to search for team members, or click "Browse Team" to see everyone</p>
-                ) : filteredUsers.length === 0 ? (
+                {filteredUsers.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-4 text-center">No users found</p>
                 ) : (
                   filteredUsers.map((user) => (
@@ -393,7 +395,7 @@ export default function BeastBabeAdmin() {
               onClick={handlePassTorch}
               disabled={!selectedUserId || passing}
               size="lg"
-              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+              className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold"
             >
               {passing ? (
                 <>
@@ -475,7 +477,13 @@ export default function BeastBabeAdmin() {
 
       {/* Browse Team Dialog */}
       <Dialog open={showBrowseDialog} onOpenChange={setShowBrowseDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col bg-background">
+        <DialogContent 
+          className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col border" 
+          style={{ 
+            backgroundColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#000000',
+            borderColor: mode === 'chaos' ? '#333333' : mode === 'chill' ? 'rgba(74, 24, 24, 0.2)' : '#FFFFFF'
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Browse Team</DialogTitle>
             <DialogDescription>

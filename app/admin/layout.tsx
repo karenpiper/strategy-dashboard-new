@@ -329,6 +329,9 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                               className={`flex items-center gap-2 px-2 py-1.5 ${getRoundedClass('rounded-lg')} transition-colors text-xs ${
                                 getNavItemStyle(isActive)
                               }`}
+                              style={{
+                                borderRadius: mode === 'code' ? '0' : mode === 'chaos' ? '1.5rem' : mode === 'chill' ? '1rem' : '0.5rem'
+                              }}
                             >
                               <Icon className="w-3.5 h-3.5" />
                               <span className="font-medium uppercase tracking-wider text-xs">{item.label}</span>
