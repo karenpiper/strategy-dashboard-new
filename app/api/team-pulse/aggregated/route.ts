@@ -57,6 +57,21 @@ export async function GET() {
       }
     })
 
+    // Get question texts (if questions table exists)
+    const questionMap = new Map<string, string>()
+    try {
+      const { data: allQuestions } = await supabase
+        .from('team_pulse_questions')
+        .select('question_key, question_text')
+      
+      allQuestions?.forEach(q => {
+        questionMap.set(q.question_key, q.question_text)
+      })
+    } catch (error) {
+      // Questions table might not exist yet, that's okay
+      console.log('Questions table not found, using question keys only')
+    }
+
     // Calculate averages and extract comment themes
     const aggregatedData = Object.entries(questionGroups).map(([questionKey, data]) => {
       const average = data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length
@@ -85,6 +100,7 @@ export async function GET() {
 
       return {
         questionKey,
+        questionText: questionMap.get(questionKey),
         average,
         responseCount: data.scores.length,
         commentThemes: themes,
