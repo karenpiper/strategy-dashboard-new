@@ -705,7 +705,7 @@ export default function TeamDashboard() {
   }, [user])
 
   // Comprehensive mode-aware card styling
-  type CardSection = 'hero' | 'recognition' | 'work' | 'team' | 'vibes' | 'community' | 'default'
+  type CardSection = 'hero' | 'recognition' | 'work' | 'team' | 'vibes' | 'community' | 'community2' | 'default'
   type SpecificCard = 'hero-large' | 'launch-pad' | 'horoscope' | 'timezones' | 'playlist' | 'friday-drop' | 'brand-redesign' | 'stats' | 'events' | 'pipeline' | 'who-needs-what' | 'snaps' | 'beast-babe' | 'wins-wall' | 'ask-hive' | 'team-pulse' | 'loom-standup' | 'inspiration-war' | 'search'
   
   const getSpecificCardStyle = (cardName: SpecificCard): { bg: string; border: string; glow: string; text: string; accent: string } => {
@@ -714,35 +714,37 @@ export default function TeamDashboard() {
         // Hero - keep current gradient
         'hero-large': { bg: 'bg-gradient-to-br from-[#FFE500] via-[#FF8C00] to-[#FF6B6B]', border: 'border-0', glow: '', text: 'text-black', accent: '#FFE500' },
         
-        // Recognition & Culture - Success Pairing (Bright Mint #34D399 + Forest Green #047857) + Golden Yellow #EAB308 + Black/White/Grey
-        'beast-babe': { bg: 'bg-[#34D399]', border: 'border-0', glow: '', text: 'text-black', accent: '#047857' }, // Bright Mint bg with Forest Green accent
-        'wins-wall': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#EAB308' }, // Black bg with Golden Yellow accent
-        'snaps': { bg: 'bg-[#1E293B]', border: 'border-2', glow: '', text: 'text-white', accent: '#34D399' }, // Slate Grey bg with Bright Mint accent and border
+        // Recognition & Culture - GREEN SYSTEM: Emerald, Forest Green, Lime Green, Orange
+        'beast-babe': { bg: 'bg-[#10B981]', border: 'border-0', glow: '', text: 'text-black', accent: '#047857' }, // Emerald bg with Forest Green accent
+        'wins-wall': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#84CC16' }, // Black bg with Lime Green accent
+        'snaps': { bg: 'bg-[#1E293B]', border: 'border-2', glow: '', text: 'text-white', accent: '#10B981' }, // Slate Grey bg with Emerald accent and border
         
-        // Work - Accent Pairing (Violet #A78BFA + Deep Violet #6D28D9) + Electric Teal #1488A6 + Black/White/Grey
-        'events': { bg: 'bg-[#000000]', border: 'border-2', glow: '', text: 'text-white', accent: '#A78BFA' }, // Black bg with Violet border and accent
-        'pipeline': { bg: 'bg-[#6D28D9]', border: 'border-0', glow: '', text: 'text-white', accent: '#1488A6' }, // Deep Violet bg with Electric Teal accent
-        'friday-drop': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#A78BFA' }, // Zinc (light grey) bg with Violet accent
-        'who-needs-what': { bg: 'bg-[#A78BFA]', border: 'border-0', glow: '', text: 'text-black', accent: '#6D28D9' }, // Violet bg with Deep Violet accent
+        // Work - BLUE SYSTEM: Ocean Blue, Navy Blue, Sky Blue, Golden Yellow
+        'events': { bg: 'bg-[#000000]', border: 'border-2', glow: '', text: 'text-white', accent: '#0EA5E9' }, // Black bg with Ocean Blue border and accent
+        'pipeline': { bg: 'bg-[#1E3A8A]', border: 'border-0', glow: '', text: 'text-white', accent: '#38BDF8' }, // Navy Blue bg with Sky Blue accent
+        'friday-drop': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#0EA5E9' }, // Zinc (light grey) bg with Ocean Blue accent
+        'who-needs-what': { bg: 'bg-[#0EA5E9]', border: 'border-0', glow: '', text: 'text-black', accent: '#1E3A8A' }, // Ocean Blue bg with Navy Blue accent
         
-        // Team - Info Pairing (Ocean Blue #0EA5E9 + Deep Ocean #0369A1) + Bright Mint #34D399 + Black/White/Grey
-        'timezones': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#0EA5E9' }, // Black bg with Ocean Blue accent
-        'team-pulse': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#0369A1' }, // Zinc bg with Deep Ocean accent
-        'loom-standup': { bg: 'bg-[#0EA5E9]', border: 'border-0', glow: '', text: 'text-black', accent: '#34D399' }, // Ocean Blue bg with Bright Mint accent
+        // Team - ORANGE SYSTEM: Orange, Brown, Tan, Purple
+        'timezones': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#F97316' }, // Black bg with Orange accent
         
-        // Vibes - Creative Pairing (Rich Purple #7C3AED + Golden Yellow #EAB308) + Deep Magenta #A21CAF + Black/White/Grey
-        'horoscope': { bg: 'bg-[#7C3AED]', border: 'border-0', glow: '', text: 'text-white', accent: '#EAB308' }, // Rich Purple bg with Golden Yellow accent
-        'playlist': { bg: 'bg-[#000000]', border: 'border-2', glow: '', text: 'text-white', accent: '#A21CAF' }, // Black bg with Deep Magenta border and accent
+        // Vibes - PURPLE SYSTEM: Purple, Deep Purple, Lavender, Lime Green
+        'horoscope': { bg: 'bg-[#9333EA]', border: 'border-0', glow: '', text: 'text-white', accent: '#C084FC' }, // Purple bg with Lavender accent
+        'playlist': { bg: 'bg-[#000000]', border: 'border-2', glow: '', text: 'text-white', accent: '#9333EA' }, // Black bg with Purple border and accent
         
-        // Community - Energy Pairing (Electric Teal #1488A6 + Deep Magenta #A21CAF) + Rich Purple #7C3AED + Black/White/Grey
-        'ask-hive': { bg: 'bg-[#1488A6]', border: 'border-0', glow: '', text: 'text-white', accent: '#7C3AED' }, // Electric Teal bg with Rich Purple accent
+        // Community 1: Hive/Pulse - MAGENTA SYSTEM: Hot Pink, Magenta, Pink, Emerald
+        'ask-hive': { bg: 'bg-[#EC4899]', border: 'border-0', glow: '', text: 'text-white', accent: '#C026D3' }, // Hot Pink bg with Magenta accent
+        'team-pulse': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#EC4899' }, // Zinc bg with Hot Pink accent
+        
+        // Community 2: Loop/Inspo War/Search - YELLOW SYSTEM: Golden Yellow, Gold, Light Yellow, Deep Purple
+        'loom-standup': { bg: 'bg-[#EAB308]', border: 'border-0', glow: '', text: 'text-black', accent: '#D97706' }, // Golden Yellow bg with Gold accent
+        'inspiration-war': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#EAB308' }, // Black bg with Golden Yellow accent
+        'search': { bg: 'bg-[#1E293B]', border: 'border-2', glow: '', text: 'text-white', accent: '#EAB308' }, // Slate Grey bg with Golden Yellow border
         
         // Other cards - keeping existing or using appropriate section colors
         'launch-pad': { bg: 'bg-gradient-to-br from-[#9D4EFF] to-[#6B2C91]', border: 'border-0', glow: '', text: 'text-white', accent: '#C4F500' },
-        'brand-redesign': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#7C3AED' }, // Zinc bg with Rich Purple accent (vibes section)
-        'stats': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#34D399' }, // Zinc bg with Bright Mint accent (recognition section)
-        'inspiration-war': { bg: 'bg-[#EAB308]', border: 'border-0', glow: '', text: 'text-black', accent: '#7C3AED' }, // Golden Yellow bg with Rich Purple accent (vibes section)
-        'search': { bg: 'bg-[#000000]', border: 'border border-[#EAB308]', glow: '', text: 'text-white', accent: '#EAB308' }, // Black bg with Golden Yellow border
+        'brand-redesign': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#9333EA' }, // Zinc bg with Purple accent (vibes section)
+        'stats': { bg: 'bg-[#F4F4F5]', border: 'border-0', glow: '', text: 'text-black', accent: '#10B981' }, // Zinc bg with Emerald accent (recognition section)
       }
       return chaosCardStyles[cardName] || chaosCardStyles['hero-large']
     } else {
@@ -754,23 +756,26 @@ export default function TeamDashboard() {
       return getCardStyle(cardName === 'hero-large' || cardName === 'launch-pad' ? 'hero' : 
                          cardName === 'snaps' || cardName === 'beast-babe' ? 'recognition' :
                          cardName === 'events' || cardName === 'pipeline' || cardName === 'who-needs-what' || cardName === 'friday-drop' ? 'work' :
-                         cardName === 'timezones' || cardName === 'team-pulse' || cardName === 'loom-standup' ? 'team' :
-                         cardName === 'horoscope' || cardName === 'playlist' || cardName === 'brand-redesign' || cardName === 'inspiration-war' ? 'vibes' :
-                         'community')
+                         cardName === 'timezones' ? 'team' :
+                         cardName === 'horoscope' || cardName === 'playlist' || cardName === 'brand-redesign' ? 'vibes' :
+                         cardName === 'ask-hive' || cardName === 'team-pulse' ? 'community' :
+                         cardName === 'loom-standup' || cardName === 'inspiration-war' || cardName === 'search' ? 'community2' :
+                         'recognition')
     }
   }
   
   const getCardStyle = (section: CardSection): { bg: string; border: string; glow: string; text: string; accent: string } => {
     if (mode === 'chaos') {
-      // Fallback for section-based styling in chaos mode - using new color palette
+      // Fallback for section-based styling in chaos mode - using 7 new color systems
       const chaosColors: Record<CardSection, { bg: string; border: string; glow: string; text: string; accent: string }> = {
         hero: { bg: 'bg-gradient-to-br from-[#FFB84D] via-[#FFE500] to-[#FFE500]', border: 'border-0', glow: '', text: 'text-black', accent: '#C4F500' }, // Keep hero gradient
-        recognition: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#34D399' }, // Success Pairing - Bright Mint accent
-        work: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#A78BFA' }, // Accent Pairing - Violet accent
-        team: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#0EA5E9' }, // Info Pairing - Ocean Blue accent
-        vibes: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#7C3AED' }, // Creative Pairing - Rich Purple accent
-        community: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#1488A6' }, // Energy Pairing - Electric Teal accent
-        default: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#34D399' },
+        recognition: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#10B981' }, // GREEN SYSTEM - Emerald accent
+        work: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#0EA5E9' }, // BLUE SYSTEM - Ocean Blue accent
+        team: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#F97316' }, // ORANGE SYSTEM - Orange accent
+        vibes: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#9333EA' }, // PURPLE SYSTEM - Purple accent
+        community: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#EC4899' }, // MAGENTA SYSTEM - Hot Pink accent
+        community2: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#EAB308' }, // YELLOW SYSTEM - Golden Yellow accent
+        default: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#10B981' },
       }
       return chaosColors[section] || chaosColors.default
     } else if (mode === 'chill') {
@@ -781,6 +786,7 @@ export default function TeamDashboard() {
         team: { bg: 'bg-white', border: 'border border-[#4A9BFF]/30', glow: '', text: 'text-[#4A1818]', accent: '#4A9BFF' },
         vibes: { bg: 'bg-white', border: 'border border-[#FFB5D8]/30', glow: '', text: 'text-[#4A1818]', accent: '#FFB5D8' },
         community: { bg: 'bg-white', border: 'border border-[#8B4444]/30', glow: '', text: 'text-[#4A1818]', accent: '#8B4444' },
+        community2: { bg: 'bg-white', border: 'border border-[#FFC043]/30', glow: '', text: 'text-[#4A1818]', accent: '#FFC043' },
         default: { bg: 'bg-white', border: 'border border-[#FFC043]/30', glow: '', text: 'text-[#4A1818]', accent: '#FFC043' },
       }
       return chillColors[section] || chillColors.default
@@ -792,6 +798,7 @@ export default function TeamDashboard() {
         team: { bg: 'bg-[#000000]', border: 'border border-[#FFFFFF]', glow: '', text: 'text-[#FFFFFF]', accent: '#FFFFFF' },
         vibes: { bg: 'bg-[#000000]', border: 'border border-[#FFFFFF]', glow: '', text: 'text-[#FFFFFF]', accent: '#FFFFFF' },
         community: { bg: 'bg-[#000000]', border: 'border border-[#FFFFFF]', glow: '', text: 'text-[#FFFFFF]', accent: '#FFFFFF' },
+        community2: { bg: 'bg-[#000000]', border: 'border border-[#FFFFFF]', glow: '', text: 'text-[#FFFFFF]', accent: '#FFFFFF' },
         default: { bg: 'bg-[#000000]', border: 'border border-[#FFFFFF]', glow: '', text: 'text-[#FFFFFF]', accent: '#FFFFFF' },
       }
       return codeColors[section] || codeColors.default
@@ -804,11 +811,12 @@ export default function TeamDashboard() {
     if (mode === 'chaos') {
       // For chaos mode, return accent, black, and a secondary color based on section
       const secondaryColors: Record<CardSection, string> = {
-        recognition: '#EAB308', // Golden Yellow
-        work: '#1488A6', // Electric Teal
-        team: '#34D399', // Bright Mint
-        vibes: '#A21CAF', // Deep Magenta
-        community: '#7C3AED', // Rich Purple
+        recognition: '#84CC16', // Lime Green (GREEN SYSTEM)
+        work: '#38BDF8', // Sky Blue (BLUE SYSTEM)
+        team: '#FCD34D', // Tan (ORANGE SYSTEM)
+        vibes: '#C084FC', // Lavender (PURPLE SYSTEM)
+        community: '#F9A8D4', // Pink (MAGENTA SYSTEM)
+        community2: '#FEF08A', // Light Yellow (YELLOW SYSTEM)
         hero: '#C4F500', // Lime
         default: '#EAB308',
       }
@@ -1550,7 +1558,7 @@ export default function TeamDashboard() {
                   </div>
                     ))}
                 </div>
-                  <Button className={`w-full mt-auto ${mode === 'chaos' ? 'bg-black text-[#EAB308] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-12 uppercase`}>
+                  <Button className={`w-full mt-auto ${mode === 'chaos' ? 'bg-black text-[#84CC16] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-12 uppercase`}>
                 Share Win
               </Button>
             </Card>
@@ -1577,12 +1585,12 @@ export default function TeamDashboard() {
                       className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
                         snapViewType === 'received'
                           ? mode === 'chaos'
-                            ? 'bg-[#EAB308] text-black'
+                            ? 'bg-[#84CC16] text-black'
                             : mode === 'chill'
                             ? 'bg-[#FFB5D8] text-[#4A1818]'
                             : 'bg-white text-black'
                           : mode === 'chaos'
-                          ? 'bg-black/40 text-[#EAB308]/60 border border-[#EAB308]/40'
+                          ? 'bg-black/40 text-[#84CC16]/60 border border-[#84CC16]/40'
                           : mode === 'chill'
                           ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
                           : 'bg-black/40 text-white/60 border border-white/40'
@@ -1595,12 +1603,12 @@ export default function TeamDashboard() {
                       className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
                         snapViewType === 'given'
                           ? mode === 'chaos'
-                            ? 'bg-[#EAB308] text-black'
+                            ? 'bg-[#84CC16] text-black'
                             : mode === 'chill'
                             ? 'bg-[#FFB5D8] text-[#4A1818]'
                             : 'bg-white text-black'
                           : mode === 'chaos'
-                          ? 'bg-black/40 text-[#EAB308]/60 border border-[#EAB308]/40'
+                          ? 'bg-black/40 text-[#84CC16]/60 border border-[#84CC16]/40'
                           : mode === 'chill'
                           ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
                           : 'bg-black/40 text-white/60 border border-white/40'
@@ -1611,13 +1619,13 @@ export default function TeamDashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Link href="/snaps">
-                      <Button className={`${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 border-2 border-[#EAB308] text-[#EAB308]' : mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/50 border-2 border-[#FFB5D8] text-[#4A1818]' : 'bg-black/40 hover:bg-black/60 border-2 border-white text-white'} font-black rounded-full h-10 px-6 text-sm uppercase`}>
+                      <Button className={`${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 border-2 border-[#84CC16] text-[#84CC16]' : mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/50 border-2 border-[#FFB5D8] text-[#4A1818]' : 'bg-black/40 hover:bg-black/60 border-2 border-white text-white'} font-black rounded-full h-10 px-6 text-sm uppercase`}>
                         VIEW ALL
                       </Button>
                     </Link>
                     <Button 
                       onClick={() => setShowAddSnapDialog(true)}
-                      className={`${mode === 'chaos' ? 'bg-gradient-to-r from-[#34D399] to-[#047857] hover:from-[#34D399] hover:to-[#34D399] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-10 px-6 text-sm uppercase`}
+                      className={`${mode === 'chaos' ? 'bg-gradient-to-r from-[#10B981] to-[#047857] hover:from-[#10B981] hover:to-[#10B981] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-10 px-6 text-sm uppercase`}
                     >
                       + GIVE A SNAP
                     </Button>
@@ -1715,7 +1723,7 @@ export default function TeamDashboard() {
           {/* Events */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('events') : getCardStyle('work')
-            const mintColor = mode === 'chaos' ? '#A78BFA' : '#00FF87' // Work section uses Violet from Accent Pairing
+            const mintColor = mode === 'chaos' ? '#0EA5E9' : '#00FF87' // Work section uses Ocean Blue from BLUE SYSTEM
             
             // Filter events for today or week view
             const now = new Date()
@@ -1806,16 +1814,16 @@ export default function TeamDashboard() {
               
               // Strategy team
               if (calendarId.includes('6236655ee40ad4fcbedc4e96ce72c39783f27645dbdd22714ca9bc90fcc551ac')) {
-                return mode === 'chaos' ? '#6D28D9' : '#9D4EFF' // Deep Violet from Accent Pairing
+                return mode === 'chaos' ? '#1E3A8A' : '#9D4EFF' // Navy Blue from BLUE SYSTEM
               }
               
               // Holidays
               if (calendarId.includes('holiday')) {
-                return mode === 'chaos' ? '#EAB308' : '#FFC043' // Golden Yellow
+                return mode === 'chaos' ? '#EAB308' : '#FFC043' // Golden Yellow from BLUE SYSTEM contrast
               }
               
               // Office events (default)
-              return mode === 'chaos' ? '#A78BFA' : '#00FF87' // Violet from Accent Pairing
+              return mode === 'chaos' ? '#0EA5E9' : '#00FF87' // Ocean Blue from BLUE SYSTEM
             }
 
             // Generate week days for Gantt chart
@@ -2007,7 +2015,7 @@ export default function TeamDashboard() {
                           <span className={`text-[10px] ${style.text}/80`}>Out of Office</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded" style={{ backgroundColor: mode === 'chaos' ? '#6D28D9' : '#9D4EFF' }}></div>
+                          <div className="w-4 h-4 rounded" style={{ backgroundColor: mode === 'chaos' ? '#1E3A8A' : '#9D4EFF' }}></div>
                           <span className={`text-[10px] ${style.text}/80`}>Strategy Team</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -2015,7 +2023,7 @@ export default function TeamDashboard() {
                           <span className={`text-[10px] ${style.text}/80`}>Holidays</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded" style={{ backgroundColor: mode === 'chaos' ? '#A78BFA' : '#00FF87' }}></div>
+                          <div className="w-4 h-4 rounded" style={{ backgroundColor: mode === 'chaos' ? '#0EA5E9' : '#00FF87' }}></div>
                           <span className={`text-[10px] ${style.text}/80`}>Office Events</span>
                         </div>
                       </div>
@@ -2258,7 +2266,7 @@ export default function TeamDashboard() {
 
             {/* Pipeline */}
             {(() => {
-              const borderColor = mode === 'chaos' ? '#A78BFA' : mode === 'chill' ? '#FFC043' : mode === 'code' ? '#FFFFFF' : '#00FF87' // Work section uses Violet from Accent Pairing
+              const borderColor = mode === 'chaos' ? '#0EA5E9' : mode === 'chill' ? '#FFC043' : mode === 'code' ? '#FFFFFF' : '#00FF87' // Work section uses Ocean Blue from BLUE SYSTEM
               
               const inProgressProjects = pipelineData.filter(p => p.status === 'In Progress')
               const completedProjects = pipelineData.filter(p => p.status === completedFilter)
@@ -2765,7 +2773,7 @@ export default function TeamDashboard() {
               </div>
                   ))}
               </div>
-                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#7C3AED] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#8B4444] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
+                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#EC4899] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#8B4444] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
               Ask Question
             </Button>
           </Card>
@@ -2831,7 +2839,7 @@ export default function TeamDashboard() {
                     </div>
                     <Button
                       onClick={() => weeklyPlaylist.spotify_url && window.open(weeklyPlaylist.spotify_url, '_blank')}
-                      className={`w-full ${mode === 'chaos' ? 'bg-black text-[#7C3AED] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase flex items-center justify-center gap-2`}
+                      className={`w-full ${mode === 'chaos' ? 'bg-black text-[#9333EA] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase flex items-center justify-center gap-2`}
                     >
                       <Play className="w-4 h-4" />
                       Play on Spotify
@@ -2852,7 +2860,7 @@ export default function TeamDashboard() {
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('loom-standup') : getCardStyle('team')
             const standupColors = mode === 'chaos'
-              ? ['#0EA5E9', '#0369A1', '#34D399'] // Team section: Ocean Blue, Deep Ocean, Bright Mint
+              ? ['#F97316', '#92400E', '#FCD34D'] // ORANGE SYSTEM: Orange, Brown, Tan
               : mode === 'chill'
               ? ['#4A9BFF', '#8B4444', '#FFB5D8']
               : ['#cccccc', '#999999', '#e5e5e5']
