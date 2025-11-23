@@ -1061,6 +1061,180 @@ export default function TeamDashboard() {
           {mode === 'code' ? (
             <>
               <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
+              <span className="text-[#808080]">RECOGNITION & CULTURE</span>
+              <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
+            </>
+          ) : (
+            <>
+              <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
+          Recognition & Culture
+            </>
+          )}
+        </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 items-stretch">
+          {/* Snaps */}
+          {(() => {
+            const style = mode === 'chaos' ? getSpecificCardStyle('snaps') : getCardStyle('recognition')
+            return (
+              <Card className={`lg:col-span-2 ${style.bg} ${style.border} p-8 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
+                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+              >
+                <div className="flex items-center gap-2 text-sm mb-6" style={{ color: style.accent }}>
+                  <Sparkles className="w-4 h-4" />
+                  <span className="uppercase tracking-wider font-black text-xs">Recent Recognition</span>
+                </div>
+                <h2 className="text-6xl font-black mb-4 uppercase" style={{ color: style.accent }}>Your Snaps</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSnapViewType('received')}
+                      className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
+                        snapViewType === 'received'
+                          ? mode === 'chaos'
+                            ? 'bg-[#E8FF00] text-black'
+                            : mode === 'chill'
+                            ? 'bg-[#FFB5D8] text-[#4A1818]'
+                            : 'bg-white text-black'
+                          : mode === 'chaos'
+                          ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
+                          : mode === 'chill'
+                          ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
+                          : 'bg-black/40 text-white/60 border border-white/40'
+                      }`}
+                    >
+                      Received
+                    </button>
+                    <button
+                      onClick={() => setSnapViewType('given')}
+                      className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
+                        snapViewType === 'given'
+                          ? mode === 'chaos'
+                            ? 'bg-[#E8FF00] text-black'
+                            : mode === 'chill'
+                            ? 'bg-[#FFB5D8] text-[#4A1818]'
+                            : 'bg-white text-black'
+                          : mode === 'chaos'
+                          ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
+                          : mode === 'chill'
+                          ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
+                          : 'bg-black/40 text-white/60 border border-white/40'
+                      }`}
+                    >
+                      Given
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link href="/vibes">
+                      <Button className={`${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 border-2 border-[#E8FF00] text-[#E8FF00]' : mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/50 border-2 border-[#FFB5D8] text-[#4A1818]' : 'bg-black/40 hover:bg-black/60 border-2 border-white text-white'} font-black rounded-full h-10 px-6 text-sm uppercase`}>
+                        VIEW ALL
+                      </Button>
+                    </Link>
+                    <Button 
+                      onClick={() => setShowAddSnapDialog(true)}
+                      className={`${mode === 'chaos' ? 'bg-gradient-to-r from-[#00FF87] to-[#00E676] hover:from-[#00FF87] hover:to-[#00FF87] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-10 px-6 text-sm uppercase`}
+                    >
+                      + GIVE A SNAP
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-[22px] mb-6 mt-2">
+                  {snaps.length === 0 ? (
+                    <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-5 border-2`} style={{ borderColor: `${style.accent}66` }}>
+                      <p className={`text-sm ${style.text}/80 text-center`}>No snaps yet. Be the first to recognize someone!</p>
+                    </div>
+                  ) : (
+                    snaps.map((snap, idx) => {
+                      const senderName = snap.submitted_by_profile?.full_name || snap.submitted_by_profile?.email || null
+                      const recipientName = snap.mentioned_user_profile?.full_name || snap.mentioned_user_profile?.email || snap.mentioned || 'Team'
+                      return (
+                        <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-3 border-2 transition-all hover:opacity-80 relative`} style={{ borderColor: `${style.accent}66`, borderLeftWidth: '10px', borderLeftColor: style.accent }}>
+                          <div className="flex-1">
+                            <p className={`text-lg mb-2 leading-relaxed ${style.text}`}>{snap.snap_content}</p>
+                            {snapViewType === 'received' && senderName && (
+                              <p className={`text-xs ${style.text}/60`}>
+                                From: {senderName}
+                              </p>
+                            )}
+                            {snapViewType === 'given' && (
+                              <p className={`text-xs ${style.text}/60`}>
+                                To: {recipientName}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </Card>
+            )
+          })()}
+
+          <div className="space-y-6">
+            {/* Beast Babe */}
+            {(() => {
+              const style = mode === 'chaos' ? getSpecificCardStyle('beast-babe') : getCardStyle('recognition')
+              return (
+                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+                >
+                  <p className="text-xs uppercase tracking-wider mb-2 font-black" style={{ color: style.accent }}>This Week's</p>
+                  <h2 className={`text-4xl font-black mb-6 uppercase ${style.text}`}>BEAST<br/>BABE</h2>
+              <div className="flex items-center justify-center mb-4">
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: style.accent }}>
+                      <Trophy className={`w-10 h-10 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
+                </div>
+              </div>
+                  <p className={`text-2xl font-black text-center ${style.text}`}>Sarah J.</p>
+                  <p className={`text-sm text-center font-medium ${style.text}/80`}>42 Snaps Received</p>
+            </Card>
+              )
+            })()}
+
+            {/* Wins Wall */}
+            {(() => {
+              const style = getSpecificCardStyle('wins-wall')
+              const wins = [
+                { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '🎉' },
+                { name: 'Jamie Park', win: 'Shipped v2.0!', emoji: '🚀' },
+                { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '⭐' },
+              ]
+              return (
+                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+                >
+                  <div className="flex items-center gap-2 text-sm mb-2" style={{ color: style.accent }}>
+                <Trophy className="w-4 h-4" />
+                    <span className="uppercase tracking-wider font-black text-xs">Celebrate</span>
+              </div>
+                  <h2 className={`text-4xl font-black mb-4 uppercase ${style.text}`}>WINS<br/>WALL</h2>
+              <div className="space-y-2 mb-4">
+                    {wins.map((win, idx) => (
+                      <div key={idx} className={`${mode === 'chaos' ? 'bg-black/40' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-3 border-2`} style={{ borderColor: `${style.accent}66` }}>
+                        <div className="flex items-center justify-between">
+                  <div>
+                            <p className={`text-sm font-black ${style.text}`}>{win.name}</p>
+                            <p className={`text-xs font-medium ${style.text}/70`}>{win.win}</p>
+                  </div>
+                          <span className="text-2xl">{win.emoji}</span>
+                </div>
+                  </div>
+                    ))}
+                </div>
+                  <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#00FF87] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-12 uppercase`}>
+                Share Win
+              </Button>
+            </Card>
+              )
+            })()}
+          </div>
+        </div>
+
+        <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
+          {mode === 'code' ? (
+            <>
+              <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
               <span className="text-[#808080]">PERSONALIZED INFORMATION</span>
               <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
             </>
@@ -1621,7 +1795,7 @@ export default function TeamDashboard() {
               { label: 'Completed', count: '24', icon: CheckCircle, iconColor: mintColor }, // Green
             ]
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+              <Card className={`md:col-span-2 ${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
               >
                 <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>WORK</p>
@@ -1644,209 +1818,6 @@ export default function TeamDashboard() {
             )
           })()}
 
-          {/* Who Needs What */}
-          {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('who-needs-what') : getCardStyle('work')
-            return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-              >
-                <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>RECENT REQUESTS</p>
-                <h2 className={`text-3xl font-black mb-6 uppercase leading-tight ${style.text}`}>WHO NEEDS WHAT</h2>
-                <div className="space-y-2 mb-4">
-                  {[
-                    { name: 'Alex', task: 'Design Review', emoji: '😊' },
-                    { name: 'Sarah', task: 'Code Help', emoji: '💻' },
-                  ].map((request) => (
-                    <div key={request.name} className={`bg-black ${getRoundedClass('rounded-lg')} p-3 flex items-center justify-between`}>
-                      <div>
-                        <p className={`text-sm font-black ${style.text}`}>{request.name}</p>
-                        <p className={`text-xs ${style.text}/60`}>{request.task}</p>
-                      </div>
-                      <span className="text-xl">{request.emoji}</span>
-                    </div>
-                  ))}
-                </div>
-                <Button className={`w-full bg-black text-white hover:bg-[#0F0F0F] font-black ${getRoundedClass('rounded-lg')} h-10 text-sm uppercase`}>
-                  CLAIM REQUEST
-                </Button>
-              </Card>
-            )
-          })()}
-        </div>
-
-        <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
-          {mode === 'code' ? (
-            <>
-              <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
-              <span className="text-[#808080]">RECOGNITION & CULTURE</span>
-              <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
-            </>
-          ) : (
-            <>
-              <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
-          Recognition & Culture
-            </>
-          )}
-        </p>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 items-stretch">
-          {/* Snaps */}
-          {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('snaps') : getCardStyle('recognition')
-            return (
-              <Card className={`lg:col-span-2 ${style.bg} ${style.border} p-8 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-              >
-                <div className="flex items-center gap-2 text-sm mb-6" style={{ color: style.accent }}>
-                  <Sparkles className="w-4 h-4" />
-                  <span className="uppercase tracking-wider font-black text-xs">Recent Recognition</span>
-                </div>
-                <h2 className="text-6xl font-black mb-4 uppercase" style={{ color: style.accent }}>Your Snaps</h2>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setSnapViewType('received')}
-                      className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
-                        snapViewType === 'received'
-                          ? mode === 'chaos'
-                            ? 'bg-[#E8FF00] text-black'
-                            : mode === 'chill'
-                            ? 'bg-[#FFB5D8] text-[#4A1818]'
-                            : 'bg-white text-black'
-                          : mode === 'chaos'
-                          ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
-                          : mode === 'chill'
-                          ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
-                          : 'bg-black/40 text-white/60 border border-white/40'
-                      }`}
-                    >
-                      Received
-                    </button>
-                    <button
-                      onClick={() => setSnapViewType('given')}
-                      className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
-                        snapViewType === 'given'
-                          ? mode === 'chaos'
-                            ? 'bg-[#E8FF00] text-black'
-                            : mode === 'chill'
-                            ? 'bg-[#FFB5D8] text-[#4A1818]'
-                            : 'bg-white text-black'
-                          : mode === 'chaos'
-                          ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
-                          : mode === 'chill'
-                          ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
-                          : 'bg-black/40 text-white/60 border border-white/40'
-                      }`}
-                    >
-                      Given
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Link href="/vibes">
-                      <Button className={`${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 border-2 border-[#E8FF00] text-[#E8FF00]' : mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/50 border-2 border-[#FFB5D8] text-[#4A1818]' : 'bg-black/40 hover:bg-black/60 border-2 border-white text-white'} font-black rounded-full h-10 px-6 text-sm uppercase`}>
-                        VIEW ALL
-                      </Button>
-                    </Link>
-                    <Button 
-                      onClick={() => setShowAddSnapDialog(true)}
-                      className={`${mode === 'chaos' ? 'bg-gradient-to-r from-[#00FF87] to-[#00E676] hover:from-[#00FF87] hover:to-[#00FF87] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-10 px-6 text-sm uppercase`}
-                    >
-                      + GIVE A SNAP
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-[22px] mb-6 mt-2">
-                  {snaps.length === 0 ? (
-                    <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-5 border-2`} style={{ borderColor: `${style.accent}66` }}>
-                      <p className={`text-sm ${style.text}/80 text-center`}>No snaps yet. Be the first to recognize someone!</p>
-                    </div>
-                  ) : (
-                    snaps.map((snap, idx) => {
-                      const senderName = snap.submitted_by_profile?.full_name || snap.submitted_by_profile?.email || null
-                      const recipientName = snap.mentioned_user_profile?.full_name || snap.mentioned_user_profile?.email || snap.mentioned || 'Team'
-                      return (
-                        <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-3 border-2 transition-all hover:opacity-80 relative`} style={{ borderColor: `${style.accent}66`, borderLeftWidth: '10px', borderLeftColor: style.accent }}>
-                          <div className="flex-1">
-                            <p className={`text-lg mb-2 leading-relaxed ${style.text}`}>{snap.snap_content}</p>
-                            {snapViewType === 'received' && senderName && (
-                              <p className={`text-xs ${style.text}/60`}>
-                                From: {senderName}
-                              </p>
-                            )}
-                            {snapViewType === 'given' && (
-                              <p className={`text-xs ${style.text}/60`}>
-                                To: {recipientName}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })
-                  )}
-                </div>
-              </Card>
-            )
-          })()}
-
-          <div className="space-y-6">
-            {/* Beast Babe */}
-            {(() => {
-              const style = mode === 'chaos' ? getSpecificCardStyle('beast-babe') : getCardStyle('recognition')
-              return (
-                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-                >
-                  <p className="text-xs uppercase tracking-wider mb-2 font-black" style={{ color: style.accent }}>This Week's</p>
-                  <h2 className={`text-4xl font-black mb-6 uppercase ${style.text}`}>BEAST<br/>BABE</h2>
-              <div className="flex items-center justify-center mb-4">
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: style.accent }}>
-                      <Trophy className={`w-10 h-10 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
-                </div>
-              </div>
-                  <p className={`text-2xl font-black text-center ${style.text}`}>Sarah J.</p>
-                  <p className={`text-sm text-center font-medium ${style.text}/80`}>42 Snaps Received</p>
-            </Card>
-              )
-            })()}
-
-            {/* Wins Wall */}
-            {(() => {
-              const style = getSpecificCardStyle('wins-wall')
-              const wins = [
-                { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '🎉' },
-                { name: 'Jamie Park', win: 'Shipped v2.0!', emoji: '🚀' },
-                { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '⭐' },
-              ]
-              return (
-                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-                >
-                  <div className="flex items-center gap-2 text-sm mb-2" style={{ color: style.accent }}>
-                <Trophy className="w-4 h-4" />
-                    <span className="uppercase tracking-wider font-black text-xs">Celebrate</span>
-              </div>
-                  <h2 className={`text-4xl font-black mb-4 uppercase ${style.text}`}>WINS<br/>WALL</h2>
-              <div className="space-y-2 mb-4">
-                    {wins.map((win, idx) => (
-                      <div key={idx} className={`${mode === 'chaos' ? 'bg-black/40' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-3 border-2`} style={{ borderColor: `${style.accent}66` }}>
-                        <div className="flex items-center justify-between">
-                  <div>
-                            <p className={`text-sm font-black ${style.text}`}>{win.name}</p>
-                            <p className={`text-xs font-medium ${style.text}/70`}>{win.win}</p>
-                  </div>
-                          <span className="text-2xl">{win.emoji}</span>
-                </div>
-                  </div>
-                    ))}
-                </div>
-                  <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#00FF87] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-12 uppercase`}>
-                Share Win
-              </Button>
-            </Card>
-              )
-            })()}
-          </div>
         </div>
 
         <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
