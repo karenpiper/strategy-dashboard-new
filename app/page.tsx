@@ -739,7 +739,7 @@ export default function TeamDashboard() {
         // Community 2: Loop/Inspo War/Search - YELLOW SYSTEM: Golden Yellow, Gold, Light Yellow, Deep Purple
         'loom-standup': { bg: 'bg-[#EAB308]', border: 'border-0', glow: '', text: 'text-black', accent: '#D97706' }, // Golden Yellow bg with Gold accent
         'inspiration-war': { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#EAB308' }, // Black bg with Golden Yellow accent
-        'search': { bg: 'bg-[#1E293B]', border: 'border-2', glow: '', text: 'text-white', accent: '#EAB308' }, // Slate Grey bg with Golden Yellow border
+        'search': { bg: 'bg-[#000000]', border: 'border-2', glow: '', text: 'text-white', accent: '#9333EA' }, // Black bg with Purple border and accent
         
         // Other cards - keeping existing or using appropriate section colors
         'launch-pad': { bg: 'bg-gradient-to-br from-[#9D4EFF] to-[#6B2C91]', border: 'border-0', glow: '', text: 'text-white', accent: '#C4F500' },
