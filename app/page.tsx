@@ -129,6 +129,17 @@ export default function TeamDashboard() {
   const [selectedPipelineProject, setSelectedPipelineProject] = useState<typeof pipelineData[0] | null>(null)
   const [isPipelineDialogOpen, setIsPipelineDialogOpen] = useState(false)
   const [completedFilter, setCompletedFilter] = useState<'Pending Decision' | 'Long Lead' | 'Won' | 'Lost'>('Pending Decision')
+  const [weeklyPlaylist, setWeeklyPlaylist] = useState<{
+    id: string
+    date: string
+    title: string | null
+    curator: string
+    curator_photo_url: string | null
+    cover_url: string | null
+    description: string | null
+    spotify_url: string
+  } | null>(null)
+  const [playlistLoading, setPlaylistLoading] = useState(true)
   
   // Get Google Calendar access token using the user's existing Google session
   const { accessToken: googleCalendarToken, loading: tokenLoading, error: tokenError } = useGoogleCalendarToken()
@@ -332,6 +343,31 @@ export default function TeamDashboard() {
     }
     
     fetchPipeline()
+  }, [user])
+
+  // Fetch weekly playlist
+  useEffect(() => {
+    async function fetchWeeklyPlaylist() {
+      if (!user) return
+      
+      try {
+        setPlaylistLoading(true)
+        const response = await fetch('/api/playlists')
+        if (response.ok) {
+          const playlists = await response.json()
+          if (playlists && playlists.length > 0) {
+            // Get the most recent playlist
+            setWeeklyPlaylist(playlists[0])
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching playlist:', error)
+      } finally {
+        setPlaylistLoading(false)
+      }
+    }
+    
+    fetchWeeklyPlaylist()
   }, [user])
 
   // Fetch recent snaps for the logged-in user
@@ -2650,6 +2686,73 @@ export default function TeamDashboard() {
 
           {/* Team Pulse */}
           <TeamPulseCard />
+
+          {/* Weekly Playlist */}
+          {(() => {
+            const style = mode === 'chaos' ? getSpecificCardStyle('playlist') : getCardStyle('vibes')
+            return (
+              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+              >
+                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
+                  <Music className="w-4 h-4" />
+                  <span className="uppercase tracking-wider font-black text-xs">Weekly</span>
+                </div>
+                <h2 className={`text-3xl font-black mb-4 uppercase ${style.text}`}>PLAYLIST</h2>
+                {playlistLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin" style={{ color: style.accent }} />
+                  </div>
+                ) : weeklyPlaylist ? (
+                  <div className="space-y-4">
+                    {weeklyPlaylist.cover_url && (
+                      <div className="relative">
+                        <img
+                          src={weeklyPlaylist.cover_url}
+                          alt={weeklyPlaylist.title || 'Playlist'}
+                          className={`w-full ${getRoundedClass('rounded-xl')} object-cover`}
+                          style={{ maxHeight: '200px' }}
+                        />
+                        {weeklyPlaylist.curator_photo_url && (
+                          <div className="absolute bottom-2 right-2">
+                            <img
+                              src={weeklyPlaylist.curator_photo_url}
+                              alt={weeklyPlaylist.curator}
+                              className={`w-12 h-12 ${getRoundedClass('rounded-full')} ring-2 ring-white object-cover`}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div>
+                      <p className={`text-lg font-black mb-1 ${style.text}`}>
+                        {weeklyPlaylist.title || 'Untitled Playlist'}
+                      </p>
+                      <p className={`text-sm ${style.text}/70 mb-3`}>
+                        Curated by {weeklyPlaylist.curator}
+                      </p>
+                      {weeklyPlaylist.description && (
+                        <p className={`text-xs ${style.text}/60 line-clamp-2 mb-4`}>
+                          {weeklyPlaylist.description}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      onClick={() => weeklyPlaylist.spotify_url && window.open(weeklyPlaylist.spotify_url, '_blank')}
+                      className={`w-full ${mode === 'chaos' ? 'bg-black text-[#9D4EFF] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase flex items-center justify-center gap-2`}
+                    >
+                      <Play className="w-4 h-4" />
+                      Play on Spotify
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className={`text-sm ${style.text}/60`}>No playlist this week</p>
+                  </div>
+                )}
+              </Card>
+            )
+          })()}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
