@@ -232,7 +232,7 @@ export default function WorkSamplesPage() {
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h1 className={`text-4xl font-black uppercase ${getTextClass()}`}>WORK SAMPLES</h1>
+            <h1 className={`text-4xl font-black uppercase ${getTextClass()}`}>WORK ARCHIVE</h1>
           </div>
           
           {/* Filters and Search */}

@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, Calendar, Music, FileText, MessageCircle, Trophy, TrendingUp, Users, Zap, Star, Heart, Coffee, Lightbulb, ChevronRight, ChevronLeft, Play, Pause, CheckCircle, Clock, ArrowRight, Video, Sparkles, Loader2, Download, Bot, Info, ExternalLink, User } from 'lucide-react'
+import { Search, Calendar, Music, FileText, MessageCircle, Trophy, TrendingUp, Users, Zap, Star, Heart, Coffee, Lightbulb, ChevronRight, ChevronLeft, Play, Pause, CheckCircle, Clock, ArrowRight, Video, Sparkles, Loader2, Download, Bot, Info, ExternalLink, User, ChevronDown, ChevronUp } from 'lucide-react'
 import { AccountMenu } from '@/components/account-menu'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -110,6 +110,28 @@ export default function TeamDashboard() {
   }>>([])
   const [snapViewType, setSnapViewType] = useState<'received' | 'given'>('received')
   const [showAddSnapDialog, setShowAddSnapDialog] = useState(false)
+  const [calendarEvents, setCalendarEvents] = useState<Array<{
+    id: string
+    summary: string
+    start: { dateTime?: string; date?: string }
+    end: { dateTime?: string; date?: string }
+    location?: string
+    description?: string
+    calendarId: string
+    calendarName?: string
+  }>>([])
+  const [calendarLoading, setCalendarLoading] = useState(true)
+  const [calendarError, setCalendarError] = useState<string | null>(null)
+  const [eventsExpanded, setEventsExpanded] = useState(false)
+
+  // Calendar IDs from the provided embed URLs
+  const calendarIds = [
+    'codeandtheory.com_6elnqlt8ok3kmcpim2vge0qqqk@group.calendar.google.com', // Out of office 1
+    'codeandtheory.com_ojeuiov0bhit2k17g8d6gj4i68@group.calendar.google.com', // Out of office 2
+    'codeandtheory.com_5b18ulcjgibgffc35hbtmv6sfs@group.calendar.google.com', // Office events
+    'en.usa#holiday@group.v.calendar.google.com', // Holidays
+    'c_6236655ee40ad4fcbedc4e96ce72c39783f27645dbdd22714ca9bc90fcc551ac@group.calendar.google.com', // Strategy team
+  ]
 
   // Format today's date in user's timezone
   useEffect(() => {
@@ -332,6 +354,45 @@ export default function TeamDashboard() {
     
     fetchSnaps()
   }, [user, snapViewType])
+
+  // Fetch calendar events
+  useEffect(() => {
+    async function fetchCalendarEvents() {
+      try {
+        setCalendarLoading(true)
+        setCalendarError(null)
+
+        // Calculate time range based on expanded state
+        const now = new Date()
+        const timeMin = now.toISOString()
+        const timeMax = eventsExpanded
+          ? new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days for week view
+          : new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString() // 1 day for today view
+
+        const calendarIdsParam = calendarIds.map(id => encodeURIComponent(id)).join(',')
+        const response = await fetch(
+          `/api/calendar?calendarIds=${calendarIdsParam}&timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&maxResults=50`
+        )
+
+        if (response.ok) {
+          const result = await response.json()
+          if (result.events && Array.isArray(result.events)) {
+            setCalendarEvents(result.events)
+          }
+        } else {
+          const errorData = await response.json()
+          setCalendarError(errorData.error || 'Failed to fetch calendar events')
+        }
+      } catch (error: any) {
+        console.error('Error fetching calendar events:', error)
+        setCalendarError(error.message || 'Failed to load calendar events')
+      } finally {
+        setCalendarLoading(false)
+      }
+    }
+
+    fetchCalendarEvents()
+  }, [user, eventsExpanded])
 
   const handleSnapAdded = async () => {
     // Refresh snaps list for the logged-in user
@@ -1074,8 +1135,8 @@ export default function TeamDashboard() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 relative">
-          {/* Centered Divider Line */}
-          <div className="hidden md:block absolute left-[calc(66.666%+48px)] top-0 bottom-0 w-px bg-white"></div>
+          {/* Centered Divider Line - 40% height, vertically centered */}
+          <div className="hidden md:block absolute left-[calc(66.666%+48px)] top-1/2 -translate-y-1/2 h-[40%] w-px bg-white"></div>
           
           {/* Horoscope - 2 columns */}
           {(() => {
@@ -1192,7 +1253,7 @@ export default function TeamDashboard() {
             }
             
             return (
-              <div>
+              <div className="pl-[50px]">
                 <SpotifyPlayer
                   playlist={playlistData}
                   isPlaying={isPlaying}
@@ -1392,34 +1453,184 @@ export default function TeamDashboard() {
           )}
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div className={`grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 ${eventsExpanded ? 'md:grid-cols-4' : ''}`}>
           {/* Events */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('events') : getCardStyle('work')
             const mintColor = '#00FF87'
+            
+            // Filter events for today or week view
+            const now = new Date()
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+            const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000)
+            const weekEnd = new Date(todayStart.getTime() + 7 * 24 * 60 * 60 * 1000)
+            
+            const filteredEvents = calendarEvents.filter(event => {
+              const eventStart = event.start.dateTime 
+                ? new Date(event.start.dateTime)
+                : event.start.date 
+                  ? new Date(event.start.date)
+                  : null
+              
+              if (!eventStart) return false
+              
+              const endDate = eventsExpanded ? weekEnd : todayEnd
+              return eventStart >= todayStart && eventStart < endDate
+            })
+
+            // Format time for display
+            const formatEventTime = (event: typeof calendarEvents[0]) => {
+              if (event.start.dateTime) {
+                const date = new Date(event.start.dateTime)
+                return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+              } else if (event.start.date) {
+                return 'All Day'
+              }
+              return ''
+            }
+
+            // Get event color based on calendar type
+            const getEventColor = (event: typeof calendarEvents[0]) => {
+              const calendarId = event.calendarId
+              
+              // Out of office (both calendars)
+              if (calendarId.includes('6elnqlt8ok3kmcpim2vge0qqqk') || calendarId.includes('ojeuiov0bhit2k17g8d6gj4i68')) {
+                return '#FF6B6B' // Red
+              }
+              
+              // Strategy team
+              if (calendarId.includes('6236655ee40ad4fcbedc4e96ce72c39783f27645dbdd22714ca9bc90fcc551ac')) {
+                return '#9D4EFF' // Purple
+              }
+              
+              // Holidays
+              if (calendarId.includes('holiday')) {
+                return '#FFC043' // Yellow/Orange
+              }
+              
+              // Office events (default)
+              return '#00FF87' // Mint/Green
+            }
+
+            // Group events by date for week view
+            const eventsByDate = eventsExpanded ? filteredEvents.reduce((acc, event) => {
+              const eventDate = event.start.dateTime 
+                ? new Date(event.start.dateTime).toDateString()
+                : event.start.date
+                  ? new Date(event.start.date).toDateString()
+                  : ''
+              
+              if (!eventDate) return acc
+              
+              if (!acc[eventDate]) {
+                acc[eventDate] = []
+              }
+              acc[eventDate].push(event)
+              return acc
+            }, {} as Record<string, typeof calendarEvents>) : {}
+
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} ${eventsExpanded ? 'md:col-span-2' : ''}`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : { borderColor: style.accent }}
               >
-                <p className={`text-xs uppercase tracking-wider mb-4 font-black`} style={{ color: mintColor }}>TODAY</p>
-                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>EVENTS</h2>
-                <div className="space-y-2">
-                  {[
-                    { time: '10:30 Team Standup' },
-                    { time: '14:00 Design Review' },
-                  ].map((event) => (
-                    <div key={event.time} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`} style={{ backgroundColor: `${mintColor}33` }}>
-                      <Clock className="w-4 h-4" style={{ color: mintColor }} />
-                      <p className={`text-sm font-black ${style.text}`}>{event.time}</p>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between mb-4">
+                  <p className={`text-xs uppercase tracking-wider font-black`} style={{ color: mintColor }}>
+                    {eventsExpanded ? 'THIS WEEK' : 'TODAY'}
+                  </p>
+                  <button
+                    onClick={() => setEventsExpanded(!eventsExpanded)}
+                    className={`${getRoundedClass('rounded-lg')} px-3 py-1.5 flex items-center gap-1 text-xs font-black transition-all`}
+                    style={{ 
+                      backgroundColor: `${mintColor}33`,
+                      color: mintColor
+                    }}
+                  >
+                    {eventsExpanded ? (
+                      <>
+                        <ChevronUp className="w-3 h-3" />
+                        Collapse
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-3 h-3" />
+                        Expand
+                      </>
+                    )}
+                  </button>
                 </div>
+                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>EVENTS</h2>
+                
+                {calendarLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className={`w-6 h-6 animate-spin ${style.text}`} />
+                  </div>
+                ) : calendarError ? (
+                  <div className={`${getRoundedClass('rounded-lg')} p-3`} style={{ backgroundColor: `${mintColor}33` }}>
+                    <p className={`text-xs ${style.text}/80`}>{calendarError}</p>
+                  </div>
+                ) : eventsExpanded ? (
+                  // Week view
+                  <div className="space-y-4">
+                    {Object.entries(eventsByDate).map(([date, events]) => {
+                      const dateObj = new Date(date)
+                      const isToday = dateObj.toDateString() === now.toDateString()
+                      const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
+                      const dayNumber = dateObj.getDate()
+                      const monthName = dateObj.toLocaleDateString('en-US', { month: 'short' })
+                      
+                      return (
+                        <div key={date} className="space-y-2">
+                          <div className="flex items-center gap-2 mb-2">
+                            <p className={`text-xs font-black uppercase ${style.text}`} style={{ color: isToday ? mintColor : style.text }}>
+                              {isToday ? 'TODAY' : `${dayName} ${monthName} ${dayNumber}`}
+                            </p>
+                          </div>
+                          {events.map((event) => {
+                            const eventColor = getEventColor(event)
+                            return (
+                              <div key={event.id} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`} style={{ backgroundColor: `${eventColor}33` }}>
+                                <Clock className="w-4 h-4" style={{ color: eventColor }} />
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm font-black ${style.text} truncate`}>{event.summary}</p>
+                                  <p className={`text-xs ${style.text}/60`}>{formatEventTime(event)}</p>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })}
+                    {Object.keys(eventsByDate).length === 0 && (
+                      <p className={`text-sm ${style.text}/80 text-center py-4`}>No events this week</p>
+                    )}
+                  </div>
+                ) : (
+                  // Today view
+                  <div className="space-y-2">
+                    {filteredEvents.length > 0 ? (
+                      filteredEvents.map((event) => {
+                        const eventColor = getEventColor(event)
+                        return (
+                          <div key={event.id} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`} style={{ backgroundColor: `${eventColor}33` }}>
+                            <Clock className="w-4 h-4" style={{ color: eventColor }} />
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-black ${style.text} truncate`}>{event.summary}</p>
+                              <p className={`text-xs ${style.text}/60`}>{formatEventTime(event)}</p>
+                            </div>
+                          </div>
+                        )
+                      })
+                    ) : (
+                      <p className={`text-sm ${style.text}/80 text-center py-4`}>No events today</p>
+                    )}
+                  </div>
+                )}
               </Card>
             )
           })()}
 
           {/* Pipeline with This Week stats bar above it */}
-          <div className="md:col-span-3 flex flex-col gap-6">
+          <div className={`${eventsExpanded ? 'md:col-span-2' : 'md:col-span-3'} flex flex-col gap-6`}>
             {/* This Week Stats Bar */}
             {(() => {
               const style = mode === 'chaos' ? getSpecificCardStyle('friday-drop') : getCardStyle('work')
