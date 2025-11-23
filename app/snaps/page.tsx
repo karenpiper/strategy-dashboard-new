@@ -618,20 +618,9 @@ export default function SnapsPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           {activeFilter === 'all' && (
-                            <>
-                              <p className={`text-xs mb-1 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
-                                To: {toName}
-                              </p>
-                              {isAnonymous && (
-                                <span className={`px-2 py-1 ${getRoundedClass('rounded-full')} text-xs font-black uppercase flex items-center gap-1 mb-2 inline-block`} style={{ 
-                                  backgroundColor: style.accent,
-                                  color: mode === 'chaos' || mode === 'code' ? '#000000' : mode === 'chill' ? '#4A1818' : '#000000'
-                                }}>
-                                  <Users className="w-3 h-3" />
-                                  Anonymous
-                                </span>
-                              )}
-                            </>
+                            <p className={`text-xs mb-1 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
+                              To: {toName}
+                            </p>
                           )}
                           <p className={`text-lg mb-2 leading-relaxed ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
                             {snap.snap_content}

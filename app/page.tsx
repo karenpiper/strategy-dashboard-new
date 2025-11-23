@@ -1575,7 +1575,7 @@ export default function TeamDashboard() {
           )}
         </p>
 
-        <div className={`grid grid-cols-1 md:grid-cols-4 gap-6 mb-12`}>
+        <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-12`}>
           {/* Events */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('events') : getCardStyle('work')
@@ -1735,7 +1735,7 @@ export default function TeamDashboard() {
             }
 
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} ${eventsExpanded ? 'md:col-span-3' : ''}`}
+              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} md:col-span-1`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : { borderColor: style.accent }}
               >
                 <div className="flex items-center justify-between mb-4">
@@ -2045,7 +2045,7 @@ export default function TeamDashboard() {
           })()}
 
           {/* Pipeline with This Week stats bar above it */}
-          <div className={`${eventsExpanded ? 'md:col-span-1' : 'md:col-span-3'} flex flex-col ${eventsExpanded ? 'gap-4 h-full' : 'gap-6'}`}>
+          <div className={`md:col-span-2 flex flex-col ${eventsExpanded ? 'gap-4 h-full' : 'gap-6'}`}>
             {/* This Week Stats Bar */}
             {(() => {
               const style = mode === 'chaos' ? getSpecificCardStyle('friday-drop') : getCardStyle('work')
