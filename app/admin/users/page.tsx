@@ -28,6 +28,7 @@ interface UserProfile {
   location: string | null
   website: string | null
   pronouns: string | null
+  slack_id: string | null
   created_at: string
   updated_at: string
 }
@@ -520,6 +521,20 @@ export default function UsersAdminPage() {
                     placeholder="e.g., they/them, she/her"
                     className="bg-white text-black border-gray-300"
                   />
+                </div>
+
+                {/* Slack ID (Admin Only) */}
+                <div>
+                  <Label className="text-black mb-2">Slack ID</Label>
+                  <Input
+                    value={editingUser.slack_id || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, slack_id: e.target.value })}
+                    placeholder="e.g., U01234567"
+                    className="bg-white text-black border-gray-300"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Slack user ID for integration (admin only)
+                  </p>
                 </div>
 
                 {/* Location and Website */}

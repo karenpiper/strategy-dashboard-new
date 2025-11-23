@@ -124,7 +124,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Convert empty strings to null for optional fields
-    const optionalFields = ['full_name', 'avatar_url', 'birthday', 'discipline', 'role', 'bio', 'location', 'website', 'pronouns']
+    const optionalFields = ['full_name', 'avatar_url', 'birthday', 'discipline', 'role', 'bio', 'location', 'website', 'pronouns', 'slack_id']
     optionalFields.forEach(field => {
       if (updateData[field] === '') {
         updateData[field] = null
