@@ -20,11 +20,13 @@ import {
   Shield,
   Settings,
   Upload,
-  Newspaper
+  Newspaper,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { getRoleDisplayName, getSpecialAccessDisplayName } from '@/lib/permissions'
 import { AccountMenu } from '@/components/account-menu'
 
@@ -34,6 +36,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { user: authUser, signOut } = useAuth()
   const { user, permissions, isLoading } = usePermissions()
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
 
   // Allow all users to access admin - access control handled within pages
   if (isLoading) {
@@ -229,37 +232,37 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       <main className="max-w-[1200px] mx-auto px-6 py-10">
         <div className="flex gap-6">
           {/* Left Sidebar Card - 1/4 width */}
-          <Card className={`w-1/4 ${mode === 'chaos' ? 'bg-[#1a1a1a]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`} style={{ 
+          <Card className={`w-1/4 ${mode === 'chaos' ? 'bg-[#1a1a1a]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-4 flex flex-col h-fit`} style={{ 
             borderColor: mode === 'chaos' ? '#E8FF00' : mode === 'chill' ? '#C8D961' : '#FFFFFF',
             borderWidth: '2px'
           }}>
-            <div className="mb-6">
-              <h1 className={`text-2xl font-black uppercase tracking-wider ${getTextClass()} mb-1`}>Admin Panel</h1>
+            <div className="mb-4">
+              <h1 className={`text-xl font-black uppercase tracking-wider ${getTextClass()} mb-1`}>Admin Panel</h1>
             </div>
 
             {/* User Profile Section */}
             {authUser && (
-              <div className={`mb-6 p-3 ${getRoundedClass('rounded-lg')} border ${getBorderClass()}`}>
-                <div className="flex items-center gap-3 mb-2">
+              <div className={`mb-4 p-2 ${getRoundedClass('rounded-lg')} border ${getBorderClass()}`}>
+                <div className="flex items-center gap-2 mb-1">
                   <AccountMenu />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Shield className="w-3 h-3" />
-                      <span className={`text-xs font-medium ${getTextClass()}`}>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <Shield className="w-2.5 h-2.5" />
+                      <span className={`text-[10px] font-medium ${getTextClass()}`}>
                         {user ? getRoleDisplayName(user.baseRole) : 'User'}
                       </span>
                     </div>
-                    <p className={`text-xs ${getTextClass()}/70 truncate`}>
+                    <p className={`text-[10px] ${getTextClass()}/70 truncate`}>
                       {authUser.user_metadata?.full_name || authUser.email || 'User'}
                     </p>
                   </div>
                 </div>
                 {user?.specialAccess.length > 0 && (
-                  <div className="space-y-1 mt-2">
+                  <div className="space-y-0.5 mt-1.5">
                     {user.specialAccess.map((access) => (
-                      <div key={access} className="flex items-center gap-2">
-                        <Crown className="w-3 h-3 text-yellow-500" />
-                        <span className={`text-xs ${getTextClass()}/70`}>
+                      <div key={access} className="flex items-center gap-1.5">
+                        <Crown className="w-2.5 h-2.5 text-yellow-500" />
+                        <span className={`text-[10px] ${getTextClass()}/70`}>
                           {getSpecialAccessDisplayName(access)}
                         </span>
                       </div>
@@ -268,77 +271,80 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                 )}
               </div>
             )}
-
-            {/* Admin Tools Button */}
-            <div className="mb-6">
-              <Button
-                onClick={() => router.push('/admin')}
-                className={`w-full ${getRoundedClass('rounded-lg')} ${
-                  mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
-                  mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
-                  'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
-                }`}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Admin Tools
-              </Button>
-            </div>
             
             {/* Navigation Sections */}
-            <nav className="space-y-6 flex-1">
+            <nav className="space-y-3 flex-1">
               {navSections.map((section) => {
                 // Check if user has access to this section
                 if (section.sectionAccess && !hasSectionAccess(section.sectionAccess)) {
                   return null
                 }
                 
+                const isCollapsed = collapsedSections[section.title] ?? false
+                const toggleSection = () => {
+                  setCollapsedSections(prev => ({
+                    ...prev,
+                    [section.title]: !prev[section.title]
+                  }))
+                }
+                
                 return (
                   <div key={section.title}>
-                    <h2 className={`text-xs font-bold uppercase tracking-wider mb-3 ${getTextClass()}/50`}>
-                      {section.title}
-                    </h2>
-                    <div className="space-y-1">
-                      {section.items.map((item) => {
-                        // Check section access for individual items
-                        if (item.sectionAccess && !hasSectionAccess(item.sectionAccess)) {
-                          return null
-                        }
-                        
-                        // Check permissions if required
-                        if (item.permission && !permissions?.[item.permission]) {
-                          return null
-                        }
-                        
-                        const Icon = item.icon
-                        const isActive = pathname === item.href || (item.href !== '/admin' && pathname?.startsWith(item.href))
-                        
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`flex items-center gap-3 px-3 py-2 ${getRoundedClass('rounded-lg')} transition-colors text-sm ${
-                              getNavItemStyle(isActive)
-                            }`}
-                          >
-                            <Icon className="w-4 h-4" />
-                            <span className="font-medium uppercase tracking-wider text-sm">{item.label}</span>
-                          </Link>
-                        )
-                      })}
-                    </div>
+                    <button
+                      onClick={toggleSection}
+                      className={`w-full flex items-center justify-between px-2 py-1.5 ${getRoundedClass('rounded-lg')} transition-colors text-[10px] font-bold uppercase tracking-wider ${getTextClass()}/50 hover:${getTextClass()} hover:bg-black/10 mb-1.5`}
+                    >
+                      <span>{section.title}</span>
+                      {isCollapsed ? (
+                        <ChevronDown className="w-3 h-3" />
+                      ) : (
+                        <ChevronUp className="w-3 h-3" />
+                      )}
+                    </button>
+                    {!isCollapsed && (
+                      <div className="space-y-0.5">
+                        {section.items.map((item) => {
+                          // Check section access for individual items
+                          if (item.sectionAccess && !hasSectionAccess(item.sectionAccess)) {
+                            return null
+                          }
+                          
+                          // Check permissions if required
+                          if (item.permission && !permissions?.[item.permission]) {
+                            return null
+                          }
+                          
+                          const Icon = item.icon
+                          const isActive = pathname === item.href || (item.href !== '/admin' && pathname?.startsWith(item.href))
+                          
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              className={`flex items-center gap-2 px-2 py-1.5 ${getRoundedClass('rounded-lg')} transition-colors text-xs ${
+                                getNavItemStyle(isActive)
+                              }`}
+                            >
+                              <Icon className="w-3.5 h-3.5" />
+                              <span className="font-medium uppercase tracking-wider text-xs">{item.label}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 )
               })}
             </nav>
 
             {/* Bottom Actions */}
-            <div className="mt-8 pt-8 border-t space-y-2">
+            <div className="mt-4 pt-4 border-t space-y-1">
               <Link
                 href="/"
-                className={`flex items-center gap-3 px-3 py-2 ${getRoundedClass('rounded-lg')} ${getTextClass()}/60 hover:${getTextClass()} hover:bg-black/10 transition-colors text-sm`}
+                className={`flex items-center gap-2 px-2 py-1.5 ${getRoundedClass('rounded-lg')} ${getTextClass()}/60 hover:${getTextClass()} hover:bg-black/10 transition-colors text-xs`}
               >
-                <Home className="w-4 h-4" />
-                <span className="font-medium">← Back to Dashboard</span>
+                <Home className="w-3.5 h-3.5" />
+                <span className="font-medium text-xs">← Back to Dashboard</span>
               </Link>
             </div>
           </Card>

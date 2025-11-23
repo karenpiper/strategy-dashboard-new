@@ -494,47 +494,45 @@ export default function UsersAdminPage() {
                   </div>
                 </div>
 
-                {/* Base Role */}
-                <div>
-                  <Label className="text-black flex items-center gap-2 mb-2">
-                    <Users className="w-4 h-4" />
-                    Base Role
-                  </Label>
-                  <select
-                    value={editingUser.base_role || 'user'}
-                    onChange={(e) => setEditingUser({ ...editingUser, base_role: e.target.value })}
-                    className="w-full h-9 rounded-md border border-gray-300 bg-white text-black px-3"
-                  >
-                    <option value="user">User</option>
-                    <option value="contributor">Contributor</option>
-                    <option value="leader">Leader</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-
-                {/* Pronouns */}
-                <div>
-                  <Label className="text-black mb-2">Pronouns</Label>
-                  <Input
-                    value={editingUser.pronouns || ''}
-                    onChange={(e) => setEditingUser({ ...editingUser, pronouns: e.target.value })}
-                    placeholder="e.g., they/them, she/her"
-                    className="bg-white text-black border-gray-300"
-                  />
-                </div>
-
-                {/* Slack ID (Admin Only) */}
-                <div>
-                  <Label className="text-black mb-2">Slack ID</Label>
-                  <Input
-                    value={editingUser.slack_id || ''}
-                    onChange={(e) => setEditingUser({ ...editingUser, slack_id: e.target.value })}
-                    placeholder="e.g., U01234567"
-                    className="bg-white text-black border-gray-300"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Slack user ID for integration (admin only)
-                  </p>
+                {/* Base Role, Pronouns, and Slack ID */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-black flex items-center gap-2 mb-2">
+                      <Users className="w-4 h-4" />
+                      Base Role
+                    </Label>
+                    <select
+                      value={editingUser.base_role || 'user'}
+                      onChange={(e) => setEditingUser({ ...editingUser, base_role: e.target.value })}
+                      className="w-full h-9 rounded-md border border-gray-300 bg-white text-black px-3"
+                    >
+                      <option value="user">User</option>
+                      <option value="contributor">Contributor</option>
+                      <option value="leader">Leader</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-black mb-2">Pronouns</Label>
+                    <Input
+                      value={editingUser.pronouns || ''}
+                      onChange={(e) => setEditingUser({ ...editingUser, pronouns: e.target.value })}
+                      placeholder="e.g., they/them, she/her"
+                      className="bg-white text-black border-gray-300"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-black mb-2">Slack ID</Label>
+                    <Input
+                      value={editingUser.slack_id || ''}
+                      onChange={(e) => setEditingUser({ ...editingUser, slack_id: e.target.value })}
+                      placeholder="e.g., U01234567"
+                      className="bg-white text-black border-gray-300"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Admin only
+                    </p>
+                  </div>
                 </div>
 
                 {/* Location and Website */}
