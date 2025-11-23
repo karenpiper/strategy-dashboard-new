@@ -1519,7 +1519,7 @@ export default function TeamDashboard() {
             const style = mode === 'chaos' ? getSpecificCardStyle('snaps') : getCardStyle('recognition')
             return (
               <Card className={`lg:col-span-2 ${style.bg} ${style.border} p-8 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : style.border.includes('border-2') ? { borderColor: style.accent } : {}}
               >
                 <div className="flex items-center gap-2 text-sm mb-6" style={{ color: style.accent }}>
                   <Sparkles className="w-4 h-4" />
@@ -1533,12 +1533,12 @@ export default function TeamDashboard() {
                       className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
                         snapViewType === 'received'
                           ? mode === 'chaos'
-                            ? 'bg-[#E8FF00] text-black'
+                            ? 'bg-[#EAB308] text-black'
                             : mode === 'chill'
                             ? 'bg-[#FFB5D8] text-[#4A1818]'
                             : 'bg-white text-black'
                           : mode === 'chaos'
-                          ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
+                          ? 'bg-black/40 text-[#EAB308]/60 border border-[#EAB308]/40'
                           : mode === 'chill'
                           ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
                           : 'bg-black/40 text-white/60 border border-white/40'
@@ -1551,12 +1551,12 @@ export default function TeamDashboard() {
                       className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
                         snapViewType === 'given'
                           ? mode === 'chaos'
-                            ? 'bg-[#E8FF00] text-black'
+                            ? 'bg-[#EAB308] text-black'
                             : mode === 'chill'
                             ? 'bg-[#FFB5D8] text-[#4A1818]'
                             : 'bg-white text-black'
                           : mode === 'chaos'
-                          ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
+                          ? 'bg-black/40 text-[#EAB308]/60 border border-[#EAB308]/40'
                           : mode === 'chill'
                           ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
                           : 'bg-black/40 text-white/60 border border-white/40'
@@ -1567,13 +1567,13 @@ export default function TeamDashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Link href="/snaps">
-                      <Button className={`${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 border-2 border-[#E8FF00] text-[#E8FF00]' : mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/50 border-2 border-[#FFB5D8] text-[#4A1818]' : 'bg-black/40 hover:bg-black/60 border-2 border-white text-white'} font-black rounded-full h-10 px-6 text-sm uppercase`}>
+                      <Button className={`${mode === 'chaos' ? 'bg-black/40 hover:bg-black/60 border-2 border-[#EAB308] text-[#EAB308]' : mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/50 border-2 border-[#FFB5D8] text-[#4A1818]' : 'bg-black/40 hover:bg-black/60 border-2 border-white text-white'} font-black rounded-full h-10 px-6 text-sm uppercase`}>
                         VIEW ALL
                       </Button>
                     </Link>
                     <Button 
                       onClick={() => setShowAddSnapDialog(true)}
-                      className={`${mode === 'chaos' ? 'bg-gradient-to-r from-[#00FF87] to-[#00E676] hover:from-[#00FF87] hover:to-[#00FF87] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-10 px-6 text-sm uppercase`}
+                      className={`${mode === 'chaos' ? 'bg-gradient-to-r from-[#34D399] to-[#047857] hover:from-[#34D399] hover:to-[#34D399] text-black' : mode === 'chill' ? 'bg-gradient-to-r from-[#C8D961] to-[#FFC043] hover:from-[#C8D961] hover:to-[#C8D961] text-[#4A1818]' : 'bg-gradient-to-r from-[#cccccc] to-[#e5e5e5] hover:from-[#cccccc] hover:to-[#cccccc] text-black'} font-black rounded-full h-10 px-6 text-sm uppercase`}
                     >
                       + GIVE A SNAP
                     </Button>
@@ -1661,7 +1661,7 @@ export default function TeamDashboard() {
           {/* Events */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('events') : getCardStyle('work')
-            const mintColor = '#00FF87'
+            const mintColor = mode === 'chaos' ? '#A78BFA' : '#00FF87' // Work section uses Violet from Accent Pairing
             
             // Filter events for today or week view
             const now = new Date()
@@ -1752,16 +1752,16 @@ export default function TeamDashboard() {
               
               // Strategy team
               if (calendarId.includes('6236655ee40ad4fcbedc4e96ce72c39783f27645dbdd22714ca9bc90fcc551ac')) {
-                return '#9D4EFF' // Purple
+                return mode === 'chaos' ? '#6D28D9' : '#9D4EFF' // Deep Violet from Accent Pairing
               }
               
               // Holidays
               if (calendarId.includes('holiday')) {
-                return '#FFC043' // Yellow/Orange
+                return mode === 'chaos' ? '#EAB308' : '#FFC043' // Golden Yellow
               }
               
               // Office events (default)
-              return '#00FF87' // Mint/Green
+              return mode === 'chaos' ? '#A78BFA' : '#00FF87' // Violet from Accent Pairing
             }
 
             // Generate week days for Gantt chart
@@ -1953,15 +1953,15 @@ export default function TeamDashboard() {
                           <span className={`text-[10px] ${style.text}/80`}>Out of Office</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#9D4EFF' }}></div>
+                          <div className="w-4 h-4 rounded" style={{ backgroundColor: mode === 'chaos' ? '#6D28D9' : '#9D4EFF' }}></div>
                           <span className={`text-[10px] ${style.text}/80`}>Strategy Team</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#FFC043' }}></div>
+                          <div className="w-4 h-4 rounded" style={{ backgroundColor: mode === 'chaos' ? '#EAB308' : '#FFC043' }}></div>
                           <span className={`text-[10px] ${style.text}/80`}>Holidays</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded" style={{ backgroundColor: '#00FF87' }}></div>
+                          <div className="w-4 h-4 rounded" style={{ backgroundColor: mode === 'chaos' ? '#A78BFA' : '#00FF87' }}></div>
                           <span className={`text-[10px] ${style.text}/80`}>Office Events</span>
                         </div>
                       </div>
@@ -2204,7 +2204,7 @@ export default function TeamDashboard() {
 
             {/* Pipeline */}
             {(() => {
-              const borderColor = mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : mode === 'code' ? '#FFFFFF' : '#00FF87'
+              const borderColor = mode === 'chaos' ? '#A78BFA' : mode === 'chill' ? '#FFC043' : mode === 'code' ? '#FFFFFF' : '#00FF87' // Work section uses Violet from Accent Pairing
               
               const inProgressProjects = pipelineData.filter(p => p.status === 'In Progress')
               const completedProjects = pipelineData.filter(p => p.status === completedFilter)
@@ -2691,7 +2691,7 @@ export default function TeamDashboard() {
               </div>
                   ))}
               </div>
-                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#9D4EFF] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#8B4444] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
+                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#7C3AED] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#8B4444] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
               Ask Question
             </Button>
           </Card>
@@ -2706,7 +2706,7 @@ export default function TeamDashboard() {
             const style = mode === 'chaos' ? getSpecificCardStyle('playlist') : getCardStyle('vibes')
             return (
               <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : style.border.includes('border-2') ? { borderColor: style.accent } : {}}
               >
                 <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
                   <Music className="w-4 h-4" />
@@ -2753,7 +2753,7 @@ export default function TeamDashboard() {
                     </div>
                     <Button
                       onClick={() => weeklyPlaylist.spotify_url && window.open(weeklyPlaylist.spotify_url, '_blank')}
-                      className={`w-full ${mode === 'chaos' ? 'bg-black text-[#9D4EFF] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase flex items-center justify-center gap-2`}
+                      className={`w-full ${mode === 'chaos' ? 'bg-black text-[#7C3AED] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase flex items-center justify-center gap-2`}
                     >
                       <Play className="w-4 h-4" />
                       Play on Spotify
@@ -2774,7 +2774,7 @@ export default function TeamDashboard() {
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('loom-standup') : getCardStyle('team')
             const standupColors = mode === 'chaos'
-              ? ['#00D4FF', '#9D4EFF', '#FF00FF']
+              ? ['#0EA5E9', '#0369A1', '#34D399'] // Team section: Ocean Blue, Deep Ocean, Bright Mint
               : mode === 'chill'
               ? ['#4A9BFF', '#8B4444', '#FFB5D8']
               : ['#cccccc', '#999999', '#e5e5e5']

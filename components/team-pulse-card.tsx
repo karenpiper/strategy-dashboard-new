@@ -102,11 +102,12 @@ export function TeamPulseCard() {
   const [highestQuestion, setHighestQuestion] = useState<QuestionSummary | null>(null)
   const [lowestQuestion, setLowestQuestion] = useState<QuestionSummary | null>(null)
 
-  // Load 2 random questions on mount
+  // Load 2 random questions on mount - always get fresh questions
   useEffect(() => {
     async function loadQuestions() {
       try {
-        const response = await fetch('/api/team-pulse/questions')
+        // Add cache-busting to ensure fresh questions each time
+        const response = await fetch(`/api/team-pulse/questions?t=${Date.now()}`)
         if (response.ok) {
           const data = await response.json()
           setQuestions(data.questions || [])
@@ -127,7 +128,7 @@ export function TeamPulseCard() {
     loadQuestions()
   }, [])
 
-  // Check if user has already submitted this week
+  // Check if user has already submitted this week (but don't auto-switch to results)
   useEffect(() => {
     async function checkSubmission() {
       if (!user) return
@@ -136,10 +137,8 @@ export function TeamPulseCard() {
         if (response.ok) {
           const data = await response.json()
           setHasSubmitted(data.hasSubmitted)
-          if (data.hasSubmitted) {
-            loadAggregatedData()
-            setCurrentStep('results')
-          }
+          // Always show questions, even if already submitted
+          // User can view results by clicking a button if needed
         }
       } catch (error) {
         console.error('Error checking submission:', error)
@@ -280,9 +279,42 @@ export function TeamPulseCard() {
                 <p className={`text-xs ${style.text}/60 mt-1`}>This week's results</p>
               </div>
             </div>
-            <Badge className={`${mode === 'chaos' ? 'bg-[#00FF87] text-black' : mode === 'chill' ? 'bg-[#C8D961] text-[#4A1818]' : 'bg-white text-black'} border-0 font-black text-xs px-3 py-1`}>
-              {totalResponses} {totalResponses === 1 ? 'response' : 'responses'}
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Badge className={`${mode === 'chaos' ? 'bg-[#00FF87] text-black' : mode === 'chill' ? 'bg-[#C8D961] text-[#4A1818]' : 'bg-white text-black'} border-0 font-black text-xs px-3 py-1`}>
+                {totalResponses} {totalResponses === 1 ? 'response' : 'responses'}
+              </Badge>
+              <Button
+                onClick={() => {
+                  // Reload questions to get fresh ones
+                  fetch(`/api/team-pulse/questions?t=${Date.now()}`)
+                    .then(res => res.json())
+                    .then(data => {
+                      setQuestions(data.questions || [])
+                      const initialResponses: Record<string, PulseResponse> = {}
+                      data.questions?.forEach((q: PulseQuestion) => {
+                        initialResponses[q.question_key] = {
+                          questionKey: q.question_key,
+                          score: 50,
+                        }
+                      })
+                      setResponses(initialResponses)
+                      setComments({})
+                      setCurrentStep('survey')
+                    })
+                    .catch(err => console.error('Error loading questions:', err))
+                }}
+                variant="outline"
+                className={`${getRoundedClass('rounded-lg')} text-xs h-8 px-4 ${
+                  mode === 'chaos' 
+                    ? 'bg-black/10 border-black/20 text-black hover:bg-black/20' 
+                    : mode === 'chill'
+                    ? 'bg-[#4A1818]/10 border-[#4A1818]/20 text-[#4A1818] hover:bg-[#4A1818]/20'
+                    : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                }`}
+              >
+                New Questions
+              </Button>
+            </div>
           </div>
 
           {/* Overall Team Mood Summary */}
@@ -445,12 +477,45 @@ export function TeamPulseCard() {
       `}</style>
       <Card className={`${style.bg} ${style.border} !rounded-[2.5rem] ${FIXED_HEIGHT} flex flex-col overflow-hidden`}>
         <div className="p-8 pb-6 flex-shrink-0">
-          <div className="flex items-center gap-2 mb-6">
-            <Lock className={`w-3 h-3 ${style.text}/60`} />
-            <p className={`text-xs ${style.text}/60`}>Your response is private and only added to the group average</p>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Lock className={`w-3 h-3 ${style.text}/60`} />
+              <p className={`text-xs ${style.text}/60`}>Your response is private and only added to the group average</p>
+            </div>
+            {hasSubmitted && (
+              <Button
+                onClick={() => {
+                  loadAggregatedData()
+                  setCurrentStep('results')
+                }}
+                variant="outline"
+                className={`${getRoundedClass('rounded-lg')} text-xs h-8 px-4 ${
+                  mode === 'chaos' 
+                    ? 'bg-black/10 border-black/20 text-black hover:bg-black/20' 
+                    : mode === 'chill'
+                    ? 'bg-[#4A1818]/10 border-[#4A1818]/20 text-[#4A1818] hover:bg-[#4A1818]/20'
+                    : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                }`}
+              >
+                View Results
+              </Button>
+            )}
           </div>
           
           <h2 className={`text-2xl font-black mb-6 uppercase ${style.text}`}>Team Pulse</h2>
+          {hasSubmitted && (
+            <div className={`mb-4 p-3 ${getRoundedClass('rounded-lg')} ${
+              mode === 'chaos' 
+                ? 'bg-[#EAB308]/10 border border-[#EAB308]/20' 
+                : mode === 'chill'
+                ? 'bg-[#FFC043]/10 border border-[#FFC043]/20'
+                : 'bg-white/10 border border-white/20'
+            }`}>
+              <p className={`text-xs ${style.text}/80`}>
+                You've already submitted this week. You can answer again to see new questions, but your previous submission won't be overwritten.
+              </p>
+            </div>
+          )}
         </div>
         
         <div className="flex-1 overflow-y-auto px-8 pb-6">
