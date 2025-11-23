@@ -1073,7 +1073,7 @@ export default function TeamDashboard() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {/* Horoscope - Double Width */}
+          {/* Horoscope - 2 columns */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('horoscope') : getCardStyle('vibes')
             return (
@@ -1159,183 +1159,44 @@ export default function TeamDashboard() {
             )
           })()}
 
-          {/* Right Column: AI Chaos Agent, Weather and Time Zones */}
-          <div className="flex flex-col gap-6">
-            {/* AI Chaos Agent */}
-            {(() => {
-              const style = mode === 'chaos' ? getSpecificCardStyle('launch-pad') : getCardStyle('hero')
-              return (
-                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} flex flex-col justify-center`}
-                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-                >
-                  <div className={`w-12 h-12 ${getRoundedClass('rounded-2xl')} flex items-center justify-center mb-4`} style={{ backgroundColor: style.accent }}>
-                    <Bot className={`w-6 h-6 ${mode === 'chaos' || mode === 'code' ? 'text-black' : 'text-[#4A1818]'}`} />
-                  </div>
-                  <p className={`text-xs uppercase tracking-wider font-black mb-2 ${mode === 'code' ? 'font-mono' : ''}`} style={{ color: style.accent }}>
-                    {mode === 'code' ? '[AI CHAOS AGENT]' : 'AI Chaos Agent'}
-                  </p>
-                  <h2 className={`text-3xl font-black leading-tight uppercase ${style.text} ${mode === 'code' ? 'font-mono' : ''}`}>
-                    {mode === 'code' ? '> READY!' : 'Ready!'}
-                  </h2>
-                </Card>
-              )
-            })()}
-
-            {/* Weather - Enhanced Design with Maps */}
-            {(() => {
-              // Weather map types from WeatherAPI.com
-              const weatherMaps = [
-                { type: 'tmp2m', label: 'Temperature', path: 'tmp2m' },
-                { type: 'precip', label: 'Precipitation', path: 'precip' },
-                { type: 'pressure', label: 'Pressure', path: 'pressure' },
-                { type: 'wind', label: 'Wind Speed', path: 'wind' },
-              ]
-
-              // Generate weather map URL for current location
-              const getWeatherMapUrl = (mapType: string, zoom: number = 4) => {
-                if (!weather?.lat || !weather?.lon) return null
-                
-                const now = new Date()
-                const utcDate = now.toISOString().split('T')[0].replace(/-/g, '') // yyyyMMdd
-                const utcHour = String(now.getUTCHours()).padStart(2, '0') // HH
-                
-                // Calculate tile coordinates (simplified - for actual implementation, you'd need proper tile math)
-                // For now, we'll use a center point approach
-                const lat = weather.lat
-                const lon = weather.lon
-                
-                // Simple tile calculation (this is approximate)
-                const n = Math.pow(2, zoom)
-                const x = Math.floor((lon + 180) / 360 * n)
-                const y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n)
-                
-                return `https://weathermaps.weatherapi.com/${mapType}/tiles/${utcDate}${utcHour}/${zoom}/${x}/${y}.png`
-              }
-
-              const style = mode === 'chaos' ? getSpecificCardStyle('weather') : getCardStyle('team')
-              const currentMap = weatherMaps[currentMapIndex]
-              const mapUrl = getWeatherMapUrl(currentMap.path)
-              
-              return (
-                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden`}
-                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-                >
-                  {weatherLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className={`w-6 h-6 animate-spin ${style.text}`} />
-                    </div>
-                  ) : weatherError ? (
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
-                          <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
-                        </div>
-                        <span className="text-3xl">🌤️</span>
-                      </div>
-                      <p className={`text-sm ${style.text}/80`}>{weatherError}</p>
-                    </div>
-                  ) : weather ? (
-                    <div className="space-y-4">
-                      {/* Top Header with Weather Icon */}
-                      <div className="flex items-start justify-between relative z-10">
-                        <div>
-                          <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
-                          <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
-                        </div>
-                        <span className="text-3xl">{weather.emoji}</span>
-                      </div>
-                      
-                      {/* Weather Map Carousel */}
-                      {mapUrl && weather.lat && weather.lon && (
-                        <div className="relative w-full h-32 rounded-xl overflow-hidden mb-4 bg-black/20">
-                          <img 
-                            src={mapUrl} 
-                            alt={currentMap.label}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              // Hide image if it fails to load
-                              e.currentTarget.style.display = 'none'
-                            }}
-                          />
-                          {/* Map Navigation */}
-                          <div className="absolute inset-0 flex items-center justify-between p-2">
-                            <button
-                              onClick={() => setCurrentMapIndex((prev) => (prev - 1 + weatherMaps.length) % weatherMaps.length)}
-                              className={`p-1.5 ${getRoundedClass('rounded-full')} bg-black/40 hover:bg-black/60 transition-all backdrop-blur-sm`}
-                              aria-label="Previous map"
-                            >
-                              <ChevronLeft className="w-4 h-4 text-white" />
-                            </button>
-                            <div className={`px-3 py-1 ${getRoundedClass('rounded-full')} bg-black/40 backdrop-blur-sm`}>
-                              <p className="text-xs font-bold text-white uppercase">{currentMap.label}</p>
-                            </div>
-                            <button
-                              onClick={() => setCurrentMapIndex((prev) => (prev + 1) % weatherMaps.length)}
-                              className={`p-1.5 ${getRoundedClass('rounded-full')} bg-black/40 hover:bg-black/60 transition-all backdrop-blur-sm`}
-                              aria-label="Next map"
-                            >
-                              <ChevronRight className="w-4 h-4 text-white" />
-                            </button>
-                          </div>
-                          {/* Map Dots Indicator */}
-                          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1.5">
-                            {weatherMaps.map((_, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => setCurrentMapIndex(idx)}
-                                className={`w-1.5 h-1.5 ${getRoundedClass('rounded-full')} transition-all ${
-                                  idx === currentMapIndex ? 'bg-white w-4' : 'bg-white/50'
-                                }`}
-                                aria-label={`View ${weatherMaps[idx].label} map`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Main Temperature */}
-                      <div className="relative z-10">
-                        <p className={`text-6xl font-black leading-none mb-2 ${style.text}`}>{weather.temperature}°</p>
-                        <p className={`${style.text} text-base font-semibold capitalize mb-4`}>{weather.description}</p>
-                      </div>
-                      
-                      {/* Work Report - More Prominent */}
-                      {weather.workReport && (
-                        <div className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} ${mode === 'chaos' ? 'bg-black/30 backdrop-blur-sm' : mode === 'chill' ? 'bg-white/15 backdrop-blur-sm' : 'bg-black/30 backdrop-blur-sm'} relative z-10 border ${mode === 'chaos' ? 'border-white/20' : mode === 'chill' ? 'border-white/20' : 'border-white/20'}`}>
-                          <p className={`text-sm font-medium ${style.text} leading-relaxed`}>{weather.workReport}</p>
-                        </div>
-                      )}
-                      
-                      {/* Bottom Stats - Side by Side */}
-                      <div className="flex gap-4 relative z-10">
-                        <div className="flex-1">
-                          <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>HUMIDITY</p>
-                          <p className={`text-xl font-black ${style.text}`}>{weather.humidity}%</p>
-                        </div>
-                        <div className="flex-1">
-                          <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>WIND</p>
-                          <p className={`text-xl font-black ${style.text}`}>{weather.windSpeed} mph</p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
-                          <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
-                        </div>
-                        <span className="text-3xl">🌤️</span>
-                      </div>
-                      <p className={`text-sm ${style.text}/80`}>Loading weather...</p>
-                    </div>
-                  )}
-                </Card>
-              )
-            })()}
-
-          </div>
+          {/* Right Column: Playlist */}
+          {(() => {
+            const [isPlaying, setIsPlaying] = useState(false)
+            
+            // Example playlist data - replace with actual Spotify API data
+            const playlistData: PlaylistData = {
+              title: 'Halloween Prom',
+              curator: 'Rebecca Smith',
+              curatorPhotoUrl: '/placeholder-user.jpg',
+              coverUrl: 'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526',
+              description: 'macabre mingling, bone-chilling bops, spooky sl dances, and spiked punch - vampy vibes include',
+              spotifyUrl: 'https://open.spotify.com/playlist/example',
+              trackCount: 20,
+              totalDuration: '73:48',
+              tracks: [
+                { name: 'Thriller', artist: 'Michael Jackson', duration: '5:57' },
+                { name: 'Monster Mash', artist: 'Bobby Pickett', duration: '3:12' },
+                { name: 'Ghostbusters', artist: 'Ray Parker Jr.', duration: '4:05' },
+                { name: 'This Is Halloween', artist: 'Danny Elfman', duration: '3:16' },
+                { name: 'Time Warp', artist: 'Richard O\'Brien', duration: '3:19' },
+                { name: 'Somebody\'s Watching Me', artist: 'Rockwell', duration: '3:57' },
+                { name: 'Bad Moon Rising', artist: 'Creedence Clearwater Revival', duration: '2:21' },
+                { name: 'I Put a Spell on You', artist: 'Screamin\' Jay Hawkins', duration: '2:24' },
+                { name: 'Witch Doctor', artist: 'David Seville', duration: '2:25' },
+                { name: 'The Addams Family Theme', artist: 'Vic Mizzy', duration: '1:49' },
+              ],
+            }
+            
+            return (
+              <div>
+                <SpotifyPlayer
+                  playlist={playlistData}
+                  isPlaying={isPlaying}
+                  onPlayPause={() => setIsPlaying(!isPlaying)}
+                />
+              </div>
+            )
+          })()}
         </div>
 
         <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
@@ -1354,6 +1215,65 @@ export default function TeamDashboard() {
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12 items-stretch">
+          <div className="space-y-6">
+            {/* Beast Babe */}
+            {(() => {
+              const style = mode === 'chaos' ? getSpecificCardStyle('beast-babe') : getCardStyle('recognition')
+              return (
+                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+                >
+                  <p className="text-xs uppercase tracking-wider mb-2 font-black" style={{ color: style.accent }}>This Week's</p>
+                  <h2 className={`text-4xl font-black mb-6 uppercase ${style.text}`}>BEAST<br/>BABE</h2>
+              <div className="flex items-center justify-center mb-4">
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: style.accent }}>
+                      <Trophy className={`w-10 h-10 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
+                </div>
+              </div>
+                  <p className={`text-2xl font-black text-center ${style.text}`}>Sarah J.</p>
+                  <p className={`text-sm text-center font-medium ${style.text}/80`}>42 Snaps Received</p>
+            </Card>
+              )
+            })()}
+
+            {/* Wins Wall */}
+            {(() => {
+              const style = getSpecificCardStyle('wins-wall')
+              const wins = [
+                { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '🎉' },
+                { name: 'Jamie Park', win: 'Shipped v2.0!', emoji: '🚀' },
+                { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '⭐' },
+              ]
+              return (
+                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full`}
+                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+                >
+                  <div className="flex items-center gap-2 text-sm mb-2" style={{ color: style.accent }}>
+                <Trophy className="w-4 h-4" />
+                    <span className="uppercase tracking-wider font-black text-xs">Celebrate</span>
+              </div>
+                  <h2 className={`text-4xl font-black mb-4 uppercase ${style.text}`}>WINS<br/>WALL</h2>
+              <div className="space-y-2 mb-4">
+                    {wins.map((win, idx) => (
+                      <div key={idx} className={`${mode === 'chaos' ? 'bg-black/40' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-3 border-2`} style={{ borderColor: `${style.accent}66` }}>
+                        <div className="flex items-center justify-between">
+                  <div>
+                            <p className={`text-sm font-black ${style.text}`}>{win.name}</p>
+                            <p className={`text-xs font-medium ${style.text}/70`}>{win.win}</p>
+                  </div>
+                          <span className="text-2xl">{win.emoji}</span>
+                </div>
+                  </div>
+                    ))}
+                </div>
+                  <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#00FF87] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-12 uppercase`}>
+                Share Win
+              </Button>
+            </Card>
+              )
+            })()}
+          </div>
+
           {/* Snaps */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('snaps') : getCardStyle('recognition')
@@ -1451,125 +1371,52 @@ export default function TeamDashboard() {
               </Card>
             )
           })()}
-
-          <div className="space-y-6">
-            {/* Beast Babe */}
-            {(() => {
-              const style = mode === 'chaos' ? getSpecificCardStyle('beast-babe') : getCardStyle('recognition')
-              return (
-                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-                >
-                  <p className="text-xs uppercase tracking-wider mb-2 font-black" style={{ color: style.accent }}>This Week's</p>
-                  <h2 className={`text-4xl font-black mb-6 uppercase ${style.text}`}>BEAST<br/>BABE</h2>
-              <div className="flex items-center justify-center mb-4">
-                    <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ backgroundColor: style.accent }}>
-                      <Trophy className={`w-10 h-10 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
-                </div>
-              </div>
-                  <p className={`text-2xl font-black text-center ${style.text}`}>Sarah J.</p>
-                  <p className={`text-sm text-center font-medium ${style.text}/80`}>42 Snaps Received</p>
-            </Card>
-              )
-            })()}
-
-            {/* Wins Wall */}
-            {(() => {
-              const style = getSpecificCardStyle('wins-wall')
-              const wins = [
-                { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '🎉' },
-                { name: 'Jamie Park', win: 'Shipped v2.0!', emoji: '🚀' },
-                { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '⭐' },
-              ]
-              return (
-                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-                >
-                  <div className="flex items-center gap-2 text-sm mb-2" style={{ color: style.accent }}>
-                <Trophy className="w-4 h-4" />
-                    <span className="uppercase tracking-wider font-black text-xs">Celebrate</span>
-              </div>
-                  <h2 className={`text-4xl font-black mb-4 uppercase ${style.text}`}>WINS<br/>WALL</h2>
-              <div className="space-y-2 mb-4">
-                    {wins.map((win, idx) => (
-                      <div key={idx} className={`${mode === 'chaos' ? 'bg-black/40' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-3 border-2`} style={{ borderColor: `${style.accent}66` }}>
-                        <div className="flex items-center justify-between">
-                  <div>
-                            <p className={`text-sm font-black ${style.text}`}>{win.name}</p>
-                            <p className={`text-xs font-medium ${style.text}/70`}>{win.win}</p>
-                  </div>
-                          <span className="text-2xl">{win.emoji}</span>
-                </div>
-                  </div>
-                    ))}
-                </div>
-                  <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#00FF87] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C8D961] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-12 uppercase`}>
-                Share Win
-              </Button>
-            </Card>
-              )
-            })()}
-          </div>
         </div>
 
         <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
           {mode === 'code' ? (
             <>
               <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
-              <span className="text-[#808080]">WORK UPDATES</span>
+              <span className="text-[#808080]">THIS WEEK</span>
               <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
             </>
           ) : (
             <>
               <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
-          Work Updates
+          This Week
             </>
           )}
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 items-start">
-          {/* Playlist - spans 2 rows */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          {/* Events */}
           {(() => {
-            const [isPlaying, setIsPlaying] = useState(false)
-            
-            // Example playlist data - replace with actual Spotify API data
-            const playlistData: PlaylistData = {
-              title: 'Halloween Prom',
-              curator: 'Rebecca Smith',
-              curatorPhotoUrl: '/placeholder-user.jpg',
-              coverUrl: 'https://i.scdn.co/image/ab67616d0000b273c5649add07ed3720be9d5526',
-              description: 'macabre mingling, bone-chilling bops, spooky sl dances, and spiked punch - vampy vibes include',
-              spotifyUrl: 'https://open.spotify.com/playlist/example',
-              trackCount: 20,
-              totalDuration: '73:48',
-              tracks: [
-                { name: 'Thriller', artist: 'Michael Jackson', duration: '5:57' },
-                { name: 'Monster Mash', artist: 'Bobby Pickett', duration: '3:12' },
-                { name: 'Ghostbusters', artist: 'Ray Parker Jr.', duration: '4:05' },
-                { name: 'This Is Halloween', artist: 'Danny Elfman', duration: '3:16' },
-                { name: 'Time Warp', artist: 'Richard O\'Brien', duration: '3:19' },
-                { name: 'Somebody\'s Watching Me', artist: 'Rockwell', duration: '3:57' },
-                { name: 'Bad Moon Rising', artist: 'Creedence Clearwater Revival', duration: '2:21' },
-                { name: 'I Put a Spell on You', artist: 'Screamin\' Jay Hawkins', duration: '2:24' },
-                { name: 'Witch Doctor', artist: 'David Seville', duration: '2:25' },
-                { name: 'The Addams Family Theme', artist: 'Vic Mizzy', duration: '1:49' },
-              ],
-            }
-            
+            const style = mode === 'chaos' ? getSpecificCardStyle('events') : getCardStyle('work')
+            const mintColor = '#00FF87'
             return (
-              <div className="col-span-1 row-span-2">
-                <SpotifyPlayer
-                  playlist={playlistData}
-                  isPlaying={isPlaying}
-                  onPlayPause={() => setIsPlaying(!isPlaying)}
-                />
-              </div>
+              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : { borderColor: style.accent }}
+              >
+                <p className={`text-xs uppercase tracking-wider mb-4 font-black`} style={{ color: mintColor }}>TODAY</p>
+                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>EVENTS</h2>
+                <div className="space-y-2">
+                  {[
+                    { time: '10:30 Team Standup' },
+                    { time: '14:00 Design Review' },
+                  ].map((event) => (
+                    <div key={event.time} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`} style={{ backgroundColor: `${mintColor}33` }}>
+                      <Clock className="w-4 h-4" style={{ color: mintColor }} />
+                      <p className={`text-sm font-black ${style.text}`}>{event.time}</p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             )
           })()}
 
-          {/* Right side container - Friday Drop + Placeholder */}
-          <div className="col-span-1 md:col-span-3 row-span-2 flex flex-col gap-6 h-full">
-            {/* Friday Drop - 3/4 width, taller, top row */}
+          {/* Pipeline with This Week stats bar above it */}
+          <div className="md:col-span-3 flex flex-col gap-6">
+            {/* This Week Stats Bar */}
             {(() => {
               const style = mode === 'chaos' ? getSpecificCardStyle('friday-drop') : getCardStyle('work')
               return (
@@ -1615,6 +1462,60 @@ export default function TeamDashboard() {
                 </Card>
               )
             })()}
+
+            {/* Pipeline */}
+            {(() => {
+              const style = mode === 'chaos' ? getSpecificCardStyle('pipeline') : getCardStyle('work')
+              const mintColor = '#00FF87'
+              const pipelineItems = [
+                { label: 'New Business', count: '12', icon: FileText, iconColor: '#FFE500' }, // Yellow
+                { label: 'In Progress', count: '8', icon: Zap, iconColor: '#9D4EFF' }, // Purple
+                { label: 'Completed', count: '24', icon: CheckCircle, iconColor: mintColor }, // Green
+              ]
+              return (
+                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+                      style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+                >
+                  <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>WORK</p>
+                  <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>PIPELINE</h2>
+                  <div className="space-y-2">
+                    {pipelineItems.map((item) => {
+                      const IconComponent = item.icon
+                      return (
+                        <div key={item.label} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center justify-between`} style={{ backgroundColor: `${mintColor}33` }}>
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="w-4 h-4" style={{ color: item.iconColor }} />
+                            <span className={`text-sm font-black ${style.text}`}>{item.label}</span>
+                          </div>
+                          <span className={`text-lg font-black ${style.text}`}>{item.count}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Card>
+              )
+            })()}
+          </div>
+        </div>
+
+        <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
+          {mode === 'code' ? (
+            <>
+              <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
+              <span className="text-[#808080]">WORK UPDATES</span>
+              <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
+            </>
+          ) : (
+            <>
+              <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
+          Work Updates
+            </>
+          )}
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-start">
+          {/* Right side container - Work Samples */}
+          <div className="col-span-1 md:col-span-3 flex flex-col gap-6 h-full">
 
             {/* Work Samples - 3/4 width, fills remaining height, right under Friday Drop */}
             {(() => {
@@ -1744,81 +1645,6 @@ export default function TeamDashboard() {
           </div>
         </div>
 
-        <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
-          {mode === 'code' ? (
-            <>
-              <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
-              <span className="text-[#808080]">WORK UPDATES CONTINUED</span>
-              <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
-            </>
-          ) : (
-            <>
-              <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
-          Work Updates Continued
-            </>
-          )}
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          {/* Events */}
-          {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('events') : getCardStyle('work')
-            const mintColor = '#00FF87'
-            return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : { borderColor: style.accent }}
-              >
-                <p className={`text-xs uppercase tracking-wider mb-4 font-black`} style={{ color: mintColor }}>TODAY</p>
-                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>EVENTS</h2>
-                <div className="space-y-2">
-                  {[
-                    { time: '10:30 Team Standup' },
-                    { time: '14:00 Design Review' },
-                  ].map((event) => (
-                    <div key={event.time} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`} style={{ backgroundColor: `${mintColor}33` }}>
-                      <Clock className="w-4 h-4" style={{ color: mintColor }} />
-                      <p className={`text-sm font-black ${style.text}`}>{event.time}</p>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )
-          })()}
-
-          {/* Pipeline */}
-          {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('pipeline') : getCardStyle('work')
-            const mintColor = '#00FF87'
-            const pipelineItems = [
-              { label: 'New Business', count: '12', icon: FileText, iconColor: '#FFE500' }, // Yellow
-              { label: 'In Progress', count: '8', icon: Zap, iconColor: '#9D4EFF' }, // Purple
-              { label: 'Completed', count: '24', icon: CheckCircle, iconColor: mintColor }, // Green
-            ]
-            return (
-              <Card className={`md:col-span-2 ${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-              >
-                <p className={`text-xs uppercase tracking-wider mb-4 font-black ${style.text}`}>WORK</p>
-                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>PIPELINE</h2>
-                <div className="space-y-2">
-                  {pipelineItems.map((item) => {
-                    const IconComponent = item.icon
-                    return (
-                      <div key={item.label} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center justify-between`} style={{ backgroundColor: `${mintColor}33` }}>
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="w-4 h-4" style={{ color: item.iconColor }} />
-                          <span className={`text-sm font-black ${style.text}`}>{item.label}</span>
-                        </div>
-                        <span className={`text-lg font-black ${style.text}`}>{item.count}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </Card>
-            )
-          })()}
-
-        </div>
 
         <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
           {mode === 'code' ? (
@@ -2151,6 +1977,162 @@ export default function TeamDashboard() {
         onOpenChange={setShowAddSnapDialog}
         onSuccess={handleSnapAdded}
       />
+
+      {/* Weather - At Bottom of Page */}
+      <div className="mb-12">
+        {(() => {
+          // Weather map types from WeatherAPI.com
+          const weatherMaps = [
+            { type: 'tmp2m', label: 'Temperature', path: 'tmp2m' },
+            { type: 'precip', label: 'Precipitation', path: 'precip' },
+            { type: 'pressure', label: 'Pressure', path: 'pressure' },
+            { type: 'wind', label: 'Wind Speed', path: 'wind' },
+          ]
+
+          // Generate weather map URL for current location
+          const getWeatherMapUrl = (mapType: string, zoom: number = 4) => {
+            if (!weather?.lat || !weather?.lon) return null
+            
+            const now = new Date()
+            const utcDate = now.toISOString().split('T')[0].replace(/-/g, '') // yyyyMMdd
+            const utcHour = String(now.getUTCHours()).padStart(2, '0') // HH
+            
+            // Calculate tile coordinates (simplified - for actual implementation, you'd need proper tile math)
+            // For now, we'll use a center point approach
+            const lat = weather.lat
+            const lon = weather.lon
+            
+            // Simple tile calculation (this is approximate)
+            const n = Math.pow(2, zoom)
+            const x = Math.floor((lon + 180) / 360 * n)
+            const y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n)
+            
+            return `https://weathermaps.weatherapi.com/${mapType}/tiles/${utcDate}${utcHour}/${zoom}/${x}/${y}.png`
+          }
+
+          const style = mode === 'chaos' ? getSpecificCardStyle('weather') : getCardStyle('team')
+          const currentMap = weatherMaps[currentMapIndex]
+          const mapUrl = getWeatherMapUrl(currentMap.path)
+          
+          return (
+            <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden`}
+                  style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+            >
+              {weatherLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className={`w-6 h-6 animate-spin ${style.text}`} />
+                </div>
+              ) : weatherError ? (
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
+                      <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
+                    </div>
+                    <span className="text-3xl">🌤️</span>
+                  </div>
+                  <p className={`text-sm ${style.text}/80`}>{weatherError}</p>
+                </div>
+              ) : weather ? (
+                <div className="space-y-4">
+                  {/* Top Header with Weather Icon */}
+                  <div className="flex items-start justify-between relative z-10">
+                    <div>
+                      <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
+                      <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
+                    </div>
+                    <span className="text-3xl">{weather.emoji}</span>
+                  </div>
+                  
+                  {/* Weather Map Carousel */}
+                  {mapUrl && weather.lat && weather.lon && (
+                    <div className="relative w-full h-32 rounded-xl overflow-hidden mb-4 bg-black/20">
+                      <img 
+                        src={mapUrl} 
+                        alt={currentMap.label}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Hide image if it fails to load
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                      {/* Map Navigation */}
+                      <div className="absolute inset-0 flex items-center justify-between p-2">
+                        <button
+                          onClick={() => setCurrentMapIndex((prev) => (prev - 1 + weatherMaps.length) % weatherMaps.length)}
+                          className={`p-1.5 ${getRoundedClass('rounded-full')} bg-black/40 hover:bg-black/60 transition-all backdrop-blur-sm`}
+                          aria-label="Previous map"
+                        >
+                          <ChevronLeft className="w-4 h-4 text-white" />
+                        </button>
+                        <div className={`px-3 py-1 ${getRoundedClass('rounded-full')} bg-black/40 backdrop-blur-sm`}>
+                          <p className="text-xs font-bold text-white uppercase">{currentMap.label}</p>
+                        </div>
+                        <button
+                          onClick={() => setCurrentMapIndex((prev) => (prev + 1) % weatherMaps.length)}
+                          className={`p-1.5 ${getRoundedClass('rounded-full')} bg-black/40 hover:bg-black/60 transition-all backdrop-blur-sm`}
+                          aria-label="Next map"
+                        >
+                          <ChevronRight className="w-4 h-4 text-white" />
+                        </button>
+                      </div>
+                      {/* Map Dots Indicator */}
+                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-1.5">
+                        {weatherMaps.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setCurrentMapIndex(idx)}
+                            className={`w-1.5 h-1.5 ${getRoundedClass('rounded-full')} transition-all ${
+                              idx === currentMapIndex ? 'bg-white w-4' : 'bg-white/50'
+                            }`}
+                            aria-label={`View ${weatherMaps[idx].label} map`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Main Temperature */}
+                  <div className="relative z-10">
+                    <p className={`text-6xl font-black leading-none mb-2 ${style.text}`}>{weather.temperature}°</p>
+                    <p className={`${style.text} text-base font-semibold capitalize mb-4`}>{weather.description}</p>
+                  </div>
+                  
+                  {/* Work Report - More Prominent */}
+                  {weather.workReport && (
+                    <div className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} ${mode === 'chaos' ? 'bg-black/30 backdrop-blur-sm' : mode === 'chill' ? 'bg-white/15 backdrop-blur-sm' : 'bg-black/30 backdrop-blur-sm'} relative z-10 border ${mode === 'chaos' ? 'border-white/20' : mode === 'chill' ? 'border-white/20' : 'border-white/20'}`}>
+                      <p className={`text-sm font-medium ${style.text} leading-relaxed`}>{weather.workReport}</p>
+                    </div>
+                  )}
+                  
+                  {/* Bottom Stats - Side by Side */}
+                  <div className="flex gap-4 relative z-10">
+                    <div className="flex-1">
+                      <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>HUMIDITY</p>
+                      <p className={`text-xl font-black ${style.text}`}>{weather.humidity}%</p>
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-xs ${style.text}/80 font-bold uppercase tracking-wide mb-1`}>WIND</p>
+                      <p className={`text-xl font-black ${style.text}`}>{weather.windSpeed} mph</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <p className={`text-xs uppercase tracking-wider font-black mb-1 ${style.text}/90`}>Right Now</p>
+                      <h2 className={`text-lg font-black uppercase ${style.text}`}>WEATHER</h2>
+                    </div>
+                    <span className="text-3xl">🌤️</span>
+                  </div>
+                  <p className={`text-sm ${style.text}/80`}>Loading weather...</p>
+                </div>
+              )}
+            </Card>
+          )
+        })()}
+      </div>
     </div>
   )
 }

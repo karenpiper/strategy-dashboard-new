@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/auth-context'
 import { useMode } from '@/contexts/mode-context'
+import { AccountMenu } from '@/components/account-menu'
+import { ModeSwitcher } from '@/components/mode-switcher'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Loader2, ArrowLeft, Search, Plus, Users, TrendingUp, Calendar, ChevronDown, Sparkles } from 'lucide-react'
+import { Loader2, Plus, Users, TrendingUp, Calendar, ChevronDown, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { AddSnapDialog } from '@/components/add-snap-dialog'
 
@@ -64,7 +66,76 @@ export default function SnapsPage() {
   const [stats, setStats] = useState<SnapStats>({ totalSnaps: 0, snapLeader: null })
   const [showTimeDropdown, setShowTimeDropdown] = useState(false)
 
-  // Get card style for snaps
+  // Dashboard styling helpers
+  const getBgClass = () => {
+    switch (mode) {
+      case 'chaos': return 'bg-[#1A1A1A]'
+      case 'chill': return 'bg-[#F5E6D3]'
+      case 'code': return 'bg-black'
+      default: return 'bg-[#1A1A1A]'
+    }
+  }
+
+  const getTextClass = () => {
+    switch (mode) {
+      case 'chaos': return 'text-white'
+      case 'chill': return 'text-[#4A1818]'
+      case 'code': return 'text-[#FFFFFF]'
+      default: return 'text-white'
+    }
+  }
+
+  const getBorderClass = () => {
+    switch (mode) {
+      case 'chaos': return 'border-[#333333]'
+      case 'chill': return 'border-[#4A1818]/20'
+      case 'code': return 'border-[#FFFFFF]'
+      default: return 'border-[#333333]'
+    }
+  }
+
+  const getNavLinkClass = (isActive = false) => {
+    const base = `transition-colors text-sm font-black uppercase ${mode === 'code' ? 'font-mono' : ''}`
+    if (isActive) {
+      switch (mode) {
+        case 'chaos': return `${base} text-white hover:text-[#C4F500]`
+        case 'chill': return `${base} text-[#4A1818] hover:text-[#FFC043]`
+        case 'code': return `${base} text-[#FFFFFF] hover:text-[#FFFFFF]`
+        default: return `${base} text-white hover:text-[#C4F500]`
+      }
+    } else {
+      switch (mode) {
+        case 'chaos': return `${base} text-[#666666] hover:text-white`
+        case 'chill': return `${base} text-[#8B4444] hover:text-[#4A1818]`
+        case 'code': return `${base} text-[#808080] hover:text-[#FFFFFF]`
+        default: return `${base} text-[#666666] hover:text-white`
+      }
+    }
+  }
+
+  const getLogoBg = () => {
+    switch (mode) {
+      case 'chaos': return 'bg-[#C4F500]'
+      case 'chill': return 'bg-[#FFC043]'
+      case 'code': return 'bg-[#FFFFFF]'
+      default: return 'bg-[#C4F500]'
+    }
+  }
+
+  const getLogoText = () => {
+    switch (mode) {
+      case 'chaos': return 'text-black'
+      case 'chill': return 'text-[#4A1818]'
+      case 'code': return 'text-black'
+      default: return 'text-black'
+    }
+  }
+
+  const getRoundedClass = (defaultClass: string) => {
+    return mode === 'code' ? 'rounded-none' : defaultClass
+  }
+
+  // Get card style for snaps using dashboard system
   const getCardStyle = () => {
     if (mode === 'chaos') {
       return { bg: 'bg-[#000000]', border: 'border-0', text: 'text-white', accent: '#E8FF00' }
@@ -123,7 +194,7 @@ export default function SnapsPage() {
                 filterDate.setHours(0, 0, 0, 0)
               } else if (timeFilter === 'this-week') {
                 const dayOfWeek = now.getDay()
-                filterDate.setDate(now.getDate() - dayOfWeek)
+                filterDate.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
                 filterDate.setHours(0, 0, 0, 0)
               } else if (timeFilter === 'this-month') {
                 filterDate.setDate(1)
@@ -233,7 +304,7 @@ export default function SnapsPage() {
               filterDate.setHours(0, 0, 0, 0)
             } else if (timeFilter === 'this-week') {
               const dayOfWeek = now.getDay()
-              filterDate.setDate(now.getDate() - dayOfWeek)
+              filterDate.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
               filterDate.setHours(0, 0, 0, 0)
             } else if (timeFilter === 'this-month') {
               filterDate.setDate(1)
@@ -279,10 +350,10 @@ export default function SnapsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: mode === 'chill' ? '#F5E6D3' : mode === 'code' ? '#000000' : '#1A1A1A' }}>
+      <div className={`min-h-screen flex items-center justify-center ${getBgClass()}`}>
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: style.accent }} />
-          <p style={{ color: style.text }}>Loading...</p>
+          <p className={getTextClass()}>Loading...</p>
         </div>
       </div>
     )
@@ -318,13 +389,34 @@ export default function SnapsPage() {
     return profile.full_name || profile.email || 'Anonymous'
   }
 
-  const getRoundedClass = (base: string) => {
-    if (mode === 'code') return 'rounded-none'
-    return base
-  }
-
   return (
-    <div className="min-h-screen" style={{ backgroundColor: mode === 'chill' ? '#F5E6D3' : mode === 'code' ? '#000000' : '#1A1A1A' }}>
+    <div className={`min-h-screen ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
+      <header className={`border-b ${getBorderClass()} px-6 py-4`}>
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <Link href="/">
+              <div className={`w-10 h-10 ${getLogoBg()} ${getLogoText()} ${getRoundedClass('rounded-xl')} flex items-center justify-center font-black text-lg ${mode === 'code' ? 'font-mono' : ''} cursor-pointer`}>
+                {mode === 'code' ? 'C:\\>' : 'D'}
+              </div>
+            </Link>
+            <nav className="flex items-center gap-6">
+              <Link href="/" className={getNavLinkClass()}>HOME</Link>
+              <Link href="/snaps" className={getNavLinkClass(true)}>SNAPS</Link>
+              <a href="#" className={getNavLinkClass()}>RESOURCES</a>
+              <Link href="/work-samples" className={getNavLinkClass()}>WORK</Link>
+              <a href="#" className={getNavLinkClass()}>TEAM</a>
+              <Link href="/vibes" className={getNavLinkClass()}>VIBES</Link>
+            </nav>
+          </div>
+          <div className="flex items-center gap-4">
+            <ModeSwitcher />
+            {user && (
+              <AccountMenu />
+            )}
+          </div>
+        </div>
+      </header>
+
       <div className="flex h-screen">
         {/* Left Sidebar */}
         <div className={`w-80 ${style.bg} ${style.border} ${getRoundedClass('rounded-r-[2.5rem]')} p-6 flex flex-col`} style={{ borderRightWidth: mode === 'code' ? '1px' : '0' }}>
@@ -424,7 +516,7 @@ export default function SnapsPage() {
                 <ChevronDown className="w-4 h-4" />
               </button>
               {showTimeDropdown && (
-                <div className={`absolute top-full left-0 right-0 mt-2 ${getRoundedClass('rounded-xl')} overflow-hidden ${
+                <div className={`absolute top-full left-0 right-0 mt-2 ${getRoundedClass('rounded-xl')} overflow-hidden z-10 ${
                   mode === 'chaos'
                     ? 'bg-black border border-white/20'
                     : mode === 'chill'
@@ -488,7 +580,7 @@ export default function SnapsPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: mode === 'chill' ? '#F5E6D3' : 'transparent' }}>
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
           <div className={`${style.bg} ${style.border} p-6 flex items-center justify-between`} style={{ borderBottomWidth: mode === 'code' ? '1px' : '0' }}>
             <h1 className={`text-4xl font-black uppercase ${style.text}`}>Snaps</h1>
@@ -502,7 +594,7 @@ export default function SnapsPage() {
           </div>
 
           {/* Snaps List */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6" style={{ backgroundColor: mode === 'chill' ? '#F5E6D3' : 'transparent' }}>
             {error && (
               <div className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} border-2`} style={{ backgroundColor: mode === 'chaos' ? 'rgba(255, 0, 0, 0.1)' : mode === 'chill' ? 'rgba(255, 0, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)', borderColor: '#ef4444' }}>
                 <p className="text-sm" style={{ color: '#ef4444' }}>{error}</p>
@@ -572,4 +664,3 @@ export default function SnapsPage() {
     </div>
   )
 }
-
