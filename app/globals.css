@@ -124,10 +124,11 @@
 html {
   scroll-behavior: smooth;
   width: 133.33vw; /* 100% / 0.75 = 133.33% to maintain full viewport coverage */
-  min-height: 133.33vh;
+  height: auto;
   transform: scale(0.75);
   transform-origin: top left;
   overflow-x: hidden; /* Prevent horizontal scrollbar */
+  overflow-y: auto; /* Allow vertical scrolling when needed */
 }
 
 /* Ensure body and all elements use rem-based sizing */
@@ -135,7 +136,7 @@ body {
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   font-size: 1rem;
   width: 100%;
-  min-height: 100%;
+  height: auto;
   margin: 0;
   padding: 0;
 }
