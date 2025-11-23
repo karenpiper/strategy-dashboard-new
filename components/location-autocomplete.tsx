@@ -7,6 +7,8 @@ import { Loader2 } from 'lucide-react'
 interface LocationSuggestion {
   display_name: string
   place_id: number
+  lat?: string
+  lon?: string
 }
 
 interface LocationAutocompleteProps {
@@ -14,13 +16,15 @@ interface LocationAutocompleteProps {
   onChange: (value: string) => void
   placeholder?: string
   className?: string
+  onTimezoneDetected?: (timezone: string) => void
 }
 
 export function LocationAutocomplete({
   value,
   onChange,
   placeholder = "e.g., New York, NY",
-  className = "w-full"
+  className = "w-full",
+  onTimezoneDetected
 }: LocationAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -60,7 +64,14 @@ export function LocationAutocomplete({
         }
 
         const data = await response.json()
-        setSuggestions(data.slice(0, 5)) // Limit to 5 suggestions
+        // Map the data to include lat/lon for timezone lookup
+        const mappedSuggestions = data.slice(0, 5).map((item: any) => ({
+          display_name: item.display_name,
+          place_id: item.place_id,
+          lat: item.lat,
+          lon: item.lon
+        }))
+        setSuggestions(mappedSuggestions)
         setShowSuggestions(true)
       } catch (error) {
         console.error('Error fetching location suggestions:', error)
@@ -98,11 +109,62 @@ export function LocationAutocomplete({
     }
   }
 
-  const handleSelect = (suggestion: LocationSuggestion) => {
+  const handleSelect = async (suggestion: LocationSuggestion) => {
     onChange(suggestion.display_name)
     setShowSuggestions(false)
     setSelectedIndex(-1)
     inputRef.current?.blur()
+    
+    // Fetch timezone for the selected location
+    if (onTimezoneDetected && suggestion.lat && suggestion.lon) {
+      try {
+        // Use timeapi.io free API to get timezone from coordinates
+        const tzResponse = await fetch(
+          `https://timeapi.io/api/TimeZone/coordinate?latitude=${suggestion.lat}&longitude=${suggestion.lon}`
+        )
+        
+        if (tzResponse.ok) {
+          const tzData = await tzResponse.json()
+          if (tzData.timeZone) {
+            onTimezoneDetected(tzData.timeZone)
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching timezone:', error)
+      }
+      
+      // Fallback: try to infer timezone from location name
+      const inferredTimezone = inferTimezoneFromLocation(suggestion.display_name)
+      if (inferredTimezone && onTimezoneDetected) {
+        onTimezoneDetected(inferredTimezone)
+      }
+    }
+  }
+  
+  // Simple timezone inference from location name (fallback)
+  const inferTimezoneFromLocation = (locationName: string): string | null => {
+    const name = locationName.toLowerCase()
+    // Common timezone mappings
+    if (name.includes('new york') || name.includes('boston') || name.includes('washington')) {
+      return 'America/New_York'
+    }
+    if (name.includes('chicago') || name.includes('dallas')) {
+      return 'America/Chicago'
+    }
+    if (name.includes('los angeles') || name.includes('san francisco') || name.includes('seattle')) {
+      return 'America/Los_Angeles'
+    }
+    if (name.includes('london')) {
+      return 'Europe/London'
+    }
+    if (name.includes('paris')) {
+      return 'Europe/Paris'
+    }
+    if (name.includes('tokyo')) {
+      return 'Asia/Tokyo'
+    }
+    return null
   }
 
   const handleBlur = () => {
@@ -143,15 +205,15 @@ export function LocationAutocomplete({
       {showSuggestions && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+          className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
         >
           {suggestions.map((suggestion, index) => (
             <button
               key={suggestion.place_id}
               type="button"
               onClick={() => handleSelect(suggestion)}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-accent focus:bg-accent focus:outline-none transition-colors ${
-                index === selectedIndex ? 'bg-accent' : ''
+              className={`w-full text-left px-3 py-2 text-sm text-black hover:bg-gray-100 focus:bg-gray-100 focus:outline-none transition-colors ${
+                index === selectedIndex ? 'bg-gray-100' : ''
               }`}
             >
               {suggestion.display_name}
