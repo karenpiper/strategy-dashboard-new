@@ -438,19 +438,20 @@ export async function DELETE(request: NextRequest) {
       const idArray = ids.split(',').map(id => id.trim())
       const { data, error: fetchError } = await supabase
         .from('work_samples')
-        .select('id, file_url')
+        .select('id, file_url, file_name')
         .in('id', idArray)
       
       if (fetchError) {
         console.error('Error fetching work samples for deletion:', fetchError)
       } else {
         workSamplesToDelete = data || []
+        console.log(`Fetched ${workSamplesToDelete.length} work samples for deletion`)
       }
     } else if (id) {
       // Single delete - fetch the work sample
       const { data, error: fetchError } = await supabase
         .from('work_samples')
-        .select('id, file_url')
+        .select('id, file_url, file_name')
         .eq('id', id)
         .single()
       
@@ -458,6 +459,7 @@ export async function DELETE(request: NextRequest) {
         console.error('Error fetching work sample for deletion:', fetchError)
       } else if (data) {
         workSamplesToDelete = [data]
+        console.log(`Fetched work sample for deletion:`, { id: data.id, file_url: data.file_url, file_name: data.file_name })
       }
     }
 
@@ -472,22 +474,67 @@ export async function DELETE(request: NextRequest) {
           if (workSample.file_url) {
             // Extract Google Drive file ID from URL
             // Format: https://drive.google.com/file/d/{fileId}/view
-            const fileIdMatch = workSample.file_url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+            // Or: https://drive.google.com/file/d/{fileId}
+            // Or: just the fileId itself
+            let fileId: string | null = null
             
+            // Try to extract from URL pattern
+            const fileIdMatch = workSample.file_url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
             if (fileIdMatch && fileIdMatch[1]) {
-              const fileId = fileIdMatch[1]
-              
+              fileId = fileIdMatch[1]
+            } else {
+              // If it doesn't match the URL pattern, it might be just the file ID
+              // Check if it looks like a file ID (alphanumeric with dashes/underscores, typically 33 chars)
+              if (/^[a-zA-Z0-9_-]{20,}$/.test(workSample.file_url)) {
+                fileId = workSample.file_url
+              }
+            }
+            
+            if (fileId) {
               try {
+                console.log(`Attempting to delete Google Drive file: ${fileId} for work sample ${workSample.id}`)
+                
+                // First, try to get file metadata to verify it exists and check permissions
+                try {
+                  const fileMetadata = await drive.files.get({
+                    fileId: fileId,
+                    fields: 'id, name, owners, permissions',
+                    supportsAllDrives: true,
+                  } as any)
+                  console.log(`File metadata retrieved:`, {
+                    id: fileMetadata.data.id,
+                    name: fileMetadata.data.name,
+                    owners: fileMetadata.data.owners?.map((o: any) => o.emailAddress),
+                  })
+                } catch (metadataError: any) {
+                  console.warn(`Could not retrieve file metadata (file may not exist or be inaccessible):`, {
+                    message: metadataError.message,
+                    code: metadataError.code,
+                  })
+                }
+                
+                // Now attempt deletion
                 await drive.files.delete({
                   fileId: fileId,
                   supportsAllDrives: true,
                 } as any)
-                console.log(`Deleted Google Drive file: ${fileId} for work sample ${workSample.id}`)
+                console.log(`✅ Successfully deleted Google Drive file: ${fileId} for work sample ${workSample.id}`)
               } catch (driveError: any) {
-                // Log but don't fail - file might already be deleted or inaccessible
-                console.warn(`Failed to delete Google Drive file ${fileId}:`, driveError.message)
+                // Log detailed error information
+                console.error(`❌ Failed to delete Google Drive file ${fileId} for work sample ${workSample.id}:`, {
+                  message: driveError.message,
+                  code: driveError.code,
+                  status: driveError.response?.status,
+                  statusText: driveError.response?.statusText,
+                  errors: driveError.errors || driveError.response?.data?.error,
+                  fullError: JSON.stringify(driveError, null, 2),
+                })
               }
+            } else {
+              console.warn(`Could not extract file ID from file_url: ${workSample.file_url} for work sample ${workSample.id}`)
             }
+          } else {
+            console.log(`No file_url found for work sample ${workSample.id}, skipping Google Drive deletion`)
           }
         }
       } catch (driveError: any) {
