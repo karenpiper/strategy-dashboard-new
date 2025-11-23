@@ -1072,7 +1072,10 @@ export default function TeamDashboard() {
           )}
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 relative">
+          {/* Centered Divider Line */}
+          <div className="hidden md:block absolute left-2/3 top-0 bottom-0 w-px bg-white -translate-x-1/2"></div>
+          
           {/* Horoscope - 2 columns */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('horoscope') : getCardStyle('vibes')
@@ -1188,7 +1191,7 @@ export default function TeamDashboard() {
             }
             
             return (
-              <div className="border-l border-white pl-[54px]">
+              <div>
                 <SpotifyPlayer
                   playlist={playlistData}
                   isPlaying={isPlaying}
