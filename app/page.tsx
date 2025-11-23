@@ -1580,25 +1580,32 @@ export default function TeamDashboard() {
                   // Event overlaps if it starts before week ends and ends after week starts
                   return eventStart < weekEnd && actualEnd >= todayStart
                 } else {
-                  // For today view, only show events that start today
+                  // For today view, exclude OOO events (we'll show them separately)
+                  const isOOO = event.calendarId.includes('6elnqlt8ok3kmcpim2vge0qqqk') || event.calendarId.includes('ojeuiov0bhit2k17g8d6gj4i68')
+                  if (isOOO) return false
+                  
+                  // Only show events that start today
                   return eventStart >= todayStart && eventStart < todayEnd
                 }
               })
               // Deduplicate events - same event might appear in multiple calendars
-              // Deduplicate by ID first, then by summary + start time
+              // Use a Map to track seen events by a unique key
               .filter((event, index, self) => {
-                // First check by ID
-                const idMatch = self.findIndex(e => e.id === event.id)
-                if (idMatch < index) return false
-                
-                // Then check by summary + start time (for same event in different calendars)
+                // Create a unique key from summary, start, and end
                 const eventStart = event.start.dateTime || event.start.date || ''
-                const duplicate = self.findIndex(e => 
-                  e.summary === event.summary && 
-                  (e.start.dateTime || e.start.date) === eventStart &&
-                  e.id !== event.id
-                )
-                return duplicate === -1 || duplicate >= index
+                const eventEnd = event.end.dateTime || event.end.date || ''
+                const eventKey = `${event.summary}|${eventStart}|${eventEnd}`
+                
+                // Find first occurrence of this key
+                const firstIndex = self.findIndex(e => {
+                  const eStart = e.start.dateTime || e.start.date || ''
+                  const eEnd = e.end.dateTime || e.end.date || ''
+                  const eKey = `${e.summary}|${eStart}|${eEnd}`
+                  return eKey === eventKey
+                })
+                
+                // Only keep the first occurrence
+                return firstIndex === index
               })
               // Sort by start time
               .sort((a, b) => {
