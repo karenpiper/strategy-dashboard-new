@@ -107,6 +107,7 @@ export default function TeamDashboard() {
       email: string | null
     } | null
   }>>([])
+  const [snapViewType, setSnapViewType] = useState<'received' | 'given'>('received')
   const [showAddSnapDialog, setShowAddSnapDialog] = useState(false)
 
   // Format today's date in user's timezone
@@ -307,13 +308,16 @@ export default function TeamDashboard() {
     fetchWorkSamples()
   }, [user])
 
-  // Fetch recent snaps
+  // Fetch recent snaps for the logged-in user
   useEffect(() => {
     async function fetchSnaps() {
       if (!user) return
       
       try {
-        const response = await fetch('/api/snaps?limit=3')
+        const url = snapViewType === 'received' 
+          ? `/api/snaps?mentioned_user_id=${user.id}&limit=3`
+          : `/api/snaps?submitted_by=${user.id}&limit=3`
+        const response = await fetch(url)
         if (response.ok) {
           const result = await response.json()
           if (result.data && Array.isArray(result.data)) {
@@ -326,14 +330,17 @@ export default function TeamDashboard() {
     }
     
     fetchSnaps()
-  }, [user])
+  }, [user, snapViewType])
 
   const handleSnapAdded = async () => {
-    // Refresh snaps list
+    // Refresh snaps list for the logged-in user
     if (!user) return
     
     try {
-      const response = await fetch('/api/snaps?limit=3')
+      const url = snapViewType === 'received' 
+        ? `/api/snaps?mentioned_user_id=${user.id}&limit=3`
+        : `/api/snaps?submitted_by=${user.id}&limit=3`
+      const response = await fetch(url)
       if (response.ok) {
         const result = await response.json()
         if (result.data && Array.isArray(result.data)) {
@@ -1687,12 +1694,6 @@ export default function TeamDashboard() {
           {/* Snaps */}
           {(() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('snaps') : getCardStyle('recognition')
-            const snapColors = mode === 'chaos'
-              ? ['#00D4FF', '#9D4EFF', '#FF00FF']
-              : mode === 'chill'
-              ? ['#4A9BFF', '#8B4444', '#FFB5D8']
-              : ['#cccccc', '#999999', '#e5e5e5']
-            const emojis = ['👍', '🙌', '⭐', '🎉', '🔥']
             return (
               <Card className={`lg:col-span-2 ${style.bg} ${style.border} p-8 ${getRoundedClass('rounded-[2.5rem]')}`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
@@ -1709,7 +1710,45 @@ export default function TeamDashboard() {
                     + GIVE A SNAP
                   </Button>
                 </div>
-                <h2 className="text-6xl font-black mb-8 uppercase" style={{ color: style.accent }}>SNAPS</h2>
+                <h2 className="text-6xl font-black mb-4 uppercase" style={{ color: style.accent }}>Your Snaps</h2>
+                <div className="flex gap-2 mb-6">
+                  <button
+                    onClick={() => setSnapViewType('received')}
+                    className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
+                      snapViewType === 'received'
+                        ? mode === 'chaos'
+                          ? 'bg-[#E8FF00] text-black'
+                          : mode === 'chill'
+                          ? 'bg-[#FFB5D8] text-[#4A1818]'
+                          : 'bg-white text-black'
+                        : mode === 'chaos'
+                        ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
+                        : mode === 'chill'
+                        ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
+                        : 'bg-black/40 text-white/60 border border-white/40'
+                    }`}
+                  >
+                    Received
+                  </button>
+                  <button
+                    onClick={() => setSnapViewType('given')}
+                    className={`px-4 py-2 rounded-full text-sm font-black uppercase transition-all ${
+                      snapViewType === 'given'
+                        ? mode === 'chaos'
+                          ? 'bg-[#E8FF00] text-black'
+                          : mode === 'chill'
+                          ? 'bg-[#FFB5D8] text-[#4A1818]'
+                          : 'bg-white text-black'
+                        : mode === 'chaos'
+                        ? 'bg-black/40 text-[#E8FF00]/60 border border-[#E8FF00]/40'
+                        : mode === 'chill'
+                        ? 'bg-[#F5E6D3]/30 text-[#4A1818]/60 border border-[#FFB5D8]/40'
+                        : 'bg-black/40 text-white/60 border border-white/40'
+                    }`}
+                  >
+                    Given
+                  </button>
+                </div>
                 <div className="space-y-3 mb-6">
                   {snaps.length === 0 ? (
                     <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-5 border-2`} style={{ borderColor: `${style.accent}66` }}>
@@ -1722,9 +1761,7 @@ export default function TeamDashboard() {
                       return (
                         <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-5 border-2 transition-all hover:opacity-80`} style={{ borderColor: `${style.accent}66` }}>
                           <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style={{ backgroundColor: snapColors[idx % snapColors.length] }}>
-                              {emojis[idx % emojis.length]}
-                            </div>
+                            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2" style={{ backgroundColor: style.accent }}></div>
                             <div className="flex-1">
                               <p className={`font-black text-sm mb-1 ${style.text}`}>
                                 <span className="font-black">{fromName}</span> <span className={`${style.text}/50`}>→</span> <span className="font-black">{toName}</span>

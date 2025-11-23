@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import {
   Dialog,
@@ -29,6 +29,16 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess }: AddSnapDialogPr
   const [snapContent, setSnapContent] = useState('')
   const [mentioned, setMentioned] = useState('')
   const [submitAnonymously, setSubmitAnonymously] = useState(false)
+  
+  // Make overlay fully opaque (no transparency)
+  useEffect(() => {
+    if (open) {
+      const overlay = document.querySelector('[data-radix-dialog-overlay]')
+      if (overlay) {
+        ;(overlay as HTMLElement).style.backgroundColor = 'rgb(0, 0, 0)'
+      }
+    }
+  }, [open])
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,7 +86,7 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess }: AddSnapDialogPr
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg bg-background">
         <DialogHeader>
           <DialogTitle>Add a Snap</DialogTitle>
           <DialogDescription>
