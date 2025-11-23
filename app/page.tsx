@@ -2061,17 +2061,17 @@ export default function TeamDashboard() {
                     /* Horizontal banner view when not expanded */
                     <div className="flex items-center justify-between gap-6 h-full">
                       <h2 className={`text-3xl font-black uppercase leading-none ${style.text} whitespace-nowrap`}>THIS WEEK</h2>
-                      <div className="flex gap-3 items-center">
+                      <div className="flex gap-4 items-center">
                         {stats.map((stat, index) => (
                           <div 
                             key={stat.label} 
-                            className={`flex flex-col items-center justify-center px-5 py-4 ${getRoundedClass('rounded-2xl')} transition-all duration-300 shadow-sm`}
+                            className={`flex flex-row items-center justify-center px-4 py-3 gap-3 ${getRoundedClass('rounded-2xl')} transition-all duration-300`}
                             style={{
-                              backgroundColor: mode === 'chaos' ? 'rgba(0,0,0,0.15)' : mode === 'chill' ? 'rgba(74,24,24,0.12)' : 'rgba(0,0,0,0.2)',
+                              backgroundColor: mode === 'chaos' ? 'rgba(0,0,0,0.2)' : mode === 'chill' ? 'rgba(74,24,24,0.15)' : 'rgba(0,0,0,0.25)',
                               animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
                             }}
                           >
-                            <span className={`text-5xl font-black ${style.text} leading-none mb-1 transition-all duration-300`}>
+                            <span className={`text-4xl font-black ${style.text} leading-none transition-all duration-300`}>
                               {stat.value}
                             </span>
                             <span className={`text-xs font-black uppercase tracking-wider ${style.text} transition-opacity duration-300 whitespace-nowrap`}>
