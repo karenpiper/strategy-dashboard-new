@@ -79,26 +79,38 @@ export default function DeckAdmin() {
       setUploadStatus({ type: 'idle', message: '' })
 
       try {
-        const ingestResponse = await fetch('/api/upload-deck', {
+        // Trigger n8n webhook for processing (fire and forget)
+        const n8nWebhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL
+        
+        if (!n8nWebhookUrl) {
+          console.warn('N8N_WEBHOOK_URL not configured, skipping webhook call')
+          setUploadStatus({
+            type: 'success',
+            message: 'Processing triggered! (Note: webhook URL not configured)'
+          })
+          return
+        }
+        
+        // Don't await - fire and forget
+        fetch(n8nWebhookUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            gdrive_file_id: manualFileId.trim(),
-            title: title.trim() || undefined,
+            googleFileId: manualFileId.trim(),
+            originalFilename: title.trim() || 'manual-upload',
+            uploaderUserId: user?.id,
+            uploaderEmail: user?.email,
           }),
+        }).catch((error) => {
+          // Log error but don't block UI
+          console.error('Failed to trigger n8n webhook:', error)
         })
-
-        const ingestResult = await ingestResponse.json()
-
-        if (!ingestResponse.ok) {
-          throw new Error(ingestResult.error || 'Failed to process deck')
-        }
 
         setUploadStatus({
           type: 'success',
-          message: `Deck processed successfully! Processed ${ingestResult.slides_count} slides and ${ingestResult.topics_count} topics.`
+          message: 'Deck processing triggered! Processing in background...'
         })
 
         // Reset form
@@ -221,27 +233,39 @@ export default function DeckAdmin() {
         }
       }
 
-      // Step 2: Ingest the deck from Google Drive
-      const ingestResponse = await fetch('/api/upload-deck', {
+      // Step 3: Trigger n8n webhook for processing (fire and forget)
+      // Note: This should be set in Vercel environment variables as NEXT_PUBLIC_N8N_WEBHOOK_URL
+      const n8nWebhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL
+      
+      if (!n8nWebhookUrl) {
+        console.warn('N8N_WEBHOOK_URL not configured, skipping webhook call')
+        setUploadStatus({
+          type: 'success',
+          message: 'Deck uploaded successfully! (Processing not triggered - webhook URL not configured)'
+        })
+        return
+      }
+      
+      // Don't await - fire and forget
+      fetch(n8nWebhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          gdrive_file_id: fileId,
-          title: title.trim() || undefined,
+          googleFileId: fileId,
+          originalFilename: selectedFile.name,
+          uploaderUserId: user?.id,
+          uploaderEmail: user?.email,
         }),
+      }).catch((error) => {
+        // Log error but don't block UI
+        console.error('Failed to trigger n8n webhook:', error)
       })
-
-      const ingestResult = await ingestResponse.json()
-
-      if (!ingestResponse.ok) {
-        throw new Error(ingestResult.error || 'Failed to process deck')
-      }
 
       setUploadStatus({
         type: 'success',
-        message: `Deck uploaded successfully! Processed ${ingestResult.slides_count} slides and ${ingestResult.topics_count} topics.`
+        message: 'Deck uploaded successfully! Processing in background...'
       })
 
       // Reset form
