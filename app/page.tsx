@@ -2108,33 +2108,24 @@ export default function TeamDashboard() {
                 const displayText = project.type || project.description || 'Unknown'
                 
                 return (
-                  <div key={project.id} className="relative flex items-start gap-2 py-1">
-                    {/* Left side with dot and connector line */}
-                    <div className="relative flex flex-col items-center shrink-0">
-                      {/* Dot */}
-                      <div className="relative z-10 mt-1.5 size-1.5 rounded-full shrink-0 bg-white" />
-                      {/* Dotted line connector */}
-                      {index < total - 1 && (
-                        <div className="absolute left-0.5 top-3 bottom-0 w-px border-l border-dashed opacity-30 border-white" />
-                      )}
-                    </div>
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 text-xs">
-                      {date && (
-                        <div className="text-white/60 mb-0.5">{date}</div>
-                      )}
-                      <div className="font-bold text-white truncate">{project.name}</div>
-                      <div className="text-white/60 truncate">{displayText}</div>
-                    </div>
-                    {/* Plus button */}
+                  <div key={project.id} className="flex items-start gap-3 py-2">
+                    {/* Plus button on the left */}
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      className="shrink-0 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 h-6 w-6"
+                      className="shrink-0 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 h-7 w-7 mt-0.5"
                       onClick={() => handleProjectClick(project)}
                     >
-                      <Plus className="size-3 text-white" />
+                      <Plus className="size-4 text-white" />
                     </Button>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 text-sm">
+                      {date && (
+                        <div className="text-white/60 mb-1 text-xs">{date}</div>
+                      )}
+                      <div className="font-bold text-white truncate">{project.name}</div>
+                      <div className="text-white/60 truncate text-xs">{displayText}</div>
+                    </div>
                   </div>
                 )
               }
@@ -2152,37 +2143,37 @@ export default function TeamDashboard() {
                     <h2 className={`${eventsExpanded ? 'text-xl mb-2' : 'text-3xl mb-3'} font-black uppercase text-white transition-all duration-300`}>PIPELINE</h2>
                     
                     {eventsExpanded ? (
-                      /* Stats view when events expanded */
-                      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                        <div className="text-center">
-                          <div className={`text-2xl font-black ${getTextClass()}`}>
+                      /* Stats view when events expanded - Vertical and larger */
+                      <div className="flex flex-col gap-6 h-full justify-center">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-white/60">In Progress</div>
+                          <div className={`text-4xl font-black ${getTextClass()}`}>
                             {pipelineLoading ? '0' : statusCounts['In Progress']}
                           </div>
-                          <div className="text-xs text-white/60 mt-1">In Progress</div>
                         </div>
-                        <div className="text-center">
-                          <div className={`text-2xl font-black ${getTextClass()}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-white/60">Pending</div>
+                          <div className={`text-4xl font-black ${getTextClass()}`}>
                             {pipelineLoading ? '0' : statusCounts['Pending Decision']}
                           </div>
-                          <div className="text-xs text-white/60 mt-1">Pending</div>
                         </div>
-                        <div className="text-center">
-                          <div className={`text-2xl font-black ${getTextClass()}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-white/60">Long Lead</div>
+                          <div className={`text-4xl font-black ${getTextClass()}`}>
                             {pipelineLoading ? '0' : statusCounts['Long Lead']}
                           </div>
-                          <div className="text-xs text-white/60 mt-1">Long Lead</div>
                         </div>
-                        <div className="text-center">
-                          <div className={`text-2xl font-black ${getTextClass()}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-white/60">Won</div>
+                          <div className={`text-4xl font-black ${getTextClass()}`}>
                             {pipelineLoading ? '0' : statusCounts['Won']}
                           </div>
-                          <div className="text-xs text-white/60 mt-1">Won</div>
                         </div>
-                        <div className="text-center">
-                          <div className={`text-2xl font-black ${getTextClass()}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-white/60">Lost</div>
+                          <div className={`text-4xl font-black ${getTextClass()}`}>
                             {pipelineLoading ? '0' : statusCounts['Lost']}
                           </div>
-                          <div className="text-xs text-white/60 mt-1">Lost</div>
                         </div>
                       </div>
                     ) : (
