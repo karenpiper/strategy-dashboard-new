@@ -399,11 +399,59 @@ export default function WorkSampleAdmin() {
         if (uploadResult.complete && uploadResult.fileId) {
           // Upload complete - update form data
           setUploadProgress('Upload complete!')
-          setFormData(prev => ({
-            ...prev,
-            file_url: uploadResult.fileUrl || `https://drive.google.com/file/d/${uploadResult.fileId}/view`,
-            file_name: file.name,
-          }))
+          
+          // If it's a PDF and no thumbnail has been set, generate one automatically
+          const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+          if (isPdf && !formData.thumbnail_url && user) {
+            try {
+              setUploadProgress('Generating thumbnail from PDF...')
+              const thumbnailResponse = await fetch('/api/work-samples/generate-pdf-thumbnail', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  fileId: uploadResult.fileId,
+                  userId: user.id,
+                }),
+              })
+
+              if (thumbnailResponse.ok) {
+                const thumbnailResult = await thumbnailResponse.json()
+                // Set thumbnail preview and URL
+                setThumbnailPreview(thumbnailResult.thumbnailUrl)
+                setFormData(prev => ({
+                  ...prev,
+                  file_url: uploadResult.fileUrl || `https://drive.google.com/file/d/${uploadResult.fileId}/view`,
+                  file_name: file.name,
+                  thumbnail_url: thumbnailResult.thumbnailUrl,
+                }))
+              } else {
+                // If thumbnail generation fails, just set the file info
+                console.warn('Failed to generate PDF thumbnail, continuing without it')
+                setFormData(prev => ({
+                  ...prev,
+                  file_url: uploadResult.fileUrl || `https://drive.google.com/file/d/${uploadResult.fileId}/view`,
+                  file_name: file.name,
+                }))
+              }
+            } catch (thumbnailError: any) {
+              // If thumbnail generation fails, just set the file info
+              console.warn('Error generating PDF thumbnail:', thumbnailError)
+              setFormData(prev => ({
+                ...prev,
+                file_url: uploadResult.fileUrl || `https://drive.google.com/file/d/${uploadResult.fileId}/view`,
+                file_name: file.name,
+              }))
+            }
+          } else {
+            // Not a PDF or thumbnail already set, just update file info
+            setFormData(prev => ({
+              ...prev,
+              file_url: uploadResult.fileUrl || `https://drive.google.com/file/d/${uploadResult.fileId}/view`,
+              file_name: file.name,
+            }))
+          }
           break
         }
 
@@ -469,9 +517,35 @@ export default function WorkSampleAdmin() {
       return
     }
 
-    if (!formData.thumbnail_url) {
-      alert('Thumbnail image is required')
-      return
+    // If no thumbnail was uploaded and we have a PDF file, try to generate one
+    if (!formData.thumbnail_url && formData.file_url && formData.file_name && user) {
+      const isPdf = formData.file_name.toLowerCase().endsWith('.pdf')
+      if (isPdf) {
+        try {
+          // Extract file ID from Google Drive URL
+          const fileIdMatch = formData.file_url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+          if (fileIdMatch && fileIdMatch[1]) {
+            const fileId = fileIdMatch[1]
+            const thumbnailResponse = await fetch('/api/work-samples/generate-pdf-thumbnail', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                fileId: fileId,
+                userId: user.id,
+              }),
+            })
+
+            if (thumbnailResponse.ok) {
+              const thumbnailResult = await thumbnailResponse.json()
+              formData.thumbnail_url = thumbnailResult.thumbnailUrl
+            }
+          }
+        } catch (thumbnailError: any) {
+          console.warn('Failed to generate thumbnail, continuing without it:', thumbnailError)
+        }
+      }
     }
 
     try {
@@ -855,7 +929,8 @@ export default function WorkSampleAdmin() {
                     )}
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>Thumbnail <span className="text-red-500">*</span></Label>
+                    <Label className={cardStyle.text}>Thumbnail (optional)</Label>
+                    <p className={`text-xs ${cardStyle.text}/70 mb-1`}>Auto-generated for PDFs if not provided</p>
                     <div>
                       {thumbnailPreview && (
                         <div className="mb-2">
@@ -871,14 +946,13 @@ export default function WorkSampleAdmin() {
                         accept="image/*"
                         onChange={handleThumbnailUpload}
                         disabled={uploadingThumbnail}
-                        required
                         className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                       />
                       {uploadingThumbnail && <p className={`text-xs ${cardStyle.text}/70 mt-1`}>Uploading...</p>}
                     </div>
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>Link (Figma or Keynote) (optional)</Label>
+                    <Label className={cardStyle.text}>Link (optional)</Label>
                     <Input
                       type="url"
                       value={formData.file_link}
