@@ -112,11 +112,17 @@ export function TeamPulseCard() {
   }
 
   const handleNext = () => {
-    // Move to comment step for current question
+    // Move to comment step for current question if score is set
     if (currentResponse && currentResponse.score !== undefined) {
       setIsCommentStep(true)
     }
   }
+  
+  // Reset comment step when question changes
+  useEffect(() => {
+    setIsCommentStep(false)
+    setCurrentComment('')
+  }, [currentQuestionIndex])
 
   const handleSkipComment = () => {
     // Save response without comment and move to next question
@@ -299,7 +305,7 @@ export function TeamPulseCard() {
         
         <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>Team Pulse</h2>
         
-        {!isCommentStep && currentResponse?.score === undefined ? (
+        {!isCommentStep ? (
           <>
             <div className="mb-6">
               <p className={`text-lg font-medium mb-6 ${style.text}`}>
@@ -328,11 +334,12 @@ export function TeamPulseCard() {
               </span>
               <Button
                 onClick={handleNext}
+                disabled={currentResponse?.score === undefined}
                 className={`${getRoundedClass('rounded-lg')} ${
                   mode === 'chaos' ? 'bg-[#00FF87] text-black hover:bg-[#00FF87]/80' :
                   mode === 'chill' ? 'bg-[#C8D961] text-[#4A1818] hover:bg-[#C8D961]/80' :
                   'bg-white text-black hover:bg-white/80'
-                } font-black uppercase tracking-wider ${mode === 'code' ? 'font-mono' : ''}`}
+                } font-black uppercase tracking-wider ${mode === 'code' ? 'font-mono' : ''} disabled:opacity-50`}
               >
                 Next
                 <ArrowRight className="w-4 h-4 ml-2" />
