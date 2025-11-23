@@ -8,7 +8,11 @@ export async function downloadFileFromDrive(fileId: string): Promise<Buffer> {
 
   try {
     const response = await drive.files.get(
-      { fileId, alt: 'media' },
+      { 
+        fileId, 
+        alt: 'media',
+        supportsAllDrives: true,
+      } as any,
       { responseType: 'arraybuffer' }
     )
 
@@ -37,7 +41,8 @@ export async function getDriveFileMetadata(fileId: string): Promise<{
     const response = await drive.files.get({
       fileId,
       fields: 'name, mimeType, webViewLink',
-    })
+      supportsAllDrives: true,
+    } as any)
 
     if (!response.data) {
       throw new Error('Failed to get file metadata from Google Drive')
