@@ -2034,18 +2034,24 @@ export default function TeamDashboard() {
               ]
               return (
                 <Card 
-                  className={`${style.bg} ${style.border} ${eventsExpanded ? 'p-8 flex-1' : 'py-3 px-6 flex-[0_0_auto]'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300`} 
+                  className={`${style.bg} ${style.border} ${eventsExpanded ? 'p-6 flex-[0_0_auto]' : 'py-3 px-6 flex-[0_0_auto]'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300`} 
                   style={eventsExpanded ? { minHeight: '0' } : { height: '80px', maxHeight: '80px', minHeight: '80px' }}
                 >
                   {eventsExpanded ? (
                     /* Vertical stats view when expanded - Bold and clean */
-                    <div className="flex flex-col gap-5 h-full justify-center">
+                    <div className="flex flex-col gap-2 h-full">
+                      <h2 className={`text-2xl font-black uppercase leading-none ${style.text} mb-3`}>THIS WEEK</h2>
                       {stats.map((stat, index) => (
-                        <div key={stat.label} className="flex items-center justify-between py-2">
+                        <div key={stat.label} className="flex items-center justify-between">
                           <div className={`text-base font-normal tracking-wide ${style.text}`}>
                             {stat.label}
                           </div>
-                          <div className={`text-5xl font-black ${style.text}`}>
+                          <div 
+                            className={`text-5xl font-black ${style.text} px-4 py-2 rounded-lg`}
+                            style={{
+                              backgroundColor: mode === 'chaos' ? 'rgba(0,0,0,0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
+                            }}
+                          >
                             {stat.value}
                           </div>
                         </div>
@@ -2149,7 +2155,7 @@ export default function TeamDashboard() {
               return (
                 <>
                   <Card 
-                    className={`${eventsExpanded ? 'p-8 flex-1' : 'p-6'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 overflow-hidden`}
+                    className={`${eventsExpanded ? 'p-6 flex-[2]' : 'p-6'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 overflow-hidden`}
                     style={{
                       backgroundColor: '#1a1a1a',
                       borderColor: borderColor,
@@ -2162,34 +2168,60 @@ export default function TeamDashboard() {
                     
                     {eventsExpanded ? (
                       /* Stats view when events expanded - Clean vertical layout */
-                      <div className="flex flex-col gap-5 h-full justify-center">
-                        <div className="flex items-center justify-between py-2">
+                      <div className="flex flex-col gap-2 h-full">
+                        <h2 className="text-2xl mb-3 font-black uppercase text-white">PIPELINE</h2>
+                        <div className="flex items-center justify-between">
                           <div className="text-base text-white font-normal tracking-wide">In Progress</div>
-                          <div className="text-5xl font-black text-white">
+                          <div 
+                            className="text-5xl font-black text-white px-4 py-2 rounded-lg"
+                            style={{
+                              backgroundColor: 'rgba(0,0,0,0.4)',
+                            }}
+                          >
                             {pipelineLoading ? '0' : statusCounts['In Progress']}
                           </div>
                         </div>
-                        <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center justify-between">
                           <div className="text-base text-white font-normal tracking-wide">Pending</div>
-                          <div className="text-5xl font-black text-white">
+                          <div 
+                            className="text-5xl font-black text-white px-4 py-2 rounded-lg"
+                            style={{
+                              backgroundColor: 'rgba(0,0,0,0.4)',
+                            }}
+                          >
                             {pipelineLoading ? '0' : statusCounts['Pending Decision']}
                           </div>
                         </div>
-                        <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center justify-between">
                           <div className="text-base text-white font-normal tracking-wide">Long Lead</div>
-                          <div className="text-5xl font-black text-white">
+                          <div 
+                            className="text-5xl font-black text-white px-4 py-2 rounded-lg"
+                            style={{
+                              backgroundColor: 'rgba(0,0,0,0.4)',
+                            }}
+                          >
                             {pipelineLoading ? '0' : statusCounts['Long Lead']}
                           </div>
                         </div>
-                        <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center justify-between">
                           <div className="text-base text-white font-normal tracking-wide">Won</div>
-                          <div className="text-5xl font-black text-white">
+                          <div 
+                            className="text-5xl font-black text-white px-4 py-2 rounded-lg"
+                            style={{
+                              backgroundColor: 'rgba(0,0,0,0.4)',
+                            }}
+                          >
                             {pipelineLoading ? '0' : statusCounts['Won']}
                           </div>
                         </div>
-                        <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center justify-between">
                           <div className="text-base text-white font-normal tracking-wide">Lost</div>
-                          <div className="text-5xl font-black text-white">
+                          <div 
+                            className="text-5xl font-black text-white px-4 py-2 rounded-lg"
+                            style={{
+                              backgroundColor: 'rgba(0,0,0,0.4)',
+                            }}
+                          >
                             {pipelineLoading ? '0' : statusCounts['Lost']}
                           </div>
                         </div>
