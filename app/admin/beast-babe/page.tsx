@@ -121,6 +121,11 @@ export default function BeastBabeAdmin() {
       return
     }
 
+    if (!achievement.trim()) {
+      setError('Please provide a reason for why they are the next Beast Babe')
+      return
+    }
+
     try {
       setPassing(true)
       setError(null)
@@ -133,7 +138,7 @@ export default function BeastBabeAdmin() {
         },
         body: JSON.stringify({
           newBeastBabeUserId: selectedUserId,
-          achievement: achievement.trim() || undefined,
+          achievement: achievement.trim(),
         }),
       })
 
@@ -379,7 +384,7 @@ export default function BeastBabeAdmin() {
 
           <div>
             <Label htmlFor="achievement" className="block text-sm font-medium text-foreground mb-2">
-              Achievement / Reason (Optional)
+              Achievement / Reason <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="achievement"
@@ -387,13 +392,14 @@ export default function BeastBabeAdmin() {
               onChange={(e) => setAchievement(e.target.value)}
               placeholder="Why are they the next Beast Babe?"
               className="min-h-[100px]"
+              required
             />
           </div>
 
           <div className="flex items-center justify-end gap-4 pt-4 border-t border-border">
             <Button
               onClick={handlePassTorch}
-              disabled={!selectedUserId || passing}
+              disabled={!selectedUserId || !achievement.trim() || passing}
               size="lg"
               className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold"
             >
