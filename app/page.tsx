@@ -181,6 +181,20 @@ export default function TeamDashboard() {
     const interval = setInterval(updateDate, 60000)
     return () => clearInterval(interval)
   }, [])
+
+  // Track current hour to trigger gradient updates
+  const [currentHour, setCurrentHour] = useState(new Date().getHours())
+  useEffect(() => {
+    const updateHour = () => {
+      setCurrentHour(new Date().getHours())
+    }
+    
+    updateHour()
+    // Update every hour to trigger gradient changes at time boundaries
+    // Also check every 5 minutes to catch transitions more smoothly
+    const interval = setInterval(updateHour, 5 * 60000)
+    return () => clearInterval(interval)
+  }, [])
   
   // Detect user timezone and calculate timezone times
   useEffect(() => {
@@ -706,7 +720,7 @@ export default function TeamDashboard() {
     }
   }, [user])
 
-  // Time-based gradient for hero section
+  // Time-based gradient for hero section (chaos mode - vibrant colors)
   const getTimeBasedGradient = (): { bg: string; text: string; accent: string } => {
     const now = new Date()
     const hour = now.getHours()
@@ -757,6 +771,62 @@ export default function TeamDashboard() {
         bg: 'bg-gradient-to-br from-[#6B2E8C] via-[#1B4D7C] to-[#0F172A]',
         text: 'text-white',
         accent: '#6B2E8C'
+      }
+    }
+  }
+
+  // Time-based gradient for hero section (chill mode - softer, lighter colors)
+  const getTimeBasedGradientChill = (): { bg: string; text: string; accent: string; border: string } => {
+    const now = new Date()
+    const hour = now.getHours()
+    
+    // Chill mode uses softer, lighter versions of the same color systems
+    // Adapted to work with warm cream background and maintain readability
+    
+    if (hour >= 5 && hour < 7) {
+      // Sunrise: Soft Orange/Yellow
+      // YELLOW SYSTEM: Golden Yellow (#FFC043), Light Yellow, Peach tones
+      return {
+        bg: 'bg-gradient-to-br from-[#FFE5B4] via-[#FFC043] to-[#FFB84D]',
+        text: 'text-[#4A1818]',
+        accent: '#FFC043',
+        border: 'border border-[#FFC043]/30'
+      }
+    } else if (hour >= 7 && hour < 17) {
+      // Daytime: Soft Blue
+      // BLUE SYSTEM: Sky Blue (#4A9BFF), lighter tones
+      return {
+        bg: 'bg-gradient-to-br from-[#E6F2FF] via-[#B3D9FF] to-[#4A9BFF]',
+        text: 'text-[#4A1818]',
+        accent: '#4A9BFF',
+        border: 'border border-[#4A9BFF]/30'
+      }
+    } else if (hour >= 17 && hour < 19) {
+      // Sunset: Soft Red/Orange
+      // RED SYSTEM: Soft Pink/Orange tones
+      return {
+        bg: 'bg-gradient-to-br from-[#FFE5D9] via-[#FFB5D8] to-[#FF8C6B]',
+        text: 'text-[#4A1818]',
+        accent: '#FF6B35',
+        border: 'border border-[#FF6B35]/30'
+      }
+    } else if (hour >= 19 && hour < 21) {
+      // Dusk: Soft Purple
+      // PURPLE SYSTEM: Lavender tones
+      return {
+        bg: 'bg-gradient-to-br from-[#F3E5F5] via-[#E1BEE7] to-[#CE93D8]',
+        text: 'text-[#4A1818]',
+        accent: '#FFB5D8',
+        border: 'border border-[#FFB5D8]/30'
+      }
+    } else {
+      // Nighttime: Soft muted tones
+      // Deep but softer maroon/purple
+      return {
+        bg: 'bg-gradient-to-br from-[#F5E6D3] via-[#E8D5C4] to-[#D4C4A8]',
+        text: 'text-[#4A1818]',
+        accent: '#8B4444',
+        border: 'border border-[#8B4444]/30'
       }
     }
   }
@@ -825,8 +895,9 @@ export default function TeamDashboard() {
   const getCardStyle = (section: CardSection): { bg: string; border: string; glow: string; text: string; accent: string } => {
     if (mode === 'chaos') {
       // Fallback for section-based styling in chaos mode - using 7 new color systems
+      const timeGradient = getTimeBasedGradient()
       const chaosColors: Record<CardSection, { bg: string; border: string; glow: string; text: string; accent: string }> = {
-        hero: { bg: 'bg-gradient-to-br from-[#FFB84D] via-[#FFE500] to-[#FFE500]', border: 'border-0', glow: '', text: 'text-black', accent: '#C4F500' }, // Keep hero gradient
+        hero: { bg: timeGradient.bg, border: 'border-0', glow: '', text: timeGradient.text, accent: timeGradient.accent }, // Time-based gradient
         recognition: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#10B981' }, // GREEN SYSTEM - Emerald accent
         work: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#00A3E0' }, // BLUE SYSTEM - Ocean accent
         team: { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#FF8C42' }, // ORANGE SYSTEM - Orange accent
@@ -837,8 +908,9 @@ export default function TeamDashboard() {
       }
       return chaosColors[section] || chaosColors.default
     } else if (mode === 'chill') {
+      const timeGradientChill = getTimeBasedGradientChill()
       const chillColors: Record<CardSection, { bg: string; border: string; glow: string; text: string; accent: string }> = {
-        hero: { bg: 'bg-gradient-to-br from-[#FFC043] via-[#FFB5D8] to-[#C8D961]', border: 'border border-[#FFC043]/30', glow: '', text: 'text-[#4A1818]', accent: '#FFC043' },
+        hero: { bg: timeGradientChill.bg, border: timeGradientChill.border, glow: '', text: timeGradientChill.text, accent: timeGradientChill.accent }, // Time-based gradient
         recognition: { bg: 'bg-white', border: 'border border-[#C8D961]/30', glow: '', text: 'text-[#4A1818]', accent: '#C8D961' },
         work: { bg: 'bg-white', border: 'border border-[#FF6B35]/30', glow: '', text: 'text-[#4A1818]', accent: '#FF6B35' },
         team: { bg: 'bg-white', border: 'border border-[#4A9BFF]/30', glow: '', text: 'text-[#4A1818]', accent: '#4A9BFF' },
@@ -1275,13 +1347,13 @@ export default function TeamDashboard() {
                     <Badge className={`${mode === 'chaos' ? 'bg-black text-[#FFE500]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFC043]' : mode === 'code' ? 'bg-[#FFFFFF] text-black border border-[#FFFFFF]' : 'bg-white text-black'} hover:opacity-90 ${mode === 'code' ? 'border-0' : 'border-0'} ${getRoundedClass('rounded-full')} font-black mb-4 md:mb-6 text-xs md:text-sm uppercase tracking-[0.2em] ${mode === 'code' ? 'font-mono' : ''} px-4 md:px-6 py-2 md:py-3`}>
                       {mode === 'code' ? '[AI CHAOS AGENT]' : mode === 'chaos' ? 'QUICK ACTIONS' : 'AI Chaos Agent'}
                     </Badge>
-                    <h1 className={`text-[clamp(3rem,8vw+1rem,10rem)] font-black mb-4 md:mb-6 leading-[0.85] tracking-tight uppercase text-black ${mode === 'code' ? 'font-mono' : ''}`}>
+                    <h1 className={`text-[clamp(3rem,8vw+1rem,10rem)] font-black mb-4 md:mb-6 leading-[0.85] tracking-tight uppercase ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                       {mode === 'code' ? `> Hello, ${userName}` : `Hello, ${userName}`}
                     </h1>
-                    <p className={`text-[clamp(1.25rem,3vw+0.5rem,2.5rem)] font-bold max-w-2xl leading-tight text-black ${mode === 'code' ? 'font-mono' : ''}`}>
+                    <p className={`text-[clamp(1.25rem,3vw+0.5rem,2.5rem)] font-bold max-w-2xl leading-tight ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                       {mode === 'code' ? ':: Let\'s ship something amazing today' : 'Let\'s ship something amazing today'}
                     </p>
-                    <p className={`text-base md:text-lg lg:text-xl font-bold mt-4 text-black/70 ${mode === 'code' ? 'font-mono' : ''}`}>
+                    <p className={`text-base md:text-lg lg:text-xl font-bold mt-4 ${mode === 'code' ? 'font-mono text-[#FFFFFF]/70' : style.text === 'text-white' ? 'text-white/70' : 'text-black/70'}`}>
                       {mode === 'code' ? `C:\\> date: ${todayDate || 'Loading...'}` : todayDate || 'Loading...'}
                     </p>
                   </div>
