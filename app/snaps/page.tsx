@@ -375,7 +375,6 @@ export default function SnapsPage() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <ModeSwitcher />
             {user && (
               <AccountMenu />
             )}

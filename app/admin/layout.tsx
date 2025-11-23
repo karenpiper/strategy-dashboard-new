@@ -27,7 +27,6 @@ import { Card } from '@/components/ui/card'
 import { useEffect } from 'react'
 import { getRoleDisplayName, getSpecialAccessDisplayName } from '@/lib/permissions'
 import { AccountMenu } from '@/components/account-menu'
-import { ModeSwitcher } from '@/components/mode-switcher'
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const { mode } = useMode()
@@ -219,7 +218,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <ModeSwitcher />
             {authUser && (
               <AccountMenu />
             )}

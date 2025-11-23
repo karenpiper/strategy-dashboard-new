@@ -9,7 +9,6 @@ import { Search, ExternalLink, User, Calendar, Filter, ArrowUpDown, ArrowUp, Arr
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { AccountMenu } from '@/components/account-menu'
-import { ModeSwitcher } from '@/components/mode-switcher'
 import { Footer } from '@/components/footer'
 
 interface WorkSample {
@@ -221,7 +220,6 @@ export default function WorkSamplesPage() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <ModeSwitcher />
             {user && (
               <AccountMenu />
             )}

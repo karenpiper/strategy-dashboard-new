@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AccountMenu } from '@/components/account-menu'
-import { ModeSwitcher } from '@/components/mode-switcher'
 import { Footer } from '@/components/footer'
 
 interface SearchResult {
@@ -116,7 +115,6 @@ export default function DecksPage() {
             Strategy Dashboard
           </Link>
           <div className="flex items-center gap-4">
-            <ModeSwitcher />
             <AccountMenu />
           </div>
         </div>
