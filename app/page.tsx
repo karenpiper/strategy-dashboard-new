@@ -1365,7 +1365,7 @@ export default function TeamDashboard() {
               >
                 {/* Black masked section on the right with transform/rotation - contains horoscope image */}
                 {mode === 'chaos' && (
-                  <div className={`absolute top-0 right-0 w-1/2 h-full ${getBgClass()} ${getRoundedClass('rounded-[2.5rem]')} transform translate-x-1/4 -rotate-12 overflow-hidden`}>
+                  <div className={`absolute top-0 right-0 w-1/2 h-full ${getBgClass()} ${getRoundedClass('rounded-[2.5rem]')} transform translate-x-[10%] -rotate-12 overflow-hidden`}>
                     {horoscopeImageLoading ? (
                       <div className="w-full h-full flex items-center justify-center">
                         <Loader2 className="w-8 h-8 animate-spin text-white" />
@@ -1399,8 +1399,8 @@ export default function TeamDashboard() {
                   </div>
                 )}
                 {mode !== 'chaos' && (
-                  <div className={`absolute top-0 right-0 w-[60%] h-full ${getBgClass()} overflow-hidden`} 
-                       style={{ clipPath: 'polygon(12% 0, 100% 0, 100% 100%, 0% 100%)' }} 
+                  <div className={`absolute top-0 right-0 w-[55%] h-full ${getBgClass()} overflow-hidden`} 
+                       style={{ clipPath: 'polygon(8% 0, 100% 0, 100% 100%, 0% 100%)' }} 
                   >
                     {horoscopeImageLoading ? (
                       <div className="w-full h-full flex items-center justify-center">
@@ -1441,20 +1441,20 @@ export default function TeamDashboard() {
                         {mode === 'code' ? '[AI CHAOS AGENT]' : 'AI Chaos Agent'}
                       </Badge>
                     )}
-                    <h1 className={`text-[clamp(2rem,6vw+0.5rem,6rem)] font-black mb-2 md:mb-3 leading-[0.85] tracking-tight uppercase ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
+                    <h1 className={`text-[clamp(2.5rem,7vw+0.5rem,7rem)] font-black mb-2 md:mb-3 leading-[0.85] tracking-tight uppercase ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                       {mode === 'code' ? `> Hello,` : `Hello,`}
                     </h1>
-                    <h2 className={`text-[clamp(1.75rem,5vw+0.5rem,5rem)] font-black mb-2 md:mb-3 leading-[0.85] tracking-tight uppercase ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
+                    <h2 className={`text-[clamp(2rem,6vw+0.5rem,6rem)] font-black mb-2 md:mb-3 leading-[0.85] tracking-tight uppercase ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                       {mode === 'code' ? `${userFirstName || userName}` : `${userFirstName || userName}`}
                     </h2>
-                    <p className={`text-[clamp(1rem,2.5vw+0.5rem,1.75rem)] font-bold max-w-2xl leading-tight ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
+                    <p className={`text-[clamp(1.25rem,3vw+0.5rem,2rem)] font-bold max-w-2xl leading-tight ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                       {mode === 'code' 
                         ? `It's ${todayDate || 'Loading...'}${temperature ? ` and ${temperature}` : ''}`
                         : `It's ${todayDate || 'Loading...'}${temperature ? ` and ${temperature}` : ''}`
                       }
                     </p>
                   </div>
-                  <div className="relative z-10 flex items-center gap-3 md:gap-4 flex-wrap mt-4">
+                  <div className="relative z-10 flex items-center gap-3 md:gap-4 flex-wrap mt-8">
                     {(() => {
                       // Determine if background is light (for button contrast)
                       const isLightBg = style.text === 'text-black'
@@ -1886,7 +1886,7 @@ export default function TeamDashboard() {
                     </Button>
                   </div>
                 </div>
-                <div className="space-y-[22px] mb-6 mt-2">
+                <div className="space-y-2 mb-6 mt-2">
                   {snaps.length === 0 ? (
                     <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-5 border-2`} style={{ borderColor: `${style.accent}66` }}>
                       <p className={`text-sm ${style.text}/80 text-center`}>No snaps yet. Be the first to recognize someone!</p>
@@ -1908,9 +1908,9 @@ export default function TeamDashboard() {
                       }
                       
                       return (
-                        <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-3 border-2 transition-all hover:opacity-80 relative`} style={{ borderColor: `${style.accent}66` }}>
-                          <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0" style={{ padding: '5px', width: '50px', height: '50px' }}>
+                        <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-1.5 border-2 transition-all hover:opacity-80 relative`} style={{ borderColor: `${style.accent}66` }}>
+                          <div className="flex items-start gap-2">
+                            <div className="flex-shrink-0" style={{ padding: '2px', width: '50px', height: '50px' }}>
                               {profilePicture ? (
                                 <img 
                                   src={profilePicture} 

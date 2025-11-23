@@ -571,7 +571,7 @@ export default function SnapsPage() {
             </div>
 
             {/* Snaps List */}
-            <div className="space-y-4">
+            <div className="space-y-2">
             {error && (
               <div className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} border-2`} style={{ backgroundColor: mode === 'chaos' ? 'rgba(255, 0, 0, 0.1)' : mode === 'chill' ? 'rgba(255, 0, 0, 0.1)' : 'rgba(255, 0, 0, 0.1)', borderColor: '#ef4444' }}>
                 <p className="text-sm" style={{ color: '#ef4444' }}>{error}</p>
@@ -604,10 +604,10 @@ export default function SnapsPage() {
                   return (
                     <Card
                       key={snap.id}
-                      className={`bg-white ${getRoundedClass('rounded-xl')} p-[10px] shadow-sm`}
+                      className={`bg-white ${getRoundedClass('rounded-xl')} p-2 shadow-sm`}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0" style={{ padding: '10px', width: '100px', height: '100px' }}>
+                      <div className="flex items-start gap-2">
+                        <div className="flex-shrink-0" style={{ padding: '4px', width: '100px', height: '100px' }}>
                           {profilePicture ? (
                             <img 
                               src={profilePicture} 
