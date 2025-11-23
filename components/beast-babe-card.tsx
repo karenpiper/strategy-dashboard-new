@@ -113,7 +113,7 @@ export function BeastBabeCard() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2 glitch-text">
             <Trophy className="w-7 h-7 text-[#84CC16] animate-bounce" style={{ animationDuration: '1.5s' }} />
-            <h2 className="text-3xl font-black text-white uppercase tracking-tight glitch-text">BEAST BABE</h2>
+            <h2 className="text-5xl font-black text-white uppercase tracking-tight glitch-text">BEAST BABE</h2>
           </div>
           <div className="flex items-center gap-2">
             <Star className="w-6 h-6 text-[#EC4899] fill-[#EC4899] animate-pulse glitch-shift" style={{ animationDelay: '0.5s' }} />
@@ -160,7 +160,7 @@ export function BeastBabeCard() {
           </div>
 
           {/* Name */}
-          <h3 className="text-2xl font-black text-white mb-1 text-center glitch-text">
+          <h3 className="text-3xl font-black text-white mb-1 text-center glitch-text">
             {currentBeastBabe?.full_name || currentBeastBabe?.email || 'No Beast Babe Yet'}
           </h3>
           

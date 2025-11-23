@@ -393,20 +393,20 @@ body {
     text-shadow: 0 0 0;
   }
   20% {
-    transform: translate(-1px, 1px);
-    text-shadow: -2px 0 #EC4899, 2px 0 #84CC16;
+    transform: translate(-0.5px, 0.5px);
+    text-shadow: -1px 0 rgba(236, 72, 153, 0.5), 1px 0 rgba(132, 204, 22, 0.5);
   }
   40% {
-    transform: translate(-1px, -1px);
-    text-shadow: -2px 0 #84CC16, 2px 0 #EC4899;
+    transform: translate(-0.5px, -0.5px);
+    text-shadow: -1px 0 rgba(132, 204, 22, 0.5), 1px 0 rgba(236, 72, 153, 0.5);
   }
   60% {
-    transform: translate(1px, 1px);
-    text-shadow: 2px 0 #EC4899, -2px 0 #84CC16;
+    transform: translate(0.5px, 0.5px);
+    text-shadow: 1px 0 rgba(236, 72, 153, 0.5), -1px 0 rgba(132, 204, 22, 0.5);
   }
   80% {
-    transform: translate(1px, -1px);
-    text-shadow: 2px 0 #84CC16, -2px 0 #EC4899;
+    transform: translate(0.5px, -0.5px);
+    text-shadow: 1px 0 rgba(132, 204, 22, 0.5), -1px 0 rgba(236, 72, 153, 0.5);
   }
 }
 
@@ -463,7 +463,7 @@ body {
 }
 
 .glitch-text {
-  animation: glitch-text 2s infinite;
+  animation: glitch-text 3s infinite;
 }
 
 .glitch-border {
