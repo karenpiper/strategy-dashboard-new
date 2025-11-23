@@ -1888,11 +1888,10 @@ export default function TeamDashboard() {
                   </p>
                   <button
                     onClick={() => setEventsExpanded(!eventsExpanded)}
-                    className={`${getRoundedClass('rounded-lg')} px-3 py-1.5 flex items-center gap-1 text-xs font-black transition-all border-2`}
+                    className={`${getRoundedClass('rounded-lg')} px-3 py-1.5 flex items-center gap-1 text-xs font-black transition-all`}
                     style={{ 
-                      backgroundColor: `${mintColor}66`,
-                      color: mintColor,
-                      borderColor: mintColor
+                      backgroundColor: style.accent,
+                      color: mode === 'chaos' ? '#000000' : mode === 'chill' ? '#4A1818' : '#FFFFFF'
                     }}
                   >
                     {eventsExpanded ? (
