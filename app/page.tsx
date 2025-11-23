@@ -1245,7 +1245,7 @@ export default function TeamDashboard() {
                 { name: 'Alex Chen', win: 'Closed $50k deal!', emoji: '⭐' },
               ]
               return (
-                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full`}
+                <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
                       style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
                 >
                   <div className="flex items-center gap-2 text-sm mb-2" style={{ color: style.accent }}>

@@ -115,7 +115,7 @@ export function SpotifyPlayer({
 
       {/* Content below media row */}
       <motion.header
-        className="content text-center mt-5 md:mt-6 mb-2 relative z-20 space-y-1.5"
+        className="content text-left mt-5 md:mt-6 mb-2 relative z-20 space-y-1.5"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
@@ -135,7 +135,7 @@ export function SpotifyPlayer({
 
       {/* Now Playing */}
       <motion.div 
-        className="text-center mb-2"
+        className="text-left mb-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.6 }}
@@ -156,7 +156,7 @@ export function SpotifyPlayer({
       {/* Spotify Link Button Only */}
       <motion.div 
         id="playlist-controls"
-        className="flex items-center justify-center mb-2"
+        className="flex items-start mb-2"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, delay: 0.6 }}
@@ -188,7 +188,7 @@ export function SpotifyPlayer({
       {/* Track Info */}
       {trackInfo && (
         <motion.div 
-          className="text-center mb-2 font-sans mt-3"
+          className="text-left mb-2 font-sans mt-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 1.2 }}
@@ -201,10 +201,10 @@ export function SpotifyPlayer({
         </motion.div>
       )}
 
-      {/* Artists List - Centered */}
+      {/* Artists List - Left Aligned */}
       {artistsList && (
         <motion.div 
-          className="text-foreground/80 text-[15px] md:text-base leading-7 text-center px-4 font-normal tracking-tight max-w-2xl mx-auto mt-3"
+          className="text-foreground/80 text-[15px] md:text-base leading-7 text-left px-4 font-normal tracking-tight max-w-2xl mt-3"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.4 }}
