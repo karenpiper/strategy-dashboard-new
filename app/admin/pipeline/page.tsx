@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { useMode } from '@/contexts/mode-context'
-import { Plus, TrendingUp, Check, X } from 'lucide-react'
+import { Plus, TrendingUp, Check, X, Edit } from 'lucide-react'
 
 interface PipelineProject {
   id: string
@@ -35,6 +35,8 @@ export default function PipelinePage() {
   const [error, setError] = useState<string | null>(null)
   const [draggedProject, setDraggedProject] = useState<PipelineProject | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [editingProject, setEditingProject] = useState<PipelineProject | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     type: '',
@@ -92,6 +94,39 @@ export default function PipelinePage() {
     }
   }
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      type: '',
+      description: '',
+      due_date: '',
+      lead: '',
+      notes: '',
+      status: 'In Progress',
+      team: '',
+      url: '',
+      tier: '',
+    })
+    setEditingProject(null)
+  }
+
+  const openEditDialog = (project: PipelineProject) => {
+    setEditingProject(project)
+    setFormData({
+      name: project.name,
+      type: project.type || '',
+      description: project.description || '',
+      due_date: project.due_date ? new Date(project.due_date).toISOString().split('T')[0] : '',
+      lead: project.lead || '',
+      notes: project.notes || '',
+      status: project.status as KanbanColumn,
+      team: project.team || '',
+      url: project.url || '',
+      tier: project.tier?.toString() || '',
+    })
+    setIsEditDialogOpen(true)
+  }
+
   const createProject = async () => {
     try {
       if (!formData.name.trim()) {
@@ -115,21 +150,52 @@ export default function PipelinePage() {
       const result = await response.json()
       setProjects(prev => [...prev, result.data])
       setIsAddDialogOpen(false)
-      setFormData({
-        name: '',
-        type: '',
-        description: '',
-        due_date: '',
-        lead: '',
-        notes: '',
-        status: 'In Progress',
-        team: '',
-        url: '',
-        tier: '',
-      })
+      resetForm()
     } catch (err: any) {
       console.error('Error creating project:', err)
       alert('Failed to create project')
+    }
+  }
+
+  const updateProject = async () => {
+    try {
+      if (!editingProject) return
+      if (!formData.name.trim()) {
+        alert('Project name is required')
+        return
+      }
+
+      const response = await fetch('/api/pipeline', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingProject.id,
+          name: formData.name,
+          type: formData.type || null,
+          description: formData.description || null,
+          due_date: formData.due_date || null,
+          lead: formData.lead || null,
+          notes: formData.notes || null,
+          status: formData.status,
+          team: formData.team || null,
+          url: formData.url || null,
+          tier: formData.tier ? parseInt(formData.tier) : null,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update project')
+      }
+
+      const result = await response.json()
+      setProjects(prev => 
+        prev.map(p => p.id === editingProject.id ? result.data : p)
+      )
+      setIsEditDialogOpen(false)
+      resetForm()
+    } catch (err: any) {
+      console.error('Error updating project:', err)
+      alert('Failed to update project')
     }
   }
 
@@ -415,7 +481,8 @@ export default function PipelinePage() {
                       key={project.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, project)}
-                      className="p-3 cursor-move hover:opacity-80 transition-opacity"
+                      onClick={() => openEditDialog(project)}
+                      className="p-3 cursor-pointer hover:opacity-80 transition-opacity"
                       style={{
                         backgroundColor: '#E8F5E9',
                         borderColor: `${borderColor}40`,
@@ -518,7 +585,8 @@ export default function PipelinePage() {
                     key={project.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, project)}
-                    className="p-3 cursor-move hover:opacity-80 transition-opacity bg-gray-50"
+                    onClick={() => openEditDialog(project)}
+                    className="p-3 cursor-pointer hover:opacity-80 transition-opacity bg-gray-50"
                     style={{
                       borderColor: `${borderColor}40`,
                       borderWidth: '1px',
@@ -590,7 +658,8 @@ export default function PipelinePage() {
                     key={project.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, project)}
-                    className="p-3 cursor-move hover:opacity-80 transition-opacity bg-gray-50"
+                    onClick={() => openEditDialog(project)}
+                    className="p-3 cursor-pointer hover:opacity-80 transition-opacity bg-gray-50"
                     style={{
                       borderColor: `${borderColor}40`,
                       borderWidth: '1px',
@@ -633,6 +702,147 @@ export default function PipelinePage() {
           </div>
         </Card>
       </div>
+
+      {/* Edit Project Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent
+          style={{
+            backgroundColor: '#1a1a1a',
+            borderColor: borderColor,
+            borderWidth: '2px',
+          }}
+          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        >
+          <DialogHeader>
+            <DialogTitle className={getTextClass()}>Edit Project</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label className={getTextClass()}>Project Name *</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="mt-1 bg-white/10 border-white/20 text-white"
+                placeholder="Enter project name"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className={getTextClass()}>Type</Label>
+                <Input
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  className="mt-1 bg-white/10 border-white/20 text-white"
+                  placeholder="e.g., Platform Work"
+                />
+              </div>
+              <div>
+                <Label className={getTextClass()}>Status</Label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as KanbanColumn })}
+                  className="mt-1 w-full h-9 rounded-md border border-white/20 bg-white/10 text-white px-3"
+                >
+                  <option value="In Progress">In Progress</option>
+                  <option value="Pending Decision">Pending Decision</option>
+                  <option value="Long Lead">Long Lead</option>
+                  <option value="Won">Won</option>
+                  <option value="Lost">Lost</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <Label className={getTextClass()}>Description</Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="mt-1 bg-white/10 border-white/20 text-white"
+                placeholder="Project description"
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className={getTextClass()}>Due Date</Label>
+                <Input
+                  type="date"
+                  value={formData.due_date}
+                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                  className="mt-1 bg-white/10 border-white/20 text-white"
+                />
+              </div>
+              <div>
+                <Label className={getTextClass()}>Tier (0-3)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="3"
+                  value={formData.tier}
+                  onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
+                  className="mt-1 bg-white/10 border-white/20 text-white"
+                  placeholder="0-3"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className={getTextClass()}>Lead</Label>
+              <Input
+                value={formData.lead}
+                onChange={(e) => setFormData({ ...formData, lead: e.target.value })}
+                className="mt-1 bg-white/10 border-white/20 text-white"
+                placeholder="Lead name"
+              />
+            </div>
+            <div>
+              <Label className={getTextClass()}>Team</Label>
+              <Input
+                value={formData.team}
+                onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                className="mt-1 bg-white/10 border-white/20 text-white"
+                placeholder="Comma-separated team members"
+              />
+            </div>
+            <div>
+              <Label className={getTextClass()}>URL</Label>
+              <Input
+                type="url"
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                className="mt-1 bg-white/10 border-white/20 text-white"
+                placeholder="https://..."
+              />
+            </div>
+            <div>
+              <Label className={getTextClass()}>Notes</Label>
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                className="mt-1 bg-white/10 border-white/20 text-white"
+                placeholder="Additional notes"
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsEditDialogOpen(false)
+                  resetForm()
+                }}
+                style={{ borderColor: borderColor, color: borderColor }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={updateProject}
+                style={{ backgroundColor: borderColor, color: '#000' }}
+              >
+                Update Project
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

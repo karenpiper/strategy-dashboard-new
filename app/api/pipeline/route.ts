@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT - Update pipeline project status
+// PUT - Update pipeline project (full update or status only)
 export async function PUT(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -81,32 +81,65 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, status } = body
+    const { id, status, name, type, description, due_date, lead, notes, team, url, tier } = body
 
-    if (!id || !status) {
+    if (!id) {
       return NextResponse.json(
-        { error: 'Project ID and status are required' },
+        { error: 'Project ID is required' },
         { status: 400 }
       )
     }
 
-    // Validate status
-    const validStatuses = ['In Progress', 'Pending Decision', 'Long Lead', 'Won', 'Lost']
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status' },
-        { status: 400 }
-      )
+    // Build update object - if status is provided alone, it's a status-only update
+    // Otherwise, it's a full update
+    const updateData: any = {
+      updated_at: new Date().toISOString()
     }
+
+    if (status !== undefined) {
+      // Validate status
+      const validStatuses = ['In Progress', 'Pending Decision', 'Long Lead', 'Won', 'Lost']
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json(
+          { error: 'Invalid status' },
+          { status: 400 }
+        )
+      }
+      updateData.status = status
+    }
+
+    // If other fields are provided, include them in the update
+    if (name !== undefined) updateData.name = name
+    if (type !== undefined) updateData.type = type || null
+    if (description !== undefined) updateData.description = description || null
+    if (due_date !== undefined) updateData.due_date = due_date || null
+    if (lead !== undefined) updateData.lead = lead || null
+    if (notes !== undefined) updateData.notes = notes || null
+    if (team !== undefined) updateData.team = team || null
+    if (url !== undefined) updateData.url = url || null
+    if (tier !== undefined) updateData.tier = tier !== null && tier !== '' ? tier : null
 
     const { data, error } = await supabase
       .from('pipeline_projects')
-      .update({ 
-        status,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
-      .select()
+      .select(`
+        id,
+        name,
+        type,
+        description,
+        due_date,
+        lead,
+        notes,
+        status,
+        team,
+        url,
+        tier,
+        created_by,
+        created_at,
+        updated_at,
+        created_by_profile:profiles!created_by(id, email, full_name)
+      `)
       .single()
 
     if (error) {
