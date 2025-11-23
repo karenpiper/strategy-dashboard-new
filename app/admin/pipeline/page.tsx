@@ -22,6 +22,7 @@ interface PipelineProject {
   team: string | null
   url: string | null
   tier: number | null
+  revenue: number | null
   created_at: string
   updated_at: string
 }
@@ -48,6 +49,7 @@ export default function PipelinePage() {
     team: '',
     url: '',
     tier: '',
+    revenue: '',
   })
 
   useEffect(() => {
@@ -106,6 +108,7 @@ export default function PipelinePage() {
       team: '',
       url: '',
       tier: '',
+      revenue: '',
     })
     setEditingProject(null)
   }
@@ -123,6 +126,7 @@ export default function PipelinePage() {
       team: project.team || '',
       url: project.url || '',
       tier: project.tier?.toString() || '',
+      revenue: project.revenue?.toString() || '',
     })
     setIsEditDialogOpen(true)
   }
@@ -140,6 +144,7 @@ export default function PipelinePage() {
         body: JSON.stringify({
           ...formData,
           tier: formData.tier ? parseInt(formData.tier) : null,
+          revenue: formData.revenue ? parseFloat(formData.revenue) : null,
         }),
       })
 
@@ -180,6 +185,7 @@ export default function PipelinePage() {
           team: formData.team || null,
           url: formData.url || null,
           tier: formData.tier ? parseInt(formData.tier) : null,
+          revenue: formData.revenue ? parseFloat(formData.revenue) : null,
         }),
       })
 
@@ -384,6 +390,18 @@ export default function PipelinePage() {
                     placeholder="0-3"
                   />
                 </div>
+              </div>
+              <div>
+                <Label className={getTextClass()}>Revenue ($)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.revenue}
+                  onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
+                  className="mt-1 bg-white/10 border-white/20 text-white"
+                  placeholder="0.00"
+                />
               </div>
               <div>
                 <Label className={getTextClass()}>Lead</Label>
@@ -783,6 +801,18 @@ export default function PipelinePage() {
                   placeholder="0-3"
                 />
               </div>
+            </div>
+            <div>
+              <Label className={getTextClass()}>Revenue ($)</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.revenue}
+                onChange={(e) => setFormData({ ...formData, revenue: e.target.value })}
+                className="mt-1 bg-white/10 border-white/20 text-white"
+                placeholder="0.00"
+              />
             </div>
             <div>
               <Label className={getTextClass()}>Lead</Label>

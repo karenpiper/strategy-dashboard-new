@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
         team,
         url,
         tier,
+        revenue,
         created_by,
         created_at,
         updated_at,
@@ -81,7 +82,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, status, name, type, description, due_date, lead, notes, team, url, tier } = body
+    const { id, status, name, type, description, due_date, lead, notes, team, url, tier, revenue } = body
 
     if (!id) {
       return NextResponse.json(
@@ -118,6 +119,7 @@ export async function PUT(request: NextRequest) {
     if (team !== undefined) updateData.team = team || null
     if (url !== undefined) updateData.url = url || null
     if (tier !== undefined) updateData.tier = tier !== null && tier !== '' ? tier : null
+    if (revenue !== undefined) updateData.revenue = revenue !== null && revenue !== '' ? revenue : null
 
     const { data, error } = await supabase
       .from('pipeline_projects')
@@ -135,6 +137,7 @@ export async function PUT(request: NextRequest) {
         team,
         url,
         tier,
+        revenue,
         created_by,
         created_at,
         updated_at,
@@ -174,7 +177,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, type, description, due_date, lead, notes, status, team, url, tier } = body
+    const { name, type, description, due_date, lead, notes, status, team, url, tier, revenue } = body
 
     if (!name || !status) {
       return NextResponse.json(
@@ -205,6 +208,7 @@ export async function POST(request: NextRequest) {
         team: team || null,
         url: url || null,
         tier: tier !== undefined ? tier : null,
+        revenue: revenue !== undefined && revenue !== null ? revenue : null,
         created_by: user.id,
         updated_at: new Date().toISOString()
       })
