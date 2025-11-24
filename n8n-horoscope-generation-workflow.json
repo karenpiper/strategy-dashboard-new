@@ -44,7 +44,7 @@
       "name": "OpenAI Text Transformation",
       "type": "n8n-nodes-base.openAi",
       "typeVersion": 1.3,
-      "position": [460, 300],
+      "position": [460, 200],
       "credentials": {
         "openAiApi": {
           "id": "openai-credentials",
@@ -61,7 +61,7 @@
       "name": "Parse Text Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 300]
+      "position": [680, 200]
     },
     {
       "parameters": {
@@ -79,7 +79,7 @@
       "name": "OpenAI Image Generation",
       "type": "n8n-nodes-base.openAi",
       "typeVersion": 1.3,
-      "position": [900, 300],
+      "position": [460, 400],
       "credentials": {
         "openAiApi": {
           "id": "openai-credentials",
@@ -90,13 +90,25 @@
     },
     {
       "parameters": {
-        "jsCode": "// Extract image URL from OpenAI response\nconst imageOutput = $input.item.json;\nlet imageUrl = null;\n\n// Debug: Log the full response structure\nconsole.log('OpenAI Image Response Structure:', JSON.stringify(imageOutput, null, 2));\n\n// Try multiple possible response structures\n// Structure 1: { data: [{ url: '...' }] }\nif (imageOutput.data && Array.isArray(imageOutput.data) && imageOutput.data[0] && imageOutput.data[0].url) {\n  imageUrl = imageOutput.data[0].url;\n}\n// Structure 2: { url: '...' }\nelse if (imageOutput.url) {\n  imageUrl = imageOutput.url;\n}\n// Structure 3: Direct array with url property\nelse if (Array.isArray(imageOutput) && imageOutput[0] && imageOutput[0].url) {\n  imageUrl = imageOutput[0].url;\n}\n// Structure 4: Nested in response property\nelse if (imageOutput.response && imageOutput.response.data && imageOutput.response.data[0] && imageOutput.response.data[0].url) {\n  imageUrl = imageOutput.response.data[0].url;\n}\n// Structure 5: Check if the node returns the full OpenAI response object\nelse if (imageOutput.choices || imageOutput.model) {\n  // This might be a chat completion response, not image - check for data property\n  if (imageOutput.data && imageOutput.data[0] && imageOutput.data[0].url) {\n    imageUrl = imageOutput.data[0].url;\n  }\n}\n\nif (!imageUrl) {\n  // Log the actual structure for debugging\n  console.error('Failed to extract image URL. Response structure:', Object.keys(imageOutput));\n  console.error('Full response:', JSON.stringify(imageOutput, null, 2));\n  throw new Error('Failed to extract image URL from OpenAI response. Response structure: ' + JSON.stringify(Object.keys(imageOutput)));\n}\n\n// Get text result from previous node\nconst textResult = $('Parse Text Result').item.json;\n\n// Combine all results\nreturn {\n  json: {\n    horoscope: textResult.horoscope,\n    dos: textResult.dos,\n    donts: textResult.donts,\n    imageUrl: imageUrl,\n    prompt: textResult.imagePrompt,\n    slots: textResult.slots,\n    reasoning: textResult.reasoning\n  }\n};"
+        "jsCode": "// This node receives merged data from both Parse Text Result and OpenAI Image Generation\n// The Merge node combines them, so we get both in $input.all()\n\n// Get all input items from the merge (should be 2: one from text path, one from image path)\nconst inputItems = $input.all();\n\n// Find text result (from Parse Text Result node)\nlet textResult = null;\nlet imageOutput = null;\n\nfor (const item of inputItems) {\n  const data = item.json;\n  // Text result has horoscope, dos, donts properties\n  if (data.horoscope && data.dos && data.donts) {\n    textResult = data;\n  }\n  // Image output has data array or url property (from OpenAI Image Generation)\n  else if (data.data || data.url || data.response || (data.choices === undefined && !data.horoscope)) {\n    imageOutput = data;\n  }\n}\n\n// Fallback: try getting directly from nodes if merge didn't work as expected\nif (!textResult) {\n  try {\n    textResult = $('Parse Text Result').item.json;\n  } catch (e) {\n    console.error('Could not get text result from Parse Text Result node');\n  }\n}\n\nif (!imageOutput) {\n  try {\n    imageOutput = $('OpenAI Image Generation').item.json;\n  } catch (e) {\n    console.error('Could not get image output from OpenAI Image Generation node');\n  }\n}\n\nif (!textResult) {\n  throw new Error('Failed to get text result. Make sure Parse Text Result node completed successfully.');\n}\n\nif (!imageOutput) {\n  throw new Error('Failed to get image output. Make sure OpenAI Image Generation node completed successfully.');\n}\n\n// Extract image URL from OpenAI response\nlet imageUrl = null;\n\n// Debug: Log the full response structure\nconsole.log('OpenAI Image Response Structure:', JSON.stringify(imageOutput, null, 2));\n\n// Try multiple possible response structures\n// Structure 1: { data: [{ url: '...' }] }\nif (imageOutput.data && Array.isArray(imageOutput.data) && imageOutput.data[0] && imageOutput.data[0].url) {\n  imageUrl = imageOutput.data[0].url;\n}\n// Structure 2: { url: '...' }\nelse if (imageOutput.url) {\n  imageUrl = imageOutput.url;\n}\n// Structure 3: Direct array with url property\nelse if (Array.isArray(imageOutput) && imageOutput[0] && imageOutput[0].url) {\n  imageUrl = imageOutput[0].url;\n}\n// Structure 4: Nested in response property\nelse if (imageOutput.response && imageOutput.response.data && imageOutput.response.data[0] && imageOutput.response.data[0].url) {\n  imageUrl = imageOutput.response.data[0].url;\n}\n// Structure 5: Check if the node returns the full OpenAI response object\nelse if (imageOutput.choices || imageOutput.model) {\n  // This might be a chat completion response, not image - check for data property\n  if (imageOutput.data && imageOutput.data[0] && imageOutput.data[0].url) {\n    imageUrl = imageOutput.data[0].url;\n  }\n}\n\nif (!imageUrl) {\n  // Log the actual structure for debugging\n  console.error('Failed to extract image URL. Response structure:', Object.keys(imageOutput));\n  console.error('Full response:', JSON.stringify(imageOutput, null, 2));\n  throw new Error('Failed to extract image URL from OpenAI response. Response structure: ' + JSON.stringify(Object.keys(imageOutput)));\n}\n\n// Get original webhook data for slots and reasoning\nconst webhookData = $('Webhook').item.json;\n\n// Combine all results\nreturn {\n  json: {\n    horoscope: textResult.horoscope,\n    dos: textResult.dos,\n    donts: textResult.donts,\n    imageUrl: imageUrl,\n    prompt: webhookData.imagePrompt || textResult.imagePrompt,\n    slots: webhookData.slots || textResult.slots,\n    reasoning: webhookData.reasoning || textResult.reasoning\n  }\n};"
       },
       "id": "combine-results",
       "name": "Combine Results",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1120, 300]
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "merge-results",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [680, 300]
     },
     {
       "parameters": {
@@ -108,7 +120,7 @@
       "name": "Webhook Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1340, 300]
+      "position": [1120, 300]
     }
   ],
   "connections": {
@@ -117,6 +129,11 @@
         [
           {
             "node": "OpenAI Text Transformation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OpenAI Image Generation",
             "type": "main",
             "index": 0
           }
@@ -147,7 +164,7 @@
       "main": [
         [
           {
-            "node": "OpenAI Image Generation",
+            "node": "Merge Results",
             "type": "main",
             "index": 0
           }
@@ -158,7 +175,7 @@
       "main": [
         [
           {
-            "node": "Combine Results",
+            "node": "Merge Results",
             "type": "main",
             "index": 0
           }
@@ -168,6 +185,17 @@
         [
           {
             "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Results": {
+      "main": [
+        [
+          {
+            "node": "Combine Results",
             "type": "main",
             "index": 0
           }
