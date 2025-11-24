@@ -2765,11 +2765,11 @@ export default function TeamDashboard() {
                       /* 3-column view when collapsed */
                       <div className="flex flex-col h-full">
                         <h2 className={`text-2xl mb-4 font-black uppercase ${pipelineStyle.text}`}>PIPELINE</h2>
-                        <div className="grid grid-cols-3 gap-4 flex-1 overflow-hidden" style={{ height: '300px' }}>
+                        <div className="grid grid-cols-3 gap-4 flex-1 overflow-hidden" style={{ maxHeight: '200px', height: '200px' }}>
                           {/* Column 1: In Progress */}
-                          <div className="flex flex-col overflow-hidden h-full">
-                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 uppercase tracking-wide`}>In Progress</div>
-                            <div className="flex-1 overflow-y-auto pr-2">
+                          <div className="flex flex-col overflow-hidden h-full min-w-0">
+                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 uppercase tracking-wide truncate`}>In Progress</div>
+                            <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 min-h-0">
                               <div className="space-y-1">
                                 {!pipelineLoading && inProgressProjects.length > 0 ? (
                                   inProgressProjects.map((project, index) => 
@@ -2785,9 +2785,9 @@ export default function TeamDashboard() {
                           </div>
                           
                           {/* Column 2: Pending Decision */}
-                          <div className="flex flex-col overflow-hidden h-full">
-                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 uppercase tracking-wide`}>Pending Decision</div>
-                            <div className="flex-1 overflow-y-auto pr-2">
+                          <div className="flex flex-col overflow-hidden h-full min-w-0">
+                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 uppercase tracking-wide truncate`}>Pending Decision</div>
+                            <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 min-h-0">
                               <div className="space-y-1">
                                 {!pipelineLoading && pendingDecisionProjects.length > 0 ? (
                                   pendingDecisionProjects.map((project, index) => 
@@ -2803,11 +2803,11 @@ export default function TeamDashboard() {
                           </div>
                           
                           {/* Column 3: Won / Lost Split */}
-                          <div className="flex flex-col overflow-hidden h-full">
+                          <div className="flex flex-col overflow-hidden h-full min-w-0">
                             {/* Won - Top Half */}
                             <div className="flex flex-col flex-1 min-h-0 mb-4">
-                              <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 uppercase tracking-wide`}>Won</div>
-                              <div className="flex-1 overflow-y-auto pr-2">
+                              <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 uppercase tracking-wide truncate`}>Won</div>
+                              <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 min-h-0">
                                 <div className="space-y-1">
                                   {!pipelineLoading && wonProjects.length > 0 ? (
                                     wonProjects.map((project, index) => 
@@ -2824,8 +2824,8 @@ export default function TeamDashboard() {
                             
                             {/* Lost - Bottom Half */}
                             <div className="flex flex-col flex-1 min-h-0 border-t" style={{ borderColor: `${borderColor}40` }}>
-                              <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 mt-4 uppercase tracking-wide`}>Lost</div>
-                              <div className="flex-1 overflow-y-auto pr-2">
+                              <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 mt-4 uppercase tracking-wide truncate`}>Lost</div>
+                              <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 min-h-0">
                                 <div className="space-y-1">
                                   {!pipelineLoading && lostProjects.length > 0 ? (
                                     lostProjects.map((project, index) => 
@@ -3152,22 +3152,28 @@ export default function TeamDashboard() {
 
         <div className="mb-6">
           {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('search') : getCardStyle('vibes')
+            // RED SYSTEM: Ocean Blue bg with Coral Red accent
+            const searchStyle = mode === 'chaos' 
+              ? { bg: 'bg-[#00A3E0]', border: 'border-0', glow: '', text: 'text-black', accent: '#FF4C4C' } // Ocean Blue bg with Coral Red accent
+              : mode === 'chill'
+              ? { bg: 'bg-white', border: 'border border-[#00A3E0]/30', glow: '', text: 'text-[#4A1818]', accent: '#FF4C4C' } // White bg with Coral Red accent
+              : { bg: 'bg-[#000000]', border: 'border border-[#00A3E0]', glow: '', text: 'text-white', accent: '#FF4C4C' } // Black bg with Coral Red accent
+            
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+              <Card className={`${searchStyle.bg} ${searchStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+                    style={searchStyle.glow ? { boxShadow: `0 0 40px ${searchStyle.glow}` } : {}}
               >
-                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
+                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: searchStyle.accent }}>
                   <Search className="w-4 h-4" />
                   <span className="uppercase tracking-wider font-black text-xs">Find Anything</span>
                 </div>
-                <h2 className={`text-4xl font-black mb-6 uppercase ${style.text}`}>SEARCH</h2>
+                <h2 className={`text-4xl font-black mb-6 uppercase ${searchStyle.text}`}>SEARCH</h2>
                 <div className="relative">
                   <Input 
                     placeholder="Resources, people, projects..."
-                    className={`${mode === 'chaos' ? 'bg-black/40 border-zinc-700' : mode === 'chill' ? 'bg-[#F5E6D3]/50 border-[#8B4444]/30' : 'bg-black/40 border-zinc-700'} ${style.text} placeholder:${style.text}/50 rounded-xl h-14 pr-14 font-medium`}
+                    className={`${mode === 'chaos' ? 'bg-black/40 border-zinc-700' : mode === 'chill' ? 'bg-[#F5E6D3]/50 border-[#8B4444]/30' : 'bg-black/40 border-zinc-700'} ${searchStyle.text} placeholder:${searchStyle.text}/50 rounded-xl h-14 pr-14 font-medium`}
                   />
-                  <Button className="absolute right-2 top-2 rounded-lg h-10 w-10 p-0" style={{ backgroundColor: style.accent, color: mode === 'chill' ? '#4A1818' : '#000000' }}>
+                  <Button className="absolute right-2 top-2 rounded-lg h-10 w-10 p-0" style={{ backgroundColor: searchStyle.accent, color: mode === 'chill' ? '#4A1818' : '#000000' }}>
                     <Search className="w-5 h-5" />
                   </Button>
                 </div>
@@ -3176,64 +3182,94 @@ export default function TeamDashboard() {
           })()}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-stretch">
           {/* Ask The Hive */}
           {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('ask-hive') : getCardStyle('community')
+            // RED SYSTEM: Coral Red bg with Crimson accent
+            const hiveStyle = mode === 'chaos' 
+              ? { bg: 'bg-[#FF4C4C]', border: 'border-0', glow: '', text: 'text-black', accent: '#C41E3A' } // Coral Red bg with Crimson accent
+              : mode === 'chill'
+              ? { bg: 'bg-white', border: 'border border-[#FF4C4C]/30', glow: '', text: 'text-[#4A1818]', accent: '#C41E3A' } // White bg with Crimson accent
+              : { bg: 'bg-[#000000]', border: 'border border-[#FF4C4C]', glow: '', text: 'text-white', accent: '#C41E3A' } // Black bg with Crimson accent
+            
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+              <Card className={`${hiveStyle.bg} ${hiveStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
+                    style={hiveStyle.glow ? { boxShadow: `0 0 40px ${hiveStyle.glow}` } : {}}
               >
-                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
+                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: hiveStyle.accent }}>
               <MessageCircle className="w-4 h-4" />
                   <span className="uppercase tracking-wider font-black text-xs">Community</span>
             </div>
-                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>ASK THE<br/>HIVE</h2>
+                <h2 className={`text-3xl font-black mb-6 uppercase ${hiveStyle.text}`}>ASK THE<br/>HIVE</h2>
             <div className="space-y-3 mb-4">
                   {[
                     { question: 'Best prototyping tool?', answers: '5 answers' },
                     { question: 'Handle difficult client?', answers: '12 answers' },
                   ].map((item) => (
-                    <div key={item.question} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2`} style={{ borderColor: `${style.accent}40` }}>
-                      <p className={`text-sm font-black mb-1 ${style.text}`}>{item.question}</p>
-                      <p className={`text-xs font-medium ${style.text}/70`}>{item.answers}</p>
+                    <div key={item.question} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2`} style={{ borderColor: `${hiveStyle.accent}40` }}>
+                      <p className={`text-sm font-black mb-1 ${hiveStyle.text}`}>{item.question}</p>
+                      <p className={`text-xs font-medium ${hiveStyle.text}/70`}>{item.answers}</p>
               </div>
                   ))}
               </div>
-                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#F87171] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#8B4444] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
+                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#C41E3A] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#C41E3A] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
               Ask Question
             </Button>
           </Card>
             )
           })()}
 
-          {/* Resources */}
+          {/* Video Archive */}
           {(() => {
-            // RED SYSTEM colors: Coral Red (#FF4C4C), Crimson (#C41E3A), Peach (#FFD4C4), Ocean Blue (#00A3E0)
-            // Ask The Hive uses Coral Red bg with Crimson accent, so Resources uses different colors
-            const redSystemStyle = mode === 'chaos' 
-              ? { bg: 'bg-[#00A3E0]', border: 'border-0', glow: '', text: 'text-black', accent: '#FFD4C4' } // Ocean Blue bg with Peach accent
+            const style = mode === 'chaos' ? getSpecificCardStyle('loom-standup') : getCardStyle('team')
+            return (
+              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
+                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+              >
+                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
+                  <Video className="w-4 h-4" />
+                  <span className="uppercase tracking-wider font-black text-xs">Archive</span>
+                </div>
+                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>VIDEO<br/>ARCHIVE</h2>
+                <div className="space-y-3 mb-4 flex-1">
+                  <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2`} style={{ borderColor: `${style.accent}40` }}>
+                    <p className={`text-sm font-black mb-1 ${style.text}`}>Video player coming soon</p>
+                    <p className={`text-xs font-medium ${style.text}/70`}>Archive will be available here</p>
+                  </div>
+                </div>
+                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#FFD700] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFD700] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
+                  View Archive
+                </Button>
+              </Card>
+            )
+          })()}
+
+          {/* Library - Most Read Resources */}
+          {(() => {
+            // RED SYSTEM: Coral Red (#FF4C4C), Crimson (#C41E3A), Peach (#FFD4C4), Ocean Blue (#00A3E0) as accent
+            const libraryStyle = mode === 'chaos' 
+              ? { bg: 'bg-[#FF4C4C]', border: 'border-0', glow: '', text: 'text-black', accent: '#00A3E0' } // Coral Red bg with Ocean Blue accent
               : mode === 'chill'
-              ? { bg: 'bg-white', border: 'border border-[#00A3E0]/30', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with Ocean Blue accent
-              : { bg: 'bg-[#000000]', border: 'border border-[#00A3E0]', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
+              ? { bg: 'bg-white', border: 'border border-[#FF4C4C]/30', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with Ocean Blue accent
+              : { bg: 'bg-[#000000]', border: 'border border-[#FF4C4C]', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
             
             return (
-              <Card className={`${redSystemStyle.bg} ${redSystemStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
-                    style={redSystemStyle.glow ? { boxShadow: `0 0 40px ${redSystemStyle.glow}` } : {}}
+              <Card className={`${libraryStyle.bg} ${libraryStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
+                    style={libraryStyle.glow ? { boxShadow: `0 0 40px ${libraryStyle.glow}` } : {}}
               >
-                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: redSystemStyle.accent }}>
+                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: libraryStyle.accent }}>
                   <FileText className="w-4 h-4" />
-                  <span className="uppercase tracking-wider font-black text-xs">Resources</span>
+                  <span className="uppercase tracking-wider font-black text-xs">Most Read</span>
                 </div>
-                <h2 className={`text-3xl font-black mb-6 uppercase ${redSystemStyle.text}`}>RESOURCES</h2>
+                <h2 className={`text-3xl font-black mb-6 uppercase ${libraryStyle.text}`}>LIBRARY</h2>
                 <div className="space-y-3 mb-4 flex-1">
-                  <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2`} style={{ borderColor: `${redSystemStyle.accent}40` }}>
-                    <p className={`text-sm font-black mb-1 ${redSystemStyle.text}`}>Placeholder content</p>
-                    <p className={`text-xs font-medium ${redSystemStyle.text}/70`}>Resources section coming soon</p>
+                  <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2`} style={{ borderColor: `${libraryStyle.accent}40` }}>
+                    <p className={`text-sm font-black mb-1 ${libraryStyle.text}`}>Most read resources</p>
+                    <p className={`text-xs font-medium ${libraryStyle.text}/70`}>Library section coming soon</p>
                   </div>
                 </div>
                 <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#00A3E0] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#00A3E0] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
-                  View Resources
+                  View Library
                 </Button>
               </Card>
             )
