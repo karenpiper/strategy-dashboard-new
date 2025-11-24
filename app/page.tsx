@@ -974,6 +974,7 @@ export default function TeamDashboard() {
   // Fetch horoscope text and image on mount - only fetches today's data
   // Historical horoscopes are stored in the database but only today's is displayed
   const isFetchingRef = useRef(false) // Use ref to persist across re-renders
+  const hasFetchedRef = useRef(false) // Track if we've successfully fetched data
   
   useEffect(() => {
     let isMounted = true // Prevent state updates if component unmounts
@@ -990,6 +991,17 @@ export default function TeamDashboard() {
         return
       }
 
+      // CRITICAL: Don't re-fetch if we already have data for today
+      // This prevents the horoscope from disappearing when component re-renders
+      if (horoscope && horoscopeImage && hasFetchedRef.current) {
+        console.log('✅ Already have horoscope data, skipping fetch')
+        if (isMounted) {
+          setHoroscopeLoading(false)
+          setHoroscopeImageLoading(false)
+        }
+        return
+      }
+
       // Prevent multiple simultaneous requests
       if (isFetchingRef.current) {
         console.log('⏸️ Request already in progress, skipping duplicate request')
@@ -1002,9 +1014,16 @@ export default function TeamDashboard() {
       // Don't redirect to profile setup from here - let the API handle it
       console.log('Fetching horoscope data for authenticated user...')
 
-      if (isMounted) {
+      // CRITICAL: Only set loading states if we don't already have data
+      // This prevents clearing existing data during re-fetch
+      if (isMounted && !horoscope) {
         setHoroscopeLoading(true)
+      }
+      if (isMounted && !horoscopeImage) {
         setHoroscopeImageLoading(true)
+      }
+      // Don't clear errors if we're just refreshing
+      if (isMounted && !horoscope && !horoscopeImage) {
         setHoroscopeError(null)
         setHoroscopeImageError(null)
       }
@@ -1052,7 +1071,7 @@ export default function TeamDashboard() {
         }
         
         if (!isMounted) {
-          isFetching = false
+          isFetchingRef.current = false
           return // Don't process if component unmounted
         }
         
@@ -1076,36 +1095,39 @@ export default function TeamDashboard() {
           console.log('   star_sign:', textData.star_sign)
           
           // Only set today's horoscope - historical horoscopes remain in database
-          setHoroscope({
-            star_sign: textData.star_sign,
-            horoscope_text: textData.horoscope_text,
-            horoscope_dos: textData.horoscope_dos || [],
-            horoscope_donts: textData.horoscope_donts || [],
-          })
-          // Generate silly character name based on star sign
-          if (textData.star_sign) {
-            // Use character_name from API if available, otherwise generate (for backwards compatibility)
-            setCharacterName(textData.character_name || generateSillyCharacterName(textData.star_sign))
-          }
-          
-          // Clear loading state for horoscope text
-          setHoroscopeLoading(false)
-          setHoroscopeError(null)
-          
-          // If image_url is in the text response, use it immediately (from n8n)
-          if (textData.image_url) {
-            console.log('✅ Using image URL from horoscope text response:', textData.image_url)
-            console.log('   Image URL length:', textData.image_url.length)
-            console.log('   Image URL type:', typeof textData.image_url)
-            setHoroscopeImage(textData.image_url)
-            setHoroscopeImageLoading(false)
-            setHoroscopeImageError(null)
-          } else {
-            console.warn('⚠️ No image_url in text response:', {
-              hasImageUrl: !!textData.image_url,
-              imageUrl: textData.image_url,
-              responseKeys: Object.keys(textData)
+          if (isMounted) {
+            setHoroscope({
+              star_sign: textData.star_sign,
+              horoscope_text: textData.horoscope_text,
+              horoscope_dos: textData.horoscope_dos || [],
+              horoscope_donts: textData.horoscope_donts || [],
             })
+            // Generate silly character name based on star sign
+            if (textData.star_sign) {
+              // Use character_name from API if available, otherwise generate (for backwards compatibility)
+              setCharacterName(textData.character_name || generateSillyCharacterName(textData.star_sign))
+            }
+            
+            // Clear loading state for horoscope text
+            setHoroscopeLoading(false)
+            setHoroscopeError(null)
+            hasFetchedRef.current = true // Mark as fetched
+            
+            // If image_url is in the text response, use it immediately (from n8n)
+            if (textData.image_url) {
+              console.log('✅ Using image URL from horoscope text response:', textData.image_url)
+              console.log('   Image URL length:', textData.image_url.length)
+              console.log('   Image URL type:', typeof textData.image_url)
+              setHoroscopeImage(textData.image_url)
+              setHoroscopeImageLoading(false)
+              setHoroscopeImageError(null)
+            } else {
+              console.warn('⚠️ No image_url in text response:', {
+                hasImageUrl: !!textData.image_url,
+                imageUrl: textData.image_url,
+                responseKeys: Object.keys(textData)
+              })
+            }
           }
         }
         
@@ -1134,23 +1156,27 @@ export default function TeamDashboard() {
           console.log('Reasoning received:', imageData.prompt_slots_reasoning)
           // Only set today's image - historical images remain in database
           // Only overwrite if we don't already have an image from text response
-          if (!horoscopeImage || !textData.image_url) {
-            console.log('   Setting image from avatar endpoint')
-            setHoroscopeImage(imageData.image_url)
-          } else {
-            console.log('   Keeping image from text response, not overwriting with avatar endpoint')
+          if (isMounted) {
+            if (!horoscopeImage || !textData.image_url) {
+              console.log('   Setting image from avatar endpoint')
+              setHoroscopeImage(imageData.image_url)
+            } else {
+              console.log('   Keeping image from text response, not overwriting with avatar endpoint')
+            }
+            setHoroscopeImagePrompt(imageData.image_prompt || null)
+            setHoroscopeImageSlots(imageData.prompt_slots || null)
+            setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
+            setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
+            console.log('Reasoning state set to:', imageData.prompt_slots_reasoning)
+            hasFetchedRef.current = true // Mark as fetched
           }
-          setHoroscopeImagePrompt(imageData.image_prompt || null)
-          setHoroscopeImageSlots(imageData.prompt_slots || null)
-          setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
-          setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
-          console.log('Reasoning state set to:', imageData.prompt_slots_reasoning)
         } else if (textData.image_url) {
           // Image URL was already set from text response above
           console.log('✅ Image URL already set from text response:', textData.image_url)
           // Make sure loading is cleared
-          if (horoscopeImageLoading) {
+          if (isMounted && horoscopeImageLoading) {
             setHoroscopeImageLoading(false)
+            hasFetchedRef.current = true // Mark as fetched
           }
         } else {
           console.warn('⚠️ No image URL found in either text or avatar response')
@@ -1186,18 +1212,20 @@ export default function TeamDashboard() {
       }
     }
     
-    // Only fetch if not already fetching
-    if (!isFetchingRef.current) {
+    // Only fetch if not already fetching and we don't have data
+    // Only fetch if not already fetching and we don't have data
+    // Use refs to check state without triggering re-renders
+    if (!isFetchingRef.current && !hasFetchedRef.current) {
       fetchHoroscopeData()
     } else {
-      console.log('⏸️ Skipping fetch - already in progress')
+      console.log('⏸️ Skipping fetch - already in progress or already fetched')
     }
     
     return () => {
       isMounted = false // Cleanup on unmount
       // Don't reset isFetchingRef here - let it complete naturally
     }
-  }, [user?.id]) // Only depend on user.id, not the whole user object
+  }, [user?.id]) // Only depend on user.id - don't include horoscope/horoscopeImage to prevent re-fetches
 
   // Time-based gradient for hero section (chaos mode - vibrant colors)
   const getTimeBasedGradient = (): { bg: string; text: string; accent: string } => {
