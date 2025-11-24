@@ -2391,12 +2391,15 @@ export default function TeamDashboard() {
                     </div>
                     
                     {/* Calendar Container */}
-                    <div className={`${getRoundedClass('rounded-xl')} p-4 border-2`} style={{ 
+                    <div className={`${getRoundedClass('rounded-xl')} p-4 border-2 relative`} style={{ 
                       backgroundColor: 'transparent',
                       borderColor: mode === 'chaos' ? '#0EA5E9' : mode === 'chill' ? 'rgba(74, 24, 24, 0.2)' : '#FFFFFF'
                     }}>
-                      {/* Day headers with dividers */}
-                      <div className="grid grid-cols-7 mb-3 pb-3" style={{ borderBottom: `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)'}` }}>
+                      {/* Day headers with dark blue background */}
+                      <div className="grid grid-cols-7 mb-3 pb-3 rounded-t-lg" style={{ 
+                        backgroundColor: mode === 'chaos' ? '#1E3A8A' : mode === 'chill' ? '#4A1818' : '#000000',
+                        borderBottom: `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.3)' : 'rgba(255, 255, 255, 0.3)'}`
+                      }}>
                         {getWeekDays().map((day, index) => {
                           const isToday = day.toDateString() === now.toDateString()
                           const dayName = day.toLocaleDateString('en-US', { weekday: 'short' })
@@ -2406,20 +2409,34 @@ export default function TeamDashboard() {
                               key={index} 
                               className="text-center relative"
                               style={{ 
-                                borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)'}` : 'none'
+                                borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.3)' : 'rgba(255, 255, 255, 0.3)'}` : 'none'
                               }}
                             >
-                              <p className={`text-xs font-black uppercase mb-1`} style={{ color: isToday ? mintColor : (mode === 'chaos' ? '#FFFFFF' : mode === 'chill' ? '#4A1818' : '#FFFFFF') }}>
+                              <p className={`text-xs font-black uppercase mb-1`} style={{ color: isToday ? mintColor : '#FFFFFF' }}>
                                 {isToday ? 'TODAY' : dayName}
                               </p>
-                              <p className={`text-sm font-black`} style={{ color: mode === 'chaos' ? '#FFFFFF' : mode === 'chill' ? '#4A1818' : '#FFFFFF' }}>{dayNumber}</p>
+                              <p className={`text-sm font-black`} style={{ color: '#FFFFFF' }}>{dayNumber}</p>
                             </div>
                           )
                         })}
                       </div>
+                      
+                      {/* Background grid for vertical lines (behind events) */}
+                      <div className="absolute inset-x-4 bottom-4 top-20 pointer-events-none">
+                        <div className="grid grid-cols-7 h-full">
+                          {Array.from({ length: 7 }).map((_, index) => (
+                            <div
+                              key={index}
+                              style={{
+                                borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? '#1E3A8A' : mode === 'chill' ? '#4A1818' : '#000000'}` : 'none'
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
 
                       {/* Events as Gantt bars - use grid for aligned columns */}
-                      <div className="space-y-2">
+                      <div className="space-y-2 relative z-10">
                         {filteredEvents.map((event) => {
                           const eventColor = getEventColor(event)
                           const span = getEventSpan(event)
@@ -2453,9 +2470,6 @@ export default function TeamDashboard() {
                                       <div 
                                         key={index} 
                                         className={`${eventHeight}`}
-                                        style={{ 
-                                          borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)'}` : 'none'
-                                        }}
                                       ></div>
                                     )
                                   }
@@ -2470,7 +2484,6 @@ export default function TeamDashboard() {
                                       style={{ 
                                         backgroundColor: `${eventColor}88`,
                                         borderLeft: isStart ? `3px solid ${eventColor}` : 'none',
-                                        borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)'}` : 'none',
                                       }}
                                     >
                                       {isStart && (
