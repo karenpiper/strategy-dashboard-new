@@ -265,9 +265,7 @@ export default function ResourcesPage() {
                 <Card
                   key={resource.id}
                   onClick={() => handleResourceClick(resource)}
-                  className={`p-6 ${getRoundedClass('rounded-2xl')} cursor-pointer transition-all hover:scale-[1.02] ${
-                    mode === 'chill' ? 'bg-white border-[#4A1818]/10' : mode === 'chaos' ? 'bg-[#2A2A2A] border-[#333333]' : 'bg-[#1a1a1a] border-white'
-                  }`}
+                  className={`p-6 ${getRoundedClass('rounded-2xl')} cursor-pointer transition-all hover:scale-[1.02] bg-white border-gray-200`}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -278,17 +276,17 @@ export default function ResourcesPage() {
                         <BookOpen className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
-                        <h3 className={`font-bold text-lg mb-1 ${getTextClass()}`}>{resource.name}</h3>
+                        <h3 className="font-bold text-lg mb-1 text-gray-900">{resource.name}</h3>
                         {resource.source && (
-                          <p className={`text-sm ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>{resource.source}</p>
+                          <p className="text-sm text-gray-600">{resource.source}</p>
                         )}
                       </div>
                     </div>
-                    <ExternalLink className={`w-5 h-5 ${mode === 'chill' ? 'text-[#4A1818]/40' : 'text-white/40'}`} />
+                    <ExternalLink className="w-5 h-5 text-gray-400" />
                   </div>
                   
                   {resource.description && (
-                    <p className={`text-sm mb-4 ${mode === 'chill' ? 'text-[#4A1818]/80' : 'text-white/80'}`}>
+                    <p className="text-sm mb-4 text-gray-700">
                       {resource.description}
                     </p>
                   )}

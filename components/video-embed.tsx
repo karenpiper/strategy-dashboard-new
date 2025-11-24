@@ -83,14 +83,24 @@ export function VideoEmbed({
         // Handle Vimeo URL formats
         let videoId: string | null = null
         
-        // vimeo.com/ID
+        // vimeo.com/ID (most common format)
         const vimeoMatch = url.match(/vimeo\.com\/(\d+)/)
         if (vimeoMatch) {
           videoId = vimeoMatch[1]
         }
         // player.vimeo.com/video/ID
         else if (url.includes('/video/')) {
-          videoId = url.split('/video/')[1]?.split('?')[0]
+          const videoMatch = url.match(/\/video\/(\d+)/)
+          if (videoMatch) {
+            videoId = videoMatch[1]
+          }
+        }
+        // vimeo.com/channels/.../ID or vimeo.com/groups/.../ID
+        else {
+          const channelMatch = url.match(/vimeo\.com\/(?:channels|groups)\/[^/]+\/(\d+)/)
+          if (channelMatch) {
+            videoId = channelMatch[1]
+          }
         }
 
         if (videoId) {
@@ -256,8 +266,9 @@ export function VideoEmbed({
       '1/1': 'aspect-square'
     }[aspectRatio]
 
+    // For direct links or non-embeddable Zoom URLs, show thumbnail with link
     return (
-      <div className={`${style.bg} ${style.border} border overflow-hidden ${getRoundedClass('rounded-lg')} ${className}`}>
+      <div className={`${style.bg} ${className.includes('border-0') ? '' : `${style.border} border`} overflow-hidden ${getRoundedClass('rounded-lg')} ${className.replace('border-0', '').trim()}`}>
         {title && (
           <div className={`p-3 border-b ${style.border}`}>
             <div className="flex items-center gap-2">
@@ -329,8 +340,61 @@ export function VideoEmbed({
     )
   }
 
+  // For embeddable videos, show thumbnail with play button if available (matches card display)
+  // Otherwise show iframe embed
+  // If we have a thumbnail, show it with play button (same as card)
+  if (thumbnailUrl && embedData.embedUrl) {
+    const aspectRatioClass = {
+      '16/9': 'aspect-video',
+      '4/3': 'aspect-[4/3]',
+      '1/1': 'aspect-square'
+    }[aspectRatio]
+
+    return (
+      <div className={`${style.bg} ${className.includes('border-0') ? '' : `${style.border} border`} overflow-hidden ${getRoundedClass('rounded-lg')} ${className.replace('border-0', '').trim()}`}>
+        {title && (
+          <div className={`p-3 border-b ${style.border}`}>
+            <div className="flex items-center gap-2">
+              <Video className={`w-4 h-4 ${style.text}`} />
+              <span className={`text-sm font-semibold ${style.text}`}>{title}</span>
+            </div>
+          </div>
+        )}
+        <a
+          href={embedData.originalUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block relative group"
+        >
+          <div className={`relative w-full ${aspectRatioClass} bg-black overflow-hidden`}>
+            <img
+              src={thumbnailUrl}
+              alt={title || 'Video thumbnail'}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.style.display = 'none'
+              }}
+            />
+            {/* Play button overlay */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+              <div className={`${getRoundedClass('rounded-full')} p-4 ${
+                mode === 'chaos' ? 'bg-[#C4F500] text-black' :
+                mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818]' :
+                'bg-white text-black'
+              } group-hover:scale-110 transition-transform`}>
+                <Play className="w-8 h-8 fill-current" />
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    )
+  }
+
+  // Fallback: show iframe embed if no thumbnail
   return (
-    <div className={`${style.bg} ${style.border} border overflow-hidden ${getRoundedClass('rounded-lg')} ${className}`}>
+    <div className={`${style.bg} ${className.includes('border-0') ? '' : `${style.border} border`} overflow-hidden ${getRoundedClass('rounded-lg')} ${className.replace('border-0', '').trim()}`}>
       {title && (
         <div className={`p-3 border-b ${style.border}`}>
           <div className="flex items-center gap-2">

@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Auto-fetch thumbnail if not provided
+    // Auto-fetch thumbnail only if not provided (user-uploaded thumbnails take priority)
     let finalThumbnailUrl = thumbnail_url
     if (!finalThumbnailUrl && video_url) {
       try {
@@ -305,8 +305,13 @@ export async function PUT(request: NextRequest) {
         }
         updateData.platform = detectedPlatform
 
-        // Auto-fetch thumbnail if URL changed and thumbnail wasn't explicitly provided
+        // Auto-fetch thumbnail only if URL changed and thumbnail wasn't explicitly provided
+        // If thumbnail_url is explicitly set to empty string, don't auto-fetch (user wants to clear it)
+        // If thumbnail_url is undefined, it means the field wasn't touched, so don't auto-fetch
+        // Only auto-fetch if video_url changed and no thumbnail was provided
         if (thumbnail_url === undefined && video_url) {
+          // Only auto-fetch if there's no existing thumbnail in the update
+          // This preserves user-uploaded thumbnails
           try {
             const fetchedThumbnail = await fetchThumbnail(video_url, detectedPlatform)
             if (fetchedThumbnail) {

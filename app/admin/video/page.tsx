@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useMode } from '@/contexts/mode-context'
 import { useAuth } from '@/contexts/auth-context'
 import { VideoEmbed } from '@/components/video-embed'
+import { createClient } from '@/lib/supabase/client'
 import { 
   Plus, 
   Search, 
@@ -69,6 +70,10 @@ export default function VideoAdmin() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false)
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
+  const thumbnailUploadRef = React.useRef<HTMLInputElement>(null)
+  const thumbnailUploadEditRef = React.useRef<HTMLInputElement>(null)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -223,6 +228,7 @@ export default function VideoAdmin() {
       duration: item.duration?.toString() || '',
       pinned: item.pinned,
     })
+    setThumbnailPreview(item.thumbnail_url || null)
     setIsEditDialogOpen(true)
   }
 
@@ -352,6 +358,79 @@ export default function VideoAdmin() {
       duration: '',
       pinned: false,
     })
+    setThumbnailPreview(null)
+  }
+
+  // Handle thumbnail upload
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB')
+      return
+    }
+
+    setUploadingThumbnail(true)
+
+    try {
+      const supabase = createClient()
+      const fileExt = file.name.split('.').pop()
+      const fileName = `video-thumbnail-${Date.now()}.${fileExt}`
+      const filePath = `${user.id}/${fileName}`
+
+      // Preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+
+      // Upload to Supabase storage (using work-sample-thumbnails bucket)
+      const { error: uploadError } = await supabase.storage
+        .from('work-sample-thumbnails')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('work-sample-thumbnails')
+        .getPublicUrl(filePath)
+
+      setFormData({ ...formData, thumbnail_url: publicUrl })
+      
+      // Reset file input so same file can be selected again
+      if (thumbnailUploadRef.current) {
+        thumbnailUploadRef.current.value = ''
+      }
+      if (thumbnailUploadEditRef.current) {
+        thumbnailUploadEditRef.current.value = ''
+      }
+    } catch (err: any) {
+      console.error('Error uploading thumbnail:', err)
+      alert(err.message || 'Failed to upload thumbnail')
+      
+      // Reset file input on error too
+      if (thumbnailUploadRef.current) {
+        thumbnailUploadRef.current.value = ''
+      }
+      if (thumbnailUploadEditRef.current) {
+        thumbnailUploadEditRef.current.value = ''
+      }
+    } finally {
+      setUploadingThumbnail(false)
+    }
   }
 
   const toggleSelect = (id: string) => {
@@ -389,7 +468,9 @@ export default function VideoAdmin() {
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
             setIsAddDialogOpen(open)
-            if (open) {
+            if (!open) {
+              resetForm()
+            } else {
               resetForm()
             }
           }}>
@@ -448,14 +529,61 @@ export default function VideoAdmin() {
                     </p>
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>Thumbnail URL (optional)</Label>
-                    <Input
-                      value={formData.thumbnail_url}
-                      onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
-                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="https://example.com/thumbnail.jpg"
-                      type="url"
-                    />
+                    <Label className={cardStyle.text}>Thumbnail (optional)</Label>
+                    <div className="space-y-2">
+                      <Input
+                        value={formData.thumbnail_url}
+                        onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
+                        className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                        placeholder="Auto-fetched or enter URL"
+                        type="url"
+                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          ref={thumbnailUploadRef}
+                          type="file"
+                          id="thumbnail-upload-add"
+                          accept="image/*"
+                          onChange={handleThumbnailUpload}
+                          className="hidden"
+                          disabled={uploadingThumbnail}
+                        />
+                        <Label
+                          htmlFor="thumbnail-upload-add"
+                          className={`cursor-pointer inline-flex items-center gap-2 px-3 py-2 ${getRoundedClass('rounded-md')} text-sm font-medium transition-colors ${
+                            mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
+                            mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
+                            'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
+                          } ${uploadingThumbnail ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {uploadingThumbnail ? 'Uploading...' : 'Upload Thumbnail'}
+                        </Label>
+                        {thumbnailPreview && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setThumbnailPreview(null)
+                              setFormData({ ...formData, thumbnail_url: '' })
+                            }}
+                            className={`text-xs ${cardStyle.text}/70 hover:${cardStyle.text} underline`}
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      {thumbnailPreview && (
+                        <div className="mt-2">
+                          <img
+                            src={thumbnailPreview}
+                            alt="Thumbnail preview"
+                            className="w-full max-w-xs h-32 object-cover rounded-md border"
+                          />
+                        </div>
+                      )}
+                      <p className={`text-xs ${cardStyle.text}/70`}>
+                        Thumbnail will be auto-fetched from YouTube/Vimeo if not provided
+                      </p>
+                    </div>
                   </div>
                   <div>
                     <Label className={cardStyle.text}>Category (optional)</Label>
@@ -736,7 +864,13 @@ export default function VideoAdmin() {
         )}
 
         {/* Edit Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+          setIsEditDialogOpen(open)
+          if (!open) {
+            setEditingItem(null)
+            resetForm()
+          }
+        }}>
           <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border max-w-4xl max-h-[90vh] overflow-y-auto`}>
             <DialogHeader>
               <DialogTitle className={cardStyle.text}>Edit Video</DialogTitle>
@@ -777,14 +911,61 @@ export default function VideoAdmin() {
                   />
                 </div>
                 <div>
-                  <Label className={cardStyle.text}>Thumbnail URL (optional)</Label>
-                  <Input
-                    value={formData.thumbnail_url}
-                    onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder="https://example.com/thumbnail.jpg"
-                    type="url"
-                  />
+                  <Label className={cardStyle.text}>Thumbnail (optional)</Label>
+                  <div className="space-y-2">
+                    <Input
+                      value={formData.thumbnail_url}
+                      onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="Auto-fetched or enter URL"
+                      type="url"
+                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={thumbnailUploadEditRef}
+                        type="file"
+                        id="thumbnail-upload-edit"
+                        accept="image/*"
+                        onChange={handleThumbnailUpload}
+                        className="hidden"
+                        disabled={uploadingThumbnail}
+                      />
+                      <Label
+                        htmlFor="thumbnail-upload-edit"
+                        className={`cursor-pointer inline-flex items-center gap-2 px-3 py-2 ${getRoundedClass('rounded-md')} text-sm font-medium transition-colors ${
+                          mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
+                          mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
+                          'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
+                        } ${uploadingThumbnail ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        {uploadingThumbnail ? 'Uploading...' : 'Upload Thumbnail'}
+                      </Label>
+                      {thumbnailPreview && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setThumbnailPreview(null)
+                            setFormData({ ...formData, thumbnail_url: '' })
+                          }}
+                          className={`text-xs ${cardStyle.text}/70 hover:${cardStyle.text} underline`}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    {thumbnailPreview && (
+                      <div className="mt-2">
+                        <img
+                          src={thumbnailPreview}
+                          alt="Thumbnail preview"
+                          className="w-full max-w-xs h-32 object-cover rounded-md border"
+                        />
+                      </div>
+                    )}
+                    <p className={`text-xs ${cardStyle.text}/70`}>
+                      Thumbnail will be auto-fetched from YouTube/Vimeo if not provided
+                    </p>
+                  </div>
                 </div>
                 <div>
                   <Label className={cardStyle.text}>Category (optional)</Label>
@@ -882,14 +1063,14 @@ export default function VideoAdmin() {
             setViewingItem(null)
           }
         }}>
-          <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border max-w-5xl max-h-[90vh] overflow-y-auto`}>
-            <DialogHeader>
+          <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border max-w-5xl max-h-[90vh] overflow-y-auto p-6`}>
+            <DialogHeader className="mb-4">
               <DialogTitle className={cardStyle.text}>
                 {viewingItem?.title || 'Video'}
               </DialogTitle>
             </DialogHeader>
             {viewingItem && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Video Embed */}
                 <VideoEmbed
                   videoUrl={viewingItem.video_url}

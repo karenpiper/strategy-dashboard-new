@@ -306,6 +306,8 @@ export async function GET(request: NextRequest) {
     
     // HARD STOP: If we have no records at all, don't generate
     // This prevents quota waste if previous saves failed
+    // NOTE: Commented out to allow generation when database is empty (e.g., first-time users)
+    /*
     const { data: anyUserRecords } = await supabaseAdmin
       .from('horoscopes')
       .select('id')
@@ -323,6 +325,7 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
+    */
     
     // Only generate new image if there's NO cached image at all
     // This ensures we only generate once per day and avoid hitting billing limits

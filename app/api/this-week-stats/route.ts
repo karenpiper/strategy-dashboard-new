@@ -111,69 +111,113 @@ export async function GET(request: NextRequest) {
             title = 'total team members'
             break
 
-          case 'total_birthdays':
-            // Count profiles with birthday recorded
-            const { count: birthdaysCount } = await supabase
+          case 'total_birthdays': {
+            // Get all profiles with birthdays and check if they fall in next 7 days
+            const { data: profiles } = await supabase
               .from('profiles')
-              .select('*', { count: 'exact', head: true })
+              .select('birthday')
               .not('birthday', 'is', null)
               .neq('birthday', '')
-            value = (birthdaysCount || 0).toString()
+            
+            if (!profiles) {
+              value = '0'
+              title = 'total birthdays'
+              break
+            }
+
+            const next7Days = []
+            for (let i = 0; i <= 7; i++) {
+              const date = new Date(today)
+              date.setDate(date.getDate() + i)
+              next7Days.push({
+                month: date.getMonth() + 1, // 1-12
+                day: date.getDate()
+              })
+            }
+
+            const birthdaysInNext7Days = profiles.filter(profile => {
+              const [month, day] = profile.birthday.split('/').map(Number)
+              return next7Days.some(d => d.month === month && d.day === day)
+            })
+
+            value = birthdaysInNext7Days.length.toString()
             title = 'total birthdays'
             break
+          }
 
-          case 'total_anniversaries':
-            // Count profiles with start_date recorded
-            const { count: anniversariesCount } = await supabase
+          case 'total_anniversaries': {
+            // Get all profiles with start_date and check if anniversary falls in next 7 days
+            const { data: profiles } = await supabase
               .from('profiles')
-              .select('*', { count: 'exact', head: true })
+              .select('start_date')
               .not('start_date', 'is', null)
-            value = (anniversariesCount || 0).toString()
+            
+            if (!profiles) {
+              value = '0'
+              title = 'total anniversaries'
+              break
+            }
+
+            const next7DaysDates = []
+            for (let i = 0; i <= 7; i++) {
+              const date = new Date(today)
+              date.setDate(date.getDate() + i)
+              next7DaysDates.push(date)
+            }
+
+            const anniversariesInNext7Days = profiles.filter(profile => {
+              if (!profile.start_date) return false
+              const startDate = new Date(profile.start_date)
+              const startMonth = startDate.getMonth() + 1
+              const startDay = startDate.getDate()
+              
+              return next7DaysDates.some(date => {
+                return date.getMonth() + 1 === startMonth && date.getDate() === startDay
+              })
+            })
+
+            value = anniversariesInNext7Days.length.toString()
             title = 'total anniversaries'
             break
+          }
 
           case 'total_snaps':
-            // Count total snaps
+            // Count snaps created in last 7 days
             const { count: snapsCount } = await supabase
               .from('snaps')
               .select('*', { count: 'exact', head: true })
+              .gte('created_at', sevenDaysAgoISO)
             value = (snapsCount || 0).toString()
             title = 'total snaps'
             break
 
           case 'won_projects':
-            // Count pipeline projects with status "Won"
+            // Count projects won in last 7 days (check updated_at when status changed to Won)
             const { count: wonCount } = await supabase
               .from('pipeline_projects')
               .select('*', { count: 'exact', head: true })
               .eq('status', 'Won')
+              .gte('updated_at', sevenDaysAgoISO)
             value = (wonCount || 0).toString()
             title = 'won projects'
             break
 
           case 'total_work_samples':
-            // Count total work samples
+            // Count work samples created in last 7 days
             const { count: workSamplesCount } = await supabase
               .from('work_samples')
               .select('*', { count: 'exact', head: true })
+              .gte('created_at', sevenDaysAgoISO)
             value = (workSamplesCount || 0).toString()
             title = 'total work samples'
             break
 
-          case 'total_decks':
-            // Count total decks
-            const { count: decksCount } = await supabase
-              .from('decks')
-              .select('*', { count: 'exact', head: true })
-            value = (decksCount || 0).toString()
-            title = 'total decks'
-            break
-
           case 'total_resources':
-            // Count total resources
+            // Count resources created in last 7 days
             const { count: resourcesCount } = await supabase
               .from('resources')
               .select('*', { count: 'exact', head: true })
+              .gte('created_at', sevenDaysAgoISO)
             value = (resourcesCount || 0).toString()
             title = 'total resources'
             break

@@ -277,6 +277,8 @@ export async function GET(request: NextRequest) {
     
     // CRITICAL SAFETY CHECK: Before generating, verify database is working
     // If we can't find records and can't verify the database is accessible, don't generate
+    // NOTE: Commented out to allow generation when database is empty (e.g., first-time users)
+    /*
     if (!cachedHoroscope && (!allUserRecords || allUserRecords.length === 0)) {
       // Check if this is the first time ever (no records at all) vs database issue
       // Try a simple test query to verify database connectivity
@@ -311,6 +313,7 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
+    */
     
     // Only generate new horoscope if there's NO cached text at all
     // BUT: We should have already found it in the checks above

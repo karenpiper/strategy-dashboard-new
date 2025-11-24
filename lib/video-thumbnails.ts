@@ -44,7 +44,7 @@ function extractYouTubeId(url: string): string | null {
  * Extract video ID from Vimeo URL
  */
 function extractVimeoId(url: string): string | null {
-  // vimeo.com/ID
+  // vimeo.com/ID (most common format)
   const vimeoMatch = url.match(/vimeo\.com\/(\d+)/)
   if (vimeoMatch) return vimeoMatch[1]
   
@@ -53,6 +53,10 @@ function extractVimeoId(url: string): string | null {
     const videoMatch = url.match(/\/video\/(\d+)/)
     if (videoMatch) return videoMatch[1]
   }
+  
+  // vimeo.com/channels/.../ID or vimeo.com/groups/.../ID
+  const channelMatch = url.match(/vimeo\.com\/(?:channels|groups)\/[^/]+\/(\d+)/)
+  if (channelMatch) return channelMatch[1]
   
   return null
 }
@@ -70,12 +74,15 @@ function getYouTubeThumbnail(videoId: string): string {
 /**
  * Get Vimeo thumbnail URL using oEmbed API
  */
-async function getVimeoThumbnail(videoId: string): Promise<string | null> {
+async function getVimeoThumbnail(videoId: string, originalUrl?: string): Promise<string | null> {
   try {
-    const oembedUrl = `https://vimeo.com/api/oembed.json?url=https://vimeo.com/${videoId}`
+    // Use the original URL if provided, otherwise construct it
+    const vimeoUrl = originalUrl || `https://vimeo.com/${videoId}`
+    const oembedUrl = `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(vimeoUrl)}`
     const response = await fetch(oembedUrl)
     
     if (!response.ok) {
+      console.error('Vimeo oEmbed API error:', response.status, response.statusText)
       return null
     }
     
@@ -162,7 +169,7 @@ export async function fetchThumbnail(videoUrl: string, platform?: string | null)
       }
       case 'vimeo': {
         if (videoInfo.videoId) {
-          return await getVimeoThumbnail(videoInfo.videoId)
+          return await getVimeoThumbnail(videoInfo.videoId, videoUrl)
         }
         break
       }

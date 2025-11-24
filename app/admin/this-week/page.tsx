@@ -25,13 +25,12 @@ const DATABASE_STATS = [
   { key: 'new_business', label: 'New Business', description: 'Pipeline projects created in last 7 days' },
   { key: 'pitches_due', label: 'Pitches Due', description: 'Pipeline projects with due date in next 7 days' },
   { key: 'total_team_members', label: 'Total Team Members', description: 'Total active team members' },
-  { key: 'total_birthdays', label: 'Total Birthdays', description: 'Team members with birthdays recorded' },
-  { key: 'total_anniversaries', label: 'Total Anniversaries', description: 'Team members with start dates recorded' },
-  { key: 'total_snaps', label: 'Total Snaps', description: 'Total recognition snaps in the system' },
-  { key: 'won_projects', label: 'Won Projects', description: 'Pipeline projects with status "Won"' },
-  { key: 'total_work_samples', label: 'Total Work Samples', description: 'Total work samples in the system' },
-  { key: 'total_decks', label: 'Total Decks', description: 'Total decks in the system' },
-  { key: 'total_resources', label: 'Total Resources', description: 'Total resources in the system' },
+  { key: 'total_birthdays', label: 'Total Birthdays', description: 'Team members with birthdays in next 7 days' },
+  { key: 'total_anniversaries', label: 'Total Anniversaries', description: 'Team members with anniversaries in next 7 days' },
+  { key: 'total_snaps', label: 'Total Snaps', description: 'Recognition snaps created in last 7 days' },
+  { key: 'won_projects', label: 'Won Projects', description: 'Pipeline projects won in last 7 days' },
+  { key: 'total_work_samples', label: 'Total Work Samples', description: 'Work samples added in last 7 days' },
+  { key: 'total_resources', label: 'Total Resources', description: 'Resources added in last 7 days' },
 ]
 
 export default function ThisWeekPage() {
@@ -422,169 +421,9 @@ export default function ThisWeekPage() {
           <p className={`${getTextClass()}/70 text-sm font-normal`}>Drag statistics from the bank below into the container to configure the 3 stats displayed in the "This Week" card on the dashboard.</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Selected Stats Container */}
-          <div className="lg:col-span-2">
-            <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <BarChart3 className={`w-6 h-6 ${getTextClass()}`} />
-                  <h2 className={`text-xl font-black uppercase ${getTextClass()}`}>Selected Stats (3 slots)</h2>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={fetchCalculatedValues}
-                    disabled={calculatingValues || selectedStats.length === 0}
-                    variant="outline"
-                    className={`${getRoundedClass('rounded-lg')} ${cardStyle.border} ${cardStyle.text} font-black uppercase tracking-wider ${mode === 'code' ? 'font-mono' : ''}`}
-                  >
-                    {calculatingValues ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Refreshing...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Refresh Values
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className={`${getRoundedClass('rounded-lg')} ${
-                      mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
-                      mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
-                      'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
-                    } font-black uppercase tracking-wider ${mode === 'code' ? 'font-mono' : ''}`}
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4 mr-2" />
-                        Save
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-3 min-h-[300px]">
-                {[1, 2, 3].map((slotPosition) => {
-                  const stat = selectedStats.find(s => s.position === slotPosition)
-                  return (
-                    <div
-                      key={slotPosition}
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, slotPosition)}
-                      className={`${cardStyle.border} border-2 border-dashed ${getRoundedClass('rounded-xl')} p-3 min-h-[90px] transition-all ${
-                        stat ? cardStyle.bg : 'bg-transparent'
-                      }`}
-                    >
-                      {stat ? (
-                        <div className="flex items-start gap-3">
-                          <div
-                            draggable
-                            onDragStart={(e) => handleDragStartPosition(e, stat.position)}
-                            onDragEnd={handleDragEnd}
-                            className="cursor-move flex items-center justify-center p-1.5 hover:opacity-70 transition-opacity"
-                          >
-                            <GripVertical className={`w-4 h-4 ${getTextClass()}`} />
-                          </div>
-                          
-                          <div className="flex-1 space-y-2">
-                            {stat.stat_type === 'database' ? (
-                              <>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-1.5">
-                                    <Database className={`w-3.5 h-3.5 ${getTextClass()}`} />
-                                    <span className={`font-medium text-xs ${getTextClass()}`}>
-                                      {DATABASE_STATS.find(s => s.key === stat.database_stat_key)?.label || 'Unknown'}
-                                    </span>
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRemoveStat(stat.position)}
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    <X className={`w-3.5 h-3.5 ${getTextClass()}`} />
-                                  </Button>
-                                </div>
-                                <div className="flex items-baseline gap-2">
-                                  <div className={`text-2xl font-black ${getTextClass()}`}>
-                                    {calculatingValues && !stat.calculatedValue ? (
-                                      <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : stat.calculatedValue !== undefined ? (
-                                      stat.calculatedValue
-                                    ) : (
-                                      <span className={`text-base ${getTextClass()}/50`}>—</span>
-                                    )}
-                                  </div>
-                                  <p className={`text-[10px] ${getTextClass()}/50`}>
-                                    {DATABASE_STATS.find(s => s.key === stat.database_stat_key)?.description}
-                                  </p>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-1.5">
-                                    <Type className={`w-3.5 h-3.5 ${getTextClass()}`} />
-                                    <span className={`font-medium text-xs ${getTextClass()}`}>Custom Stat</span>
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRemoveStat(stat.position)}
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    <X className={`w-3.5 h-3.5 ${getTextClass()}`} />
-                                  </Button>
-                                </div>
-                                <div className="space-y-1.5">
-                                  <div>
-                                    <Label className={`text-[10px] ${getTextClass()}`}>Title</Label>
-                                    <Input
-                                      value={stat.custom_title || ''}
-                                      onChange={(e) => updateStat(stat.position, { custom_title: e.target.value })}
-                                      placeholder="e.g., team members"
-                                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} text-xs h-8`}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label className={`text-[10px] ${getTextClass()}`}>Value</Label>
-                                    <Input
-                                      value={stat.custom_value || ''}
-                                      onChange={(e) => updateStat(stat.position, { custom_value: e.target.value })}
-                                      placeholder="e.g., 25"
-                                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} text-xs h-8`}
-                                    />
-                                  </div>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className={`flex items-center justify-center h-full ${getTextClass()}/40 text-xs`}>
-                          Drop a stat here
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </Card>
-          </div>
-
-          {/* Stats Bank */}
-          <div>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+          {/* Available Stats - Wider, on the left */}
+          <div className="lg:col-span-3">
             <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
               <div className="flex items-center gap-3 mb-4">
                 <Database className={`w-5 h-5 ${getTextClass()}`} />
@@ -600,14 +439,14 @@ export default function ThisWeekPage() {
                       draggable
                       onDragStart={(e) => handleDragStart(e, stat.key)}
                       onDragEnd={handleDragEnd}
-                      className={`${cardStyle.border} border p-2.5 ${getRoundedClass('rounded-xl')} cursor-move hover:opacity-80 transition-all hover:scale-[1.02]`}
+                      className={`${cardStyle.border} border p-3 ${getRoundedClass('rounded-xl')} cursor-move hover:opacity-80 transition-all hover:scale-[1.02]`}
                     >
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <div className={`font-medium text-xs ${getTextClass()} truncate`}>{stat.label}</div>
-                          <div className={`text-[10px] ${getTextClass()}/50 truncate`}>{stat.description}</div>
+                          <div className={`font-medium text-sm ${getTextClass()} truncate`}>{stat.label}</div>
+                          <div className={`text-xs ${getTextClass()}/50 truncate`}>{stat.description}</div>
                         </div>
-                        <div className={`text-lg font-black ${getTextClass()} shrink-0`}>
+                        <div className={`text-3xl font-black ${getTextClass()} shrink-0`}>
                           {calculatedValue}
                         </div>
                       </div>
@@ -631,6 +470,156 @@ export default function ThisWeekPage() {
                 <Plus className="w-4 h-4 mr-2" />
                 Add Custom Stat
               </Button>
+            </Card>
+          </div>
+
+          {/* Selected Stats Container - Smaller, on the right */}
+          <div className="lg:col-span-2">
+            <Card className={`${cardStyle.bg} ${cardStyle.border} border p-4 ${getRoundedClass('rounded-xl')}`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className={`w-4 h-4 ${getTextClass()}`} />
+                  <h2 className={`text-sm font-black uppercase ${getTextClass()}`}>Selected Stats (3 slots)</h2>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    onClick={fetchCalculatedValues}
+                    disabled={calculatingValues || selectedStats.length === 0}
+                    variant="outline"
+                    size="sm"
+                    className={`${getRoundedClass('rounded-lg')} ${cardStyle.border} ${cardStyle.text} font-black uppercase tracking-wider text-xs h-7 px-2 ${mode === 'code' ? 'font-mono' : ''}`}
+                  >
+                    {calculatingValues ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-3 h-3" />
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving}
+                    size="sm"
+                    className={`${getRoundedClass('rounded-lg')} h-7 px-2 ${
+                      mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
+                      mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
+                      'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
+                    } font-black uppercase tracking-wider text-xs ${mode === 'code' ? 'font-mono' : ''}`}
+                  >
+                    {saving ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Save className="w-3 h-3" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2 min-h-[200px]">
+                {[1, 2, 3].map((slotPosition) => {
+                  const stat = selectedStats.find(s => s.position === slotPosition)
+                  return (
+                    <div
+                      key={slotPosition}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, slotPosition)}
+                      className={`${cardStyle.border} border-2 border-dashed ${getRoundedClass('rounded-lg')} p-2 min-h-[70px] transition-all ${
+                        stat ? cardStyle.bg : 'bg-transparent'
+                      }`}
+                    >
+                      {stat ? (
+                        <div className="flex items-start gap-2">
+                          <div
+                            draggable
+                            onDragStart={(e) => handleDragStartPosition(e, stat.position)}
+                            onDragEnd={handleDragEnd}
+                            className="cursor-move flex items-center justify-center p-1 hover:opacity-70 transition-opacity"
+                          >
+                            <GripVertical className={`w-3 h-3 ${getTextClass()}`} />
+                          </div>
+                          
+                          <div className="flex-1 space-y-1">
+                            {stat.stat_type === 'database' ? (
+                              <>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1">
+                                    <Database className={`w-3 h-3 ${getTextClass()}`} />
+                                    <span className={`font-medium text-[10px] ${getTextClass()} truncate`}>
+                                      {DATABASE_STATS.find(s => s.key === stat.database_stat_key)?.label || 'Unknown'}
+                                    </span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRemoveStat(stat.position)}
+                                    className="h-5 w-5 p-0"
+                                  >
+                                    <X className={`w-3 h-3 ${getTextClass()}`} />
+                                  </Button>
+                                </div>
+                                <div className="flex items-baseline gap-1.5">
+                                  <div className={`text-lg font-black ${getTextClass()}`}>
+                                    {calculatingValues && !stat.calculatedValue ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : stat.calculatedValue !== undefined ? (
+                                      stat.calculatedValue
+                                    ) : (
+                                      <span className={`text-xs ${getTextClass()}/50`}>—</span>
+                                    )}
+                                  </div>
+                                  <p className={`text-[9px] ${getTextClass()}/50 line-clamp-1`}>
+                                    {DATABASE_STATS.find(s => s.key === stat.database_stat_key)?.description}
+                                  </p>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1">
+                                    <Type className={`w-3 h-3 ${getTextClass()}`} />
+                                    <span className={`font-medium text-[10px] ${getTextClass()}`}>Custom Stat</span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleRemoveStat(stat.position)}
+                                    className="h-5 w-5 p-0"
+                                  >
+                                    <X className={`w-3 h-3 ${getTextClass()}`} />
+                                  </Button>
+                                </div>
+                                <div className="space-y-1">
+                                  <div>
+                                    <Label className={`text-[9px] ${getTextClass()}`}>Title</Label>
+                                    <Input
+                                      value={stat.custom_title || ''}
+                                      onChange={(e) => updateStat(stat.position, { custom_title: e.target.value })}
+                                      placeholder="e.g., team members"
+                                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} text-[10px] h-6`}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label className={`text-[9px] ${getTextClass()}`}>Value</Label>
+                                    <Input
+                                      value={stat.custom_value || ''}
+                                      onChange={(e) => updateStat(stat.position, { custom_value: e.target.value })}
+                                      placeholder="e.g., 25"
+                                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} text-[10px] h-6`}
+                                    />
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`flex items-center justify-center h-full ${getTextClass()}/40 text-[10px]`}>
+                          Drop a stat here
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </Card>
           </div>
         </div>
