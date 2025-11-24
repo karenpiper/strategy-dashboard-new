@@ -80,6 +80,20 @@ export default function MediaPage() {
   const [sortBy, setSortBy] = useState<SortField>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
+  // Get card style for media using RED SYSTEM (Video/Media)
+  // RED SYSTEM: Crimson (#C41E3A), Ocean Blue (#00A3E0), Peach (#FFD4C4)
+  const getCardStyle = () => {
+    if (mode === 'chaos') {
+      return { bg: 'bg-[#C41E3A]', border: 'border-0', text: 'text-white', accent: '#00A3E0' } // Crimson bg with Ocean Blue accent (RED SYSTEM)
+    } else if (mode === 'chill') {
+      return { bg: 'bg-white', border: 'border border-[#C41E3A]/30', text: 'text-[#4A1818]', accent: '#00A3E0' }
+    } else {
+      return { bg: 'bg-[#000000]', border: 'border border-[#C41E3A]', text: 'text-[#FFFFFF]', accent: '#00A3E0' }
+    }
+  }
+
+  const style = getCardStyle()
+
   // Dashboard styling helpers
   const getBgClass = () => {
     switch (mode) {
@@ -256,72 +270,123 @@ export default function MediaPage() {
       <SiteHeader />
 
       <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
+        {loading && (
+          <div className="text-center py-8 mb-8">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: style.accent }} />
+            <p className={getTextClass()}>Loading media...</p>
+          </div>
+        )}
         <div className="flex gap-6">
-          {/* Left Sidebar Navigation */}
-          <Card className={`w-1/4 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-4 flex flex-col sticky top-24 h-fit`} style={{ 
-            borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#FFFFFF',
-            borderWidth: mode === 'chaos' ? '2px' : '0px'
+          {/* Left Sidebar Card */}
+          <Card className={`w-80 ${mode === 'chaos' ? 'bg-[#C41E3A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`} style={{ 
+            borderColor: mode === 'chaos' ? '#00A3E0' : mode === 'chill' ? '#C41E3A' : '#C41E3A',
+            borderWidth: mode === 'chaos' ? '2px' : mode === 'chill' ? '2px' : '2px'
           }}>
-            <div className="mb-4">
-              <h1 className={`text-xl font-black uppercase tracking-wider ${getTextClass()} mb-1`}>Media</h1>
+            {/* Navigation Section */}
+            <div className="mb-6">
+              <h3 className={`text-xs uppercase tracking-wider font-black mb-4 ${mode === 'chill' ? 'text-[#4A1818]' : mode === 'chaos' ? 'text-white' : 'text-white'}`}>
+                ▼ NAVIGATION
+              </h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
+                    activeTab === 'all'
+                      ? mode === 'chaos'
+                        ? 'bg-[#00A3E0] text-white'
+                        : mode === 'chill'
+                        ? 'bg-[#00A3E0] text-white'
+                        : 'bg-[#00A3E0] text-white'
+                      : mode === 'chaos'
+                      ? 'bg-[#00A3E0]/30 text-white/80 hover:bg-[#00A3E0]/50'
+                      : mode === 'chill'
+                      ? 'bg-[#00A3E0]/20 text-[#4A1818]/60 hover:bg-[#00A3E0]/30'
+                      : 'bg-[#00A3E0]/30 text-white/60 hover:bg-[#00A3E0]/50'
+                  }`}
+                >
+                  <span className="font-black uppercase text-sm">All Media</span>
+                  <span className="ml-auto text-xs opacity-60">{mustReads.length + videos.length + news.length}</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('must-reads')}
+                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
+                    activeTab === 'must-reads'
+                      ? mode === 'chaos'
+                        ? 'bg-[#00A3E0] text-white'
+                        : mode === 'chill'
+                        ? 'bg-[#00A3E0] text-white'
+                        : 'bg-[#00A3E0] text-white'
+                      : mode === 'chaos'
+                      ? 'bg-[#00A3E0]/30 text-white/80 hover:bg-[#00A3E0]/50'
+                      : mode === 'chill'
+                      ? 'bg-[#00A3E0]/20 text-[#4A1818]/60 hover:bg-[#00A3E0]/30'
+                      : 'bg-[#00A3E0]/30 text-white/60 hover:bg-[#00A3E0]/50'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span className="font-black uppercase text-sm">Must Reads</span>
+                  <span className="ml-auto text-xs opacity-60">{mustReads.length}</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('videos')}
+                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
+                    activeTab === 'videos'
+                      ? mode === 'chaos'
+                        ? 'bg-[#00A3E0] text-white'
+                        : mode === 'chill'
+                        ? 'bg-[#00A3E0] text-white'
+                        : 'bg-[#00A3E0] text-white'
+                      : mode === 'chaos'
+                      ? 'bg-[#00A3E0]/30 text-white/80 hover:bg-[#00A3E0]/50'
+                      : mode === 'chill'
+                      ? 'bg-[#00A3E0]/20 text-[#4A1818]/60 hover:bg-[#00A3E0]/30'
+                      : 'bg-[#00A3E0]/30 text-white/60 hover:bg-[#00A3E0]/50'
+                  }`}
+                >
+                  <Video className="w-4 h-4" />
+                  <span className="font-black uppercase text-sm">Videos</span>
+                  <span className="ml-auto text-xs opacity-60">{videos.length}</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('news')}
+                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
+                    activeTab === 'news'
+                      ? mode === 'chaos'
+                        ? 'bg-[#00A3E0] text-white'
+                        : mode === 'chill'
+                        ? 'bg-[#00A3E0] text-white'
+                        : 'bg-[#00A3E0] text-white'
+                      : mode === 'chaos'
+                      ? 'bg-[#00A3E0]/30 text-white/80 hover:bg-[#00A3E0]/50'
+                      : mode === 'chill'
+                      ? 'bg-[#00A3E0]/20 text-[#4A1818]/60 hover:bg-[#00A3E0]/30'
+                      : 'bg-[#00A3E0]/30 text-white/60 hover:bg-[#00A3E0]/50'
+                  }`}
+                >
+                  <Newspaper className="w-4 h-4" />
+                  <span className="font-black uppercase text-sm">News</span>
+                  <span className="ml-auto text-xs opacity-60">{news.length}</span>
+                </button>
+              </div>
             </div>
 
-            <nav className="space-y-1">
-              <button
-                onClick={() => setActiveTab('all')}
-                className={`w-full text-left px-3 py-2 ${getRoundedClass('rounded-lg')} transition-all flex items-center gap-2 ${
-                  activeTab === 'all'
-                    ? mode === 'chaos' ? 'bg-[#00C896] text-black' : mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818]' : 'bg-white text-black'
-                    : `${getTextClass()}/60 hover:${getTextClass()} hover:bg-black/10`
-                }`}
-              >
-                <span className="font-semibold text-sm">All Media</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('must-reads')}
-                className={`w-full text-left px-3 py-2 ${getRoundedClass('rounded-lg')} transition-all flex items-center gap-2 ${
-                  activeTab === 'must-reads'
-                    ? mode === 'chaos' ? 'bg-[#00C896] text-black' : mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818]' : 'bg-white text-black'
-                    : `${getTextClass()}/60 hover:${getTextClass()} hover:bg-black/10`
-                }`}
-              >
-                <BookOpen className="w-4 h-4" />
-                <span className="font-semibold text-sm">Must Reads</span>
-                <span className="ml-auto text-xs opacity-60">{mustReads.length}</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('videos')}
-                className={`w-full text-left px-3 py-2 ${getRoundedClass('rounded-lg')} transition-all flex items-center gap-2 ${
-                  activeTab === 'videos'
-                    ? mode === 'chaos' ? 'bg-[#00C896] text-black' : mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818]' : 'bg-white text-black'
-                    : `${getTextClass()}/60 hover:${getTextClass()} hover:bg-black/10`
-                }`}
-              >
-                <Video className="w-4 h-4" />
-                <span className="font-semibold text-sm">Videos</span>
-                <span className="ml-auto text-xs opacity-60">{videos.length}</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('news')}
-                className={`w-full text-left px-3 py-2 ${getRoundedClass('rounded-lg')} transition-all flex items-center gap-2 ${
-                  activeTab === 'news'
-                    ? mode === 'chaos' ? 'bg-[#00C896] text-black' : mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818]' : 'bg-white text-black'
-                    : `${getTextClass()}/60 hover:${getTextClass()} hover:bg-black/10`
-                }`}
-              >
-                <Newspaper className="w-4 h-4" />
-                <span className="font-semibold text-sm">News</span>
-                <span className="ml-auto text-xs opacity-60">{news.length}</span>
-              </button>
-            </nav>
+            {/* Divider */}
+            <div className={`h-px mb-6 ${mode === 'chaos' ? 'bg-[#00A3E0]/40' : mode === 'chill' ? 'bg-[#4A1818]/20' : 'bg-white/20'}`}></div>
 
-            <div className="mt-4 pt-4 border-t space-y-1">
+            {/* Back to Dashboard */}
+            <div className="mt-auto">
               <Link
                 href="/"
-                className={`flex items-center gap-2 px-3 py-2 ${getRoundedClass('rounded-lg')} ${getTextClass()}/60 hover:${getTextClass()} hover:bg-black/10 transition-colors text-sm`}
+                className={`flex items-center gap-2 px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all ${
+                  mode === 'chaos'
+                    ? 'bg-[#00A3E0]/30 text-white/80 hover:bg-[#00A3E0]/50'
+                    : mode === 'chill'
+                    ? 'bg-[#00A3E0]/20 text-[#4A1818]/60 hover:bg-[#00A3E0]/30'
+                    : 'bg-[#00A3E0]/30 text-white/60 hover:bg-[#00A3E0]/50'
+                }`}
               >
                 <Home className="w-4 h-4" />
-                <span className="font-medium">← Back to Dashboard</span>
+                <span className="font-black uppercase text-sm">← Back to Dashboard</span>
               </Link>
             </div>
           </Card>
@@ -340,13 +405,22 @@ export default function MediaPage() {
             <div className="mb-6 space-y-4">
               {/* Search Bar */}
               <div className="relative">
-                <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`} />
+                <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5`} style={{ color: style.accent }} />
                 <Input
                   type="text"
                   placeholder="Search media..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`pl-12 pr-4 h-12 ${getRoundedClass('rounded-xl')} ${mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818] placeholder:text-gray-400' : mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500' : 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500'}`}
+                  className={`pl-12 pr-4 h-12 ${getRoundedClass('rounded-xl')} ${
+                    mode === 'chill' 
+                      ? 'bg-white border-gray-300 text-[#4A1818] placeholder:text-gray-400' 
+                      : mode === 'chaos'
+                      ? 'bg-black/40 border-2 text-white placeholder:text-white/60'
+                      : 'bg-black/40 border-2 text-white placeholder:text-white/60'
+                  }`}
+                  style={{
+                    borderColor: mode === 'chaos' || mode === 'code' ? style.accent : undefined
+                  }}
                 />
               </div>
 
@@ -359,13 +433,16 @@ export default function MediaPage() {
                     <select
                       value={filterCategory}
                       onChange={(e) => setFilterCategory(e.target.value)}
-                      className={`h-12 px-4 ${getRoundedClass('rounded-xl')} text-sm font-medium border focus:outline-none focus:ring-2 ${
+                      className={`h-12 px-4 ${getRoundedClass('rounded-xl')} text-sm font-medium border-2 focus:outline-none focus:ring-2 ${
                         mode === 'chill' 
-                          ? 'bg-white border-gray-300 text-[#4A1818] focus:ring-[#FFC043]' 
+                          ? 'bg-white border-gray-300 text-[#4A1818] focus:ring-[#00A3E0]' 
                           : mode === 'chaos'
-                          ? 'bg-black/30 border-gray-600 text-white focus:ring-white'
-                          : 'bg-black/30 border-gray-600 text-white focus:ring-white'
+                          ? 'bg-black/40 text-white focus:ring-white'
+                          : 'bg-black/40 text-white focus:ring-white'
                       }`}
+                      style={{
+                        borderColor: mode === 'chaos' || mode === 'code' ? style.accent : undefined
+                      }}
                     >
                       <option value="all">All Categories</option>
                       {categories.map(cat => (
@@ -381,13 +458,16 @@ export default function MediaPage() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as SortField)}
-                    className={`h-12 px-4 ${getRoundedClass('rounded-xl')} text-sm font-medium border focus:outline-none focus:ring-2 ${
+                    className={`h-12 px-4 ${getRoundedClass('rounded-xl')} text-sm font-medium border-2 focus:outline-none focus:ring-2 ${
                       mode === 'chill' 
-                        ? 'bg-white border-gray-300 text-[#4A1818] focus:ring-[#FFC043]' 
+                        ? 'bg-white border-gray-300 text-[#4A1818] focus:ring-[#00A3E0]' 
                         : mode === 'chaos'
-                        ? 'bg-black/30 border-gray-600 text-white focus:ring-white'
-                        : 'bg-black/30 border-gray-600 text-white focus:ring-white'
+                        ? 'bg-black/40 text-white focus:ring-white'
+                        : 'bg-black/40 text-white focus:ring-white'
                     }`}
+                    style={{
+                      borderColor: mode === 'chaos' || mode === 'code' ? style.accent : undefined
+                    }}
                   >
                     <option value="date">Date</option>
                     <option value="title">Title</option>
@@ -395,13 +475,16 @@ export default function MediaPage() {
                   </select>
                   <button
                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    className={`h-12 px-4 ${getRoundedClass('rounded-xl')} border flex items-center justify-center transition-colors ${
+                    className={`h-12 px-4 ${getRoundedClass('rounded-xl')} border-2 flex items-center justify-center transition-colors ${
                       mode === 'chill' 
                         ? 'bg-white border-gray-300 text-[#4A1818] hover:bg-gray-50' 
                         : mode === 'chaos'
-                        ? 'bg-black/30 border-gray-600 text-white hover:bg-black/50'
-                        : 'bg-black/30 border-gray-600 text-white hover:bg-black/50'
+                        ? 'bg-black/40 text-white hover:bg-black/60'
+                        : 'bg-black/40 text-white hover:bg-black/60'
                     }`}
+                    style={{
+                      borderColor: mode === 'chaos' || mode === 'code' ? style.accent : undefined
+                    }}
                     title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                   >
                     {sortOrder === 'asc' ? (
@@ -415,12 +498,7 @@ export default function MediaPage() {
             </div>
 
             {/* Media Items Grid */}
-            {loading ? (
-              <div className="text-center py-12">
-                <Loader2 className={`w-8 h-8 animate-spin mx-auto mb-4 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`} />
-                <p className={getTextClass()}>Loading media...</p>
-              </div>
-            ) : filteredItems.length === 0 ? (
+            {filteredItems.length === 0 ? (
               <div className="text-center py-12">
                 <p className={`text-lg ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>
                   No media found. Try adjusting your search or filters.
@@ -448,8 +526,8 @@ export default function MediaPage() {
                               variant="outline"
                               className={`${getRoundedClass('rounded')} text-xs`}
                               style={{
-                                borderColor: mode === 'chill' ? '#FFC043' : '#00C896',
-                                color: mode === 'chill' ? '#FFC043' : '#00C896'
+                                borderColor: style.accent,
+                                color: style.accent
                               }}
                             >
                               Article
@@ -502,8 +580,8 @@ export default function MediaPage() {
                               variant="outline"
                               className={`${getRoundedClass('rounded')} text-xs`}
                               style={{
-                                borderColor: mode === 'chill' ? '#FFC043' : '#00C896',
-                                color: mode === 'chill' ? '#FFC043' : '#00C896'
+                                borderColor: style.accent,
+                                color: style.accent
                               }}
                             >
                               Video
