@@ -588,8 +588,18 @@ export async function GET(request: NextRequest) {
         horoscopeText: horoscopeText.substring(0, 50) + '...', 
         dosCount: horoscopeDos.length,
         dontsCount: horoscopeDonts.length,
-        hasImageUrl: !!imageUrl
+        hasImageUrl: !!imageUrl,
+        imageUrl: imageUrl || 'MISSING',
+        imageUrlLength: imageUrl?.length || 0
       })
+      
+      // CRITICAL: Verify imageUrl is set before saving
+      if (!imageUrl || imageUrl.trim() === '') {
+        console.error('❌ CRITICAL ERROR: imageUrl is empty before saving to database!')
+        console.error('   n8nResult.imageUrl:', n8nResult.imageUrl)
+        console.error('   permanentImageUrl:', permanentImageUrl)
+        throw new Error('Cannot save horoscope: imageUrl is empty. n8n generation may have failed.')
+      }
     } catch (error: any) {
       console.error('❌ Error generating horoscope:', error)
       console.error('   Error code:', error.code)
@@ -679,8 +689,18 @@ export async function GET(request: NextRequest) {
       donts_count: upsertData.horoscope_donts?.length || 0,
       character_name: upsertData.character_name,
       image_url: upsertData.image_url || 'MISSING',
-      image_url_length: upsertData.image_url?.length || 0
+      image_url_length: upsertData.image_url?.length || 0,
+      image_url_preview: upsertData.image_url?.substring(0, 100) || 'MISSING'
     })
+    
+    // CRITICAL: Verify imageUrl is set before saving
+    if (!upsertData.image_url || upsertData.image_url.trim() === '') {
+      console.error('❌ CRITICAL ERROR: Cannot save - image_url is empty in upsertData!')
+      console.error('   This means the image URL was lost somewhere in the process')
+      console.error('   horoscopeText exists:', !!upsertData.horoscope_text)
+      console.error('   imageUrl variable:', imageUrl)
+      throw new Error('Cannot save horoscope: image_url is empty. This should not happen.')
+    }
     
     const { data: upsertResult, error: upsertError } = await supabaseAdmin
       .from('horoscopes')
@@ -752,7 +772,21 @@ export async function GET(request: NextRequest) {
         console.error('   ❌ CRITICAL: Error verifying saved record:', verifyError)
         console.error('   This means the save may have failed silently!')
       } else if (verifyRecord) {
-        console.log('   ✅ Verified: Record exists in database with text length:', verifyRecord.horoscope_text?.length || 0)
+        console.log('   ✅ Verified: Record exists in database')
+        console.log('   Text length:', verifyRecord.horoscope_text?.length || 0)
+        console.log('   Image URL:', verifyRecord.image_url || 'MISSING')
+        console.log('   Image URL length:', verifyRecord.image_url?.length || 0)
+        console.log('   Image URL matches saved:', verifyRecord.image_url === imageUrl)
+        
+        // CRITICAL: Verify the image URL was actually saved
+        if (!verifyRecord.image_url || verifyRecord.image_url.trim() === '') {
+          console.error('   ❌ CRITICAL: Image URL is missing in database after save!')
+          console.error('   This means the save failed to persist the image_url field')
+        } else if (verifyRecord.image_url !== imageUrl) {
+          console.warn('   ⚠️ WARNING: Image URL in database does not match what we tried to save!')
+          console.warn('   Expected:', imageUrl)
+          console.warn('   Actual:', verifyRecord.image_url)
+        }
         console.log('   Record ID:', verifyRecord.id)
         console.log('   Record date:', verifyRecord.date)
       } else {
