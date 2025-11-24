@@ -76,7 +76,7 @@ export function SpotifyPlayer({
   return (
     <section 
       aria-labelledby="playlist-heading" 
-      className={`playlist-card w-full h-full min-h-[520px] p-5 md:p-6 relative ${className}`}
+      className={`playlist-card w-full h-full min-h-[520px] p-5 md:p-6 relative flex flex-col items-center ${className}`}
       style={{
         ['--cover' as any]: '180px',
         ['--vinyl-gap' as any]: '24px'
@@ -99,23 +99,41 @@ export function SpotifyPlayer({
           {/* Vinyl - positioned behind cover */}
           <div className="vinylWrap">
             <div className="vinyl rounded-full bg-black/90 ring-1 ring-black/40 pointer-events-none">
-              {/* center label avatar */}
+              {/* center label avatar - curator's photo */}
               {submitterPhoto && (
                 <img
                   src={submitterPhoto}
-                  alt=""
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 md:w-12 md:h-12 rounded-full ring-2 ring-emerald-400"
+                  alt={playlist.curator || 'Curator'}
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full ring-2 ring-emerald-400 object-cover"
                   aria-hidden="true"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.style.display = 'none'
+                    const parent = target.parentElement
+                    if (parent) {
+                      const fallback = parent.querySelector('.spotify-curator-avatar-fallback') as HTMLElement
+                      if (fallback) fallback.style.display = 'flex'
+                    }
+                  }}
                 />
               )}
+              {/* Fallback if image fails to load */}
+              <div 
+                className="spotify-curator-avatar-fallback absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full flex items-center justify-center text-white font-semibold text-base md:text-lg lg:text-xl hidden"
+                style={{
+                  backgroundColor: '#10b981'
+                }}
+              >
+                {(playlist.curator || 'C').charAt(0).toUpperCase()}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content below media row */}
+      {/* Content below media row - centered */}
       <motion.header
-        className="content text-left mt-5 md:mt-6 mb-2 relative z-20 space-y-1.5"
+        className="content text-center mt-5 md:mt-6 mb-2 relative z-20 space-y-1.5 w-full"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
@@ -133,33 +151,42 @@ export function SpotifyPlayer({
         <p className="text-[12px] md:text-sm text-foreground/80">by {playlist.curator || 'Unknown'}</p>
       </motion.header>
 
-      {/* Now Playing */}
-      <motion.div 
-        className="text-left mb-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
-      >
-        <motion.p 
-          className="text-sm md:text-[15px] text-foreground/85"
-          aria-live="polite"
-          aria-atomic="true"
-          animate={{ 
-            opacity: shouldReduceMotion ? 1 : (isPlaying ? [0.7, 1, 0.7] : 1)
-          }}
-          transition={{ duration: 2, repeat: shouldReduceMotion ? 0 : (isPlaying ? Infinity : 0) }}
+      {/* Description */}
+      {playlist.description && (
+        <motion.div 
+          className="text-center mb-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
         >
-          {nowPlayingText}
-        </motion.p>
-      </motion.div>
+          <p className="text-sm md:text-base text-foreground/70">
+            {playlist.description}
+          </p>
+        </motion.div>
+      )}
 
-      {/* Spotify Link Button Only */}
+      {/* Artists List - under description in smaller font */}
+      {artistsList && (
+        <motion.div 
+          className="text-center mb-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
+          <p className="text-xs md:text-sm text-foreground/60 break-normal whitespace-normal">
+            {artistsList}
+          </p>
+        </motion.div>
+      )}
+
+      {/* Spotify Link Button - with 10px padding above and below */}
       <motion.div 
         id="playlist-controls"
-        className="flex items-start mb-2"
+        className="flex items-center justify-center w-full"
+        style={{ paddingTop: '10px', paddingBottom: '10px' }}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
+        transition={{ duration: 0.6, delay: 0.7 }}
       >
         {/* Spotify pill */}
         <motion.button 
@@ -176,48 +203,17 @@ export function SpotifyPlayer({
         </motion.button>
       </motion.div>
 
-      {/* Equalizer row - CSS animated bars */}
-      <div className="eq-container">
-        <div className="eq">
-          {Array.from({ length: 16 }, (_, i) => (
-            <div key={i} className="eq-bar" />
-          ))}
-        </div>
-      </div>
-
       {/* Track Info */}
       {trackInfo && (
         <motion.div 
-          className="text-left mb-2 font-sans mt-3"
+          className="text-center mb-2 font-sans"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 1.2 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
         >
-          <motion.p 
-            className="text-[11px] md:text-xs text-foreground/70"
-          >
+          <p className="text-[11px] md:text-xs text-foreground/70">
             {trackInfo}
-          </motion.p>
-        </motion.div>
-      )}
-
-      {/* Artists List - Left Aligned */}
-      {artistsList && (
-        <motion.div 
-          className="text-foreground/80 text-[15px] md:text-base leading-7 text-left px-4 font-normal tracking-tight max-w-2xl mt-3"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1.4 }}
-        >
-          <motion.p
-            className="break-normal whitespace-normal line-clamp-6 md:line-clamp-7"
-            animate={{ 
-              opacity: [0.8, 1, 0.8]
-            }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            {artistsList}
-          </motion.p>
+          </p>
         </motion.div>
       )}
 

@@ -81,7 +81,7 @@ export function PlaylistCard({
                   <img
                     src={curatorAvatar}
                     alt={curator}
-                    className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 ${getRoundedClass('rounded-full')} ring-2 object-cover`}
+                    className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 ${getRoundedClass('rounded-full')} ring-2 object-cover`}
                     style={{
                       ringColor: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#10b981'
                     }}
@@ -97,7 +97,7 @@ export function PlaylistCard({
                     }}
                   />
                   <div 
-                    className={`playlist-curator-avatar-fallback absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 ${getRoundedClass('rounded-full')} flex items-center justify-center text-white font-semibold text-xs hidden`}
+                    className={`playlist-curator-avatar-fallback absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 ${getRoundedClass('rounded-full')} flex items-center justify-center text-white font-semibold text-base md:text-lg lg:text-xl hidden`}
                     style={{
                       backgroundColor: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#10b981',
                       color: mode === 'chaos' || mode === 'code' ? '#000000' : mode === 'chill' ? '#4A1818' : '#000000'
@@ -108,7 +108,7 @@ export function PlaylistCard({
                 </>
               ) : (
                 <div 
-                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 md:w-14 md:h-14 ${getRoundedClass('rounded-full')} flex items-center justify-center text-white font-semibold text-xs`}
+                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 ${getRoundedClass('rounded-full')} flex items-center justify-center text-white font-semibold text-base md:text-lg lg:text-xl`}
                   style={{
                     backgroundColor: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#10b981',
                     color: mode === 'chaos' || mode === 'code' ? '#000000' : mode === 'chill' ? '#4A1818' : '#000000'

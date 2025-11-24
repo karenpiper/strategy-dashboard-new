@@ -22,8 +22,18 @@ async function getAccessToken(): Promise<string> {
   const clientId = process.env.SPOTIFY_CLIENT_ID
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET
 
-  if (!clientId || !clientSecret) {
-    throw new Error('Spotify credentials not configured. Please set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET environment variables.')
+  // Check if credentials are missing or empty strings
+  if (!clientId || !clientSecret || clientId.trim() === '' || clientSecret.trim() === '') {
+    const envKeys = Object.keys(process.env).filter(key => key.includes('SPOTIFY'))
+    console.error('Spotify credentials check:', {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+      clientIdLength: clientId?.length || 0,
+      clientSecretLength: clientSecret?.length || 0,
+      envKeysWithSpotify: envKeys,
+      allEnvKeys: Object.keys(process.env).length
+    })
+    throw new Error('Spotify credentials not configured. Please set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET environment variables in .env.local and restart your development server. If you\'re on Vercel, make sure these are set in your project settings.')
   }
 
   const response = await fetch('https://accounts.spotify.com/api/token', {
