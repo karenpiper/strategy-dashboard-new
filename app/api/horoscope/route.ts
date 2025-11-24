@@ -553,25 +553,61 @@ export async function GET(request: NextRequest) {
           })
         
         if (uploadError) {
-          console.error('⚠️ Error uploading image to Supabase storage:', uploadError)
-          // Don't fail the request if image upload fails - use original URL
-          console.log('   Using original OpenAI image URL instead')
+          console.error('❌ CRITICAL: Error uploading image to Supabase storage:', uploadError)
+          console.error('   Upload error details:', {
+            message: uploadError.message,
+            statusCode: uploadError.statusCode,
+            error: uploadError.error
+          })
+          // CRITICAL: If upload fails, we should fail the request
+          // Don't use temporary OpenAI URLs that will expire
+          throw new Error(`Failed to upload image to Supabase storage: ${uploadError.message}. Cannot save horoscope with temporary image URL.`)
+        }
+        
+        // Get public URL from Supabase storage
+        const { data: urlData } = supabaseAdmin.storage
+          .from('avatars')
+          .getPublicUrl(filePath)
+        
+        if (!urlData || !urlData.publicUrl) {
+          console.error('❌ CRITICAL: Failed to get public URL from Supabase storage')
+          throw new Error('Failed to get public URL for uploaded image. Upload may have succeeded but URL generation failed.')
+        }
+        
+        permanentImageUrl = urlData.publicUrl
+        console.log('✅ Image uploaded to Supabase storage successfully')
+        console.log('   File path:', filePath)
+        console.log('   Public URL:', permanentImageUrl)
+        console.log('   Original OpenAI URL:', imageUrl)
+        console.log('   URL length:', permanentImageUrl.length)
+        
+        // CRITICAL: Verify the URL is a Supabase URL, not OpenAI URL
+        if (permanentImageUrl === imageUrl) {
+          console.error('❌ CRITICAL: Permanent URL is same as original URL - upload failed!')
+          throw new Error('Image upload failed - permanent URL matches temporary OpenAI URL')
+        }
+        
+        if (!permanentImageUrl.includes('supabase.co') && !permanentImageUrl.includes('supabase')) {
+          console.error('❌ CRITICAL: Permanent URL does not appear to be a Supabase URL!')
+          console.error('   URL:', permanentImageUrl)
+          throw new Error('Image upload may have failed - URL is not a Supabase storage URL')
+        }
+        
+        // Verify the uploaded file exists by checking storage
+        const { data: fileData, error: fileCheckError } = await supabaseAdmin.storage
+          .from('avatars')
+          .list(userId, {
+            limit: 1,
+            search: fileName
+          })
+        
+        if (fileCheckError) {
+          console.warn('⚠️ Could not verify uploaded file exists:', fileCheckError)
+        } else if (!fileData || fileData.length === 0) {
+          console.error('❌ CRITICAL: Uploaded file not found in storage!')
+          throw new Error('Image upload verification failed - file not found in storage after upload')
         } else {
-          // Get public URL from Supabase storage
-          const { data: urlData } = supabaseAdmin.storage
-            .from('avatars')
-            .getPublicUrl(filePath)
-          
-          permanentImageUrl = urlData.publicUrl
-          console.log('✅ Image uploaded to Supabase storage')
-          console.log('   File path:', filePath)
-          console.log('   Public URL:', permanentImageUrl)
-          console.log('   Original URL:', imageUrl)
-          
-          // Verify the URLs are different (should be Supabase URL, not OpenAI URL)
-          if (permanentImageUrl === imageUrl) {
-            console.warn('⚠️ WARNING: Permanent URL is same as original URL - upload may have failed')
-          }
+          console.log('✅ Verified uploaded file exists in storage:', fileData[0].name)
         }
       } catch (imageError: any) {
         console.error('⚠️ Error processing image upload:', imageError)
