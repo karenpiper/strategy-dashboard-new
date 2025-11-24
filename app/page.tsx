@@ -3886,12 +3886,12 @@ export default function TeamDashboard() {
           )}
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-stretch">
           {/* Playlist */}
           {(() => {
             const playlistStyle = mode === 'chaos' ? getSpecificCardStyle('playlist') : getCardStyle('vibes')
             return (
-              <Card id="playlist-section" className={`bg-transparent border-0 p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
+              <Card id="playlist-section" className={`bg-transparent border-0 p-6 md:col-span-1 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
               >
                 <div className="flex items-center gap-2 text-sm mb-3" style={{ color: playlistStyle.accent }}>
                   <Music className="w-4 h-4" />
@@ -3937,7 +3937,7 @@ export default function TeamDashboard() {
           {(() => {
             const inspirationStyle = mode === 'chaos' ? getSpecificCardStyle('inspiration-war') : getCardStyle('hero')
             return (
-              <Card className={`${inspirationStyle.bg} ${inspirationStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
+              <Card className={`${inspirationStyle.bg} ${inspirationStyle.border} p-6 md:col-span-2 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
                     style={inspirationStyle.glow ? { boxShadow: `0 0 40px ${inspirationStyle.glow}` } : {}}
               >
                 <div className="flex items-center justify-between mb-4">
