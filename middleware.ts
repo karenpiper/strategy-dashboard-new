@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase environment variables in middleware')
+    console.error('[Middleware] Missing Supabase environment variables')
     // If env vars are missing, allow access to login page only
     if (!pathname.startsWith('/login') && !pathname.startsWith('/auth/callback')) {
       const url = request.nextUrl.clone()
@@ -26,6 +26,19 @@ export async function middleware(request: NextRequest) {
   })
 
   try {
+    // Log cookies for debugging (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      const cookieNames = request.cookies.getAll().map(c => c.name)
+      const hasAuthCookies = cookieNames.some(name => 
+        name.includes('sb-') || name.includes('supabase')
+      )
+      console.log('[Middleware] Request cookies:', cookieNames.length, 'cookies found')
+      console.log('[Middleware] Has auth cookies:', hasAuthCookies)
+    }
+
+    // Determine if we're in production (HTTPS)
+    const isProduction = request.nextUrl.protocol === 'https:'
+
     const supabase = createServerClient(
       supabaseUrl,
       supabaseAnonKey,
@@ -35,22 +48,36 @@ export async function middleware(request: NextRequest) {
             return request.cookies.getAll()
           },
           setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
-            // Set all cookies on both request and response
-            cookiesToSet.forEach(({ name, value, options }) => {
-              request.cookies.set({ name, value, ...options })
+            // Set all cookies on both request and response with proper options
+            cookiesToSet.forEach(({ name, value, options = {} }) => {
+              const cookieOptions = {
+                ...options,
+                path: options.path || '/',
+                sameSite: options.sameSite || 'lax' as const,
+                secure: options.secure !== undefined ? options.secure : isProduction,
+                httpOnly: options.httpOnly !== undefined ? options.httpOnly : true,
+              }
+              request.cookies.set({ name, value, ...cookieOptions })
               response = NextResponse.next({
                 request: {
                   headers: request.headers,
                 },
               })
-              response.cookies.set({ name, value, ...options })
+              response.cookies.set({ name, value, ...cookieOptions })
             })
           },
           set(name: string, value: string, options: any) {
+            const cookieOptions = {
+              ...options,
+              path: options?.path || '/',
+              sameSite: options?.sameSite || 'lax' as const,
+              secure: options?.secure !== undefined ? options.secure : isProduction,
+              httpOnly: options?.httpOnly !== undefined ? options.httpOnly : true,
+            }
             request.cookies.set({
               name,
               value,
-              ...options,
+              ...cookieOptions,
             })
             response = NextResponse.next({
               request: {
@@ -60,14 +87,20 @@ export async function middleware(request: NextRequest) {
             response.cookies.set({
               name,
               value,
-              ...options,
+              ...cookieOptions,
             })
           },
           remove(name: string, options: any) {
+            const cookieOptions = {
+              ...options,
+              path: options?.path || '/',
+              sameSite: options?.sameSite || 'lax' as const,
+              secure: options?.secure !== undefined ? options.secure : isProduction,
+            }
             request.cookies.set({
               name,
               value: '',
-              ...options,
+              ...cookieOptions,
             })
             response = NextResponse.next({
               request: {
@@ -77,7 +110,7 @@ export async function middleware(request: NextRequest) {
             response.cookies.set({
               name,
               value: '',
-              ...options,
+              ...cookieOptions,
             })
           },
         },
@@ -85,6 +118,7 @@ export async function middleware(request: NextRequest) {
     )
 
     // Refresh session to ensure we have the latest auth state
+    console.log('[Middleware] Checking session for path:', pathname)
     const {
       data: { session },
       error: sessionError,
@@ -94,7 +128,7 @@ export async function middleware(request: NextRequest) {
 
     // If there's an error getting the session, treat as unauthenticated
     if (sessionError) {
-      console.error('Error getting session in middleware:', sessionError)
+      console.error('[Middleware] Error getting session:', sessionError.message)
       // If we can't verify auth, redirect to login (except for login/auth/profile routes)
       if (
         !pathname.startsWith('/login') &&
@@ -102,6 +136,7 @@ export async function middleware(request: NextRequest) {
         !pathname.startsWith('/profile/setup') &&
         !pathname.startsWith('/api')
       ) {
+        console.log('[Middleware] Redirecting to login due to session error')
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         return NextResponse.redirect(url)
@@ -116,7 +151,7 @@ export async function middleware(request: NextRequest) {
       !pathname.startsWith('/profile/setup') &&
       !pathname.startsWith('/api')
     ) {
-      console.log('No user found, redirecting to login. Pathname:', pathname)
+      console.log('[Middleware] No user found, redirecting to login. Pathname:', pathname)
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       return NextResponse.redirect(url)
@@ -124,7 +159,7 @@ export async function middleware(request: NextRequest) {
 
     // Redirect logged-in users away from login page
     if (user && pathname === '/login') {
-      console.log('User logged in, redirecting from login to home')
+      console.log('[Middleware] User logged in, redirecting from login to home')
       const url = request.nextUrl.clone()
       url.pathname = '/'
       return NextResponse.redirect(url)
@@ -132,12 +167,11 @@ export async function middleware(request: NextRequest) {
 
     // Log successful auth check (only in development)
     if (user && process.env.NODE_ENV === 'development') {
-      console.log('User authenticated:', user.email, 'Path:', pathname)
+      console.log('[Middleware] User authenticated:', user.email, 'Path:', pathname)
     }
   } catch (error) {
-    console.error('Middleware error:', error)
+    console.error('[Middleware] Error:', error)
     // On error, redirect to login for security (except for login/auth/profile routes)
-    const pathname = request.nextUrl.pathname
     if (
       !pathname.startsWith('/login') &&
       !pathname.startsWith('/auth/callback') &&
