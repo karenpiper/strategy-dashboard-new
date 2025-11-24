@@ -770,10 +770,13 @@ export async function GET(request: NextRequest) {
       }
       
       // CRITICAL: Verify the record was actually saved
-      // If verification fails, this is a critical error - the save didn't work
+      // Wait a moment to ensure transaction is committed
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // First verification - immediate check
       const { data: verifyRecord, error: verifyError } = await supabaseAdmin
         .from('horoscopes')
-        .select('horoscope_text, date, id, image_url, image_prompt, prompt_slots_json')
+        .select('horoscope_text, date, id, image_url, image_prompt, prompt_slots_json, generated_at')
         .eq('user_id', userId)
         .eq('date', todayDate)
         .maybeSingle()
@@ -781,8 +784,12 @@ export async function GET(request: NextRequest) {
       if (verifyError) {
         console.error('   ❌ CRITICAL: Error verifying saved record:', verifyError)
         console.error('   This means the save may have failed silently!')
+        throw new Error(`Database verification failed: ${verifyError.message}`)
       } else if (verifyRecord) {
         console.log('   ✅ Verified: Record exists in database')
+        console.log('   Record ID:', verifyRecord.id)
+        console.log('   Record date:', verifyRecord.date)
+        console.log('   Generated at:', verifyRecord.generated_at)
         console.log('   Text length:', verifyRecord.horoscope_text?.length || 0)
         console.log('   Image URL:', verifyRecord.image_url || 'MISSING')
         console.log('   Image URL length:', verifyRecord.image_url?.length || 0)
@@ -792,13 +799,37 @@ export async function GET(request: NextRequest) {
         if (!verifyRecord.image_url || verifyRecord.image_url.trim() === '') {
           console.error('   ❌ CRITICAL: Image URL is missing in database after save!')
           console.error('   This means the save failed to persist the image_url field')
+          throw new Error('Image URL was not saved to database despite successful upsert')
         } else if (verifyRecord.image_url !== imageUrl) {
           console.warn('   ⚠️ WARNING: Image URL in database does not match what we tried to save!')
           console.warn('   Expected:', imageUrl)
           console.warn('   Actual:', verifyRecord.image_url)
         }
-        console.log('   Record ID:', verifyRecord.id)
-        console.log('   Record date:', verifyRecord.date)
+        
+        // CRITICAL: Second verification with a fresh query to ensure data is actually persisted
+        // Wait a bit longer and query again to ensure transaction committed
+        await new Promise(resolve => setTimeout(resolve, 200))
+        
+        const { data: verifyRecord2, error: verifyError2 } = await supabaseAdmin
+          .from('horoscopes')
+          .select('id, horoscope_text, image_url, date')
+          .eq('user_id', userId)
+          .eq('date', todayDate)
+          .maybeSingle()
+        
+        if (verifyError2) {
+          console.error('   ❌ CRITICAL: Second verification query failed:', verifyError2)
+          throw new Error(`Second database verification failed: ${verifyError2.message}`)
+        } else if (!verifyRecord2) {
+          console.error('   ❌ CRITICAL: Record disappeared after second verification!')
+          console.error('   This suggests the transaction was rolled back or the record was deleted')
+          throw new Error('Record not found in second verification - transaction may have been rolled back')
+        } else {
+          console.log('   ✅ Second verification passed - record is persisted')
+          console.log('   Second check - Record ID:', verifyRecord2.id)
+          console.log('   Second check - Has text:', !!verifyRecord2.horoscope_text)
+          console.log('   Second check - Has image:', !!verifyRecord2.image_url)
+        }
       } else {
         console.error('   ❌ CRITICAL VERIFICATION FAILED: Record not found after save!')
         console.error('   This means the upsert appeared to succeed but the record is missing!')
@@ -835,7 +866,7 @@ export async function GET(request: NextRequest) {
       image_url_length: imageUrl?.length || 0,
       character_name: characterName
     })
-
+    
     return NextResponse.json({
       star_sign: starSign,
       horoscope_text: horoscopeText,
