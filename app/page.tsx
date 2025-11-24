@@ -650,6 +650,7 @@ export default function TeamDashboard() {
       if (!googleCalendarToken || tokenLoading) return
       
       try {
+        console.log('🔄 Fetching user calendars with token...')
         const response = await fetch(
           `/api/calendars/list?accessToken=${encodeURIComponent(googleCalendarToken)}`
         )
@@ -657,6 +658,7 @@ export default function TeamDashboard() {
         if (response.ok) {
           const result = await response.json()
           if (result.calendars && Array.isArray(result.calendars)) {
+            console.log(`✅ Successfully fetched ${result.calendars.length} calendars`)
             setUserCalendars(result.calendars)
             
             // Filter calendars - you can customize this filter
@@ -683,14 +685,32 @@ export default function TeamDashboard() {
             // Set useDynamicCalendars to true to enable this feature
             if (useDynamicCalendars && filteredCalendars.length > 0) {
               setCalendarIds(filteredCalendars)
-              console.log(`Using ${filteredCalendars.length} dynamically fetched calendars:`, filteredCalendars)
+              console.log(`✅ Using ${filteredCalendars.length} dynamically fetched calendars:`, filteredCalendars)
             } else if (filteredCalendars.length > 0) {
-              console.log(`Found ${filteredCalendars.length} accessible calendars (not using - enable useDynamicCalendars to use them)`)
+              console.log(`ℹ️ Found ${filteredCalendars.length} accessible calendars (not using - enable useDynamicCalendars to use them)`)
+            } else {
+              console.warn('⚠️ No calendars found after filtering')
             }
+          } else {
+            console.warn('⚠️ Unexpected response format:', result)
+          }
+        } else {
+          // Handle error response
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          console.error('❌ Failed to fetch calendars:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData.error,
+            details: errorData.details
+          })
+          
+          if (response.status === 401 || response.status === 403) {
+            console.error('🔐 Authentication issue - token may be invalid or missing calendar scopes')
+            console.error('💡 Try re-authenticating with Google and granting calendar permissions')
           }
         }
       } catch (error) {
-        console.error('Error fetching user calendars:', error)
+        console.error('❌ Error fetching user calendars:', error)
       }
     }
     

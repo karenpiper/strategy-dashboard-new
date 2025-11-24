@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { fetchThumbnail, parseVideoUrl } from '@/lib/video-thumbnails'
 
 // GET - Fetch all videos with optional search and filter
 export async function GET(request: NextRequest) {
@@ -172,13 +173,27 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Auto-fetch thumbnail if not provided
+    let finalThumbnailUrl = thumbnail_url
+    if (!finalThumbnailUrl && video_url) {
+      try {
+        const fetchedThumbnail = await fetchThumbnail(video_url, detectedPlatform)
+        if (fetchedThumbnail) {
+          finalThumbnailUrl = fetchedThumbnail
+        }
+      } catch (error) {
+        console.error('Error fetching thumbnail:', error)
+        // Continue without thumbnail if fetch fails
+      }
+    }
+
     const { data, error } = await supabase
       .from('videos')
       .insert({
         title,
         video_url,
         description: description || null,
-        thumbnail_url: thumbnail_url || null,
+        thumbnail_url: finalThumbnailUrl || null,
         category: category || null,
         tags: tagsArray,
         platform: detectedPlatform || null,
@@ -277,15 +292,30 @@ export async function PUT(request: NextRequest) {
     if (video_url !== undefined) {
       updateData.video_url = video_url
       // Re-detect platform if URL changed
+      let detectedPlatform = updateData.platform
       if (video_url) {
         if (video_url.includes('youtube.com') || video_url.includes('youtu.be')) {
-          updateData.platform = 'youtube'
+          detectedPlatform = 'youtube'
         } else if (video_url.includes('vimeo.com')) {
-          updateData.platform = 'vimeo'
+          detectedPlatform = 'vimeo'
         } else if (video_url.includes('zoom.us')) {
-          updateData.platform = 'zoom'
+          detectedPlatform = 'zoom'
         } else {
-          updateData.platform = 'direct'
+          detectedPlatform = 'direct'
+        }
+        updateData.platform = detectedPlatform
+
+        // Auto-fetch thumbnail if URL changed and thumbnail wasn't explicitly provided
+        if (thumbnail_url === undefined && video_url) {
+          try {
+            const fetchedThumbnail = await fetchThumbnail(video_url, detectedPlatform)
+            if (fetchedThumbnail) {
+              updateData.thumbnail_url = fetchedThumbnail
+            }
+          } catch (error) {
+            console.error('Error fetching thumbnail:', error)
+            // Continue without updating thumbnail if fetch fails
+          }
         }
       }
     }

@@ -8,6 +8,7 @@ interface VideoEmbedProps {
   videoUrl: string
   title?: string
   platform?: string | null
+  thumbnailUrl?: string | null
   className?: string
   aspectRatio?: '16/9' | '4/3' | '1/1'
 }
@@ -18,6 +19,7 @@ export function VideoEmbed({
   videoUrl, 
   title, 
   platform,
+  thumbnailUrl,
   className = '',
   aspectRatio = '16/9'
 }: VideoEmbedProps) {
