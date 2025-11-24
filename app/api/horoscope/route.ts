@@ -253,26 +253,36 @@ export async function GET(request: NextRequest) {
     // Skip this check if force regeneration is requested
     if (cachedHoroscope && !forceRegenerate) {
       if (cachedHoroscope.horoscope_text && cachedHoroscope.horoscope_text.trim() !== '') {
-        console.log('✅ FOUND cached horoscope text in database - RETURNING CACHED (NO API CALL)')
-        console.log('   ⚠️ This horoscope was NOT generated via n8n - it is cached from a previous generation')
-        console.log('   To regenerate with n8n, add ?force=true to the URL')
-        console.log('   Text length:', cachedHoroscope.horoscope_text.length)
-        console.log('   Text preview:', cachedHoroscope.horoscope_text.substring(0, 100) + '...')
-        console.log('   Date:', cachedHoroscope.date)
-        console.log('   Generated at:', cachedHoroscope.generated_at)
-        console.log('   Image URL:', cachedHoroscope.image_url || 'MISSING')
-        // Note: prompt_slots_json may not be in the select query, so we check safely
+        // Check if this horoscope was generated with the new n8n system
+        // Old horoscopes won't have prompt_slots_json
         const hasPromptSlots = 'prompt_slots_json' in cachedHoroscope && !!cachedHoroscope.prompt_slots_json
-        console.log('   Has prompt slots:', hasPromptSlots)
-        return NextResponse.json({
-          star_sign: cachedHoroscope.star_sign,
-          horoscope_text: cachedHoroscope.horoscope_text,
-          horoscope_dos: cachedHoroscope.horoscope_dos || [],
-          horoscope_donts: cachedHoroscope.horoscope_donts || [],
-          image_url: cachedHoroscope.image_url || '',
-          character_name: cachedHoroscope.character_name || null,
-          cached: true,
-        })
+        
+        if (!hasPromptSlots) {
+          console.log('🔄 FOUND old cached horoscope (pre-n8n system) - will regenerate with n8n')
+          console.log('   This horoscope was generated before n8n integration')
+          console.log('   Text length:', cachedHoroscope.horoscope_text.length)
+          console.log('   Date:', cachedHoroscope.date)
+          console.log('   Generated at:', cachedHoroscope.generated_at)
+          // Don't return - continue to generate new horoscope via n8n
+        } else {
+          console.log('✅ FOUND cached horoscope text in database - RETURNING CACHED (NO API CALL)')
+          console.log('   This horoscope was generated via n8n system')
+          console.log('   Text length:', cachedHoroscope.horoscope_text.length)
+          console.log('   Text preview:', cachedHoroscope.horoscope_text.substring(0, 100) + '...')
+          console.log('   Date:', cachedHoroscope.date)
+          console.log('   Generated at:', cachedHoroscope.generated_at)
+          console.log('   Image URL:', cachedHoroscope.image_url || 'MISSING')
+          console.log('   Has prompt slots:', hasPromptSlots)
+          return NextResponse.json({
+            star_sign: cachedHoroscope.star_sign,
+            horoscope_text: cachedHoroscope.horoscope_text,
+            horoscope_dos: cachedHoroscope.horoscope_dos || [],
+            horoscope_donts: cachedHoroscope.horoscope_donts || [],
+            image_url: cachedHoroscope.image_url || '',
+            character_name: cachedHoroscope.character_name || null,
+            cached: true,
+          })
+        }
       } else {
         // Record exists but text is empty - this shouldn't happen, but don't regenerate
         console.log('⚠️ WARNING: Record exists for today but horoscope_text is empty/null')
