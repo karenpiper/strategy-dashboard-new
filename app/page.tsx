@@ -3710,38 +3710,6 @@ export default function TeamDashboard() {
           )}
         </p>
 
-        <div className="mb-6">
-          {(() => {
-            // RED SYSTEM: White/Black bg with Ocean Blue accent (Ocean Blue only as accent, not background)
-            const searchStyle = mode === 'chaos' 
-              ? { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
-              : mode === 'chill'
-              ? { bg: 'bg-white', border: 'border-0', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with Ocean Blue accent
-              : { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
-            
-            return (
-              <Card className={`${searchStyle.bg} ${searchStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
-                    style={searchStyle.glow ? { boxShadow: `0 0 40px ${searchStyle.glow}` } : {}}
-              >
-                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: searchStyle.accent }}>
-                  <Search className="w-4 h-4" />
-                  <span className="uppercase tracking-wider font-black text-xs">Find Anything</span>
-                </div>
-                <h2 className={`text-4xl font-black mb-6 uppercase ${searchStyle.text}`}>SEARCH</h2>
-                <div className="relative">
-                  <Input 
-                    placeholder="Resources, people, projects..."
-                    className={`${mode === 'chaos' ? 'bg-black/40 border-zinc-700' : mode === 'chill' ? 'bg-[#F5E6D3]/50 border-[#8B4444]/30' : 'bg-black/40 border-zinc-700'} ${searchStyle.text} placeholder:${searchStyle.text}/50 rounded-xl h-14 pr-14 font-medium`}
-                  />
-                  <Button className="absolute right-2 top-2 rounded-lg h-10 w-10 p-0" style={{ backgroundColor: searchStyle.accent, color: mode === 'chill' ? '#4A1818' : '#FFFFFF' }}>
-                    <Search className="w-5 h-5" />
-                  </Button>
-                </div>
-              </Card>
-            )
-          })()}
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-stretch">
           {/* Ask The Hive */}
           {(() => {
@@ -3831,33 +3799,56 @@ export default function TeamDashboard() {
             )
           })()}
 
-          {/* Library - Most Read Resources */}
+          {/* Must Reads */}
           {(() => {
             // RED SYSTEM: Peach bg with Ocean Blue accent (no colored borders on colored backgrounds)
-            const libraryStyle = mode === 'chaos' 
+            const mustReadsStyle = mode === 'chaos' 
               ? { bg: 'bg-[#FFD4C4]', border: 'border-0', glow: '', text: 'text-black', accent: '#00A3E0' } // Peach bg with Ocean Blue accent
               : mode === 'chill'
               ? { bg: 'bg-white', border: 'border border-[#FFD4C4]/30', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with colored border
               : { bg: 'bg-[#000000]', border: 'border border-[#FFD4C4]', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with colored border
             
             return (
-              <Card className={`${libraryStyle.bg} ${libraryStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
-                    style={libraryStyle.glow ? { boxShadow: `0 0 40px ${libraryStyle.glow}` } : {}}
+              <Card className={`${mustReadsStyle.bg} ${mustReadsStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
+                    style={mustReadsStyle.glow ? { boxShadow: `0 0 40px ${mustReadsStyle.glow}` } : {}}
               >
-                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: libraryStyle.accent }}>
+                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: mustReadsStyle.accent }}>
                   <FileText className="w-4 h-4" />
-                  <span className="uppercase tracking-wider font-black text-xs">Most Read</span>
+                  <span className="uppercase tracking-wider font-black text-xs">Latest</span>
                 </div>
-                <h2 className={`text-3xl font-black mb-6 uppercase ${libraryStyle.text}`}>LIBRARY</h2>
-                <div className="space-y-3 mb-4 flex-1">
-                  <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2`} style={{ borderColor: `${libraryStyle.accent}40` }}>
-                    <p className={`text-sm font-black mb-1 ${libraryStyle.text}`}>Most read resources</p>
-                    <p className={`text-xs font-medium ${libraryStyle.text}/70`}>Library section coming soon</p>
+                <h2 className={`text-3xl font-black mb-4 uppercase ${mustReadsStyle.text}`}>MUST<br/>READS</h2>
+                {mustReadsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin" style={{ color: mustReadsStyle.accent }} />
                   </div>
-                </div>
-                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#00A3E0] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#00A3E0] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
-                  View Library
-                </Button>
+                ) : latestMustReads.length > 0 ? (
+                  <div className="space-y-3 flex-1">
+                    {latestMustReads.map((read) => (
+                      <a
+                        key={read.id}
+                        href={read.article_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`block ${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2 hover:opacity-80 transition-all`}
+                        style={{ borderColor: `${mustReadsStyle.accent}40` }}
+                      >
+                        <p className={`text-sm font-black mb-1 ${mustReadsStyle.text} line-clamp-2`}>{read.article_title}</p>
+                        <p className={`text-xs ${mustReadsStyle.text}/60`}>
+                          {new Date(read.created_at).toLocaleDateString()}
+                        </p>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className={`text-sm ${mustReadsStyle.text}/60`}>No must reads yet</p>
+                  </div>
+                )}
+                <Link href="/admin/must-read">
+                  <Button className={`w-full mt-4 ${mode === 'chaos' ? 'bg-black text-[#00A3E0] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#00A3E0] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
+                    View All Must Reads
+                  </Button>
+                </Link>
               </Card>
             )
           })()}
@@ -3895,7 +3886,7 @@ export default function TeamDashboard() {
           )}
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 items-stretch">
           {/* Playlist */}
           {(() => {
             const playlistStyle = mode === 'chaos' ? getSpecificCardStyle('playlist') : getCardStyle('vibes')
@@ -3942,55 +3933,6 @@ export default function TeamDashboard() {
             )
           })()}
 
-          {/* Must Reads */}
-          {(() => {
-            // RED SYSTEM: Use similar styling to other cards
-            const mustReadsStyle = mode === 'chaos' 
-              ? { bg: 'bg-[#000000]', border: 'border border-[#00A3E0]', glow: '', text: 'text-white', accent: '#00A3E0' }
-              : mode === 'chill'
-              ? { bg: 'bg-white', border: 'border border-[#00A3E0]/30', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' }
-              : { bg: 'bg-[#000000]', border: 'border border-[#00A3E0]', glow: '', text: 'text-white', accent: '#00A3E0' }
-            
-            return (
-              <Card className={`${mustReadsStyle.bg} ${mustReadsStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
-                    style={mustReadsStyle.glow ? { boxShadow: `0 0 40px ${mustReadsStyle.glow}` } : {}}
-              >
-                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: mustReadsStyle.accent }}>
-                  <FileText className="w-4 h-4" />
-                  <span className="uppercase tracking-wider font-black text-xs">Latest</span>
-                </div>
-                <h2 className={`text-3xl font-black mb-4 uppercase ${mustReadsStyle.text}`}>MUST<br/>READS</h2>
-                {mustReadsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin" style={{ color: mustReadsStyle.accent }} />
-                  </div>
-                ) : latestMustReads.length > 0 ? (
-                  <div className="space-y-3 flex-1">
-                    {latestMustReads.map((read) => (
-                      <a
-                        key={read.id}
-                        href={read.article_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`block ${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2 hover:opacity-80 transition-all`}
-                        style={{ borderColor: `${mustReadsStyle.accent}40` }}
-                      >
-                        <p className={`text-sm font-black mb-1 ${mustReadsStyle.text} line-clamp-2`}>{read.article_title}</p>
-                        <p className={`text-xs ${mustReadsStyle.text}/60`}>
-                          {new Date(read.created_at).toLocaleDateString()}
-                        </p>
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center">
-                    <p className={`text-sm ${mustReadsStyle.text}/60`}>No must reads yet</p>
-                  </div>
-                )}
-              </Card>
-            )
-          })()}
-
           {/* Inspiration War */}
           {(() => {
             const inspirationStyle = mode === 'chaos' ? getSpecificCardStyle('inspiration-war') : getCardStyle('hero')
@@ -4024,6 +3966,38 @@ export default function TeamDashboard() {
                 <div className="flex items-center justify-between text-xs">
                   <p className={`font-black ${inspirationStyle.text}`}>🎨 24 entries</p>
                   <p className={`font-black ${inspirationStyle.text}`}>8h to vote</p>
+                </div>
+              </Card>
+            )
+          })()}
+        </div>
+
+        <div className="mb-6">
+          {(() => {
+            // RED SYSTEM: White/Black bg with Ocean Blue accent (Ocean Blue only as accent, not background)
+            const searchStyle = mode === 'chaos' 
+              ? { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
+              : mode === 'chill'
+              ? { bg: 'bg-white', border: 'border-0', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with Ocean Blue accent
+              : { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
+            
+            return (
+              <Card className={`${searchStyle.bg} ${searchStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
+                    style={searchStyle.glow ? { boxShadow: `0 0 40px ${searchStyle.glow}` } : {}}
+              >
+                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: searchStyle.accent }}>
+                  <Search className="w-4 h-4" />
+                  <span className="uppercase tracking-wider font-black text-xs">Find Anything</span>
+                </div>
+                <h2 className={`text-4xl font-black mb-6 uppercase ${searchStyle.text}`}>SEARCH</h2>
+                <div className="relative">
+                  <Input 
+                    placeholder="Resources, people, projects..."
+                    className={`${mode === 'chaos' ? 'bg-black/40 border-zinc-700' : mode === 'chill' ? 'bg-[#F5E6D3]/50 border-[#8B4444]/30' : 'bg-black/40 border-zinc-700'} ${searchStyle.text} placeholder:${searchStyle.text}/50 rounded-xl h-14 pr-14 font-medium`}
+                  />
+                  <Button className="absolute right-2 top-2 rounded-lg h-10 w-10 p-0" style={{ backgroundColor: searchStyle.accent, color: mode === 'chill' ? '#4A1818' : '#FFFFFF' }}>
+                    <Search className="w-5 h-5" />
+                  </Button>
                 </div>
               </Card>
             )
