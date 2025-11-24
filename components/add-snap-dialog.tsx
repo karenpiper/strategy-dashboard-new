@@ -48,7 +48,18 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess }: AddSnapDialogPr
   
   // Make overlay transparent and ensure dialog content is opaque
   useEffect(() => {
-    if (open) {
+    if (!open) return
+    
+    // Get background color based on mode
+    let bgColor = '#1a1a1a' // default dark (chaos)
+    if (mode === 'chill') {
+      bgColor = '#FFFFFF'
+    } else if (mode === 'code') {
+      bgColor = '#000000'
+    }
+    
+    const applyStyles = () => {
+      // Make overlay transparent
       const overlay = document.querySelector('[data-radix-dialog-overlay]')
       if (overlay) {
         const overlayEl = overlay as HTMLElement
@@ -56,23 +67,87 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess }: AddSnapDialogPr
         overlayEl.style.setProperty('opacity', '0', 'important')
       }
       
-      // Ensure dialog content is opaque
-      const dialogContent = document.querySelector('[data-radix-dialog-content]')
-      if (dialogContent) {
-        const contentEl = dialogContent as HTMLElement
-        // Use a solid background color based on mode
-        let bgColor = '#1a1a1a' // default dark (chaos)
-        if (mode === 'chill') {
-          bgColor = '#FFFFFF'
-        } else if (mode === 'code') {
-          bgColor = '#000000'
+      // Find dialog content - try multiple times with different delays
+      const findDialog = () => {
+        // Try data attribute
+        let dialog = document.querySelector('[data-radix-dialog-content]') as HTMLElement
+        
+        // Try role attribute
+        if (!dialog) {
+          const dialogs = document.querySelectorAll('[role="dialog"]')
+          for (const d of dialogs) {
+            const styles = window.getComputedStyle(d)
+            if (styles.position === 'fixed' && (styles.zIndex === '50' || styles.zIndex === '50px')) {
+              dialog = d as HTMLElement
+              break
+            }
+          }
         }
-        contentEl.style.setProperty('background-color', bgColor, 'important')
-        contentEl.style.setProperty('opacity', '1', 'important')
-        contentEl.style.setProperty('backdrop-filter', 'none', 'important')
+        
+        if (dialog) {
+          dialog.style.setProperty('background-color', bgColor, 'important')
+          dialog.style.setProperty('opacity', '1', 'important')
+          dialog.style.setProperty('backdrop-filter', 'none', 'important')
+          dialog.style.setProperty('background', bgColor, 'important')
+          
+          // Force remove any background classes
+          dialog.classList.remove('bg-transparent', 'bg-background', 'bg-background/0', 'bg-background/50')
+          
+          return true
+        }
+        return false
       }
+      
+      // Try multiple times
+      findDialog()
+      setTimeout(findDialog, 0)
+      setTimeout(findDialog, 50)
+      setTimeout(findDialog, 100)
+      setTimeout(findDialog, 200)
+    }
+    
+    // Apply styles with multiple attempts
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        applyStyles()
+      })
+    })
+    
+    // Also use MutationObserver as backup
+    const observer = new MutationObserver(() => {
+      const overlay = document.querySelector('[data-radix-dialog-overlay]')
+      if (overlay) {
+        const overlayEl = overlay as HTMLElement
+        overlayEl.style.setProperty('background-color', 'transparent', 'important')
+        overlayEl.style.setProperty('opacity', '0', 'important')
+      }
+      
+      const dialog = document.querySelector('[data-radix-dialog-content]') as HTMLElement
+      if (dialog) {
+        dialog.style.setProperty('background-color', bgColor, 'important')
+        dialog.style.setProperty('opacity', '1', 'important')
+        dialog.style.setProperty('backdrop-filter', 'none', 'important')
+        dialog.style.setProperty('background', bgColor, 'important')
+        dialog.classList.remove('bg-transparent', 'bg-background', 'bg-background/0', 'bg-background/50')
+      }
+    })
+    
+    observer.observe(document.body, { childList: true, subtree: true })
+    
+    return () => {
+      observer.disconnect()
     }
   }, [open, mode])
+  
+  // Get background color based on mode
+  const getBackgroundColor = () => {
+    if (mode === 'chill') {
+      return '#FFFFFF'
+    } else if (mode === 'code') {
+      return '#000000'
+    }
+    return '#1a1a1a' // default dark (chaos)
+  }
   
   // Fetch team members for autocomplete
   useEffect(() => {
@@ -204,8 +279,13 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess }: AddSnapDialogPr
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-lg bg-background"
-        style={{ opacity: 1 }}
+        className={`sm:max-w-lg`}
+        style={{ 
+          backgroundColor: getBackgroundColor(),
+          opacity: 1,
+          backdropFilter: 'none',
+          background: getBackgroundColor()
+        }}
       >
         <DialogHeader>
           <DialogTitle>Add a Snap</DialogTitle>
