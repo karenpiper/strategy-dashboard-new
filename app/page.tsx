@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, Calendar, Music, FileText, MessageCircle, Trophy, TrendingUp, Users, Zap, Star, Heart, Coffee, Lightbulb, ChevronRight, ChevronLeft, Play, Pause, CheckCircle, Clock, ArrowRight, Video, Sparkles, Loader2, Download, Bot, Info, ExternalLink, User, ChevronDown, ChevronUp, Plus } from 'lucide-react'
+import { Search, Calendar, Music, FileText, MessageCircle, Trophy, TrendingUp, Users, Zap, Star, Heart, Coffee, Lightbulb, ChevronRight, ChevronLeft, Play, Pause, CheckCircle, Clock, ArrowRight, Video, Sparkles, Loader2, Download, Bot, Info, ExternalLink, User, ChevronDown, ChevronUp, Plus, Check } from 'lucide-react'
 import { AccountMenu } from '@/components/account-menu'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -2551,8 +2551,8 @@ export default function TeamDashboard() {
               ]
               return (
                 <Card 
-                  className={`${style.bg} ${style.border} ${eventsExpanded ? 'p-6 flex-[0_0_auto]' : 'py-3 px-6 flex-[0_0_auto]'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 h-full flex flex-col`} 
-                  style={eventsExpanded ? { minHeight: '0' } : { height: '80px', maxHeight: '80px', minHeight: '80px' }}
+                  className={`${style.bg} ${style.border} ${eventsExpanded ? 'p-6 flex-[0_0_auto] h-full' : 'py-3 px-6 flex-[0_0_auto]'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex flex-col`} 
+                  style={eventsExpanded ? { minHeight: '0' } : { height: '80px', maxHeight: '80px', minHeight: '80px', overflow: 'hidden' }}
                 >
                   {eventsExpanded ? (
                     /* Vertical stats view when expanded - Bold and clean */
@@ -2929,6 +2929,14 @@ export default function TeamDashboard() {
                 }
               }
               
+              // Check if a work sample matches a won pipeline project
+              const isWonProject = (projectName: string) => {
+                return pipelineData.some(p => 
+                  p.status === 'Won' && 
+                  p.name.toLowerCase().trim() === projectName.toLowerCase().trim()
+                )
+              }
+              
               return (
                 <div className="flex-1 p-6">
                   <div className="flex items-center justify-between mb-6">
@@ -2995,20 +3003,27 @@ export default function TeamDashboard() {
                               {sample.date ? new Date(sample.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}
                             </p>
                             
-                            {/* Title with external link */}
-                            {(sample.file_link || sample.file_url) ? (
-                              <a
-                                href={sample.file_link || sample.file_url || '#'}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={`text-base font-black uppercase ${textStyle} hover:opacity-70 transition-opacity flex items-center gap-1`}
-                              >
-                                {sample.project_name}
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            ) : (
-                              <h3 className={`text-base font-black uppercase ${textStyle}`}>{sample.project_name}</h3>
-                            )}
+                            {/* Title with external link and won badge */}
+                            <div className="flex items-center gap-2">
+                              {(sample.file_link || sample.file_url) ? (
+                                <a
+                                  href={sample.file_link || sample.file_url || '#'}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`text-base font-black uppercase ${textStyle} hover:opacity-70 transition-opacity flex items-center gap-1`}
+                                >
+                                  {sample.project_name}
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              ) : (
+                                <h3 className={`text-base font-black uppercase ${textStyle}`}>{sample.project_name}</h3>
+                              )}
+                              {isWonProject(sample.project_name) && (
+                                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/20 border border-green-500/40">
+                                  <Check className="w-3 h-3 text-green-500" />
+                                </div>
+                              )}
+                            </div>
                             
                             {/* Client as badge */}
                             {sample.client && (
