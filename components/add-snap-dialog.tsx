@@ -44,16 +44,14 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess }: AddSnapDialogPr
   const suggestionsRef = useRef<HTMLDivElement>(null)
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   
-  // Make overlay fully opaque (no transparency)
+  // Make overlay transparent
   useEffect(() => {
     if (open) {
       const overlay = document.querySelector('[data-radix-dialog-overlay]')
       if (overlay) {
         const overlayEl = overlay as HTMLElement
-        overlayEl.style.setProperty('background-color', 'rgb(0, 0, 0)', 'important')
-        overlayEl.style.setProperty('opacity', '1', 'important')
-        overlayEl.classList.remove('bg-black/80')
-        overlayEl.classList.add('bg-black')
+        overlayEl.style.setProperty('background-color', 'transparent', 'important')
+        overlayEl.style.setProperty('opacity', '0', 'important')
       }
     }
   }, [open])
