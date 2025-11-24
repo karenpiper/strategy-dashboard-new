@@ -550,83 +550,58 @@ export default function ProfilePage() {
 
       <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
         <div className="flex gap-6">
-          {/* Left Sidebar Card - Matching Snaps Page Style */}
-          <div 
-            className={`w-80 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit overflow-hidden`} 
-            style={{ 
-              borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#FFFFFF',
-              borderWidth: mode === 'chaos' ? '2px' : mode === 'chill' ? '2px' : '2px',
-              borderRadius: mode === 'code' ? '0' : '2.5rem'
-            }}
-          >
-            <div className="mb-6">
-              <h3 className={`text-xs uppercase tracking-wider font-black mb-4 ${mode === 'chill' ? 'text-[#4A1818]' : mode === 'chaos' ? 'text-[#00C896]' : 'text-white'}`}>
-                ▼ NAVIGATION
-              </h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => setActiveTab('profile')}
-                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
-                    activeTab === 'profile'
-                      ? mode === 'chaos'
-                        ? 'bg-[#00C896] text-black'
-                        : mode === 'chill'
-                        ? 'bg-[#C8D961] text-[#4A1818]'
-                        : 'bg-white text-black'
-                      : mode === 'chaos'
-                      ? 'bg-[#00C896]/30 text-black/80 hover:bg-[#00C896]/50 text-black'
-                      : mode === 'chill'
-                      ? 'bg-white/30 text-[#4A1818]/60 hover:bg-white/50 text-[#4A1818]'
-                      : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
-                  }`}
-                >
-                  <User className="w-4 h-4" />
-                  <span className="font-black uppercase text-sm">Profile</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('avatars')}
-                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
-                    activeTab === 'avatars'
-                      ? mode === 'chaos'
-                        ? 'bg-[#00C896] text-black'
-                        : mode === 'chill'
-                        ? 'bg-[#C8D961] text-[#4A1818]'
-                        : 'bg-white text-black'
-                      : mode === 'chaos'
-                      ? 'bg-[#00C896]/30 text-black/80 hover:bg-[#00C896]/50 text-black'
-                      : mode === 'chill'
-                      ? 'bg-white/30 text-[#4A1818]/60 hover:bg-white/50 text-[#4A1818]'
-                      : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
-                  }`}
-                >
-                  <ImageIcon className="w-4 h-4" />
-                  <span className="font-black uppercase text-sm">Avatars</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('activity')}
-                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
-                    activeTab === 'activity'
-                      ? mode === 'chaos'
-                        ? 'bg-[#00C896] text-black'
-                        : mode === 'chill'
-                        ? 'bg-[#C8D961] text-[#4A1818]'
-                        : 'bg-white text-black'
-                      : mode === 'chaos'
-                      ? 'bg-[#00C896]/30 text-black/80 hover:bg-[#00C896]/50 text-black'
-                      : mode === 'chill'
-                      ? 'bg-white/30 text-[#4A1818]/60 hover:bg-white/50 text-[#4A1818]'
-                      : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
-                  }`}
-                >
-                  <Activity className="w-4 h-4" />
-                  <span className="font-black uppercase text-sm">Activity</span>
-                </button>
-              </div>
+          {/* Left Sidebar Card - Matching Admin Panel Style */}
+          <Card className={`w-1/4 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-4 flex flex-col sticky top-24 h-fit`} style={{ 
+            borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#FFFFFF',
+            borderWidth: mode === 'chaos' ? '2px' : '0px'
+          }}>
+            <div className="mb-4">
+              <h1 className={`text-xl font-black uppercase tracking-wider ${getTextClass()} mb-1`}>Profile</h1>
             </div>
-          </div>
+            
+            {/* Navigation */}
+            <nav className="space-y-0.5 flex-1">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`w-full text-left px-2 py-1.5 ${getRoundedClass('rounded-lg')} transition-colors flex items-center gap-2 text-xs ${
+                  getNavItemStyle(activeTab === 'profile')
+                }`}
+                style={{
+                  borderRadius: mode === 'code' ? '0' : mode === 'chaos' ? '1.5rem' : mode === 'chill' ? '1rem' : '0.5rem'
+                }}
+              >
+                <User className="w-3.5 h-3.5" />
+                <span className="font-medium uppercase tracking-wider text-xs">Profile</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('avatars')}
+                className={`w-full text-left px-2 py-1.5 ${getRoundedClass('rounded-lg')} transition-colors flex items-center gap-2 text-xs ${
+                  getNavItemStyle(activeTab === 'avatars')
+                }`}
+                style={{
+                  borderRadius: mode === 'code' ? '0' : mode === 'chaos' ? '1.5rem' : mode === 'chill' ? '1rem' : '0.5rem'
+                }}
+              >
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span className="font-medium uppercase tracking-wider text-xs">Avatars</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('activity')}
+                className={`w-full text-left px-2 py-1.5 ${getRoundedClass('rounded-lg')} transition-colors flex items-center gap-2 text-xs ${
+                  getNavItemStyle(activeTab === 'activity')
+                }`}
+                style={{
+                  borderRadius: mode === 'code' ? '0' : mode === 'chaos' ? '1.5rem' : mode === 'chill' ? '1rem' : '0.5rem'
+                }}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span className="font-medium uppercase tracking-wider text-xs">Activity</span>
+              </button>
+            </nav>
+          </Card>
 
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col">
+          {/* Right Content Area - 3/4 width */}
+          <div className="w-3/4">
             {activeTab === 'profile' && (
               <>
                 {/* Header */}
