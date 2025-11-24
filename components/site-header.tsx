@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useMode } from '@/contexts/mode-context'
 import { useAuth } from '@/contexts/auth-context'
 import { AccountMenu } from '@/components/account-menu'
+import { ThemeSwitcher } from '@/components/theme-switcher'
 import { usePathname } from 'next/navigation'
 import { ReactNode } from 'react'
 
@@ -101,6 +102,7 @@ export function SiteHeader({ rightContent }: SiteHeaderProps = {}) {
         </div>
         <div className="flex items-center gap-4">
           {rightContent}
+          <ThemeSwitcher />
           {user && <AccountMenu />}
         </div>
       </div>
