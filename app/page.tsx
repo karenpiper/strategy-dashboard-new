@@ -2680,9 +2680,6 @@ export default function TeamDashboard() {
                     className={`${pipelineStyle.bg} ${pipelineStyle.border} ${eventsExpanded ? 'p-6 flex-[2]' : 'p-6'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 overflow-hidden`}
                     style={pipelineStyle.glow ? { boxShadow: `0 0 40px ${pipelineStyle.glow}` } : {}}
                   >
-                    {!eventsExpanded && (
-                      <h2 className={`text-3xl mb-3 font-black uppercase ${pipelineStyle.text} transition-all duration-300`}>PIPELINE</h2>
-                    )}
                     
                     {eventsExpanded ? (
                       /* Stats view when events expanded - Clean vertical layout */
@@ -2734,63 +2731,50 @@ export default function TeamDashboard() {
                         </div>
                       </div>
                     ) : (
-                      /* Full view when events not expanded */
-                      <div className="grid grid-cols-1 lg:grid-cols-2 divide-x" style={{ borderColor: `${borderColor}40` }}>
-                      {/* Left Half - IN PROGRESS */}
-                      <div className="flex flex-col pr-4">
-                        <div className="flex items-center gap-3 mb-4">
-                          <h3 className={`text-lg font-semibold ${pipelineStyle.text}`}>IN PROGRESS</h3>
-                          <Badge 
-                            variant="secondary" 
-                            className="text-[10px]"
-                            style={{ 
-                              backgroundColor: `${borderColor}20`,
-                              color: borderColor,
-                              borderColor: borderColor
-                            }}
-                          >
-                            {pipelineLoading ? '0' : inProgressProjects.length} {inProgressProjects.length === 1 ? 'project' : 'projects'}
-                          </Badge>
-                        </div>
-                        
-                        {/* Scrollable list - Fixed height to align bottoms */}
-                        <div className="overflow-y-auto" style={{ height: '300px' }}>
-                          <div className="space-y-1">
-                            {!pipelineLoading && inProgressProjects.length > 0 ? (
-                              inProgressProjects.map((project, index) => 
-                                renderProjectItem(project, index, inProgressProjects.length)
-                              )
-                            ) : (
-                              <div className={`${pipelineStyle.text}/60 text-sm py-4`}>
-                                No projects in progress
-                              </div>
-                            )}
+                      /* Default 3-column view when events not expanded */
+                      <div className="flex flex-col h-full">
+                        <h2 className={`text-3xl mb-4 font-black uppercase ${pipelineStyle.text}`}>PIPELINE</h2>
+                        <div className="grid grid-cols-3 gap-4 flex-1">
+                          {/* Column 1: In Progress */}
+                          <div className="flex flex-col">
+                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-2 uppercase tracking-wide`}>In Progress</div>
+                            <div 
+                              className={`text-5xl font-black ${pipelineStyle.text} px-4 py-3 rounded-lg flex items-center justify-center`}
+                              style={{
+                                backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
+                              }}
+                            >
+                              {pipelineLoading ? '0' : statusCounts['In Progress']}
+                            </div>
+                          </div>
+                          
+                          {/* Column 2: Pending Decision */}
+                          <div className="flex flex-col">
+                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-2 uppercase tracking-wide`}>Pending Decision</div>
+                            <div 
+                              className={`text-5xl font-black ${pipelineStyle.text} px-4 py-3 rounded-lg flex items-center justify-center`}
+                              style={{
+                                backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
+                              }}
+                            >
+                              {pipelineLoading ? '0' : statusCounts['Pending Decision']}
+                            </div>
+                          </div>
+                          
+                          {/* Column 3: Won / Lost */}
+                          <div className="flex flex-col">
+                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-2 uppercase tracking-wide`}>Won / Lost</div>
+                            <div 
+                              className={`text-5xl font-black ${pipelineStyle.text} px-4 py-3 rounded-lg flex items-center justify-center`}
+                              style={{
+                                backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
+                              }}
+                            >
+                              {pipelineLoading ? '0' : (statusCounts['Won'] + statusCounts['Lost'])}
+                            </div>
                           </div>
                         </div>
                       </div>
-
-                      {/* Right Half - COMPLETED */}
-                      <div className="flex flex-col pl-4">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className={`text-lg font-semibold ${pipelineStyle.text}`}>COMPLETED</h3>
-                        </div>
-                        
-                        {/* Scrollable list - Fixed height to align bottoms, show one less item */}
-                        <div className="overflow-y-auto" style={{ height: '300px' }}>
-                          <div className="space-y-1">
-                            {!pipelineLoading && completedProjects.length > 0 ? (
-                              completedProjects.slice(0, Math.max(0, completedProjects.length - 1)).map((project, index) => 
-                                renderProjectItem(project, index, completedProjects.length - 1)
-                              )
-                            ) : (
-                              <div className={`${pipelineStyle.text}/60 text-sm py-4`}>
-                                No projects with status: {currentCompletedFilter}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                     )}
                 </Card>
                 
