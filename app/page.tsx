@@ -154,6 +154,13 @@ export default function TeamDashboard() {
   } | null>(null)
   const [playlistLoading, setPlaylistLoading] = useState(true)
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false)
+  const [latestMustReads, setLatestMustReads] = useState<Array<{
+    id: string
+    article_title: string
+    article_url: string
+    created_at: string
+  }>>([])
+  const [mustReadsLoading, setMustReadsLoading] = useState(true)
   
   // Get Google Calendar access token using the user's existing Google session
   const { accessToken: googleCalendarToken, loading: tokenLoading, error: tokenError } = useGoogleCalendarToken()
@@ -591,6 +598,27 @@ export default function TeamDashboard() {
     
     fetchWeeklyPlaylist()
   }, [user])
+
+  // Fetch latest must reads
+  useEffect(() => {
+    async function fetchLatestMustReads() {
+      try {
+        setMustReadsLoading(true)
+        const response = await fetch('/api/must-reads?sortBy=created_at&sortOrder=desc')
+        if (response.ok) {
+          const result = await response.json()
+          // Get the 3 latest must reads
+          setLatestMustReads((result.data || []).slice(0, 3))
+        }
+      } catch (error) {
+        console.error('Error fetching must reads:', error)
+      } finally {
+        setMustReadsLoading(false)
+      }
+    }
+    
+    fetchLatestMustReads()
+  }, [])
 
   // Fetch recent snaps for the logged-in user
   useEffect(() => {
@@ -3148,12 +3176,12 @@ export default function TeamDashboard() {
 
         <div className="mb-6">
           {(() => {
-            // RED SYSTEM: Ocean Blue bg with Coral Red accent
+            // RED SYSTEM: White/Black bg with Ocean Blue accent (Ocean Blue only as accent, not background)
             const searchStyle = mode === 'chaos' 
-              ? { bg: 'bg-[#00A3E0]', border: 'border-0', glow: '', text: 'text-black', accent: '#FF4C4C' } // Ocean Blue bg with Coral Red accent
+              ? { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
               : mode === 'chill'
-              ? { bg: 'bg-white', border: 'border border-[#00A3E0]/30', glow: '', text: 'text-[#4A1818]', accent: '#FF4C4C' } // White bg with Coral Red accent
-              : { bg: 'bg-[#000000]', border: 'border border-[#00A3E0]', glow: '', text: 'text-white', accent: '#FF4C4C' } // Black bg with Coral Red accent
+              ? { bg: 'bg-white', border: 'border-0', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with Ocean Blue accent
+              : { bg: 'bg-[#000000]', border: 'border-0', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
             
             return (
               <Card className={`${searchStyle.bg} ${searchStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')}`}
@@ -3169,7 +3197,7 @@ export default function TeamDashboard() {
                     placeholder="Resources, people, projects..."
                     className={`${mode === 'chaos' ? 'bg-black/40 border-zinc-700' : mode === 'chill' ? 'bg-[#F5E6D3]/50 border-[#8B4444]/30' : 'bg-black/40 border-zinc-700'} ${searchStyle.text} placeholder:${searchStyle.text}/50 rounded-xl h-14 pr-14 font-medium`}
                   />
-                  <Button className="absolute right-2 top-2 rounded-lg h-10 w-10 p-0" style={{ backgroundColor: searchStyle.accent, color: mode === 'chill' ? '#4A1818' : '#000000' }}>
+                  <Button className="absolute right-2 top-2 rounded-lg h-10 w-10 p-0" style={{ backgroundColor: searchStyle.accent, color: mode === 'chill' ? '#4A1818' : '#FFFFFF' }}>
                     <Search className="w-5 h-5" />
                   </Button>
                 </div>
@@ -3181,12 +3209,12 @@ export default function TeamDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-stretch">
           {/* Ask The Hive */}
           {(() => {
-            // RED SYSTEM: Coral Red bg with Crimson accent
+            // RED SYSTEM: Coral Red bg with Crimson accent (no colored borders on colored backgrounds)
             const hiveStyle = mode === 'chaos' 
               ? { bg: 'bg-[#FF4C4C]', border: 'border-0', glow: '', text: 'text-black', accent: '#C41E3A' } // Coral Red bg with Crimson accent
               : mode === 'chill'
-              ? { bg: 'bg-white', border: 'border border-[#FF4C4C]/30', glow: '', text: 'text-[#4A1818]', accent: '#C41E3A' } // White bg with Crimson accent
-              : { bg: 'bg-[#000000]', border: 'border border-[#FF4C4C]', glow: '', text: 'text-white', accent: '#C41E3A' } // Black bg with Crimson accent
+              ? { bg: 'bg-white', border: 'border border-[#FF4C4C]/30', glow: '', text: 'text-[#4A1818]', accent: '#C41E3A' } // White bg with colored border
+              : { bg: 'bg-[#000000]', border: 'border border-[#FF4C4C]', glow: '', text: 'text-white', accent: '#C41E3A' } // Black bg with colored border
             
             return (
               <Card className={`${hiveStyle.bg} ${hiveStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
@@ -3217,12 +3245,12 @@ export default function TeamDashboard() {
 
           {/* Video Archive */}
           {(() => {
-            // RED SYSTEM: Crimson bg with Ocean Blue accent
+            // RED SYSTEM: Crimson bg with Ocean Blue accent (no colored borders on colored backgrounds)
             const videoStyle = mode === 'chaos' 
               ? { bg: 'bg-[#C41E3A]', border: 'border-0', glow: '', text: 'text-white', accent: '#00A3E0' } // Crimson bg with Ocean Blue accent
               : mode === 'chill'
-              ? { bg: 'bg-white', border: 'border border-[#C41E3A]/30', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with Ocean Blue accent
-              : { bg: 'bg-[#000000]', border: 'border border-[#C41E3A]', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
+              ? { bg: 'bg-white', border: 'border border-[#C41E3A]/30', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with colored border
+              : { bg: 'bg-[#000000]', border: 'border border-[#C41E3A]', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with colored border
             
             return (
               <Card className={`${videoStyle.bg} ${videoStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
@@ -3248,12 +3276,12 @@ export default function TeamDashboard() {
 
           {/* Library - Most Read Resources */}
           {(() => {
-            // RED SYSTEM: Peach bg with Ocean Blue accent
+            // RED SYSTEM: Peach bg with Ocean Blue accent (no colored borders on colored backgrounds)
             const libraryStyle = mode === 'chaos' 
               ? { bg: 'bg-[#FFD4C4]', border: 'border-0', glow: '', text: 'text-black', accent: '#00A3E0' } // Peach bg with Ocean Blue accent
               : mode === 'chill'
-              ? { bg: 'bg-white', border: 'border border-[#FFD4C4]/30', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with Ocean Blue accent
-              : { bg: 'bg-[#000000]', border: 'border border-[#FFD4C4]', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
+              ? { bg: 'bg-white', border: 'border border-[#FFD4C4]/30', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with colored border
+              : { bg: 'bg-[#000000]', border: 'border border-[#FFD4C4]', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with colored border
             
             return (
               <Card className={`${libraryStyle.bg} ${libraryStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
