@@ -2682,24 +2682,20 @@ export default function TeamDashboard() {
               }
 
               const renderWonLostItem = (project: typeof pipelineData[0], index: number) => {
-                const date = formatDate(project.due_date)
-                const displayText = project.type || project.description || 'Unknown'
+                const client = project.type || project.description || ''
+                const displayText = client ? `${client} - ${project.name}` : project.name
                 return (
-                  <div key={project.id} className="flex items-start gap-2 py-1.5">
+                  <div key={project.id} className="flex items-center gap-2 py-1">
                     {/* Dot on the left */}
                     <div 
-                      className="shrink-0 w-2 h-2 rounded-full mt-2"
+                      className="shrink-0 w-2 h-2 rounded-full"
                       style={{
                         backgroundColor: pipelineStyle.accent,
                       }}
                     />
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 text-sm">
-                      {date && (
-                        <div className={`${pipelineStyle.text}/60 mb-1 text-xs`}>{date}</div>
-                      )}
-                      <div className={`font-bold ${pipelineStyle.text} truncate`}>{project.name}</div>
-                      <div className={`${pipelineStyle.text}/60 truncate text-xs`}>{displayText}</div>
+                    {/* Content - single line */}
+                    <div className={`text-sm ${pipelineStyle.text} truncate`}>
+                      {displayText}
                     </div>
                   </div>
                 )
@@ -2765,7 +2761,7 @@ export default function TeamDashboard() {
                       /* 3-column view when collapsed */
                       <div className="flex flex-col h-full">
                         <h2 className={`text-2xl mb-4 font-black uppercase ${pipelineStyle.text}`}>PIPELINE</h2>
-                        <div className="grid grid-cols-3 gap-4 flex-1 overflow-hidden" style={{ maxHeight: '200px', height: '200px' }}>
+                        <div className="grid grid-cols-3 gap-4 flex-1 overflow-hidden" style={{ maxHeight: '400px', height: '400px' }}>
                           {/* Column 1: In Progress */}
                           <div className="flex flex-col overflow-hidden h-full min-w-0">
                             <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 uppercase tracking-wide truncate`}>In Progress</div>
@@ -3221,23 +3217,29 @@ export default function TeamDashboard() {
 
           {/* Video Archive */}
           {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('loom-standup') : getCardStyle('team')
+            // RED SYSTEM: Crimson bg with Ocean Blue accent
+            const videoStyle = mode === 'chaos' 
+              ? { bg: 'bg-[#C41E3A]', border: 'border-0', glow: '', text: 'text-white', accent: '#00A3E0' } // Crimson bg with Ocean Blue accent
+              : mode === 'chill'
+              ? { bg: 'bg-white', border: 'border border-[#C41E3A]/30', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with Ocean Blue accent
+              : { bg: 'bg-[#000000]', border: 'border border-[#C41E3A]', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
+            
             return (
-              <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+              <Card className={`${videoStyle.bg} ${videoStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
+                    style={videoStyle.glow ? { boxShadow: `0 0 40px ${videoStyle.glow}` } : {}}
               >
-                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
+                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: videoStyle.accent }}>
                   <Video className="w-4 h-4" />
                   <span className="uppercase tracking-wider font-black text-xs">Archive</span>
                 </div>
-                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>VIDEO<br/>ARCHIVE</h2>
+                <h2 className={`text-3xl font-black mb-6 uppercase ${videoStyle.text}`}>VIDEO<br/>ARCHIVE</h2>
                 <div className="space-y-3 mb-4 flex-1">
-                  <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2`} style={{ borderColor: `${style.accent}40` }}>
-                    <p className={`text-sm font-black mb-1 ${style.text}`}>Video player coming soon</p>
-                    <p className={`text-xs font-medium ${style.text}/70`}>Archive will be available here</p>
+                  <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2`} style={{ borderColor: `${videoStyle.accent}40` }}>
+                    <p className={`text-sm font-black mb-1 ${videoStyle.text}`}>Video player coming soon</p>
+                    <p className={`text-xs font-medium ${videoStyle.text}/70`}>Archive will be available here</p>
                   </div>
                 </div>
-                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#FFD700] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FFD700] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
+                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#00A3E0] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#00A3E0] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
                   View Archive
                 </Button>
               </Card>
@@ -3246,12 +3248,12 @@ export default function TeamDashboard() {
 
           {/* Library - Most Read Resources */}
           {(() => {
-            // RED SYSTEM: Coral Red (#FF4C4C), Crimson (#C41E3A), Peach (#FFD4C4), Ocean Blue (#00A3E0) as accent
+            // RED SYSTEM: Peach bg with Ocean Blue accent
             const libraryStyle = mode === 'chaos' 
-              ? { bg: 'bg-[#FF4C4C]', border: 'border-0', glow: '', text: 'text-black', accent: '#00A3E0' } // Coral Red bg with Ocean Blue accent
+              ? { bg: 'bg-[#FFD4C4]', border: 'border-0', glow: '', text: 'text-black', accent: '#00A3E0' } // Peach bg with Ocean Blue accent
               : mode === 'chill'
-              ? { bg: 'bg-white', border: 'border border-[#FF4C4C]/30', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with Ocean Blue accent
-              : { bg: 'bg-[#000000]', border: 'border border-[#FF4C4C]', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
+              ? { bg: 'bg-white', border: 'border border-[#FFD4C4]/30', glow: '', text: 'text-[#4A1818]', accent: '#00A3E0' } // White bg with Ocean Blue accent
+              : { bg: 'bg-[#000000]', border: 'border border-[#FFD4C4]', glow: '', text: 'text-white', accent: '#00A3E0' } // Black bg with Ocean Blue accent
             
             return (
               <Card className={`${libraryStyle.bg} ${libraryStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
