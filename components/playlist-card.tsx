@@ -15,6 +15,7 @@ interface PlaylistCardProps {
   date: string
   week_label?: string | null
   onClick?: () => void
+  className?: string
 }
 
 export function PlaylistCard({
@@ -26,7 +27,8 @@ export function PlaylistCard({
   curator_photo_url,
   date,
   week_label,
-  onClick
+  onClick,
+  className = ''
 }: PlaylistCardProps) {
   const { mode } = useMode()
 
@@ -56,7 +58,7 @@ export function PlaylistCard({
 
   return (
     <div 
-      className={`playlist-card w-full cursor-pointer group`}
+      className={`playlist-card w-full cursor-pointer group ${className}`}
       onClick={handleClick}
     >
       {/* Media Row: cover and vinyl with proper overlap */}

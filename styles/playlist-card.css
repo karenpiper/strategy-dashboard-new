@@ -11,15 +11,28 @@
   overflow: visible;
 }
 
+/* Smaller size for archive cards */
+.playlist-card.archive {
+  --cover: 140px;
+  --vinyl-gap: 20px;
+  --overlap: 60px;
+}
+
 @media (min-width: 768px) {
   .playlist-card { 
     --cover: 200px; 
+  }
+  .playlist-card.archive {
+    --cover: 160px;
   }
 }
 
 @media (min-width: 1024px) {
   .playlist-card { 
     --cover: 220px; 
+  }
+  .playlist-card.archive {
+    --cover: 180px;
   }
 }
 

@@ -501,20 +501,22 @@ export default function VibesPage() {
         <div className="mb-8">
           <h2 className={`text-4xl font-black mb-6 ${getTextClass()}`}>Archive</h2>
           {archivePlaylists.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {archivePlaylists.map((playlist) => (
-                <PlaylistCard
-                  key={playlist.id}
-                  id={playlist.id}
-                  title={playlist.title}
-                  curator={playlist.curator}
-                  description={playlist.description}
-                  spotify_url={playlist.spotify_url}
-                  cover_url={playlist.cover_url}
-                  curator_photo_url={playlist.curator_photo_url}
-                  date={playlist.date}
-                  week_label={playlist.week_label}
-                />
+                <div key={playlist.id} className="p-6">
+                  <PlaylistCard
+                    id={playlist.id}
+                    title={playlist.title}
+                    curator={playlist.curator}
+                    description={playlist.description}
+                    spotify_url={playlist.spotify_url}
+                    cover_url={playlist.cover_url}
+                    curator_photo_url={playlist.curator_photo_url}
+                    date={playlist.date}
+                    week_label={playlist.week_label}
+                    className="archive"
+                  />
+                </div>
               ))}
             </div>
           ) : (

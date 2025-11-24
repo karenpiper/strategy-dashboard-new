@@ -210,144 +210,165 @@ export default function ResourcesPage() {
       <SiteHeader />
 
       {/* Main Content */}
-      <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24 w-full">
+      <main className="max-w-[1400px] mx-auto px-6 py-6 flex-1 pt-20 w-full">
         <div className="flex gap-6">
           {/* Main Content Area */}
           <div className="flex-1">
-            {/* Page Title */}
-            <h1 className={`text-4xl font-black uppercase mb-8 ${getTextClass()}`}>RESOURCES</h1>
-
-            {/* Search Bar */}
-            <div className="relative mb-6">
-              <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`} />
-              <Input
-                type="text"
-                placeholder="Search resources..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`pl-12 pr-4 py-6 ${getRoundedClass('rounded-2xl')} ${mode === 'chill' ? 'bg-white border-[#4A1818]/20' : mode === 'chaos' ? 'bg-[#2A2A2A] border-[#333333]' : 'bg-[#1a1a1a] border-white'} ${getTextClass()} text-lg`}
-              />
-              <Button
-                onClick={() => {}}
-                className={`absolute right-2 top-1/2 transform -translate-y-1/2 ${getRoundedClass('rounded-xl')} px-4`}
-                style={{ backgroundColor: orangeColors.primary, color: mode === 'code' ? '#000000' : '#FFFFFF' }}
-              >
-                <Search className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* Filter Buttons */}
-            <div className="flex flex-wrap gap-3 mb-8">
-              {filters.map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setActiveFilter(filter)}
-                  className={`px-6 py-3 ${getRoundedClass('rounded-xl')} font-black uppercase text-sm transition-all ${
-                    activeFilter === filter
-                      ? `text-white`
-                      : mode === 'chill'
-                      ? 'text-[#4A1818]/60 hover:text-[#4A1818]'
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                  style={{
-                    backgroundColor: activeFilter === filter ? orangeColors.primary : 'transparent',
-                    border: activeFilter === filter ? 'none' : `2px solid ${mode === 'chill' ? '#4A1818/20' : '#333333'}`
-                  }}
-                >
-                  {getFilterDisplayName(filter)}
-                </button>
-              ))}
-            </div>
-
-            {/* Resource Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredResources.map((resource) => (
-                <Card
-                  key={resource.id}
-                  onClick={() => handleResourceClick(resource)}
-                  className={`p-6 ${getRoundedClass('rounded-2xl')} cursor-pointer transition-all hover:scale-[1.02] bg-white border-gray-200`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className={`w-10 h-10 ${getRoundedClass('rounded-lg')} flex items-center justify-center`}
-                        style={{ backgroundColor: orangeColors.contrast }}
-                      >
-                        <BookOpen className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-lg mb-1 text-gray-900">{resource.name}</h3>
-                        {resource.source && (
-                          <p className="text-sm text-gray-600">{resource.source}</p>
-                        )}
-                      </div>
-                    </div>
-                    <ExternalLink className="w-5 h-5 text-gray-400" />
-                  </div>
-                  
-                  {resource.description && (
-                    <p className="text-sm mb-4 text-gray-700">
-                      {resource.description}
-                    </p>
-                  )}
-
-                  <div className="flex flex-wrap gap-2">
-                    <Badge 
-                      variant="outline"
-                      className={`${getRoundedClass('rounded-lg')} text-xs`}
-                      style={{ 
-                        borderColor: orangeColors.primaryPair,
-                        color: orangeColors.primaryPair,
-                        backgroundColor: 'transparent'
-                      }}
-                    >
-                      {resource.primary_category}
-                    </Badge>
-                    {resource.secondary_tags.slice(0, 2).map((tag, idx) => (
-                      <Badge
-                        key={idx}
-                        variant="outline"
-                        className={`${getRoundedClass('rounded-lg')} text-xs`}
-                        style={{
-                          borderColor: orangeColors.complementary,
-                          color: orangeColors.complementary,
-                          backgroundColor: 'transparent'
-                        }}
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            {filteredResources.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <p className={`text-lg ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>
-                  No resources found. Try adjusting your search or filters.
-                </p>
+            {/* Header with Title, Search, and Filters */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h1 className={`text-3xl font-black uppercase ${getTextClass()}`}>RESOURCES</h1>
+                <div className="text-sm text-gray-500">
+                  {filteredResources.length} {filteredResources.length === 1 ? 'resource' : 'resources'}
+                </div>
               </div>
-            )}
+
+              {/* Search Bar */}
+              <div className="relative mb-4">
+                <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`} />
+                <Input
+                  type="text"
+                  placeholder="Search resources..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`pl-10 pr-4 py-2 ${getRoundedClass('rounded-lg')} ${mode === 'chill' ? 'bg-white border-[#4A1818]/20' : mode === 'chaos' ? 'bg-[#2A2A2A] border-[#333333]' : 'bg-[#1a1a1a] border-white'} ${getTextClass()} text-sm`}
+                />
+              </div>
+
+              {/* Filter Buttons - Compact */}
+              <div className="flex flex-wrap gap-2">
+                {filters.map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setActiveFilter(filter)}
+                    className={`px-3 py-1.5 ${getRoundedClass('rounded-md')} font-semibold uppercase text-xs transition-all ${
+                      activeFilter === filter
+                        ? `text-white`
+                        : mode === 'chill'
+                        ? 'text-[#4A1818]/60 hover:text-[#4A1818]'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                    style={{
+                      backgroundColor: activeFilter === filter ? orangeColors.primary : 'transparent',
+                      border: activeFilter === filter ? 'none' : `1px solid ${mode === 'chill' ? '#4A1818/20' : '#333333'}`
+                    }}
+                  >
+                    {getFilterDisplayName(filter)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Resource List Table */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Category</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tags</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Source</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-12"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredResources.map((resource) => (
+                      <tr
+                        key={resource.id}
+                        onClick={() => handleResourceClick(resource)}
+                        className="hover:bg-gray-50 cursor-pointer transition-colors"
+                      >
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div 
+                              className={`w-6 h-6 ${getRoundedClass('rounded')} flex items-center justify-center flex-shrink-0`}
+                              style={{ backgroundColor: orangeColors.contrast }}
+                            >
+                              <BookOpen className="w-3 h-3 text-white" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-semibold text-sm text-gray-900 truncate">{resource.name}</div>
+                              {resource.description && (
+                                <div className="text-xs text-gray-500 mt-0.5 truncate max-w-md">{resource.description}</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <Badge 
+                            variant="outline"
+                            className={`${getRoundedClass('rounded')} text-xs px-2 py-0.5`}
+                            style={{ 
+                              borderColor: orangeColors.primaryPair,
+                              color: orangeColors.primaryPair,
+                              backgroundColor: 'transparent'
+                            }}
+                          >
+                            {resource.primary_category.split(' & ')[0]}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex flex-wrap gap-1 max-w-xs">
+                            {resource.secondary_tags.slice(0, 3).map((tag, idx) => (
+                              <span
+                                key={idx}
+                                className={`text-xs px-1.5 py-0.5 ${getRoundedClass('rounded')} truncate`}
+                                style={{
+                                  color: orangeColors.complementary,
+                                  backgroundColor: `${orangeColors.complementary}15`
+                                }}
+                                title={tag}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {resource.secondary_tags.length > 3 && (
+                              <span className="text-xs text-gray-400">+{resource.secondary_tags.length - 3}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          {resource.source && (
+                            <span className="text-xs text-gray-600 truncate block max-w-xs" title={resource.source}>{resource.source}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <ExternalLink className="w-4 h-4 text-gray-400 mx-auto" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {filteredResources.length === 0 && !loading && (
+                <div className="text-center py-12">
+                  <p className="text-sm text-gray-500">
+                    No resources found. Try adjusting your search or filters.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Right Sidebar */}
-          <div className="w-80 space-y-6">
+          {/* Right Sidebar - Compact */}
+          <div className="w-64 space-y-4">
             {/* Recently Viewed */}
             {recentlyViewed.length > 0 && (
-              <Card className={`${getRoundedClass('rounded-2xl')} p-6`} style={{ backgroundColor: orangeColors.primaryPair }}>
-                <div className="flex items-center gap-2 mb-4">
-                  <Clock className="w-5 h-5 text-white" />
-                  <h3 className="font-black uppercase text-sm text-white">Recently Viewed</h3>
+              <Card className={`${getRoundedClass('rounded-lg')} p-4`} style={{ backgroundColor: orangeColors.primaryPair }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="w-4 h-4 text-white" />
+                  <h3 className="font-bold uppercase text-xs text-white">Recently Viewed</h3>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {recentlyViewed.map((resource) => (
                     <button
                       key={resource.id}
                       onClick={() => handleResourceClick(resource)}
                       className="text-left w-full"
                     >
-                      <p className="text-sm text-white/90 hover:text-white transition-colors">{resource.name}</p>
+                      <p className="text-xs text-white/90 hover:text-white transition-colors line-clamp-1">{resource.name}</p>
                     </button>
                   ))}
                 </div>
@@ -356,21 +377,21 @@ export default function ResourcesPage() {
 
             {/* Most Used */}
             {mostUsed.length > 0 && (
-              <Card className={`${getRoundedClass('rounded-2xl')} p-6`} style={{ backgroundColor: orangeColors.contrast }}>
-                <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp className="w-5 h-5 text-white" />
-                  <h3 className="font-black uppercase text-sm text-white">Most Used</h3>
+              <Card className={`${getRoundedClass('rounded-lg')} p-4`} style={{ backgroundColor: orangeColors.contrast }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp className="w-4 h-4 text-white" />
+                  <h3 className="font-bold uppercase text-xs text-white">Most Used</h3>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {mostUsed.map((resource, idx) => (
                     <div key={resource.id}>
                       {idx === 0 && (
                         <div 
-                          className={`${getRoundedClass('rounded-lg')} p-3 mb-3`}
+                          className={`${getRoundedClass('rounded')} p-2 mb-2`}
                           style={{ backgroundColor: orangeColors.complementary }}
                         >
-                          <p className="text-sm font-bold text-white">{resource.name}</p>
-                          <p className="text-xs text-white/80 mt-1">{resource.view_count} views this month</p>
+                          <p className="text-xs font-bold text-white line-clamp-1">{resource.name}</p>
+                          <p className="text-xs text-white/80 mt-0.5">{resource.view_count} views</p>
                         </div>
                       )}
                       {idx > 0 && (
@@ -378,7 +399,7 @@ export default function ResourcesPage() {
                           onClick={() => handleResourceClick(resource)}
                           className="text-left w-full"
                         >
-                          <p className="text-sm text-white/90 hover:text-white transition-colors">{resource.name}</p>
+                          <p className="text-xs text-white/90 hover:text-white transition-colors line-clamp-1">{resource.name}</p>
                         </button>
                       )}
                     </div>
