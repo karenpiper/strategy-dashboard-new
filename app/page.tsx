@@ -2623,7 +2623,9 @@ export default function TeamDashboard() {
               const borderColor = pipelineStyle.accent
               
               const inProgressProjects = pipelineData.filter(p => p.status === 'In Progress')
-              const completedProjects = pipelineData.filter(p => p.status === currentCompletedFilter)
+              const pendingDecisionProjects = pipelineData.filter(p => p.status === 'Pending Decision')
+              const wonProjects = pipelineData.filter(p => p.status === 'Won')
+              const lostProjects = pipelineData.filter(p => p.status === 'Lost')
               
               // Calculate counts for displayed statuses
               const statusCounts = {
@@ -2682,7 +2684,88 @@ export default function TeamDashboard() {
                   >
                     
                     {eventsExpanded ? (
-                      /* Stats view when events expanded - Clean vertical layout */
+                      /* 3-column view when events expanded */
+                      <div className="flex flex-col h-full">
+                        <h2 className={`text-2xl mb-4 font-black uppercase ${pipelineStyle.text}`}>PIPELINE</h2>
+                        <div className="grid grid-cols-3 gap-4 flex-1 overflow-hidden">
+                          {/* Column 1: In Progress */}
+                          <div className="flex flex-col overflow-hidden">
+                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 uppercase tracking-wide`}>In Progress</div>
+                            <div className="flex-1 overflow-y-auto pr-2">
+                              <div className="space-y-1">
+                                {!pipelineLoading && inProgressProjects.length > 0 ? (
+                                  inProgressProjects.map((project, index) => 
+                                    renderProjectItem(project, index, inProgressProjects.length)
+                                  )
+                                ) : (
+                                  <div className={`${pipelineStyle.text}/60 text-sm py-4`}>
+                                    No projects in progress
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Column 2: Pending Decision */}
+                          <div className="flex flex-col overflow-hidden">
+                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 uppercase tracking-wide`}>Pending Decision</div>
+                            <div className="flex-1 overflow-y-auto pr-2">
+                              <div className="space-y-1">
+                                {!pipelineLoading && pendingDecisionProjects.length > 0 ? (
+                                  pendingDecisionProjects.map((project, index) => 
+                                    renderProjectItem(project, index, pendingDecisionProjects.length)
+                                  )
+                                ) : (
+                                  <div className={`${pipelineStyle.text}/60 text-sm py-4`}>
+                                    No pending decisions
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Column 3: Won / Lost Split */}
+                          <div className="flex flex-col overflow-hidden">
+                            {/* Won - Top Half */}
+                            <div className="flex flex-col flex-1 min-h-0 mb-4">
+                              <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 uppercase tracking-wide`}>Won</div>
+                              <div className="flex-1 overflow-y-auto pr-2">
+                                <div className="space-y-1">
+                                  {!pipelineLoading && wonProjects.length > 0 ? (
+                                    wonProjects.map((project, index) => 
+                                      renderProjectItem(project, index, wonProjects.length)
+                                    )
+                                  ) : (
+                                    <div className={`${pipelineStyle.text}/60 text-sm py-4`}>
+                                      No won projects
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Lost - Bottom Half */}
+                            <div className="flex flex-col flex-1 min-h-0 border-t" style={{ borderColor: `${borderColor}40` }}>
+                              <div className={`text-sm font-semibold ${pipelineStyle.text} mb-3 mt-4 uppercase tracking-wide`}>Lost</div>
+                              <div className="flex-1 overflow-y-auto pr-2">
+                                <div className="space-y-1">
+                                  {!pipelineLoading && lostProjects.length > 0 ? (
+                                    lostProjects.map((project, index) => 
+                                      renderProjectItem(project, index, lostProjects.length)
+                                    )
+                                  ) : (
+                                    <div className={`${pipelineStyle.text}/60 text-sm py-4`}>
+                                      No lost projects
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Vertical stats view when collapsed */
                       <div className="flex flex-col gap-2 h-full">
                         <h2 className={`text-2xl mb-3 font-black uppercase ${pipelineStyle.text}`}>PIPELINE</h2>
                         <div className="flex items-center justify-between">
@@ -2727,51 +2810,6 @@ export default function TeamDashboard() {
                             }}
                           >
                             {pipelineLoading ? '0' : statusCounts['Lost']}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Default 3-column view when events not expanded */
-                      <div className="flex flex-col h-full">
-                        <h2 className={`text-3xl mb-4 font-black uppercase ${pipelineStyle.text}`}>PIPELINE</h2>
-                        <div className="grid grid-cols-3 gap-4 flex-1">
-                          {/* Column 1: In Progress */}
-                          <div className="flex flex-col">
-                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-2 uppercase tracking-wide`}>In Progress</div>
-                            <div 
-                              className={`text-5xl font-black ${pipelineStyle.text} px-4 py-3 rounded-lg flex items-center justify-center`}
-                              style={{
-                                backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
-                              }}
-                            >
-                              {pipelineLoading ? '0' : statusCounts['In Progress']}
-                            </div>
-                          </div>
-                          
-                          {/* Column 2: Pending Decision */}
-                          <div className="flex flex-col">
-                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-2 uppercase tracking-wide`}>Pending Decision</div>
-                            <div 
-                              className={`text-5xl font-black ${pipelineStyle.text} px-4 py-3 rounded-lg flex items-center justify-center`}
-                              style={{
-                                backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
-                              }}
-                            >
-                              {pipelineLoading ? '0' : statusCounts['Pending Decision']}
-                            </div>
-                          </div>
-                          
-                          {/* Column 3: Won / Lost */}
-                          <div className="flex flex-col">
-                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-2 uppercase tracking-wide`}>Won / Lost</div>
-                            <div 
-                              className={`text-5xl font-black ${pipelineStyle.text} px-4 py-3 rounded-lg flex items-center justify-center`}
-                              style={{
-                                backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
-                              }}
-                            >
-                              {pipelineLoading ? '0' : (statusCounts['Won'] + statusCounts['Lost'])}
-                            </div>
                           </div>
                         </div>
                       </div>
