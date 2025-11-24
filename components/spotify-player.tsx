@@ -24,8 +24,8 @@ export function SpotifyPlayer({
   // Fallback cover image
   const albumArtwork = playlist.coverUrl || "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop";
   
-  // Fallback to curator photo if no album artwork
-  const submitterPhoto = playlist.curatorPhotoUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face";
+  // Curator's avatar for vinyl label
+  const curatorAvatar = playlist.curatorPhotoUrl;
 
 
   const handleSpotifyLink = () => {
@@ -92,7 +92,7 @@ export function SpotifyPlayer({
         <div className="mediaGroup">
           {/* Cover - positioned on top */}
           <img
-            src={albumArtwork || submitterPhoto}
+            src={albumArtwork}
             alt={playlist.title || "Playlist cover"}
             className="object-cover w-[var(--cover)] h-[var(--cover)] rounded-none ring-2 ring-emerald-300/30 relative z-10"
           />
@@ -100,9 +100,9 @@ export function SpotifyPlayer({
           <div className="vinylWrap">
             <div className="vinyl rounded-full bg-black/90 ring-1 ring-black/40 pointer-events-none">
               {/* center label avatar - curator's photo */}
-              {submitterPhoto && (
+              {curatorAvatar ? (
                 <img
-                  src={submitterPhoto}
+                  src={curatorAvatar}
                   alt={playlist.curator || 'Curator'}
                   className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full ring-2 ring-emerald-400 object-cover"
                   aria-hidden="true"
@@ -116,10 +116,10 @@ export function SpotifyPlayer({
                     }
                   }}
                 />
-              )}
-              {/* Fallback if image fails to load */}
+              ) : null}
+              {/* Fallback if no avatar or image fails to load */}
               <div 
-                className="spotify-curator-avatar-fallback absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full flex items-center justify-center text-white font-semibold text-base md:text-lg lg:text-xl hidden"
+                className={`spotify-curator-avatar-fallback absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full flex items-center justify-center text-white font-semibold text-base md:text-lg lg:text-xl ${curatorAvatar ? 'hidden' : ''}`}
                 style={{
                   backgroundColor: '#10b981'
                 }}
