@@ -11,7 +11,24 @@ The dashboard uses your existing Google OAuth session (from Supabase login) to r
 
 ## Setup
 
-You only need to add one environment variable:
+### Step 1: Configure Google Cloud Console
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to **APIs & Services** > **Credentials**
+3. Click on your OAuth 2.0 Client ID (the same one used for Supabase)
+4. Under **Authorized JavaScript origins**, add:
+   - Your production domain (e.g., `https://yourdomain.com`)
+   - For local development: `http://localhost:3000`
+   - For Vercel preview deployments: `https://*.vercel.app`
+5. Under **Authorized redirect URIs**, make sure you have:
+   - `https://<your-project-ref>.supabase.co/auth/v1/callback` (for Supabase login)
+   - `http://localhost:3000/auth/callback` (for local development)
+   - **Also add your current origin** (e.g., `https://yourdomain.com` or `http://localhost:3000`) - this is needed for GSI token client
+6. Click **Save**
+
+### Step 2: Add Environment Variable
+
+Add this to your `.env.local`:
 
 ```env
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_oauth_client_id
@@ -151,6 +168,24 @@ Restart your development server and check if the calendar events are loading. Th
 
 ## Troubleshooting
 
+### Error 400: redirect_uri_mismatch
+
+**Problem:** You see "Access blocked: This app's request is invalid" with error 400: redirect_uri_mismatch
+
+**Solution:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to **APIs & Services** > **Credentials**
+3. Click on your OAuth 2.0 Client ID
+4. Under **Authorized JavaScript origins**, add your current origin:
+   - For production: `https://yourdomain.com`
+   - For local: `http://localhost:3000`
+   - For Vercel: `https://*.vercel.app` (or your specific preview URL)
+5. Under **Authorized redirect URIs**, also add your current origin (same as above)
+6. Click **Save** and wait a few minutes for changes to propagate
+7. Clear your browser cache and try again
+
+**Note:** The origin must match exactly (including http vs https and the port number)
+
 ### "Invalid grant" error
 - Your refresh token may have expired or been revoked
 - Generate a new refresh token following Step 2
@@ -163,6 +198,7 @@ Restart your development server and check if the calendar events are loading. Th
 - Verify you can see the calendar in your Google Calendar app
 - Make sure you're using OAuth2 (check that the environment variables are set)
 - Check server logs to see which authentication method is being used
+- If using service account, make sure the calendars are shared with the service account email
 
 ## Notes
 

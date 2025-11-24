@@ -98,6 +98,10 @@ export function useGoogleCalendarToken() {
 
         // Request token using Google Identity Services
         let callbackFired = false
+        const currentOrigin = window.location.origin
+        
+        // For GSI token client, we need to ensure the origin is in authorized JavaScript origins
+        // The redirect URI should be the current origin or a postMessage target
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: clientId,
           scope: 'https://www.googleapis.com/auth/calendar.readonly',
@@ -114,7 +118,12 @@ export function useGoogleCalendarToken() {
               setLoading(false)
             } else {
               console.error('No access token in GSI response:', response)
-              setError('Failed to get calendar access token. User may have denied access.')
+              // Check if it's a redirect URI error
+              if (response.error === 'redirect_uri_mismatch') {
+                setError(`Redirect URI mismatch. Please add "${currentOrigin}" to authorized JavaScript origins in Google Cloud Console.`)
+              } else {
+                setError('Failed to get calendar access token. User may have denied access.')
+              }
               setLoading(false)
             }
           },
@@ -122,8 +131,19 @@ export function useGoogleCalendarToken() {
 
         // Request token (will show consent dialog if needed)
         // This is non-blocking - user can interact with the consent dialog
-        tokenClient.requestAccessToken()
-        setNeedsAuth(true) // We're requesting, so we might need user interaction
+        try {
+          tokenClient.requestAccessToken()
+          setNeedsAuth(true) // We're requesting, so we might need user interaction
+        } catch (error: any) {
+          console.error('Error requesting token:', error)
+          if (error.message?.includes('redirect_uri')) {
+            setError(`Redirect URI configuration error. Please add "${currentOrigin}" to authorized JavaScript origins in Google Cloud Console.`)
+          } else {
+            setError(error.message || 'Failed to request calendar access')
+          }
+          setLoading(false)
+          return
+        }
         
         // Set a timeout in case the callback never fires (e.g., popup blocked)
         setTimeout(() => {
