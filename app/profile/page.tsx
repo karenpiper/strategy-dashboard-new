@@ -136,22 +136,22 @@ export default function ProfilePage() {
   const getCardStyle = () => {
     if (mode === 'chaos') {
       return { 
-        bg: 'bg-[#2A2A2A]', 
-        border: 'border-2 border-[#00C896]', 
+        bg: 'bg-[#000000]', 
+        border: 'border border-[#C4F500]', 
         text: 'text-white', 
-        accent: '#00C896' 
+        accent: '#C4F500' 
       }
     } else if (mode === 'chill') {
       return { 
-        bg: 'bg-[#E8E0D0]', 
-        border: 'border-2 border-[#C8D961]', 
+        bg: 'bg-white', 
+        border: 'border border-[#FFC043]/30', 
         text: 'text-[#4A1818]', 
-        accent: '#C8D961' 
+        accent: '#FFC043' 
       }
     } else { // code
       return { 
-        bg: 'bg-[#1a1a1a]', 
-        border: 'border-2 border-[#FFFFFF]', 
+        bg: 'bg-[#000000]', 
+        border: 'border border-[#FFFFFF]', 
         text: 'text-[#FFFFFF]', 
         accent: '#FFFFFF' 
       }
@@ -161,24 +161,24 @@ export default function ProfilePage() {
   const getFieldCardStyle = () => {
     if (mode === 'chaos') {
       return {
-        bg: 'bg-[#2A2A2A]',
-        border: 'border-2 border-[#00C896]',
+        bg: 'bg-[#000000]',
+        border: 'border border-[#C4F500]',
         text: 'text-white',
         label: 'text-white',
         hint: 'text-white/60'
       }
     } else if (mode === 'chill') {
       return {
-        bg: 'bg-[#E8E0D0]',
-        border: 'border-2 border-[#C8D961]',
+        bg: 'bg-white',
+        border: 'border border-[#FFC043]/30',
         text: 'text-[#4A1818]',
         label: 'text-[#4A1818]',
         hint: 'text-[#4A1818]/60'
       }
     } else {
       return {
-        bg: 'bg-[#1a1a1a]',
-        border: 'border-2 border-[#FFFFFF]',
+        bg: 'bg-[#000000]',
+        border: 'border border-[#FFFFFF]',
         text: 'text-white',
         label: 'text-white',
         hint: 'text-white/60'
@@ -188,9 +188,9 @@ export default function ProfilePage() {
 
   const getInputFieldStyle = () => {
     if (mode === 'chaos') {
-      return 'bg-[#1A1A1A] border-[#00C896] text-white placeholder:text-gray-400 focus:border-[#00C896] focus:ring-[#00C896]'
+      return 'bg-[#1A1A1A] border-[#C4F500] text-white placeholder:text-gray-400 focus:border-[#C4F500] focus:ring-[#C4F500]'
     } else if (mode === 'chill') {
-      return 'bg-[#F5E6D3] border-[#C8D961] text-[#4A1818] placeholder:text-[#4A1818]/40 focus:border-[#C8D961] focus:ring-[#C8D961]'
+      return 'bg-[#F5E6D3] border-[#FFC043]/30 text-[#4A1818] placeholder:text-[#4A1818]/40 focus:border-[#FFC043] focus:ring-[#FFC043]'
     } else {
       return 'bg-black border-white text-white placeholder:text-gray-400 focus:border-white focus:ring-white'
     }
@@ -552,7 +552,7 @@ export default function ProfilePage() {
         <div className="flex gap-6">
           {/* Left Sidebar Card - Matching Admin Panel Style */}
           <Card className={`w-1/4 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-4 flex flex-col sticky top-24 h-fit`} style={{ 
-            borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#FFFFFF',
+            borderColor: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF',
             borderWidth: mode === 'chaos' ? '2px' : '0px'
           }}>
             <div className="mb-4">
@@ -614,13 +614,13 @@ export default function ProfilePage() {
 
                 {/* Error/Success Messages */}
                 {error && (
-                  <Card className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} ${mode === 'chaos' ? 'bg-[#2A2A2A] border-2 border-red-500' : mode === 'chill' ? 'bg-[#E8E0D0] border-2 border-red-500' : 'bg-[#1a1a1a] border-2 border-red-500'}`}>
+                  <Card className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} ${mode === 'chaos' ? 'bg-[#000000] border border-red-500' : mode === 'chill' ? 'bg-white border border-red-500' : 'bg-[#000000] border border-red-500'}`}>
                     <p className={`text-sm ${mode === 'chill' ? 'text-red-600' : 'text-red-400'}`}>{error}</p>
                   </Card>
                 )}
 
                 {success && (
-                  <Card className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} ${mode === 'chaos' ? 'bg-[#2A2A2A] border-2 border-[#00C896]' : mode === 'chill' ? 'bg-[#E8E0D0] border-2 border-green-500' : 'bg-[#1a1a1a] border-2 border-green-500'}`}>
+                  <Card className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} ${mode === 'chaos' ? 'bg-[#000000] border border-[#C4F500]' : mode === 'chill' ? 'bg-white border border-green-500' : 'bg-[#000000] border border-green-500'}`}>
                     <p className={`text-sm ${mode === 'chill' ? 'text-green-600' : 'text-green-400'}`}>{success}</p>
                   </Card>
                 )}
@@ -789,7 +789,7 @@ export default function ProfilePage() {
                             src={displayAvatarUrl}
                             alt={fullName || user.email || 'User'}
                             className={`w-20 h-20 ${getRoundedClass('rounded-full')} object-cover border-2`}
-                            style={{ borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#000000' }}
+                            style={{ borderColor: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#000000' }}
                             onError={(e) => {
                               const target = e.target as HTMLImageElement
                               target.style.display = 'none'
@@ -799,9 +799,9 @@ export default function ProfilePage() {
                         <div 
                           className={`avatar-fallback w-20 h-20 ${getRoundedClass('rounded-full')} flex items-center justify-center text-2xl font-semibold border-2 ${displayAvatarUrl ? 'hidden' : ''}`}
                           style={{ 
-                            backgroundColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#000000',
-                            borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#000000',
-                            color: '#FFFFFF'
+                            backgroundColor: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#000000',
+                            borderColor: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#000000',
+                            color: mode === 'chaos' ? '#000000' : mode === 'chill' ? '#4A1818' : '#FFFFFF'
                           }}
                         >
                           {initials}
@@ -813,7 +813,7 @@ export default function ProfilePage() {
                             size="sm"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploading}
-                            className={`${mode === 'chaos' ? 'border-[#00C896] text-[#00C896] hover:bg-[#00C896]/10' : mode === 'chill' ? 'border-[#C8D961] text-[#C8D961] hover:bg-[#C8D961]/10' : 'border-black text-black hover:bg-black/10'}`}
+                            className={`${mode === 'chaos' ? 'border-[#C4F500] text-[#C4F500] hover:bg-[#C4F500]/10' : mode === 'chill' ? 'border-[#FFC043] text-[#FFC043] hover:bg-[#FFC043]/10' : 'border-black text-black hover:bg-black/10'}`}
                           >
                             {uploading ? (
                               <>
@@ -849,14 +849,14 @@ export default function ProfilePage() {
                         type="button"
                         variant="outline"
                         onClick={() => router.push('/')}
-                        className={`${mode === 'chaos' ? 'border-[#00C896] text-[#00C896] hover:bg-[#00C896]/10' : mode === 'chill' ? 'border-[#C8D961] text-[#C8D961] hover:bg-[#C8D961]/10' : 'border-black text-black hover:bg-black/10'}`}
+                        className={`${mode === 'chaos' ? 'border-[#C4F500] text-[#C4F500] hover:bg-[#C4F500]/10' : mode === 'chill' ? 'border-[#FFC043] text-[#FFC043] hover:bg-[#FFC043]/10' : 'border-black text-black hover:bg-black/10'}`}
                       >
                         Cancel
                       </Button>
                       <Button
                         type="submit"
                         disabled={saving}
-                        className={`${mode === 'chaos' ? 'bg-[#00C896] text-black hover:bg-[#00C896]/80' : mode === 'chill' ? 'bg-[#C8D961] text-[#4A1818] hover:bg-[#C8D961]/80' : 'bg-black text-white hover:bg-black/80'}`}
+                        className={`${mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' : mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' : 'bg-black text-white hover:bg-black/80'}`}
                       >
                         {saving ? (
                           <>
@@ -904,15 +904,15 @@ export default function ProfilePage() {
                           <Button
                             size="sm"
                             onClick={() => handleDownloadAvatar(avatar.url, avatar.date)}
-                            className={`${mode === 'chaos' ? 'bg-[#00C896] text-black hover:bg-[#00C896]/80' : mode === 'chill' ? 'bg-[#C8D961] text-[#4A1818] hover:bg-[#C8D961]/80' : 'bg-black text-white hover:bg-black/80'}`}
+                            className={`${mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' : mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' : 'bg-black text-white hover:bg-black/80'}`}
                           >
                             <Download className="w-4 h-4 mr-2" />
                             Download
                           </Button>
                         </div>
                         <div className={`absolute top-2 left-2 px-2 py-1 ${getRoundedClass('rounded-md')} text-xs font-bold ${
-                          mode === 'chaos' ? 'bg-[#00C896] text-black' : 
-                          mode === 'chill' ? 'bg-[#C8D961] text-[#4A1818]' : 
+                          mode === 'chaos' ? 'bg-[#C4F500] text-black' : 
+                          mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818]' : 
                           'bg-black text-white'
                         }`}>
                           {new Date(avatar.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
