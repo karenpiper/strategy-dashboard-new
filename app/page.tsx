@@ -973,9 +973,10 @@ export default function TeamDashboard() {
   
   // Fetch horoscope text and image on mount - only fetches today's data
   // Historical horoscopes are stored in the database but only today's is displayed
+  const isFetchingRef = useRef(false) // Use ref to persist across re-renders
+  
   useEffect(() => {
     let isMounted = true // Prevent state updates if component unmounts
-    let isFetching = false // Prevent multiple simultaneous requests
     
     async function fetchHoroscopeData() {
       // Only fetch if user is authenticated
@@ -990,12 +991,13 @@ export default function TeamDashboard() {
       }
 
       // Prevent multiple simultaneous requests
-      if (isFetching) {
+      if (isFetchingRef.current) {
         console.log('⏸️ Request already in progress, skipping duplicate request')
         return
       }
       
-      isFetching = true
+      isFetchingRef.current = true
+      console.log('🚀 Starting horoscope fetch...')
 
       // Don't redirect to profile setup from here - let the API handle it
       console.log('Fetching horoscope data for authenticated user...')
@@ -1174,7 +1176,7 @@ export default function TeamDashboard() {
         setHoroscopeLoading(false)
         setHoroscopeImageLoading(false)
       } finally {
-        isFetching = false // Reset fetching flag
+        isFetchingRef.current = false // Reset fetching flag
         if (isMounted) {
           // Double-check loading states are cleared
           console.log('🔚 Finally block - ensuring loading states are cleared')
@@ -1184,13 +1186,18 @@ export default function TeamDashboard() {
       }
     }
     
-    fetchHoroscopeData()
+    // Only fetch if not already fetching
+    if (!isFetchingRef.current) {
+      fetchHoroscopeData()
+    } else {
+      console.log('⏸️ Skipping fetch - already in progress')
+    }
     
     return () => {
       isMounted = false // Cleanup on unmount
-      isFetching = false // Reset fetching flag
+      // Don't reset isFetchingRef here - let it complete naturally
     }
-  }, [user])
+  }, [user?.id]) // Only depend on user.id, not the whole user object
 
   // Time-based gradient for hero section (chaos mode - vibrant colors)
   const getTimeBasedGradient = (): { bg: string; text: string; accent: string } => {

@@ -807,13 +807,25 @@ export async function GET(request: NextRequest) {
         console.error('   Attempted to save:', {
           user_id: upsertData.user_id,
           date: upsertData.date,
-          text_length: upsertData.horoscope_text?.length || 0
+          text_length: upsertData.horoscope_text?.length || 0,
+          image_url: upsertData.image_url || 'MISSING'
         })
+        
+        // CRITICAL: Don't return success if we can't verify the save
+        // This prevents returning data that wasn't actually saved
+        return NextResponse.json(
+          { 
+            error: 'Failed to verify horoscope was saved to database. The generated horoscope may not have been persisted.',
+            details: 'Database verification failed after save operation'
+          },
+          { status: 500 }
+        )
       }
     }
     
+    // CRITICAL: Only return response AFTER database save is verified
     // Log what we're returning to verify it matches what was saved
-    console.log('📤 Returning horoscope response:', {
+    console.log('📤 Returning horoscope response (AFTER database save verified):', {
       star_sign: starSign,
       text_length: horoscopeText?.length || 0,
       text_preview: horoscopeText?.substring(0, 100) || 'MISSING',
