@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/auth-context'
+import { useMode } from '@/contexts/mode-context'
 import { createClient } from '@/lib/supabase/client'
 import {
   Dialog,
@@ -30,6 +31,7 @@ interface Profile {
 
 export function AddSnapDialog({ open, onOpenChange, onSuccess }: AddSnapDialogProps) {
   const { user } = useAuth()
+  const { mode } = useMode()
   const supabase = createClient()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,7 +46,7 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess }: AddSnapDialogPr
   const suggestionsRef = useRef<HTMLDivElement>(null)
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   
-  // Make overlay transparent
+  // Make overlay transparent and ensure dialog content is opaque
   useEffect(() => {
     if (open) {
       const overlay = document.querySelector('[data-radix-dialog-overlay]')
@@ -53,8 +55,24 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess }: AddSnapDialogPr
         overlayEl.style.setProperty('background-color', 'transparent', 'important')
         overlayEl.style.setProperty('opacity', '0', 'important')
       }
+      
+      // Ensure dialog content is opaque
+      const dialogContent = document.querySelector('[data-radix-dialog-content]')
+      if (dialogContent) {
+        const contentEl = dialogContent as HTMLElement
+        // Use a solid background color based on mode
+        let bgColor = '#1a1a1a' // default dark (chaos)
+        if (mode === 'chill') {
+          bgColor = '#FFFFFF'
+        } else if (mode === 'code') {
+          bgColor = '#000000'
+        }
+        contentEl.style.setProperty('background-color', bgColor, 'important')
+        contentEl.style.setProperty('opacity', '1', 'important')
+        contentEl.style.setProperty('backdrop-filter', 'none', 'important')
+      }
     }
-  }, [open])
+  }, [open, mode])
   
   // Fetch team members for autocomplete
   useEffect(() => {
@@ -185,7 +203,10 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess }: AddSnapDialogPr
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-background">
+      <DialogContent 
+        className="sm:max-w-lg bg-background"
+        style={{ opacity: 1 }}
+      >
         <DialogHeader>
           <DialogTitle>Add a Snap</DialogTitle>
           <DialogDescription>
