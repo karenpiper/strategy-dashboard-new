@@ -142,31 +142,18 @@ export async function GET(request: NextRequest) {
     // Images are generated ONCE per day per user and cached in the database
     // Even if the URL expires, we don't regenerate - we only generate once per day
     
-    // SAFETY CHECK: If ANY record exists for today, we should NOT generate
-    // This prevents duplicate generations even if image_url is somehow empty
-    if (cachedHoroscope) {
-      if (cachedHoroscope.image_url && cachedHoroscope.image_url.trim() !== '') {
-        console.log('✅ FOUND cached image in database - RETURNING CACHED (NO API CALL)')
-        console.log('   Image URL:', cachedHoroscope.image_url.substring(0, 50) + '...')
-        console.log('   Date:', cachedHoroscope.date)
-        console.log('   Generated at:', cachedHoroscope.generated_at)
-      } else {
-        // Record exists but image_url is empty - this shouldn't happen, but don't regenerate
-        console.log('⚠️ WARNING: Record exists for today but image_url is empty/null')
-        console.log('   Date:', cachedHoroscope.date)
-        console.log('   Generated at:', cachedHoroscope.generated_at)
-        console.log('   Returning existing record (NOT generating to avoid billing limits)')
-        return NextResponse.json({
-          image_url: null,
-          image_prompt: cachedHoroscope.image_prompt || null,
-          prompt_slots: cachedHoroscope.prompt_slots_json || null,
-          prompt_slots_labels: null,
-          prompt_slots_reasoning: null,
-          cached: true,
-          error: 'Image URL is missing from cached record. Please contact support.'
-        })
-      }
-      console.log('✅ Returning cached image for user', userId, 'on date', todayDate, '- NO API CALL - using database cache')
+    // TEMPORARY: Cache check disabled for debugging n8n integration
+    // TODO: Re-enable cache check once n8n is working properly
+    // SAFETY CHECK: DISABLED - Always return latest from database
+    // The main /api/horoscope endpoint generates and saves the image, so we just return what's in the DB
+    console.log('🔄 CACHE CHECK DISABLED - Returning latest image from database (debugging mode)')
+    
+    if (cachedHoroscope && cachedHoroscope.image_url && cachedHoroscope.image_url.trim() !== '') {
+      console.log('✅ Found image in database - returning latest data')
+      console.log('   Image URL:', cachedHoroscope.image_url.substring(0, 100) + '...')
+      console.log('   Date:', cachedHoroscope.date)
+      console.log('   Generated at:', cachedHoroscope.generated_at)
+      console.log('   Has prompt slots:', !!cachedHoroscope.prompt_slots_json)
       
       // Resolve slot IDs to labels for display (only if prompt_slots_json exists)
       const slots = cachedHoroscope.prompt_slots_json
@@ -230,23 +217,36 @@ export async function GET(request: NextRequest) {
         prompt_slots: cachedHoroscope.prompt_slots_json || null,
         prompt_slots_labels: Object.keys(slotLabels).length > 0 ? slotLabels : null,
         prompt_slots_reasoning: cachedReasoning,
-        cached: true,
+        cached: false, // Mark as not cached since we're always returning latest
       })
+    } else {
+      console.log('⚠️ No image found in database for today - main endpoint should generate it first')
+      console.log('   This endpoint only returns cached images, it does not generate new ones')
+      console.log('   Please call /api/horoscope first to generate both text and image via n8n')
     }
     
-    // CRITICAL SAFETY CHECK: Double-check database one more time before generating
+    // CRITICAL SAFETY CHECK: DISABLED for debugging
     // This prevents race conditions if multiple requests come in simultaneously
+    // TODO: Re-enable once n8n is working properly
+    // if (doubleCheckHoroscope && doubleCheckHoroscope.image_url && doubleCheckHoroscope.image_url.trim() !== '') {
+    //   ... (safety check code commented out)
+    // }
+    
+    console.log('🔄 SAFETY CHECK DISABLED - Will return latest from database (debugging mode)')
+    
+    // Double-check database to get the absolute latest (in case it was just updated)
     const { data: doubleCheckHoroscope } = await supabaseAdmin
       .from('horoscopes')
-      .select('image_url, image_prompt, prompt_slots_json, date')
+      .select('image_url, image_prompt, prompt_slots_json, date, generated_at')
       .eq('user_id', userId)
       .eq('date', todayDate)
       .maybeSingle()
     
     if (doubleCheckHoroscope && doubleCheckHoroscope.image_url && doubleCheckHoroscope.image_url.trim() !== '') {
-      console.log('🛡️ SAFETY CHECK: Image was created between checks - returning cached instead of generating')
-      console.log('   This prevents duplicate API calls and billing limit hits')
-      // Return cached image to prevent duplicate generation
+      console.log('✅ Found latest image in database (from double-check)')
+      console.log('   Image URL:', doubleCheckHoroscope.image_url.substring(0, 100) + '...')
+      console.log('   Generated at:', doubleCheckHoroscope.generated_at)
+      // Return latest image from database
       // Re-fetch labels if needed (simplified for safety check)
       const slots = doubleCheckHoroscope.prompt_slots_json
       const slotLabels: any = {}
