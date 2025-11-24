@@ -66,6 +66,7 @@ export default function TeamDashboard() {
     pitch_won?: boolean | null
   }>>([])
   const [workSamplesSearchQuery, setWorkSamplesSearchQuery] = useState('')
+  const [resourcesSearchQuery, setResourcesSearchQuery] = useState('')
   const [horoscopeImage, setHoroscopeImage] = useState<string | null>(null)
   const [horoscopeImagePrompt, setHoroscopeImagePrompt] = useState<string | null>(null)
   const [horoscopeImageSlots, setHoroscopeImageSlots] = useState<any>(null)
@@ -2550,8 +2551,8 @@ export default function TeamDashboard() {
               ]
               return (
                 <Card 
-                  className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex flex-col`} 
-                  style={eventsExpanded ? { flex: '0 0 auto', height: '180px', maxHeight: '180px' } : { flex: '0 0 auto', height: 'auto', minHeight: '100px' }}
+                  className={`${style.bg} ${style.border} ${eventsExpanded ? 'p-6' : 'py-3 px-6'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex flex-col`} 
+                  style={eventsExpanded ? { flex: '0 0 auto', height: '180px', maxHeight: '180px' } : { flex: '0 0 auto', height: 'auto', minHeight: '70px' }}
                 >
                   {eventsExpanded ? (
                     /* Vertical stats view when expanded - Bold and clean */
@@ -2684,51 +2685,47 @@ export default function TeamDashboard() {
                     )}
                     
                     {eventsExpanded ? (
-                      /* Stats view when events expanded - Clean vertical layout */
-                      <div className="flex flex-col gap-2 h-full">
-                        <h2 className={`text-2xl mb-3 font-black uppercase ${pipelineStyle.text}`}>PIPELINE</h2>
-                        <div className="flex items-center justify-between">
-                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>In Progress</div>
-                          <div 
-                            className={`text-5xl font-black ${pipelineStyle.text} px-4 py-2 rounded-lg`}
-                            style={{
-                              backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
-                            }}
-                          >
-                            {pipelineLoading ? '0' : statusCounts['In Progress']}
+                      /* Stats view when events expanded - 3 column layout */
+                      <div className="flex flex-col h-full">
+                        <h2 className={`text-2xl mb-4 font-black uppercase ${pipelineStyle.text}`}>PIPELINE</h2>
+                        <div className="grid grid-cols-3 gap-4 flex-1">
+                          {/* Column 1: In Progress */}
+                          <div className="flex flex-col">
+                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-2 uppercase tracking-wide`}>In Progress</div>
+                            <div 
+                              className={`text-5xl font-black ${pipelineStyle.text} px-4 py-3 rounded-lg flex items-center justify-center`}
+                              style={{
+                                backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
+                              }}
+                            >
+                              {pipelineLoading ? '0' : statusCounts['In Progress']}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>Pending Decision</div>
-                          <div 
-                            className={`text-5xl font-black ${pipelineStyle.text} px-4 py-2 rounded-lg`}
-                            style={{
-                              backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
-                            }}
-                          >
-                            {pipelineLoading ? '0' : statusCounts['Pending Decision']}
+                          
+                          {/* Column 2: Pending Decision */}
+                          <div className="flex flex-col">
+                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-2 uppercase tracking-wide`}>Pending Decision</div>
+                            <div 
+                              className={`text-5xl font-black ${pipelineStyle.text} px-4 py-3 rounded-lg flex items-center justify-center`}
+                              style={{
+                                backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
+                              }}
+                            >
+                              {pipelineLoading ? '0' : statusCounts['Pending Decision']}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>Won</div>
-                          <div 
-                            className={`text-5xl font-black ${pipelineStyle.text} px-4 py-2 rounded-lg`}
-                            style={{
-                              backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
-                            }}
-                          >
-                            {pipelineLoading ? '0' : statusCounts['Won']}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className={`text-base ${pipelineStyle.text} font-normal tracking-wide`}>Lost</div>
-                          <div 
-                            className={`text-5xl font-black ${pipelineStyle.text} px-4 py-2 rounded-lg`}
-                            style={{
-                              backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
-                            }}
-                          >
-                            {pipelineLoading ? '0' : statusCounts['Lost']}
+                          
+                          {/* Column 3: Won / Lost */}
+                          <div className="flex flex-col">
+                            <div className={`text-sm font-semibold ${pipelineStyle.text} mb-2 uppercase tracking-wide`}>Won / Lost</div>
+                            <div 
+                              className={`text-5xl font-black ${pipelineStyle.text} px-4 py-3 rounded-lg flex items-center justify-center`}
+                              style={{
+                                backgroundColor: mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74,24,24,0.25)' : 'rgba(0,0,0,0.35)',
+                              }}
+                            >
+                              {pipelineLoading ? '0' : (statusCounts['Won'] + statusCounts['Lost'])}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -3067,6 +3064,26 @@ export default function TeamDashboard() {
           </div>
         </div>
 
+        {/* Resources Section */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-3xl font-black uppercase leading-tight ${mode === 'chaos' ? 'text-white' : mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>RESOURCES</h2>
+          </div>
+          <div className="mb-6">
+            <form onSubmit={(e) => { e.preventDefault(); }} className="flex items-center">
+              <div className="relative w-full">
+                <Search className={`absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 ${mode === 'chaos' ? 'text-white/50' : mode === 'chill' ? 'text-[#4A1818]/50' : 'text-white/50'}`} />
+                <Input
+                  type="text"
+                  value={resourcesSearchQuery}
+                  onChange={(e) => setResourcesSearchQuery(e.target.value)}
+                  placeholder="Search..."
+                  className={`pl-8 h-8 w-full text-xs ${mode === 'chaos' ? 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500' : mode === 'chill' ? 'bg-white border-gray-300 text-[#4A1818] placeholder:text-gray-400' : 'bg-black/30 border-gray-600 text-white placeholder:text-gray-500'}`}
+                />
+              </div>
+            </form>
+          </div>
+        </div>
 
         <p className={`text-xs uppercase tracking-widest font-black mb-6 flex items-center gap-2 ${mode === 'chaos' ? 'text-[#666666]' : mode === 'chill' ? 'text-[#8B4444]' : mode === 'code' ? 'text-[#808080] font-mono' : 'text-[#808080]'}`}>
           {mode === 'code' ? (
@@ -3121,6 +3138,37 @@ export default function TeamDashboard() {
               Ask Question
             </Button>
           </Card>
+            )
+          })()}
+
+          {/* Resources */}
+          {(() => {
+            // RED SYSTEM colors: Coral Red (#FF4C4C), Crimson (#C41E3A), Peach (#FFD4C4), Ocean Blue (#00A3E0)
+            const redSystemStyle = mode === 'chaos' 
+              ? { bg: 'bg-[#FF4C4C]', border: 'border-0', glow: '', text: 'text-black', accent: '#C41E3A' }
+              : mode === 'chill'
+              ? { bg: 'bg-white', border: 'border border-[#FF4C4C]/30', glow: '', text: 'text-[#4A1818]', accent: '#FF4C4C' }
+              : { bg: 'bg-[#000000]', border: 'border border-[#FF4C4C]', glow: '', text: 'text-white', accent: '#FF4C4C' }
+            
+            return (
+              <Card className={`${redSystemStyle.bg} ${redSystemStyle.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} md:col-span-2 h-full flex flex-col`}
+                    style={redSystemStyle.glow ? { boxShadow: `0 0 40px ${redSystemStyle.glow}` } : {}}
+              >
+                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: redSystemStyle.accent }}>
+                  <FileText className="w-4 h-4" />
+                  <span className="uppercase tracking-wider font-black text-xs">Resources</span>
+                </div>
+                <h2 className={`text-3xl font-black mb-6 uppercase ${redSystemStyle.text}`}>RESOURCES</h2>
+                <div className="space-y-3 mb-4 flex-1">
+                  <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2`} style={{ borderColor: `${redSystemStyle.accent}40` }}>
+                    <p className={`text-sm font-black mb-1 ${redSystemStyle.text}`}>Placeholder content</p>
+                    <p className={`text-xs font-medium ${redSystemStyle.text}/70`}>Resources section coming soon</p>
+                  </div>
+                </div>
+                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#FF4C4C] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#FF4C4C] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
+                  View Resources
+                </Button>
+              </Card>
             )
           })()}
 
