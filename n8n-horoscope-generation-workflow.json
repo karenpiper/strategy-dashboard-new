@@ -100,7 +100,7 @@
     },
     {
       "parameters": {
-        "mode": "wait",
+        "mode": "append",
         "options": {}
       },
       "id": "merge-results",
