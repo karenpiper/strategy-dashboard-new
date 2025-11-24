@@ -2208,13 +2208,11 @@ export default function TeamDashboard() {
               <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} ${eventsExpanded ? 'md:col-span-2' : 'md:col-span-1'} h-full flex flex-col`}
                     style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : { borderColor: style.accent }}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <p className={`text-xs uppercase tracking-wider font-black`} style={{ color: mintColor }}>
-                    {eventsExpanded ? 'THIS WEEK' : 'TODAY'}
-                  </p>
+                <div className="flex items-start justify-between mb-4">
+                  <h2 className={`text-3xl font-black uppercase ${style.text}`}>EVENTS</h2>
                   <button
                     onClick={() => setEventsExpanded(!eventsExpanded)}
-                    className={`${getRoundedClass('rounded-lg')} px-3 py-1.5 flex items-center gap-1 text-xs font-black transition-all`}
+                    className={`${getRoundedClass('rounded-lg')} px-3 py-1.5 flex items-center gap-1 text-xs font-black transition-all flex-shrink-0`}
                     style={{ 
                       backgroundColor: style.accent,
                       color: mode === 'chaos' ? '#000000' : mode === 'chill' ? '#4A1818' : '#FFFFFF'
@@ -2233,7 +2231,6 @@ export default function TeamDashboard() {
                     )}
                   </button>
                 </div>
-                <h2 className={`text-3xl font-black mb-6 uppercase ${style.text}`}>EVENTS</h2>
                 
                 {/* White Container - wraps calendar and key only */}
                 <div className="bg-white rounded-[2rem] p-6 flex-1 flex flex-col">
@@ -2557,10 +2554,6 @@ export default function TeamDashboard() {
                   {eventsExpanded ? (
                     /* Vertical stats view when expanded - Bold and clean */
                     <div className="flex flex-col gap-2 h-full">
-                      {/* Small label to match Events spacing */}
-                      <p className={`text-xs uppercase tracking-wider font-black mb-4`} style={{ color: mintColor }}>
-                        STATS
-                      </p>
                       <h2 className={`text-2xl font-black uppercase leading-none ${style.text} mb-3`}>THIS WEEK</h2>
                       {stats.map((stat, index) => (
                         <div key={stat.label} className="flex items-center justify-between">
@@ -2580,13 +2573,8 @@ export default function TeamDashboard() {
                     </div>
                   ) : (
                     /* Horizontal banner view when not expanded */
-                    <div className="flex flex-col h-full">
-                      {/* Small label to match Events spacing */}
-                      <p className={`text-xs uppercase tracking-wider font-black mb-4`} style={{ color: mintColor }}>
-                        STATS
-                      </p>
-                      <div className="flex items-center justify-between gap-6 flex-1">
-                        <h2 className={`text-3xl font-black uppercase leading-none ${style.text} whitespace-nowrap`}>THIS WEEK</h2>
+                    <div className="flex items-center justify-between gap-6 h-full">
+                      <h2 className={`text-3xl font-black uppercase leading-none ${style.text} whitespace-nowrap`}>THIS WEEK</h2>
                       <div className="flex gap-4 items-center">
                       {stats.map((stat, index) => (
                         <div 
@@ -2605,7 +2593,6 @@ export default function TeamDashboard() {
                             </span>
                         </div>
                       ))}
-                      </div>
                       </div>
                     </div>
                   )}

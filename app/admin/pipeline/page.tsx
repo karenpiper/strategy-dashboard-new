@@ -693,8 +693,13 @@ export default function PipelinePage() {
                           {date}
                         </div>
                       )}
-                      <div className="font-semibold text-black mb-1">
-                        {project.name}
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="font-semibold text-black">
+                          {project.name}
+                        </div>
+                        <div className="px-2 py-0.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-green-500 to-emerald-500 shadow-sm">
+                          won!
+                        </div>
                       </div>
                       {displayText && (
                         <div className="text-xs text-black opacity-60 mb-1">
