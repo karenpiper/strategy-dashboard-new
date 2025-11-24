@@ -542,14 +542,20 @@ export async function GET(request: NextRequest) {
         console.log('   Image buffer size:', imageBuffer.length, 'bytes')
         
         // Upload to Supabase storage (avatars bucket)
-        const fileName = `horoscope-${userId}-${todayDate}.png`
+        // Use timestamp to preserve all generated images (don't overwrite)
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+        const fileName = `horoscope-${userId}-${todayDate}-${timestamp}.png`
         const filePath = `${userId}/${fileName}`
+        
+        console.log('📤 Uploading image to Supabase storage...')
+        console.log('   File path:', filePath)
+        console.log('   File size:', imageBuffer.length, 'bytes')
         
         const { error: uploadError } = await supabaseAdmin.storage
           .from('avatars')
           .upload(filePath, imageBuffer, {
             contentType: 'image/png',
-            upsert: true, // Overwrite if exists
+            upsert: false, // Don't overwrite - preserve all images
           })
         
         if (uploadError) {
@@ -698,6 +704,12 @@ export async function GET(request: NextRequest) {
       .eq('date', todayDate)
       .maybeSingle()
     
+    // CRITICAL: Ensure imageUrl is set before building upsert data
+    if (!imageUrl || imageUrl.trim() === '') {
+      console.error('❌ CRITICAL: imageUrl is empty when building upsert data!')
+      throw new Error('Cannot save horoscope: imageUrl is empty. Image upload may have failed.')
+    }
+    
     const upsertData: any = {
       user_id: userId,
       star_sign: starSign,
@@ -707,10 +719,20 @@ export async function GET(request: NextRequest) {
       character_name: characterName,
       date: todayDate, // Explicitly set date to ensure consistency
       generated_at: new Date().toISOString(),
-      image_url: imageUrl, // Set image URL from n8n result (after upload to Supabase)
+      image_url: imageUrl, // CRITICAL: Set image URL from Supabase storage (after upload)
       prompt_slots_json: promptSlots, // Set prompt slots from prompt building
       image_prompt: imagePrompt, // Set image prompt
     }
+    
+    // CRITICAL: Log the exact data being saved
+    console.log('💾 Preparing to save horoscope with image URL:', {
+      user_id: upsertData.user_id,
+      date: upsertData.date,
+      has_image_url: !!upsertData.image_url,
+      image_url_length: upsertData.image_url?.length || 0,
+      image_url_preview: upsertData.image_url?.substring(0, 100) || 'MISSING',
+      is_supabase_url: upsertData.image_url?.includes('supabase.co') || false
+    })
     
     console.log('💾 Saving horoscope to database...')
     console.log('   Upsert data:', {
@@ -729,14 +751,18 @@ export async function GET(request: NextRequest) {
       image_url_preview: upsertData.image_url?.substring(0, 100) || 'MISSING'
     })
     
-    // CRITICAL: Verify imageUrl is set before saving
+    // CRITICAL: Final verification before upsert
     if (!upsertData.image_url || upsertData.image_url.trim() === '') {
       console.error('❌ CRITICAL ERROR: Cannot save - image_url is empty in upsertData!')
       console.error('   This means the image URL was lost somewhere in the process')
       console.error('   horoscopeText exists:', !!upsertData.horoscope_text)
       console.error('   imageUrl variable:', imageUrl)
+      console.error('   upsertData keys:', Object.keys(upsertData))
       throw new Error('Cannot save horoscope: image_url is empty. This should not happen.')
     }
+    
+    console.log('💾 Executing database upsert...')
+    console.log('   Upsert data image_url:', upsertData.image_url.substring(0, 150) + '...')
     
     const { data: upsertResult, error: upsertError } = await supabaseAdmin
       .from('horoscopes')
@@ -744,7 +770,7 @@ export async function GET(request: NextRequest) {
         onConflict: 'user_id,date', // Use the unique constraint
         ignoreDuplicates: false // Update existing records
       })
-      .select() // Return the inserted/updated record
+      .select('id, user_id, date, image_url, horoscope_text, generated_at') // Explicitly select image_url
     
     if (upsertError) {
       // This is critical - if we can't save, we've wasted an API call

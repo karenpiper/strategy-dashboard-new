@@ -799,9 +799,10 @@ export default function TeamDashboard() {
           
           if (response.status === 401 || response.status === 403) {
             console.error('🔐 Authentication issue - token may be invalid or missing calendar scopes')
-            if (response.status === 401 && refreshCalendarToken) {
-              console.log('🔄 Token expired in calendars list - refreshing token...')
-              refreshCalendarToken()
+            // Don't automatically refresh on calendars list 401 - let the calendar events endpoint handle it
+            // This prevents duplicate refresh triggers
+            if (response.status === 401) {
+              console.log('ℹ️  401 error in calendars list - calendar events endpoint will handle token refresh if needed')
             } else {
               console.error('💡 Try re-authenticating with Google and granting calendar permissions')
             }
@@ -817,6 +818,8 @@ export default function TeamDashboard() {
 
   // Track token refresh attempts to prevent infinite loops
   const tokenRefreshAttemptsRef = useRef(0)
+  const lastTokenRefreshRef = useRef<number>(0) // Track last token refresh timestamp
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null) // Track debounce timeout
   
   // Fetch calendar events
   useEffect(() => {
@@ -869,19 +872,38 @@ export default function TeamDashboard() {
           
           // Check if token expired and refresh if needed
           if (result.tokenExpired && googleCalendarToken && refreshCalendarToken) {
-            // Prevent infinite retry loops
-            if (tokenRefreshAttemptsRef.current < 2) {
-              tokenRefreshAttemptsRef.current += 1
-              console.log(`🔄 Token expired detected - refreshing token (attempt ${tokenRefreshAttemptsRef.current})...`)
-              refreshCalendarToken()
-              // Wait a bit for token to refresh, then retry
-              setTimeout(() => {
-                fetchCalendarEvents()
-              }, 2000)
-              return
+            const now = Date.now()
+            const fiveMinutes = 5 * 60 * 1000
+            
+            // Check cooldown: only allow refresh if last refresh was > 5 minutes ago
+            if (lastTokenRefreshRef.current > 0 && (now - lastTokenRefreshRef.current) < fiveMinutes) {
+              const timeRemaining = Math.ceil((fiveMinutes - (now - lastTokenRefreshRef.current)) / 1000)
+              console.log(`⏸️  Token refresh cooldown active. Please wait ${timeRemaining} seconds. Using fallback authentication.`)
+              // Don't trigger refresh, just continue with fallback
             } else {
-              console.error('⚠️ Token refresh failed after multiple attempts - using fallback authentication')
-              tokenRefreshAttemptsRef.current = 0 // Reset for next time
+              // Clear any existing debounce timeout
+              if (refreshTimeoutRef.current) {
+                clearTimeout(refreshTimeoutRef.current)
+              }
+              
+              // Debounce: wait 1 second before triggering refresh to avoid multiple simultaneous calls
+              refreshTimeoutRef.current = setTimeout(() => {
+                // Prevent infinite retry loops
+                if (tokenRefreshAttemptsRef.current < 2) {
+                  tokenRefreshAttemptsRef.current += 1
+                  lastTokenRefreshRef.current = now
+                  console.log(`🔄 Token expired detected - refreshing token (attempt ${tokenRefreshAttemptsRef.current})...`)
+                  refreshCalendarToken()
+                  // Wait a bit for token to refresh, then retry
+                  setTimeout(() => {
+                    fetchCalendarEvents()
+                  }, 2000)
+                } else {
+                  console.error('⚠️ Token refresh failed after multiple attempts - using fallback authentication')
+                  tokenRefreshAttemptsRef.current = 0 // Reset for next time
+                }
+              }, 1000) // 1 second debounce
+              return
             }
           } else {
             // Reset counter on successful response
@@ -949,6 +971,13 @@ export default function TeamDashboard() {
     // Fetch events immediately - don't wait for token
     // Token will be used if available, otherwise falls back to service account
     fetchCalendarEvents()
+    
+    // Cleanup: clear timeout on unmount
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current)
+      }
+    }
   }, [user, eventsExpanded, googleCalendarToken, tokenLoading, tokenError, calendarIds])
 
   const handleSnapAdded = async () => {

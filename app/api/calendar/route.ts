@@ -218,11 +218,14 @@ export async function GET(request: NextRequest) {
         let isTokenExpired = false
         
         // Check for token expiration (401 with Invalid Credentials)
+        // Note: We'll determine if token is truly expired after checking ALL calendars
+        // Individual 401s might be due to permissions, not token expiration
         if ((error.code === 401 || error.status === 401) && accessToken) {
           if (error.message?.includes('Invalid Credentials') || error.message?.includes('invalid_token')) {
+            // Mark as potentially expired - we'll verify after checking all calendars
             isTokenExpired = true
-            errorMessage = 'Token expired - please refresh your Google Calendar connection'
-            console.error(`⚠️  Access token expired for calendar ${decodedCalendarId}. Client should refresh token.`)
+            errorMessage = 'Access denied - may be token expiration or permissions issue'
+            console.error(`⚠️  401 error for calendar ${decodedCalendarId}. Will check if all calendars fail to determine if token expired.`)
           }
         }
         
@@ -271,8 +274,22 @@ export async function GET(request: NextRequest) {
       return aStart.localeCompare(bStart)
     })
 
-    // Check if any failures were due to token expiration
-    const hasTokenExpiration = failedCalendars.some(f => f.isTokenExpired)
+    // Determine if token is truly expired
+    // Token is only expired if:
+    // 1. We're using OAuth2 (accessToken provided)
+    // 2. ALL calendars failed (no successful calendars)
+    // 3. ALL failures are 401 errors (not permission issues)
+    const failed401Count = failedCalendars.filter(f => f.isTokenExpired).length
+    const hasTokenExpiration = accessToken && 
+                                successfulCalendars.length === 0 && 
+                                failedCalendars.length > 0 && 
+                                failed401Count === failedCalendars.length
+    
+    if (hasTokenExpiration) {
+      console.error(`⚠️  Token appears to be expired: All ${failedCalendars.length} calendar(s) failed with 401 errors`)
+    } else if (failed401Count > 0 && successfulCalendars.length > 0) {
+      console.log(`ℹ️  Some calendars failed with 401, but ${successfulCalendars.length} succeeded. This is likely a permissions issue, not token expiration.`)
+    }
     
     return NextResponse.json({
       events: allEvents,
@@ -282,7 +299,7 @@ export async function GET(request: NextRequest) {
       failedCalendarDetails: failedCalendars,
       authInfo: authInfo, // Include auth info for debugging
       usingOAuth2: usingOAuth2,
-      tokenExpired: hasTokenExpiration, // Flag to indicate token needs refresh
+      tokenExpired: hasTokenExpiration, // Only true if ALL calendars failed with 401
     })
   } catch (error: any) {
     console.error('Error fetching calendar events:', error)

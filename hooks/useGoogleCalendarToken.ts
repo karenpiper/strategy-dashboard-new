@@ -32,6 +32,7 @@ export function useGoogleCalendarToken() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const isRequestingRef = useRef(false) // Use ref to prevent re-renders
   const hasFetchedRef = useRef(false) // Track if we've successfully fetched
+  const lastRefreshAttemptRef = useRef<number>(0) // Track last refresh attempt timestamp
 
   useEffect(() => {
     async function getToken() {
@@ -265,15 +266,28 @@ export function useGoogleCalendarToken() {
     }
     
     getToken()
-  }, [refreshTrigger, accessToken]) // Only depend on refreshTrigger and accessToken
+  }, [refreshTrigger]) // Only depend on refreshTrigger - don't re-run when accessToken changes
 
   // Function to refresh the token (clears cache and requests new token)
   const refreshToken = () => {
+    const now = Date.now()
+    const fiveMinutes = 5 * 60 * 1000
+    
+    // Check cooldown: only allow refresh if last refresh was > 5 minutes ago
+    if (lastRefreshAttemptRef.current > 0 && (now - lastRefreshAttemptRef.current) < fiveMinutes) {
+      const timeRemaining = Math.ceil((fiveMinutes - (now - lastRefreshAttemptRef.current)) / 1000)
+      console.log(`⏸️  Refresh cooldown active. Please wait ${timeRemaining} seconds before refreshing again.`)
+      return
+    }
+    
     console.log('🔄 Refreshing Google Calendar token...')
-    // Clear cached token and denied flag
+    lastRefreshAttemptRef.current = now
+    
+    // Clear cached token but DON'T clear denied flag - respect user's previous denial
     localStorage.removeItem('google_calendar_token')
     localStorage.removeItem('google_calendar_token_expiry')
-    sessionStorage.removeItem('google_calendar_denied')
+    // Note: We intentionally do NOT clear 'google_calendar_denied' here
+    // If user previously denied access, we should respect that
     setAccessToken(null)
     setError(null)
     setLoading(true)
