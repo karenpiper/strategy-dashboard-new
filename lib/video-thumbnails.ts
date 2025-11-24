@@ -59,9 +59,11 @@ function extractVimeoId(url: string): string | null {
 
 /**
  * Get YouTube thumbnail URL
+ * Returns maxresdefault (highest quality), which falls back to hqdefault if not available
  */
 function getYouTubeThumbnail(videoId: string): string {
-  // Try maxresdefault first (highest quality), fallback to hqdefault
+  // maxresdefault is the highest quality, but may not exist for all videos
+  // YouTube will serve hqdefault as fallback if maxresdefault doesn't exist
   return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
 }
 

@@ -895,6 +895,7 @@ export default function VideoAdmin() {
                   videoUrl={viewingItem.video_url}
                   title={viewingItem.title}
                   platform={viewingItem.platform}
+                  thumbnailUrl={viewingItem.thumbnail_url}
                   aspectRatio="16/9"
                 />
 
