@@ -258,12 +258,9 @@ export default function ResourcesPage() {
       : <ArrowDown className="w-3 h-3 text-gray-700" />
   }
 
-  if (authLoading || loading) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center ${getBgClass()}`}>
-        <Loader2 className={`w-8 h-8 animate-spin ${orangeColors.primary}`} />
-      </div>
-    )
+  // Don't show full loading screen - render page structure immediately
+  if (!user && !authLoading) {
+    return null
   }
 
   return (
@@ -271,40 +268,40 @@ export default function ResourcesPage() {
       <SiteHeader />
 
       {/* Main Content */}
-      <main className="max-w-[1400px] mx-auto px-6 py-6 flex-1 pt-20 w-full">
+      <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24 w-full">
         <div className="flex gap-6">
           {/* Main Content Area */}
           <div className="flex-1">
             {/* Header with Title, Search, and Filters */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className={`text-3xl font-black uppercase ${getTextClass()}`}>RESOURCES</h1>
-                <div className="text-sm text-gray-500">
-                  {filteredResources.length} {filteredResources.length === 1 ? 'resource' : 'resources'}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-8">
+                <h1 className={`text-4xl font-black uppercase ${getTextClass()}`}>RESOURCES</h1>
+                <div className={`text-sm ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>
+                  {loading ? 'Loading...' : `${filteredResources.length} ${filteredResources.length === 1 ? 'resource' : 'resources'}`}
                 </div>
               </div>
 
               {/* Search Bar */}
-              <div className="relative mb-4">
-                <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`} />
+              <div className="relative mb-6">
+                <Search className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`} />
                 <Input
                   type="text"
                   placeholder="Search resources..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`pl-10 pr-4 py-2 ${getRoundedClass('rounded-lg')} ${mode === 'chill' ? 'bg-white border-[#4A1818]/20' : mode === 'chaos' ? 'bg-[#2A2A2A] border-[#333333]' : 'bg-[#1a1a1a] border-white'} ${getTextClass()} text-sm`}
+                  className={`pl-12 pr-4 py-3 ${getRoundedClass('rounded-xl')} ${mode === 'chill' ? 'bg-white border-[#4A1818]/20' : mode === 'chaos' ? 'bg-[#2A2A2A] border-[#333333]' : 'bg-[#1a1a1a] border-white'} ${getTextClass()} text-base`}
                 />
               </div>
 
               {/* Filter and Sort Controls */}
-              <div className="flex items-center justify-between gap-4">
-                {/* Filter Buttons - Compact */}
+              <div className="flex flex-wrap items-center gap-4">
+                {/* Filter Buttons */}
                 <div className="flex flex-wrap gap-2 flex-1">
                   {filters.map((filter) => (
                     <button
                       key={filter}
                       onClick={() => setActiveFilter(filter)}
-                      className={`px-3 py-1.5 ${getRoundedClass('rounded-md')} font-semibold uppercase text-xs transition-all ${
+                      className={`px-4 py-2 ${getRoundedClass('rounded-xl')} font-semibold uppercase text-sm transition-all ${
                         activeFilter === filter
                           ? `text-white`
                           : mode === 'chill'
@@ -313,7 +310,7 @@ export default function ResourcesPage() {
                       }`}
                       style={{
                         backgroundColor: activeFilter === filter ? orangeColors.primary : 'transparent',
-                        border: activeFilter === filter ? 'none' : `1px solid ${mode === 'chill' ? '#4A1818/20' : '#333333'}`
+                        border: activeFilter === filter ? 'none' : `2px solid ${mode === 'chill' ? '#4A1818/20' : '#333333'}`
                       }}
                     >
                       {getFilterDisplayName(filter)}
@@ -323,9 +320,7 @@ export default function ResourcesPage() {
 
                 {/* Sort Dropdown */}
                 <div className="flex items-center gap-2">
-                  <label className={`text-xs font-semibold ${mode === 'chill' ? 'text-[#4A1818]/80' : 'text-white/80'}`}>
-                    Sort:
-                  </label>
+                  <ArrowUpDown className={`w-4 h-4 ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`} />
                   <select
                     value={`${sortBy}-${sortOrder}`}
                     onChange={(e) => {
@@ -333,12 +328,12 @@ export default function ResourcesPage() {
                       setSortBy(field as 'name' | 'category' | 'source' | 'views')
                       setSortOrder(order as 'asc' | 'desc')
                     }}
-                    className={`px-3 py-1.5 ${getRoundedClass('rounded-md')} text-xs font-semibold border ${
+                    className={`h-12 px-4 ${getRoundedClass('rounded-xl')} text-sm font-medium border focus:outline-none focus:ring-2 ${
                       mode === 'chill' 
-                        ? 'bg-white border-[#4A1818]/20 text-[#4A1818]' 
+                        ? 'bg-white border-gray-300 text-[#4A1818] focus:ring-[#FFC043]' 
                         : mode === 'chaos'
-                        ? 'bg-[#2A2A2A] border-[#333333] text-white'
-                        : 'bg-[#1a1a1a] border-white text-white'
+                        ? 'bg-black/30 border-gray-600 text-white focus:ring-white'
+                        : 'bg-black/30 border-gray-600 text-white focus:ring-white'
                     }`}
                   >
                     <option value="name-asc">Name (A-Z)</option>
@@ -350,14 +345,37 @@ export default function ResourcesPage() {
                     <option value="views-desc">Most Viewed</option>
                     <option value="views-asc">Least Viewed</option>
                   </select>
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    className={`h-12 px-4 ${getRoundedClass('rounded-xl')} border flex items-center justify-center transition-colors ${
+                      mode === 'chill' 
+                        ? 'bg-white border-gray-300 text-[#4A1818] hover:bg-gray-50' 
+                        : mode === 'chaos'
+                        ? 'bg-black/30 border-gray-600 text-white hover:bg-black/50'
+                        : 'bg-black/30 border-gray-600 text-white hover:bg-black/50'
+                    }`}
+                    title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                  >
+                    {sortOrder === 'asc' ? (
+                      <ArrowUp className="w-4 h-4" />
+                    ) : (
+                      <ArrowDown className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
 
             {/* Resource List Table */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
+            {loading ? (
+              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-gray-400" />
+                <p className="text-gray-500 mt-4">Loading resources...</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th 
@@ -473,16 +491,17 @@ export default function ResourcesPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
-
-              {filteredResources.length === 0 && !loading && (
-                <div className="text-center py-12">
-                  <p className="text-sm text-gray-500">
-                    No resources found. Try adjusting your search or filters.
-                  </p>
                 </div>
-              )}
-            </div>
+
+                {filteredResources.length === 0 && !loading && (
+                  <div className="text-center py-12">
+                    <p className="text-sm text-gray-500">
+                      No resources found. Try adjusting your search or filters.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right Sidebar - Compact */}

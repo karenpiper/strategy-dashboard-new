@@ -270,18 +270,8 @@ export default function SnapsPage() {
     setFilteredSnaps(filtered)
   }, [searchQuery, allSnaps])
 
-  if (authLoading || loading) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center ${getBgClass()}`}>
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: style.accent }} />
-          <p className={getTextClass()}>Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
+  // Don't show full loading screen - render page structure immediately
+  if (!user && !authLoading) {
     return null
   }
 
@@ -316,6 +306,12 @@ export default function SnapsPage() {
       <SiteHeader />
 
       <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
+        {loading && (
+          <div className="text-center py-8 mb-8">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: style.accent }} />
+            <p className={getTextClass()}>Loading snaps...</p>
+          </div>
+        )}
         <div className="flex gap-6">
           {/* Left Sidebar Card */}
           <Card className={`w-80 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`} style={{ 

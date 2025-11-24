@@ -118,74 +118,62 @@ export default function VibesPage() {
     }
   }, [user, authLoading, router])
 
-  // Fetch data
+  // Fetch data - optimized to run in parallel and only once
   useEffect(() => {
+    if (!user || authLoading) return
+    
+    let mounted = true
+    setLoading(true)
+    
+    // Set static data immediately (no API call needed)
+    setQuestionOfWeek("What's one thing you learned this week?")
+    setAnswers([
+      { id: '1', answer: "How to use CSS Grid effectively!", author: 'Alex' },
+      { id: '2', answer: "Better time management techniques", author: 'Sarah' }
+    ])
+    
     async function fetchData() {
-      if (!user) return
-      
-      setLoading(true)
-      
       try {
-        // Fetch Beast Babe from API
-        const beastBabeResponse = await fetch('/api/beast-babe')
+        // Fetch all data in parallel for faster loading
+        const [beastBabeResponse, playlistsResponse] = await Promise.all([
+          fetch('/api/beast-babe'),
+          fetch('/api/playlists') // Remove refresh=true to speed up
+        ])
+        
+        if (!mounted) return
+        
+        // Process Beast Babe
         if (beastBabeResponse.ok) {
           const beastBabeData = await beastBabeResponse.json()
-          if (beastBabeData?.currentBeastBabe) {
-        setBeastBabe({
+          if (beastBabeData?.currentBeastBabe && mounted) {
+            setBeastBabe({
               id: beastBabeData.currentBeastBabe.id,
               full_name: beastBabeData.currentBeastBabe.full_name,
               email: beastBabeData.currentBeastBabe.email,
               avatar_url: beastBabeData.currentBeastBabe.avatar_url,
-              snaps_count: 0 // This would need to come from the API if available
+              snaps_count: 0
             })
           }
         }
 
-        // Fetch Question of the Week (placeholder - you'll need to create a questions table)
-        setQuestionOfWeek("What's one thing you learned this week?")
-        setAnswers([
-          { id: '1', answer: "How to use CSS Grid effectively!", author: 'Alex' },
-          { id: '2', answer: "Better time management techniques", author: 'Sarah' }
-        ])
-
-        // Fetch playlists from database
-        // First try with refresh to get Spotify metadata if missing
-        console.log('[Vibes] Fetching playlists from API...')
-        const playlistsResponse = await fetch('/api/playlists?refresh=true')
-        console.log('[Vibes] Playlist API response status:', playlistsResponse.status, playlistsResponse.statusText)
-        
+        // Process Playlists
         let playlists = null
         if (playlistsResponse.ok) {
           playlists = await playlistsResponse.json()
-          console.log('[Vibes] Received playlists from API:', playlists)
-          console.log('[Vibes] Playlists type:', typeof playlists)
-          console.log('[Vibes] Is array:', Array.isArray(playlists))
-          console.log('[Vibes] Playlists length:', playlists?.length ?? 'null/undefined')
         } else {
-          console.warn('[Vibes] API request failed, falling back to direct Supabase query')
-          const errorData = await playlistsResponse.json().catch(() => ({ error: 'Unknown error' }))
-          console.error('[Vibes] API error response:', playlistsResponse.status, errorData)
-          
           // Fallback to direct Supabase query if API fails
-          const { data, error: playlistsError } = await supabase
+          const { data } = await supabase
             .from('playlists')
             .select('*')
             .order('date', { ascending: false })
-          
-          if (playlistsError) {
-            console.error('[Vibes] Error fetching playlists from Supabase:', playlistsError)
-            console.error('[Vibes] Supabase error details:', JSON.stringify(playlistsError, null, 2))
-          } else {
-            console.log('[Vibes] Received playlists from Supabase:', data)
-            playlists = data
-          }
+          playlists = data
         }
 
+        if (!mounted) return
+
         if (playlists && Array.isArray(playlists) && playlists.length > 0) {
-          console.log(`[Vibes] Found ${playlists.length} playlist(s), setting weekly and archive playlists`)
           // Set the most recent playlist as weekly playlist
           const mostRecent = playlists[0]
-          console.log('[Vibes] Setting weekly playlist:', mostRecent)
           setWeeklyPlaylist({
             id: mostRecent.id,
             date: mostRecent.date,
@@ -199,7 +187,7 @@ export default function VibesPage() {
             week_label: mostRecent.week_label || 'This Week'
           })
 
-          // Set remaining playlists as archive (skip the first one)
+          // Set remaining playlists as archive
           const archive = playlists.slice(1).map((p, index) => ({
             id: p.id,
             date: p.date,
@@ -212,52 +200,49 @@ export default function VibesPage() {
             created_at: p.created_at,
             week_label: p.week_label || (index === 0 ? 'Last Week' : index === 1 ? '2 Weeks Ago' : index === 2 ? '3 Weeks Ago' : null)
           }))
-          console.log(`[Vibes] Setting ${archive.length} archive playlist(s)`)
           setArchivePlaylists(archive)
         } else {
-          console.log('[Vibes] No playlists found or empty array')
           setWeeklyPlaylist(null)
           setArchivePlaylists([])
         }
       } catch (err: any) {
         console.error('[Vibes] Error fetching data:', err)
-        if (err instanceof Error) {
-          console.error('[Vibes] Error message:', err.message)
-          console.error('[Vibes] Error stack:', err.stack)
+        if (mounted) {
+          setWeeklyPlaylist(null)
+          setArchivePlaylists([])
         }
-        setWeeklyPlaylist(null)
-        setArchivePlaylists([])
       } finally {
-        setLoading(false)
+        if (mounted) {
+          setLoading(false)
+        }
       }
     }
     
-    if (user) {
-      fetchData()
+    fetchData()
+    
+    return () => {
+      mounted = false
     }
-  }, [user, supabase])
+  }, [user]) // Removed supabase from dependencies - it's stable
 
-  if (authLoading || loading) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center ${getBgClass()}`}>
-        <div className="text-center">
-          <p className={getTextClass()}>Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
+  // Don't show loading screen - render page immediately with loading states
+  if (!user && !authLoading) {
     return null
   }
 
   return (
-    <div className={`flex flex-col ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
+    <div className={`flex flex-col min-h-screen ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       <SiteHeader />
 
       <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
         {/* Header */}
         <h1 className={`text-4xl font-black uppercase mb-8 ${getTextClass()}`}>VIBES</h1>
+        
+        {loading && (
+          <div className="text-center py-8">
+            <p className={`${getTextClass()} opacity-60`}>Loading...</p>
+          </div>
+        )}
 
         {/* Top Row - Three Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
