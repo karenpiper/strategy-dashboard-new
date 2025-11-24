@@ -316,6 +316,7 @@ export async function GET(request: NextRequest) {
     */
     
     // Only generate new horoscope if there's NO cached text at all
+    // Generation is now enabled even when database is empty
     // BUT: We should have already found it in the checks above
     // If we get here, something is wrong with our logic
     console.log('⚠️ NO cached horoscope text found in database for user', userId, 'on date', todayDate)
