@@ -2341,13 +2341,13 @@ export default function TeamDashboard() {
                       </div>
                     </div>
                     
-                    {/* Calendar Container with darker background */}
+                    {/* Calendar Container */}
                     <div className={`${getRoundedClass('rounded-xl')} p-4 border-2`} style={{ 
-                      backgroundColor: mode === 'chaos' ? '#1E3A8A' : mode === 'chill' ? 'rgba(255, 255, 255, 0.5)' : '#000000',
+                      backgroundColor: 'transparent',
                       borderColor: mode === 'chaos' ? '#0EA5E9' : mode === 'chill' ? 'rgba(74, 24, 24, 0.2)' : '#FFFFFF'
                     }}>
                       {/* Day headers with dividers */}
-                      <div className="grid grid-cols-7 mb-3 pb-3" style={{ borderBottom: `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.2)' : 'rgba(255, 255, 255, 0.3)'}` }}>
+                      <div className="grid grid-cols-7 mb-3 pb-3" style={{ borderBottom: `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)'}` }}>
                         {getWeekDays().map((day, index) => {
                           const isToday = day.toDateString() === now.toDateString()
                           const dayName = day.toLocaleDateString('en-US', { weekday: 'short' })
@@ -2357,7 +2357,7 @@ export default function TeamDashboard() {
                               key={index} 
                               className="text-center relative"
                               style={{ 
-                                borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.3)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.2)' : 'rgba(255, 255, 255, 0.3)'}` : 'none'
+                                borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)'}` : 'none'
                               }}
                             >
                               <p className={`text-xs font-black uppercase mb-1`} style={{ color: isToday ? mintColor : (mode === 'chaos' ? '#FFFFFF' : mode === 'chill' ? '#4A1818' : '#FFFFFF') }}>
@@ -2377,6 +2377,22 @@ export default function TeamDashboard() {
                           const colSpan = span.endDay - span.startDay + 1
                           const startCol = span.startDay + 1
                           
+                          // Check if this is an OOO event
+                          const isOOO = event.calendarId.includes('6elnqlt8ok3kmcpim2vge0qqqk') || event.calendarId.includes('ojeuiov0bhit2k17g8d6gj4i68')
+                          
+                          // For OOO events, extract just the person's name
+                          let displayText = event.summary
+                          if (isOOO) {
+                            // Remove [PENDING APPROVAL] prefix (case-insensitive)
+                            displayText = displayText.replace(/^\[PENDING APPROVAL\]\s*/i, '')
+                            // Extract just the name (before " - " or other details)
+                            const nameMatch = displayText.match(/^([^-]+?)(?:\s*-\s*|\s+vacation|\s+parental|\s+leave)/i)
+                            displayText = nameMatch ? nameMatch[1].trim() : displayText.split(' - ')[0].trim()
+                          }
+                          
+                          // Height: half for OOO, full for others
+                          const eventHeight = isOOO ? 'h-6' : 'h-12'
+                          
                           return (
                             <div key={event.id} className="relative mb-2">
                               {/* Event bar spanning days - merged boxes */}
@@ -2387,9 +2403,9 @@ export default function TeamDashboard() {
                                     return (
                                       <div 
                                         key={index} 
-                                        className="flex-1 h-12"
+                                        className={`flex-1 ${eventHeight}`}
                                         style={{ 
-                                          borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.2)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.15)' : 'rgba(255, 255, 255, 0.2)'}` : 'none'
+                                          borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)'}` : 'none'
                                         }}
                                       ></div>
                                     )
@@ -2401,17 +2417,23 @@ export default function TeamDashboard() {
                                   return (
                                     <div
                                       key={index}
-                                      className={`flex-1 h-12 ${getRoundedClass(isStart && isEnd ? 'rounded-lg' : isStart ? 'rounded-l-lg' : isEnd ? 'rounded-r-lg' : '')} flex items-center px-2`}
+                                      className={`flex-1 ${eventHeight} ${getRoundedClass(isStart && isEnd ? 'rounded-lg' : isStart ? 'rounded-l-lg' : isEnd ? 'rounded-r-lg' : '')} flex items-center px-2`}
                                       style={{ 
                                         backgroundColor: `${eventColor}88`,
                                         borderLeft: isStart ? `3px solid ${eventColor}` : 'none',
-                                        borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.2)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.15)' : 'rgba(255, 255, 255, 0.2)'}` : 'none',
+                                        borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)'}` : 'none',
                                       }}
                                     >
                                       {isStart && (
                                         <div className="flex-1 min-w-0">
-                                          <p className={`text-xs font-black truncate`} style={{ color: mode === 'chaos' ? '#000000' : mode === 'chill' ? '#4A1818' : '#FFFFFF' }}>{event.summary}</p>
-                                          <p className={`text-[10px]`} style={{ color: mode === 'chaos' ? 'rgba(0, 0, 0, 0.7)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.7)' : 'rgba(255, 255, 255, 0.7)' }}>{formatEventTime(event)}</p>
+                                          {isOOO ? (
+                                            <p className={`text-xs font-black truncate`} style={{ color: mode === 'chaos' ? '#000000' : mode === 'chill' ? '#4A1818' : '#FFFFFF' }}>{displayText}</p>
+                                          ) : (
+                                            <>
+                                              <p className={`text-xs font-black truncate`} style={{ color: mode === 'chaos' ? '#000000' : mode === 'chill' ? '#4A1818' : '#FFFFFF' }}>{displayText}</p>
+                                              <p className={`text-[10px]`} style={{ color: mode === 'chaos' ? 'rgba(0, 0, 0, 0.7)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.7)' : 'rgba(255, 255, 255, 0.7)' }}>{formatEventTime(event)}</p>
+                                            </>
+                                          )}
                                         </div>
                                       )}
                                     </div>
