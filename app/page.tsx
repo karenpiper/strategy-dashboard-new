@@ -25,6 +25,7 @@ import { useGoogleCalendarToken } from '@/hooks/useGoogleCalendarToken'
 import { TeamPulseCard } from '@/components/team-pulse-card'
 import { Footer } from '@/components/footer'
 import { BeastBabeCard } from '@/components/beast-babe-card'
+import { VideoEmbed } from '@/components/video-embed'
 
 // Force dynamic rendering to avoid SSR issues with context
 export const dynamic = 'force-dynamic'
@@ -167,6 +168,16 @@ export default function TeamDashboard() {
     birthday: string | null
     start_date: string | null
   }>>([])
+  const [videos, setVideos] = useState<Array<{
+    id: string
+    title: string
+    video_url: string
+    thumbnail_url: string | null
+    platform: string | null
+    pinned: boolean
+    created_at: string
+  }>>([])
+  const [videosLoading, setVideosLoading] = useState(true)
   
   // Get Google Calendar access token using the user's existing Google session
   const { accessToken: googleCalendarToken, loading: tokenLoading, error: tokenError } = useGoogleCalendarToken()
@@ -2205,7 +2216,7 @@ export default function TeamDashboard() {
               
               // Deduplicate events - same event might appear in multiple calendars (e.g., holidays and office events)
               // Use a Map to track the best event for each normalized key
-              const eventMap = dateFilteredEvents.reduce((eventMap: Map<string, typeof calendarEvents[0]>, event) => {
+              const eventMap = dateFilteredEvents.reduce((eventMap: Map<string, typeof calendarEvents[0] & { isOfficeClosed?: boolean }>, event) => {
                 // Normalize event summary (remove common variations, trim, lowercase for comparison)
                 const normalizeSummary = (summary: string) => {
                   return summary
@@ -2213,6 +2224,24 @@ export default function TeamDashboard() {
                     .toLowerCase()
                     .replace(/\s+/g, ' ') // Normalize whitespace
                     .replace(/[^\w\s]/g, '') // Remove punctuation for comparison
+                }
+                
+                // Check if two normalized summaries are similar enough to be considered the same event
+                const areSimilar = (summary1: string, summary2: string) => {
+                  const norm1 = normalizeSummary(summary1)
+                  const norm2 = normalizeSummary(summary2)
+                  
+                  // Exact match after normalization
+                  if (norm1 === norm2) return true
+                  
+                  // One contains the other (e.g., "thanksgiving" vs "thanksgiving day")
+                  if (norm1.includes(norm2) || norm2.includes(norm1)) {
+                    // Only consider it a match if the shorter one is at least 5 characters
+                    const shorter = norm1.length < norm2.length ? norm1 : norm2
+                    return shorter.length >= 5
+                  }
+                  
+                  return false
                 }
                 
                 // Get event date (for all-day events, use date; for timed events, use dateTime)
@@ -2229,14 +2258,22 @@ export default function TeamDashboard() {
                 const eventDate = getEventDate(event)
                 const normalizedSummary = normalizeSummary(event.summary)
                 
-                // Create a unique key from normalized summary and date
-                const eventKey = `${normalizedSummary}|${eventDate}`
+                // Check if we already have a similar event on the same date
+                let existingEvent: typeof calendarEvents[0] & { isOfficeClosed?: boolean } | undefined = undefined
+                let existingKey: string | undefined = undefined
                 
-                // Check if we already have an event with this key
-                const existingEvent = eventMap.get(eventKey)
+                for (const [key, existing] of eventMap.entries()) {
+                  const [, existingDate] = key.split('|')
+                  if (existingDate === eventDate && areSimilar(event.summary, existing.summary)) {
+                    existingEvent = existing
+                    existingKey = key
+                    break
+                  }
+                }
                 
                 if (!existingEvent) {
-                  // First time seeing this event, add it
+                  // First time seeing this event, add it with normalized key
+                  const eventKey = `${normalizedSummary}|${eventDate}`
                   eventMap.set(eventKey, event)
                 } else {
                   // Duplicate found - check if it's in both office and holiday calendars
@@ -2246,23 +2283,33 @@ export default function TeamDashboard() {
                   const isCurrentOffice = event.calendarId.includes('5b18ulcjgibgffc35hbtmv6sfs')
                   
                   // If event appears in both office and holiday calendars, mark it as "office closed" holiday
+                  // This means the office is closed for this holiday, so we only show it once with special color
                   if ((isCurrentOffice && isExistingHoliday) || (isCurrentHoliday && isExistingOffice)) {
-                    // Create a merged event that indicates it's in both calendars
+                    // Create a merged event that indicates it's in both calendars (office closed)
                     const mergedEvent = {
-                      ...existingEvent,
+                      ...(isCurrentOffice ? event : existingEvent), // Prefer the office event's details
                       isOfficeClosed: true, // Flag to indicate office is closed
-                      // Keep the office event's calendar ID if it exists, otherwise holiday
-                      calendarId: isCurrentOffice ? event.calendarId : existingEvent.calendarId
+                      // Use holiday calendar ID for color detection, but mark as office closed
+                      calendarId: isCurrentHoliday ? event.calendarId : existingEvent.calendarId
                     }
-                    eventMap.set(eventKey, mergedEvent)
+                    // Remove the old entry and add the merged one
+                    if (existingKey) {
+                      eventMap.delete(existingKey)
+                    }
+                    const newKey = `${normalizedSummary}|${eventDate}`
+                    eventMap.set(newKey, mergedEvent)
                   } else if (isCurrentOffice && isExistingOffice) {
-                    // Both are office events, keep existing
+                    // Both are office events, keep existing (don't add duplicate)
                   } else if (isCurrentHoliday && isExistingHoliday) {
-                    // Both are holidays, keep existing
+                    // Both are holidays, keep existing (don't add duplicate)
                   } else {
                     // Different types but not the office+holiday combo, prefer office
                     if (isCurrentOffice) {
-                      eventMap.set(eventKey, event)
+                      if (existingKey) {
+                        eventMap.delete(existingKey)
+                      }
+                      const newKey = `${normalizedSummary}|${eventDate}`
+                      eventMap.set(newKey, event)
                     }
                     // Otherwise keep existing
                   }
@@ -2584,23 +2631,30 @@ export default function TeamDashboard() {
                         })}
                       </div>
                       
-                      {/* Background grid for vertical lines (behind events) */}
-                      <div className="absolute inset-x-4 bottom-4 top-20 pointer-events-none">
-                        <div className="grid grid-cols-7 h-full">
-                          {Array.from({ length: 7 }).map((_, index) => (
-                            <div
-                              key={index}
-                              style={{
-                                borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? '#1E3A8A' : mode === 'chill' ? '#4A1818' : '#000000'}` : 'none'
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </div>
+                      {/* Check if there are any birthdays/anniversaries to determine top spacing */}
+                      {(() => {
+                        const hasBirthdaysOrAnniversaries = filteredEvents.some((e: any) => e.isBirthday || e.isAnniversary)
+                        const topOffset = hasBirthdaysOrAnniversaries ? 'top-20' : 'top-0'
+                        
+                        return (
+                          <>
+                            {/* Background grid for vertical lines (behind events) */}
+                            <div className={`absolute inset-x-4 bottom-4 ${topOffset} pointer-events-none`}>
+                              <div className="grid grid-cols-7 h-full">
+                                {Array.from({ length: 7 }).map((_, index) => (
+                                  <div
+                                    key={index}
+                                    style={{
+                                      borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? '#1E3A8A' : mode === 'chill' ? '#4A1818' : '#000000'}` : 'none'
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
 
-                      {/* Events as Gantt bars - use grid for aligned columns */}
-                      <div className="space-y-2 relative z-10">
-                        {filteredEvents.map((event) => {
+                            {/* Events as Gantt bars - use grid for aligned columns */}
+                            <div className={`space-y-2 relative z-10 ${hasBirthdaysOrAnniversaries ? '' : 'mt-0'}`}>
+                              {filteredEvents.map((event) => {
                           const eventColor = getEventColor(event)
                           const span = getEventSpan(event)
                           const colSpan = span.endDay - span.startDay + 1
@@ -2674,7 +2728,10 @@ export default function TeamDashboard() {
                         {filteredEvents.length === 0 && (
                           <p className={`text-sm text-center py-4`} style={{ color: mode === 'chaos' ? 'rgba(255, 255, 255, 0.8)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.8)' : 'rgba(255, 255, 255, 0.8)' }}>No events this week</p>
                         )}
-                      </div>
+                            </div>
+                          </>
+                        )
+                      })()}
                     </div>
                   </div>
                 ) : (
@@ -2903,8 +2960,8 @@ export default function TeamDashboard() {
               }
               return (
                 <Card 
-                  className={`${style.bg} ${style.border} ${eventsExpanded ? 'p-6' : 'py-3 px-6'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex flex-col`} 
-                  style={eventsExpanded ? { flex: '0 0 auto', height: '180px', maxHeight: '180px' } : { flex: '0 0 auto', height: 'auto', minHeight: '70px' }}
+                  className={`${style.bg} ${style.border} ${eventsExpanded ? 'p-6 flex-1' : 'py-3 px-6'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex flex-col`} 
+                  style={eventsExpanded ? {} : { flex: '0 0 auto', height: 'auto', minHeight: '70px' }}
                 >
                   {eventsExpanded ? (
                     /* Horizontal stats view when expanded - labels below numbers */
@@ -3056,7 +3113,7 @@ export default function TeamDashboard() {
                       return (
                 <>
                   <Card 
-                    className={`${pipelineStyle.bg} ${pipelineStyle.border} ${eventsExpanded ? 'p-6 flex-[2]' : 'p-6'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 overflow-hidden`}
+                    className={`${pipelineStyle.bg} ${pipelineStyle.border} ${eventsExpanded ? 'p-6 flex-1' : 'p-6'} ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 overflow-hidden`}
                     style={pipelineStyle.glow ? { boxShadow: `0 0 40px ${pipelineStyle.glow}` } : {}}
                   >
                     
