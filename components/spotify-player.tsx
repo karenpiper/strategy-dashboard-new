@@ -58,7 +58,7 @@ export function SpotifyPlayer({
       ));
       return artists.join(', ');
     }
-    return playlist.description || '';
+    return null;
   }, [playlist]);
 
   // Derive track count and duration

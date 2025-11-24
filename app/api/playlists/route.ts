@@ -186,7 +186,7 @@ export async function PUT(request: NextRequest) {
     const supabase = await createClient()
     const body = await request.json()
 
-    const { id, date, title, curator, description, spotify_url, apple_playlist_url, cover_url, curator_photo_url, week_label } = body
+    const { id, date, title, curator, description, spotify_url, apple_playlist_url, cover_url, curator_photo_url, week_label, total_duration, track_count, artists_list } = body
 
     if (!id) {
       return NextResponse.json(
@@ -238,6 +238,9 @@ export async function PUT(request: NextRequest) {
     if (finalCoverUrl !== undefined) updateData.cover_url = finalCoverUrl
     if (finalCuratorPhotoUrl !== undefined) updateData.curator_photo_url = finalCuratorPhotoUrl
     if (week_label !== undefined) updateData.week_label = week_label
+    if (total_duration !== undefined) updateData.total_duration = total_duration
+    if (track_count !== undefined) updateData.track_count = track_count
+    if (artists_list !== undefined) updateData.artists_list = artists_list
 
     const { data: playlist, error } = await supabase
       .from('playlists')
@@ -270,7 +273,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
     const body = await request.json()
 
-    const { date, title, curator, description, spotify_url, apple_playlist_url, cover_url, curator_photo_url, week_label } = body
+    const { date, title, curator, description, spotify_url, apple_playlist_url, cover_url, curator_photo_url, week_label, total_duration, track_count, artists_list } = body
 
     if (!date || !curator || !spotify_url) {
       return NextResponse.json(
@@ -321,6 +324,9 @@ export async function POST(request: NextRequest) {
         cover_url: finalCoverUrl || null,
         curator_photo_url: finalCuratorPhotoUrl || null,
         week_label: week_label || null,
+        total_duration: total_duration || null,
+        track_count: track_count || null,
+        artists_list: artists_list || null,
       })
       .select()
       .single()

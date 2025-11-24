@@ -152,6 +152,9 @@ export default function TeamDashboard() {
     cover_url: string | null
     description: string | null
     spotify_url: string
+    total_duration?: string | null
+    track_count?: number | null
+    artists_list?: string | null
   } | null>(null)
   const [playlistLoading, setPlaylistLoading] = useState(true)
   const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false)
@@ -3918,7 +3921,10 @@ export default function TeamDashboard() {
                         coverUrl: weeklyPlaylist.cover_url || undefined,
                         description: weeklyPlaylist.description || undefined,
                         spotifyUrl: weeklyPlaylist.spotify_url || undefined,
-                        tracks: []
+                        tracks: [],
+                        totalDuration: weeklyPlaylist.total_duration || undefined,
+                        trackCount: weeklyPlaylist.track_count || undefined,
+                        artistsList: weeklyPlaylist.artists_list || undefined,
                       }}
                       onSpotifyLink={() => {
                         if (weeklyPlaylist.spotify_url) {
@@ -4101,7 +4107,10 @@ export default function TeamDashboard() {
                 coverUrl: weeklyPlaylist.cover_url || undefined,
                 description: weeklyPlaylist.description || undefined,
                 spotifyUrl: weeklyPlaylist.spotify_url || undefined,
-                tracks: []
+                tracks: [],
+                totalDuration: weeklyPlaylist.total_duration || undefined,
+                trackCount: weeklyPlaylist.track_count || undefined,
+                artistsList: weeklyPlaylist.artists_list || undefined,
               }}
               onSpotifyLink={() => {
                 if (weeklyPlaylist.spotify_url) {

@@ -36,6 +36,9 @@ interface Playlist {
   spotify_url: string
   created_at: string
   week_label?: string | null
+  total_duration?: string | null
+  track_count?: number | null
+  artists_list?: string | null
 }
 
 export default function PlaylistsAdmin() {
@@ -244,6 +247,9 @@ export default function PlaylistsAdmin() {
           spotify_url: spotifyData.spotifyUrl || formData.spotify_url,
           cover_url: spotifyData.coverUrl || null,
           curator_photo_url: spotifyData.curatorPhotoUrl || null,
+          total_duration: spotifyData.totalDuration || null,
+          track_count: spotifyData.trackCount || null,
+          artists_list: spotifyData.artistsList || null,
         }),
       })
 
@@ -287,9 +293,9 @@ export default function PlaylistsAdmin() {
         description: item.description || undefined,
         spotifyUrl: item.spotify_url,
         tracks: [],
-        artistsList: undefined,
-        totalDuration: undefined,
-        trackCount: undefined,
+        artistsList: item.artists_list || undefined,
+        totalDuration: item.total_duration || undefined,
+        trackCount: item.track_count || undefined,
       })
     } else {
       setSpotifyData(null)
@@ -315,6 +321,9 @@ export default function PlaylistsAdmin() {
       const finalCoverUrl = spotifyData?.coverUrl || editingItem.cover_url
       const finalDescription = formData.description.trim() || spotifyData?.description || editingItem.description || ''
       const finalCurator = formData.curator.trim()
+      const finalTotalDuration = spotifyData?.totalDuration || editingItem.total_duration || null
+      const finalTrackCount = spotifyData?.trackCount || editingItem.track_count || null
+      const finalArtistsList = spotifyData?.artistsList || editingItem.artists_list || null
 
       const response = await fetch('/api/playlists', {
         method: 'PUT',
@@ -328,6 +337,9 @@ export default function PlaylistsAdmin() {
           spotify_url: formData.spotify_url,
           cover_url: finalCoverUrl || null,
           curator_photo_url: spotifyData?.curatorPhotoUrl || editingItem.curator_photo_url || null,
+          total_duration: finalTotalDuration,
+          track_count: finalTrackCount,
+          artists_list: finalArtistsList,
         }),
       })
 
