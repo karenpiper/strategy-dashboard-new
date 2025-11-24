@@ -16,60 +16,66 @@ import {
   Trash2, 
   Filter,
   X,
-  ExternalLink
+  Pin,
+  ExternalLink,
+  Play
 } from 'lucide-react'
 
-interface Resource {
+interface Video {
   id: string
-  name: string
-  primary_category: string
-  secondary_tags: string[]
-  link: string
-  source: string | null
+  title: string
+  video_url: string
   description: string | null
-  username: string | null
-  password: string | null
-  instructions: string | null
-  documentation: string | null
-  view_count: number
+  thumbnail_url: string | null
+  category: string | null
+  tags: string[] | null
+  platform: string | null
+  duration: number | null
+  pinned: boolean
+  submitted_by: string
   created_at: string
   updated_at: string
+  submitted_by_profile?: {
+    id: string
+    email: string
+    full_name: string | null
+  }
 }
 
-const PRIMARY_CATEGORIES = [
-  'Research & Insights',
-  'Communication & Presentation',
-  'Creative & Inspiration',
-  'Learning & Technology',
-  'Strategy & Planning',
-  'Tools & Templates'
+const VIDEO_CATEGORIES = [
+  'Training',
+  'Meeting Recording',
+  'Tutorial',
+  'Presentation',
+  'Demo',
+  'Other'
 ]
 
-export default function ResourcesAdmin() {
+export default function VideoAdmin() {
   const { mode } = useMode()
   const { user } = useAuth()
-  const [resources, setResources] = useState<Resource[]>([])
+  const [videos, setVideos] = useState<Video[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [filterPinned, setFilterPinned] = useState<string | null>(null)
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [sortBy, setSortBy] = useState<string>('created_at')
   const [sortOrder, setSortOrder] = useState<string>('desc')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [editingItem, setEditingItem] = useState<Resource | null>(null)
+  const [editingItem, setEditingItem] = useState<Video | null>(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   const [formData, setFormData] = useState({
-    name: '',
-    primary_category: '',
-    secondary_tags: '',
-    link: '',
-    source: '',
+    title: '',
+    video_url: '',
     description: '',
-    username: '',
-    password: '',
-    instructions: '',
-    documentation: '',
+    thumbnail_url: '',
+    category: '',
+    tags: '',
+    platform: '',
+    duration: '',
+    pinned: false,
   })
 
   // Theme-aware styling helpers
@@ -122,61 +128,61 @@ export default function ResourcesAdmin() {
     return base
   }
 
-  // Fetch resources
-  const fetchResources = async () => {
+  // Fetch videos
+  const fetchVideos = async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
       if (searchQuery) params.append('search', searchQuery)
-      if (filterCategory !== 'all') params.append('filter', filterCategory)
+      if (filterPinned !== null) params.append('pinned', filterPinned)
+      if (filterCategory !== 'all') params.append('category', filterCategory)
       if (sortBy) params.append('sortBy', sortBy)
       if (sortOrder) params.append('sortOrder', sortOrder)
 
-      const response = await fetch(`/api/resources?${params.toString()}`)
+      const response = await fetch(`/api/videos?${params.toString()}`)
       const result = await response.json()
       
       if (response.ok) {
-        setResources(result.data || [])
+        setVideos(result.data || [])
       } else {
-        console.error('Error fetching resources:', result.error)
+        console.error('Error fetching videos:', result.error)
       }
     } catch (error) {
-      console.error('Error fetching resources:', error)
+      console.error('Error fetching videos:', error)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchResources()
+    fetchVideos()
   }, [])
 
   // Debounce search and refetch on sort/filter changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchResources()
+      fetchVideos()
     }, 300) // 300ms debounce
 
     return () => clearTimeout(timer)
-  }, [searchQuery, filterCategory, sortBy, sortOrder])
+  }, [searchQuery, filterPinned, filterCategory, sortBy, sortOrder])
 
   // Handle add
   const handleAdd = async () => {
     try {
-      const response = await fetch('/api/resources', {
+      const response = await fetch('/api/videos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name,
-          primary_category: formData.primary_category,
-          secondary_tags: formData.secondary_tags,
-          link: formData.link,
-          source: formData.source || null,
+          title: formData.title,
+          video_url: formData.video_url,
           description: formData.description || null,
-          username: formData.username || null,
-          password: formData.password || null,
-          instructions: formData.instructions || null,
-          documentation: formData.documentation || null,
+          thumbnail_url: formData.thumbnail_url || null,
+          category: formData.category || null,
+          tags: formData.tags,
+          platform: formData.platform || null,
+          duration: formData.duration ? parseInt(formData.duration) : null,
+          pinned: formData.pinned,
         }),
       })
 
@@ -185,34 +191,33 @@ export default function ResourcesAdmin() {
       if (response.ok) {
         setIsAddDialogOpen(false)
         resetForm()
-        fetchResources()
+        fetchVideos()
       } else {
         const errorMsg = result.details 
           ? `${result.error}\n\nDetails: ${result.details}`
-          : result.error || 'Failed to add resource'
-        console.error('Error adding resource:', result)
+          : result.error || 'Failed to add video'
+        console.error('Error adding video:', result)
         alert(errorMsg)
       }
     } catch (error) {
-      console.error('Error adding resource:', error)
-      alert(`Failed to add resource: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.error('Error adding video:', error)
+      alert(`Failed to add video: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
   // Handle edit
-  const handleEdit = (item: Resource) => {
+  const handleEdit = (item: Video) => {
     setEditingItem(item)
     setFormData({
-      name: item.name,
-      primary_category: item.primary_category,
-      secondary_tags: item.secondary_tags?.join(', ') || '',
-      link: item.link,
-      source: item.source || '',
+      title: item.title,
+      video_url: item.video_url,
       description: item.description || '',
-      username: item.username || '',
-      password: item.password || '',
-      instructions: item.instructions || '',
-      documentation: item.documentation || '',
+      thumbnail_url: item.thumbnail_url || '',
+      category: item.category || '',
+      tags: item.tags?.join(', ') || '',
+      platform: item.platform || '',
+      duration: item.duration?.toString() || '',
+      pinned: item.pinned,
     })
     setIsEditDialogOpen(true)
   }
@@ -221,21 +226,20 @@ export default function ResourcesAdmin() {
     if (!editingItem) return
 
     try {
-      const response = await fetch('/api/resources', {
+      const response = await fetch('/api/videos', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: editingItem.id,
-          name: formData.name,
-          primary_category: formData.primary_category,
-          secondary_tags: formData.secondary_tags,
-          link: formData.link,
-          source: formData.source || null,
+          title: formData.title,
+          video_url: formData.video_url,
           description: formData.description || null,
-          username: formData.username || null,
-          password: formData.password || null,
-          instructions: formData.instructions || null,
-          documentation: formData.documentation || null,
+          thumbnail_url: formData.thumbnail_url || null,
+          category: formData.category || null,
+          tags: formData.tags,
+          platform: formData.platform || null,
+          duration: formData.duration ? parseInt(formData.duration) : null,
+          pinned: formData.pinned,
         }),
       })
 
@@ -245,80 +249,104 @@ export default function ResourcesAdmin() {
         setIsEditDialogOpen(false)
         setEditingItem(null)
         resetForm()
-        fetchResources()
+        fetchVideos()
       } else {
         const errorMsg = result.details 
           ? `${result.error}\n\nDetails: ${result.details}`
-          : result.error || 'Failed to update resource'
-        console.error('Error updating resource:', result)
+          : result.error || 'Failed to update video'
+        console.error('Error updating video:', result)
         alert(errorMsg)
       }
     } catch (error) {
-      console.error('Error updating resource:', error)
-      alert(`Failed to update resource: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.error('Error updating video:', error)
+      alert(`Failed to update video: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
   // Handle delete
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this resource?')) return
+    if (!confirm('Are you sure you want to delete this video?')) return
 
     try {
-      const response = await fetch(`/api/resources?id=${id}`, {
+      const response = await fetch(`/api/videos?id=${id}`, {
         method: 'DELETE',
       })
 
       const result = await response.json()
       
       if (response.ok) {
-        fetchResources()
+        fetchVideos()
         setSelectedIds(new Set())
       } else {
         alert(`Error: ${result.error}`)
       }
     } catch (error) {
-      console.error('Error deleting resource:', error)
-      alert('Failed to delete resource')
+      console.error('Error deleting video:', error)
+      alert('Failed to delete video')
     }
   }
 
   // Handle bulk delete
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return
-    if (!confirm(`Are you sure you want to delete ${selectedIds.size} resource(s)?`)) return
+    if (!confirm(`Are you sure you want to delete ${selectedIds.size} video(s)?`)) return
 
     try {
       const ids = Array.from(selectedIds).join(',')
-      const response = await fetch(`/api/resources?ids=${ids}`, {
+      const response = await fetch(`/api/videos?ids=${ids}`, {
         method: 'DELETE',
       })
 
       const result = await response.json()
       
       if (response.ok) {
-        fetchResources()
+        fetchVideos()
         setSelectedIds(new Set())
       } else {
         alert(`Error: ${result.error}`)
       }
     } catch (error) {
-      console.error('Error deleting resources:', error)
-      alert('Failed to delete resources')
+      console.error('Error deleting videos:', error)
+      alert('Failed to delete videos')
+    }
+  }
+
+  // Handle pin toggle
+  const handleTogglePin = async (id: string, currentPinned: boolean) => {
+    try {
+      const response = await fetch('/api/videos', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          pinned: !currentPinned,
+        }),
+      })
+
+      const result = await response.json()
+      
+      if (response.ok) {
+        fetchVideos()
+      } else {
+        alert(`Error: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Error toggling pin:', error)
+      alert('Failed to toggle pin')
     }
   }
 
   const resetForm = () => {
     setFormData({
-      name: '',
-      primary_category: '',
-      secondary_tags: '',
-      link: '',
-      source: '',
+      title: '',
+      video_url: '',
       description: '',
-      username: '',
-      password: '',
-      instructions: '',
-      documentation: '',
+      thumbnail_url: '',
+      category: '',
+      tags: '',
+      platform: '',
+      duration: '',
+      pinned: false,
     })
   }
 
@@ -333,14 +361,14 @@ export default function ResourcesAdmin() {
   }
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === resources.length && resources.length > 0) {
+    if (selectedIds.size === videos.length && videos.length > 0) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(resources.map(item => item.id)))
+      setSelectedIds(new Set(videos.map(item => item.id)))
     }
   }
 
-  const filteredResources = resources
+  const filteredVideos = videos
 
   const cardStyle = getCardStyle()
 
@@ -349,8 +377,8 @@ export default function ResourcesAdmin() {
       <div className="max-w-[1200px] mx-auto">
         {/* Header */}
         <div className="mb-4">
-          <h1 className={`text-2xl font-black uppercase tracking-wider ${getTextClass()} mb-1`}>Resources</h1>
-          <p className={`${getTextClass()}/70 text-sm font-normal`}>Manage team resources</p>
+          <h1 className={`text-2xl font-black uppercase tracking-wider ${getTextClass()} mb-1`}>Videos</h1>
+          <p className={`${getTextClass()}/70 text-sm font-normal`}>Manage video content</p>
         </div>
 
         {/* Actions Bar */}
@@ -375,62 +403,76 @@ export default function ResourcesAdmin() {
             </DialogTrigger>
             <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border max-w-4xl max-h-[90vh] overflow-y-auto`}>
               <DialogHeader>
-                <DialogTitle className={cardStyle.text}>Add New Resource</DialogTitle>
+                <DialogTitle className={cardStyle.text}>Add New Video</DialogTitle>
               </DialogHeader>
+              {/* Pinned at the top */}
+              <div className="mb-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="pinned-add"
+                    checked={formData.pinned}
+                    onChange={(e) => setFormData({ ...formData, pinned: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="pinned-add" className={cardStyle.text}>Pinned</Label>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Left Column */}
                 <div className="space-y-4">
                   <div>
-                    <Label className={cardStyle.text}>Name *</Label>
+                    <Label className={cardStyle.text}>Title *</Label>
                     <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="Enter resource name"
+                      placeholder="Enter video title"
                     />
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>Primary Category *</Label>
+                    <Label className={cardStyle.text}>Video URL *</Label>
+                    <Input
+                      value={formData.video_url}
+                      onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="https://youtube.com/watch?v=..."
+                      type="url"
+                    />
+                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                      Supports YouTube, Vimeo, or direct video links
+                    </p>
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Thumbnail URL (optional)</Label>
+                    <Input
+                      value={formData.thumbnail_url}
+                      onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
+                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder="https://example.com/thumbnail.jpg"
+                      type="url"
+                    />
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Category (optional)</Label>
                     <select
-                      value={formData.primary_category}
-                      onChange={(e) => setFormData({ ...formData, primary_category: e.target.value })}
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                       className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                     >
-                      <option value="">Select category</option>
-                      {PRIMARY_CATEGORIES.map(cat => (
+                      <option value="">No Category</option>
+                      {VIDEO_CATEGORIES.map(cat => (
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>Secondary Tags (comma-separated)</Label>
+                    <Label className={cardStyle.text}>Tags (comma-separated)</Label>
                     <Input
-                      value={formData.secondary_tags}
-                      onChange={(e) => setFormData({ ...formData, secondary_tags: e.target.value })}
+                      value={formData.tags}
+                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                       className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                       placeholder="Tag1, Tag2, Tag3"
-                    />
-                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                      Separate multiple tags with commas
-                    </p>
-                  </div>
-                  <div>
-                    <Label className={cardStyle.text}>Link *</Label>
-                    <Input
-                      value={formData.link}
-                      onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="https://example.com"
-                      type="url"
-                    />
-                  </div>
-                  <div>
-                    <Label className={cardStyle.text}>Source (optional)</Label>
-                    <Input
-                      value={formData.source}
-                      onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="Source name"
                     />
                   </div>
                 </div>
@@ -443,47 +485,34 @@ export default function ResourcesAdmin() {
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="Resource description"
-                      rows={3}
+                      placeholder="Video description"
+                      rows={4}
                     />
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>Username (optional)</Label>
+                    <Label className={cardStyle.text}>Platform (optional)</Label>
+                    <select
+                      value={formData.platform}
+                      onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
+                      className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                    >
+                      <option value="">Auto-detect</option>
+                      <option value="youtube">YouTube</option>
+                      <option value="vimeo">Vimeo</option>
+                      <option value="direct">Direct Link</option>
+                    </select>
+                    <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                      Platform is auto-detected from URL if not specified
+                    </p>
+                  </div>
+                  <div>
+                    <Label className={cardStyle.text}>Duration in seconds (optional)</Label>
                     <Input
-                      value={formData.username}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      type="number"
+                      value={formData.duration}
+                      onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                       className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="Username"
-                    />
-                  </div>
-                  <div>
-                    <Label className={cardStyle.text}>Password (optional)</Label>
-                    <Input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="Password"
-                    />
-                  </div>
-                  <div>
-                    <Label className={cardStyle.text}>Instructions (optional)</Label>
-                    <Textarea
-                      value={formData.instructions}
-                      onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
-                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="Usage instructions"
-                      rows={2}
-                    />
-                  </div>
-                  <div>
-                    <Label className={cardStyle.text}>Documentation (optional)</Label>
-                    <Textarea
-                      value={formData.documentation}
-                      onChange={(e) => setFormData({ ...formData, documentation: e.target.value })}
-                      className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="Documentation link or notes"
-                      rows={2}
+                      placeholder="3600"
                     />
                   </div>
                 </div>
@@ -498,7 +527,7 @@ export default function ResourcesAdmin() {
                 </Button>
                 <Button
                   onClick={handleAdd}
-                  disabled={!formData.name || !formData.primary_category || !formData.link}
+                  disabled={!formData.title || !formData.video_url}
                   className={`${getRoundedClass('rounded-lg')} ${
                     mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
                     mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
@@ -539,12 +568,25 @@ export default function ResourcesAdmin() {
           <div className="flex items-center gap-1">
             <Filter className={`w-3 h-3 ${getTextClass()}/50`} />
             <select
+              value={filterPinned || 'all'}
+              onChange={(e) => setFilterPinned(e.target.value === 'all' ? null : e.target.value)}
+              className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} h-8 px-2 text-xs ${getRoundedClass('rounded-md')}`}
+            >
+              <option value="all">All</option>
+              <option value="true">Pinned Only</option>
+              <option value="false">Not Pinned</option>
+            </select>
+          </div>
+
+          {/* Category Filter */}
+          <div className="flex items-center gap-1">
+            <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
               className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} h-8 px-2 text-xs ${getRoundedClass('rounded-md')}`}
             >
               <option value="all">All Categories</option>
-              {PRIMARY_CATEGORIES.map(cat => (
+              {VIDEO_CATEGORIES.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
@@ -563,8 +605,8 @@ export default function ResourcesAdmin() {
             >
               <option value="created_at-desc">Date (Newest)</option>
               <option value="created_at-asc">Date (Oldest)</option>
-              <option value="name-asc">Name (A-Z)</option>
-              <option value="name-desc">Name (Z-A)</option>
+              <option value="title-asc">Title (A-Z)</option>
+              <option value="title-desc">Title (Z-A)</option>
             </select>
           </div>
         </div>
@@ -574,9 +616,9 @@ export default function ResourcesAdmin() {
           <Card className={`${cardStyle.bg} ${cardStyle.border} border p-3 ${getRoundedClass('rounded-xl')}`}>
             <p className={`${cardStyle.text} text-sm`}>Loading...</p>
           </Card>
-        ) : filteredResources.length === 0 ? (
+        ) : filteredVideos.length === 0 ? (
           <Card className={`${cardStyle.bg} ${cardStyle.border} border p-3 ${getRoundedClass('rounded-xl')}`}>
-            <p className={`${cardStyle.text} text-sm`}>No resources found.</p>
+            <p className={`${cardStyle.text} text-sm`}>No videos found.</p>
           </Card>
         ) : (
           <Card className={`${cardStyle.bg} ${cardStyle.border} border ${getRoundedClass('rounded-xl')} overflow-hidden`}>
@@ -587,22 +629,26 @@ export default function ResourcesAdmin() {
                     <th className="p-4 text-left w-12">
                       <input
                         type="checkbox"
-                        checked={selectedIds.size === filteredResources.length && filteredResources.length > 0}
+                        checked={selectedIds.size === filteredVideos.length && filteredVideos.length > 0}
                         onChange={toggleSelectAll}
                         className="w-3 h-3"
                       />
                     </th>
-                    <th className={`p-2 text-left ${cardStyle.text} font-black uppercase text-xs`}>Name</th>
+                    <th className={`p-2 text-left ${cardStyle.text} font-black uppercase text-xs`}>Pin</th>
+                    <th className={`p-2 text-left ${cardStyle.text} font-black uppercase text-xs`}>Title</th>
                     <th className={`p-2 text-left ${cardStyle.text} font-black uppercase text-xs`}>Category</th>
                     <th className={`p-2 text-left ${cardStyle.text} font-black uppercase text-xs`}>Created On</th>
                     <th className={`p-2 text-right ${cardStyle.text} font-black uppercase text-xs`}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredResources.map((item) => (
+                  {filteredVideos.map((item) => (
                     <tr
                       key={item.id}
-                      className={`${cardStyle.border} border-b hover:opacity-80 transition-opacity`}
+                      className={`${cardStyle.border} border-b hover:opacity-80 transition-opacity ${
+                        item.pinned ? 'bg-opacity-20' : ''
+                      }`}
+                      style={item.pinned ? { backgroundColor: `${cardStyle.accent}20` } : {}}
                     >
                       <td className="p-2">
                         <input
@@ -612,11 +658,16 @@ export default function ResourcesAdmin() {
                           className="w-3 h-3"
                         />
                       </td>
+                      <td className="p-2">
+                        {item.pinned && (
+                          <Pin className={`w-3 h-3`} style={{ color: cardStyle.accent }} />
+                        )}
+                      </td>
                       <td className={`p-2 ${cardStyle.text} font-semibold text-sm`}>
-                        {item.name}
+                        {item.title}
                       </td>
                       <td className={`p-2 ${cardStyle.text}/70 text-xs font-normal`}>
-                        {item.primary_category}
+                        {item.category || '-'}
                       </td>
                       <td className={`p-2 ${cardStyle.text}/70 text-xs font-normal`}>
                         {new Date(item.created_at).toLocaleDateString()}
@@ -624,13 +675,22 @@ export default function ResourcesAdmin() {
                       <td className="p-2">
                         <div className="flex items-center justify-end gap-1">
                           <Button
-                            onClick={() => window.open(item.link, '_blank')}
+                            onClick={() => handleTogglePin(item.id, item.pinned)}
                             size="sm"
                             variant="outline"
                             className={`${cardStyle.border} border ${cardStyle.text} h-6 px-2`}
-                            title="Open link"
+                            title={item.pinned ? 'Unpin' : 'Pin'}
                           >
-                            <ExternalLink className="w-3 h-3" />
+                            <Pin className={`w-3 h-3 ${item.pinned ? 'fill-current' : ''}`} />
+                          </Button>
+                          <Button
+                            onClick={() => window.open(item.video_url, '_blank')}
+                            size="sm"
+                            variant="outline"
+                            className={`${cardStyle.border} border ${cardStyle.text} h-6 px-2`}
+                            title="Watch video"
+                          >
+                            <Play className="w-3 h-3" />
                           </Button>
                           <Button
                             onClick={() => handleEdit(item)}
@@ -662,62 +722,73 @@ export default function ResourcesAdmin() {
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className={`${cardStyle.bg} ${cardStyle.border} border max-w-4xl max-h-[90vh] overflow-y-auto`}>
             <DialogHeader>
-              <DialogTitle className={cardStyle.text}>Edit Resource</DialogTitle>
+              <DialogTitle className={cardStyle.text}>Edit Video</DialogTitle>
             </DialogHeader>
+            {/* Pinned at the top */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="pinned-edit"
+                  checked={formData.pinned}
+                  onChange={(e) => setFormData({ ...formData, pinned: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="pinned-edit" className={cardStyle.text}>Pinned</Label>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Left Column */}
               <div className="space-y-4">
                 <div>
-                  <Label className={cardStyle.text}>Name *</Label>
+                  <Label className={cardStyle.text}>Title *</Label>
                   <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder="Enter resource name"
+                    placeholder="Enter video title"
                   />
                 </div>
                 <div>
-                  <Label className={cardStyle.text}>Primary Category *</Label>
+                  <Label className={cardStyle.text}>Video URL *</Label>
+                  <Input
+                    value={formData.video_url}
+                    onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    placeholder="https://youtube.com/watch?v=..."
+                    type="url"
+                  />
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Thumbnail URL (optional)</Label>
+                  <Input
+                    value={formData.thumbnail_url}
+                    onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
+                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    placeholder="https://example.com/thumbnail.jpg"
+                    type="url"
+                  />
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Category (optional)</Label>
                   <select
-                    value={formData.primary_category}
-                    onChange={(e) => setFormData({ ...formData, primary_category: e.target.value })}
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                   >
-                    <option value="">Select category</option>
-                    {PRIMARY_CATEGORIES.map(cat => (
+                    <option value="">No Category</option>
+                    {VIDEO_CATEGORIES.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <Label className={cardStyle.text}>Secondary Tags (comma-separated)</Label>
+                  <Label className={cardStyle.text}>Tags (comma-separated)</Label>
                   <Input
-                    value={formData.secondary_tags}
-                    onChange={(e) => setFormData({ ...formData, secondary_tags: e.target.value })}
+                    value={formData.tags}
+                    onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                     className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                     placeholder="Tag1, Tag2, Tag3"
-                  />
-                  <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                    Separate multiple tags with commas
-                  </p>
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Link *</Label>
-                  <Input
-                    value={formData.link}
-                    onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder="https://example.com"
-                    type="url"
-                  />
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Source (optional)</Label>
-                  <Input
-                    value={formData.source}
-                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder="Source name"
                   />
                 </div>
               </div>
@@ -730,47 +801,31 @@ export default function ResourcesAdmin() {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder="Resource description"
-                    rows={3}
+                    placeholder="Video description"
+                    rows={4}
                   />
                 </div>
                 <div>
-                  <Label className={cardStyle.text}>Username (optional)</Label>
+                  <Label className={cardStyle.text}>Platform (optional)</Label>
+                  <select
+                    value={formData.platform}
+                    onChange={(e) => setFormData({ ...formData, platform: e.target.value })}
+                    className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
+                  >
+                    <option value="">Auto-detect</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="vimeo">Vimeo</option>
+                    <option value="direct">Direct Link</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Duration in seconds (optional)</Label>
                   <Input
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    type="number"
+                    value={formData.duration}
+                    onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                     className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder="Username"
-                  />
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Password (optional)</Label>
-                  <Input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder="Password"
-                  />
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Instructions (optional)</Label>
-                  <Textarea
-                    value={formData.instructions}
-                    onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder="Usage instructions"
-                    rows={2}
-                  />
-                </div>
-                <div>
-                  <Label className={cardStyle.text}>Documentation (optional)</Label>
-                  <Textarea
-                    value={formData.documentation}
-                    onChange={(e) => setFormData({ ...formData, documentation: e.target.value })}
-                    className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder="Documentation link or notes"
-                    rows={2}
+                    placeholder="3600"
                   />
                 </div>
               </div>
@@ -789,7 +844,7 @@ export default function ResourcesAdmin() {
               </Button>
               <Button
                 onClick={handleUpdate}
-                disabled={!formData.name || !formData.primary_category || !formData.link}
+                disabled={!formData.title || !formData.video_url}
                 className={`${getRoundedClass('rounded-lg')} ${
                   mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
                   mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :

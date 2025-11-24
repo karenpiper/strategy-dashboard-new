@@ -3,6 +3,7 @@
 import { useMode } from '@/contexts/mode-context'
 import { PermissionsProvider, usePermissions } from '@/contexts/permissions-context'
 import { useAuth } from '@/contexts/auth-context'
+import { SiteHeader } from '@/components/site-header'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { 
@@ -69,15 +70,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const getBorderClass = () => {
-    switch (mode) {
-      case 'chaos': return 'border-[#333333]'
-      case 'chill': return 'border-[#8B4444]/30'
-      case 'code': return 'border-[#FFFFFF]/30'
-      default: return 'border-[#333333]'
-    }
-  }
-
   const getRoundedClass = (base: string) => {
     if (mode === 'code') return 'rounded-none'
     // For rounded-[2.5rem] or similar, keep it to match the rest of the site (like snaps page)
@@ -88,43 +80,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     if (mode === 'chaos') return base.replace('rounded', 'rounded-[1.5rem]')
     if (mode === 'chill') return base.replace('rounded', 'rounded-2xl')
     return base
-  }
-
-  const getNavLinkClass = (isActive = false) => {
-    const base = `transition-colors text-sm font-black uppercase ${mode === 'code' ? 'font-mono' : ''}`
-    if (isActive) {
-      switch (mode) {
-        case 'chaos': return `${base} text-white hover:text-[#C4F500]`
-        case 'chill': return `${base} text-[#4A1818] hover:text-[#FFC043]`
-        case 'code': return `${base} text-[#FFFFFF] hover:text-[#FFFFFF]`
-        default: return `${base} text-white hover:text-[#C4F500]`
-      }
-    } else {
-      switch (mode) {
-        case 'chaos': return `${base} text-[#666666] hover:text-white`
-        case 'chill': return `${base} text-[#8B4444] hover:text-[#4A1818]`
-        case 'code': return `${base} text-[#808080] hover:text-[#FFFFFF]`
-        default: return `${base} text-[#666666] hover:text-white`
-      }
-    }
-  }
-
-  const getLogoBg = () => {
-    switch (mode) {
-      case 'chaos': return 'bg-[#C4F500]'
-      case 'chill': return 'bg-[#FFC043]'
-      case 'code': return 'bg-[#FFFFFF]'
-      default: return 'bg-[#C4F500]'
-    }
-  }
-
-  const getLogoText = () => {
-    switch (mode) {
-      case 'chaos': return 'text-black'
-      case 'chill': return 'text-[#4A1818]'
-      case 'code': return 'text-black'
-      default: return 'text-black'
-    }
   }
 
   const getNavItemStyle = (isActive: boolean) => {
@@ -185,6 +140,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         { href: '/admin/pipeline', label: 'Pipeline', icon: GitBranch, permission: null, sectionAccess: 'leadership' as const },
         { href: '/admin/news', label: 'News', icon: Newspaper, permission: null, sectionAccess: 'leadership' as const },
         { href: '/admin/curator-rotation', label: 'Curator Rotation', icon: RotateCw, permission: null, sectionAccess: 'leadership' as const },
+        { href: '/admin/video', label: 'Video', icon: Upload, permission: null, sectionAccess: 'leadership' as const },
       ]
     },
     {
@@ -207,34 +163,10 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`min-h-screen ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
-      {/* Main Navigation Header - Fixed */}
-      <header className={`border-b ${getBorderClass()} px-6 py-4 fixed top-0 left-0 right-0 z-50 ${getBgClass()}`}>
-        <div className="max-w-[1200px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link href="/">
-              <div className={`w-10 h-10 ${getLogoBg()} ${getLogoText()} ${getRoundedClass('rounded-xl')} flex items-center justify-center font-black text-lg ${mode === 'code' ? 'font-mono' : ''} cursor-pointer`}>
-                {mode === 'code' ? 'C:\\>' : 'D'}
-              </div>
-            </Link>
-            <nav className="flex items-center gap-6">
-              <Link href="/" className={getNavLinkClass()}>HOME</Link>
-              <Link href="/snaps" className={getNavLinkClass()}>SNAPS</Link>
-              <Link href="/resources" className={getNavLinkClass()}>RESOURCES</Link>
-              <Link href="/work-samples" className={getNavLinkClass()}>WORK</Link>
-              <a href="#" className={getNavLinkClass()}>TEAM</a>
-              <Link href="/vibes" className={getNavLinkClass()}>VIBES</Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            {authUser && (
-              <AccountMenu />
-            )}
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* Main Content Area - Centered */}
-      <main className="max-w-[1200px] mx-auto px-6 py-10 mt-20">
+      <main className="max-w-[1200px] mx-auto px-6 py-10 pt-24">
         <div className="flex gap-6">
           {/* Left Sidebar Card - 1/4 width - Fixed height, doesn't scroll */}
           <Card className={`w-1/4 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-4 flex flex-col sticky top-24 h-fit`} style={{ 
