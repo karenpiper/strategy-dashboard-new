@@ -515,6 +515,34 @@ export default function TeamDashboard() {
     fetchWorkSamples()
   }, [user])
 
+  // Fetch videos
+  useEffect(() => {
+    async function fetchVideos() {
+      if (!user) return
+      
+      try {
+        setVideosLoading(true)
+        const response = await fetch('/api/videos?pinned=true&sortBy=created_at&sortOrder=desc')
+        if (response.ok) {
+          const result = await response.json()
+          if (result.data && Array.isArray(result.data)) {
+            // Get pinned videos first, then fill with recent videos up to 4 total
+            const pinnedVideos = result.data.filter((v: any) => v.pinned)
+            const otherVideos = result.data.filter((v: any) => !v.pinned)
+            const allVideos = [...pinnedVideos, ...otherVideos].slice(0, 4)
+            setVideos(allVideos)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching videos:', error)
+      } finally {
+        setVideosLoading(false)
+      }
+    }
+    
+    fetchVideos()
+  }, [user])
+
   // Fetch pipeline data
   useEffect(() => {
     async function fetchPipeline() {
@@ -3642,15 +3670,36 @@ export default function TeamDashboard() {
                   <span className="uppercase tracking-wider font-black text-xs">Archive</span>
         </div>
                 <h2 className={`text-3xl font-black mb-6 uppercase ${videoStyle.text}`}>VIDEO<br/>ARCHIVE</h2>
-                <div className="space-y-3 mb-4 flex-1">
-                  <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2`} style={{ borderColor: `${videoStyle.accent}40` }}>
-                    <p className={`text-sm font-black mb-1 ${videoStyle.text}`}>Video player coming soon</p>
-                    <p className={`text-xs font-medium ${videoStyle.text}/70`}>Archive will be available here</p>
-                  </div>
+                <div className="space-y-3 mb-4 flex-1 overflow-y-auto">
+                  {videosLoading ? (
+                    <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2 flex items-center justify-center`} style={{ borderColor: `${videoStyle.accent}40` }}>
+                      <Loader2 className={`w-5 h-5 animate-spin ${videoStyle.text}`} />
+                    </div>
+                  ) : videos.length === 0 ? (
+                    <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-4 border-2`} style={{ borderColor: `${videoStyle.accent}40` }}>
+                      <p className={`text-sm font-black mb-1 ${videoStyle.text}`}>No videos yet</p>
+                      <p className={`text-xs font-medium ${videoStyle.text}/70`}>Videos will appear here</p>
+                    </div>
+                  ) : (
+                    videos.map((video) => (
+                      <div key={video.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-2 border-2`} style={{ borderColor: `${videoStyle.accent}40` }}>
+                        <VideoEmbed
+                          videoUrl={video.video_url}
+                          title={video.title}
+                          platform={video.platform}
+                          thumbnailUrl={video.thumbnail_url}
+                          aspectRatio="16/9"
+                          className="border-0"
+                        />
+                      </div>
+                    ))
+                  )}
                 </div>
-                <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#00A3E0] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#00A3E0] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
-                  View Archive
-                </Button>
+                <Link href="/admin/video">
+                  <Button className={`w-full ${mode === 'chaos' ? 'bg-black text-[#00A3E0] hover:bg-[#0F0F0F]' : mode === 'chill' ? 'bg-[#4A1818] text-[#00A3E0] hover:bg-[#3A1414]' : 'bg-white text-black hover:bg-[#e5e5e5]'} font-black rounded-full h-10 text-sm uppercase`}>
+                    View Archive
+                  </Button>
+                </Link>
               </Card>
             )
           })()}
