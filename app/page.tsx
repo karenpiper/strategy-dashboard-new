@@ -522,7 +522,8 @@ export default function TeamDashboard() {
       
       try {
         setVideosLoading(true)
-        const response = await fetch('/api/videos?pinned=true&sortBy=created_at&sortOrder=desc')
+        // Fetch all videos, sorted by pinned first, then by date
+        const response = await fetch('/api/videos?sortBy=created_at&sortOrder=desc')
         if (response.ok) {
           const result = await response.json()
           if (result.data && Array.isArray(result.data)) {
@@ -3683,9 +3684,11 @@ export default function TeamDashboard() {
                   ) : (
                     videos.map((video) => (
                       <div key={video.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} rounded-xl p-2 border-2`} style={{ borderColor: `${videoStyle.accent}40` }}>
+                        <div className="mb-2">
+                          <p className={`text-sm font-semibold ${videoStyle.text} line-clamp-2`}>{video.title}</p>
+                        </div>
                         <VideoEmbed
                           videoUrl={video.video_url}
-                          title={video.title}
                           platform={video.platform}
                           thumbnailUrl={video.thumbnail_url}
                           aspectRatio="16/9"
