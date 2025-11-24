@@ -117,25 +117,63 @@ export default function ProfilePage() {
   const getCardStyle = () => {
     if (mode === 'chaos') {
       return { 
-        bg: 'bg-black', 
-        border: 'border border-[#C4F500]', 
+        bg: 'bg-[#2A2A2A]', 
+        border: 'border-2 border-[#00C896]', 
         text: 'text-white', 
-        accent: '#C4F500' 
+        accent: '#00C896' 
       }
     } else if (mode === 'chill') {
       return { 
-        bg: 'bg-white', 
-        border: 'border border-[#FFC043]/30', 
+        bg: 'bg-[#E8E0D0]', 
+        border: 'border-2 border-[#C8D961]', 
         text: 'text-[#4A1818]', 
-        accent: '#FFC043' 
+        accent: '#C8D961' 
       }
     } else { // code
       return { 
-        bg: 'bg-[#000000]', 
-        border: 'border border-[#FFFFFF]', 
+        bg: 'bg-[#1a1a1a]', 
+        border: 'border-2 border-[#FFFFFF]', 
         text: 'text-[#FFFFFF]', 
         accent: '#FFFFFF' 
       }
+    }
+  }
+
+  const getFieldCardStyle = () => {
+    if (mode === 'chaos') {
+      return {
+        bg: 'bg-[#2A2A2A]',
+        border: 'border-2 border-[#00C896]',
+        text: 'text-white',
+        label: 'text-white',
+        hint: 'text-white/60'
+      }
+    } else if (mode === 'chill') {
+      return {
+        bg: 'bg-[#E8E0D0]',
+        border: 'border-2 border-[#C8D961]',
+        text: 'text-[#4A1818]',
+        label: 'text-[#4A1818]',
+        hint: 'text-[#4A1818]/60'
+      }
+    } else {
+      return {
+        bg: 'bg-[#1a1a1a]',
+        border: 'border-2 border-[#FFFFFF]',
+        text: 'text-white',
+        label: 'text-white',
+        hint: 'text-white/60'
+      }
+    }
+  }
+
+  const getInputFieldStyle = () => {
+    if (mode === 'chaos') {
+      return 'bg-[#1A1A1A] border-[#00C896] text-white placeholder:text-gray-400 focus:border-[#00C896] focus:ring-[#00C896]'
+    } else if (mode === 'chill') {
+      return 'bg-[#F5E6D3] border-[#C8D961] text-[#4A1818] placeholder:text-[#4A1818]/40 focus:border-[#C8D961] focus:ring-[#C8D961]'
+    } else {
+      return 'bg-black border-white text-white placeholder:text-gray-400 focus:border-white focus:ring-white'
     }
   }
   
@@ -510,12 +548,12 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-20">
+      <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-32">
         <div className="flex gap-6">
           {/* Left Sidebar Card - Matching Snaps Page Style */}
-          <Card className={`w-80 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`} style={{ 
+          <Card className={`w-80 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit overflow-hidden`} style={{ 
             borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#FFFFFF',
-            borderWidth: mode === 'chaos' ? '2px' : '0px'
+            borderWidth: mode === 'chaos' ? '2px' : mode === 'chill' ? '2px' : '2px'
           }}>
             <div className="mb-6">
               <h3 className={`text-xs uppercase tracking-wider font-black mb-4 ${mode === 'chill' ? 'text-[#4A1818]' : mode === 'chaos' ? 'text-[#00C896]' : 'text-white'}`}>
@@ -597,118 +635,55 @@ export default function ProfilePage() {
 
                 {/* Error/Success Messages */}
                 {error && (
-                  <Card className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} bg-white border-2 border-red-500/20`}>
-                    <p className="text-sm text-red-600">{error}</p>
+                  <Card className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} ${mode === 'chaos' ? 'bg-[#2A2A2A] border-2 border-red-500' : mode === 'chill' ? 'bg-[#E8E0D0] border-2 border-red-500' : 'bg-[#1a1a1a] border-2 border-red-500'}`}>
+                    <p className={`text-sm ${mode === 'chill' ? 'text-red-600' : 'text-red-400'}`}>{error}</p>
                   </Card>
                 )}
 
                 {success && (
-                  <Card className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} bg-white border-2 border-green-500/20`}>
-                    <p className="text-sm text-green-600">{success}</p>
+                  <Card className={`mb-4 p-4 ${getRoundedClass('rounded-xl')} ${mode === 'chaos' ? 'bg-[#2A2A2A] border-2 border-[#00C896]' : mode === 'chill' ? 'bg-[#E8E0D0] border-2 border-green-500' : 'bg-[#1a1a1a] border-2 border-green-500'}`}>
+                    <p className={`text-sm ${mode === 'chill' ? 'text-green-600' : 'text-green-400'}`}>{success}</p>
                   </Card>
                 )}
 
                 {/* Form Fields as Cards */}
                 <form onSubmit={handleSubmit} className="space-y-2">
-                  {/* Profile Picture Card */}
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-4 shadow-sm`}>
-                    <Label className={`text-sm font-semibold mb-3 block ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
-                      Profile Picture
-                    </Label>
-                    <div className="flex items-center gap-4">
-                      {displayAvatarUrl ? (
-                        <img
-                          src={displayAvatarUrl}
-                          alt={fullName || user.email || 'User'}
-                          className={`w-20 h-20 ${getRoundedClass('rounded-full')} object-cover border-2`}
-                          style={{ borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#000000' }}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                          }}
-                        />
-                      ) : null}
-                      <div 
-                        className={`avatar-fallback w-20 h-20 ${getRoundedClass('rounded-full')} flex items-center justify-center text-2xl font-semibold border-2 ${displayAvatarUrl ? 'hidden' : ''}`}
-                        style={{ 
-                          backgroundColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#000000',
-                          borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#000000',
-                          color: '#FFFFFF'
-                        }}
-                      >
-                        {initials}
-                      </div>
-                      <div className="flex-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={uploading}
-                          className={`${mode === 'chaos' ? 'border-[#00C896] text-[#00C896] hover:bg-[#00C896]/10' : mode === 'chill' ? 'border-[#C8D961] text-[#C8D961] hover:bg-[#C8D961]/10' : 'border-black text-black hover:bg-black/10'}`}
-                        >
-                          {uploading ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Uploading...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-4 h-4 mr-2" />
-                              Upload Photo
-                            </>
-                          )}
-                        </Button>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handlePhotoUpload}
-                          className="hidden"
-                        />
-                        <p className={`text-xs mt-2 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
-                          JPG, PNG or GIF. Max size 5MB
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
+                  {/* Row 1: Full Name and Pronouns */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-4`}>
+                      <Label htmlFor="full-name" className={`text-sm font-semibold mb-2 block ${getFieldCardStyle().label}`}>
+                        Full Name
+                      </Label>
+                      <Input
+                        id="full-name"
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Your full name"
+                        className={`w-full ${getInputFieldStyle()}`}
+                      />
+                    </Card>
+                    <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-4`}>
+                      <Label htmlFor="pronouns" className={`text-sm font-semibold mb-2 block ${getFieldCardStyle().label}`}>
+                        Pronouns
+                      </Label>
+                      <Input
+                        id="pronouns"
+                        type="text"
+                        value={pronouns}
+                        onChange={(e) => setPronouns(e.target.value)}
+                        placeholder="e.g., she/her, he/him, they/them"
+                        className={`w-full ${getInputFieldStyle()}`}
+                      />
+                      <p className={`text-xs mt-1 ${getFieldCardStyle().hint}`}>
+                        Your pronouns (optional)
+                      </p>
+                    </Card>
+                  </div>
 
-                  {/* Full Name Card */}
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-4 shadow-sm`}>
-                    <Label htmlFor="full-name" className={`text-sm font-semibold mb-2 block ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
-                      Full Name
-                    </Label>
-                    <Input
-                      id="full-name"
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Your full name"
-                      className="w-full bg-white border-gray-300 text-black placeholder:text-gray-400"
-                    />
-                  </Card>
-
-                  {/* Pronouns Card */}
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-4 shadow-sm`}>
-                    <Label htmlFor="pronouns" className={`text-sm font-semibold mb-2 block ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
-                      Pronouns
-                    </Label>
-                    <Input
-                      id="pronouns"
-                      type="text"
-                      value={pronouns}
-                      onChange={(e) => setPronouns(e.target.value)}
-                      placeholder="e.g., she/her, he/him, they/them"
-                      className="w-full bg-white border-gray-300 text-black placeholder:text-gray-400"
-                    />
-                    <p className={`text-xs mt-1 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
-                      Your pronouns (optional)
-                    </p>
-                  </Card>
-
-                  {/* Bio Card */}
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-4 shadow-sm`}>
-                    <Label htmlFor="bio" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
+                  {/* Row 2: Bio */}
+                  <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-4`}>
+                    <Label htmlFor="bio" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${getFieldCardStyle().label}`}>
                       <FileText className="w-4 h-4" />
                       Bio
                     </Label>
@@ -717,116 +692,179 @@ export default function ProfilePage() {
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       placeholder="Tell us about yourself..."
-                      className="w-full min-h-[100px] bg-white border-gray-300 text-black placeholder:text-gray-400"
+                      className={`w-full min-h-[100px] ${getInputFieldStyle()}`}
                       rows={4}
                     />
                   </Card>
 
-                  {/* Birthday Card */}
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-4 shadow-sm`}>
-                    <Label htmlFor="birthday" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
-                      <Calendar className="w-4 h-4" />
-                      Birthday
-                    </Label>
-                    <Input
-                      id="birthday"
-                      type="text"
-                      value={birthday}
-                      onChange={(e) => {
-                        let value = e.target.value
-                        value = value.replace(/[^\d/]/g, '')
-                        if (value.length === 2 && !value.includes('/')) {
-                          value = value + '/'
-                        }
-                        if (value.length > 5) {
-                          value = value.slice(0, 5)
-                        }
-                        setBirthday(value)
-                      }}
-                      placeholder="MM/DD (e.g., 03/15)"
-                      maxLength={5}
-                      className="w-full bg-white border-gray-300 text-black placeholder:text-gray-400"
-                    />
-                    <p className={`text-xs mt-1 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
-                      Month and day only (required for horoscope generation)
-                    </p>
-                  </Card>
+                  {/* Row 3: Birthday and Start Date */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-4`}>
+                      <Label htmlFor="birthday" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${getFieldCardStyle().label}`}>
+                        <Calendar className="w-4 h-4" />
+                        Birthday
+                      </Label>
+                      <Input
+                        id="birthday"
+                        type="text"
+                        value={birthday}
+                        onChange={(e) => {
+                          let value = e.target.value
+                          value = value.replace(/[^\d/]/g, '')
+                          if (value.length === 2 && !value.includes('/')) {
+                            value = value + '/'
+                          }
+                          if (value.length > 5) {
+                            value = value.slice(0, 5)
+                          }
+                          setBirthday(value)
+                        }}
+                        placeholder="MM/DD (e.g., 03/15)"
+                        maxLength={5}
+                        className={`w-full ${getInputFieldStyle()}`}
+                      />
+                      <p className={`text-xs mt-1 ${getFieldCardStyle().hint}`}>
+                        Month and day only (required for horoscope generation)
+                      </p>
+                    </Card>
+                    <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-4`}>
+                      <Label htmlFor="start-date" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${getFieldCardStyle().label}`}>
+                        <Calendar className="w-4 h-4" />
+                        Start Date
+                      </Label>
+                      <Input
+                        id="start-date"
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className={`w-full ${getInputFieldStyle()}`}
+                      />
+                      <p className={`text-xs mt-1 ${getFieldCardStyle().hint}`}>
+                        Your start date (month, day, and year)
+                      </p>
+                    </Card>
+                  </div>
 
-                  {/* Start Date Card */}
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-4 shadow-sm`}>
-                    <Label htmlFor="start-date" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
-                      <Calendar className="w-4 h-4" />
-                      Start Date
-                    </Label>
-                    <Input
-                      id="start-date"
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full bg-white border-gray-300 text-black placeholder:text-gray-400"
-                    />
-                    <p className={`text-xs mt-1 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
-                      Your start date (month, day, and year)
-                    </p>
-                  </Card>
+                  {/* Row 4: Location and Website */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-4`}>
+                      <Label htmlFor="location" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${getFieldCardStyle().label}`}>
+                        <MapPin className="w-4 h-4" />
+                        Location
+                      </Label>
+                      <LocationAutocomplete
+                        value={location}
+                        onChange={setLocation}
+                        placeholder="Start typing a city or location..."
+                        className={`w-full ${getInputFieldStyle()}`}
+                      />
+                      <p className={`text-xs mt-1 ${getFieldCardStyle().hint}`}>
+                        Start typing to see location suggestions
+                      </p>
+                    </Card>
+                    <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-4`}>
+                      <Label htmlFor="website" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${getFieldCardStyle().label}`}>
+                        <Globe className="w-4 h-4" />
+                        Website
+                      </Label>
+                      <Input
+                        id="website"
+                        type="text"
+                        value={website}
+                        onChange={(e) => setWebsite(e.target.value)}
+                        placeholder="example.com or https://example.com"
+                        className={`w-full ${getInputFieldStyle()}`}
+                      />
+                      <p className={`text-xs mt-1 ${getFieldCardStyle().hint}`}>
+                        Your personal or professional website
+                      </p>
+                    </Card>
+                  </div>
 
-                  {/* Location Card */}
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-4 shadow-sm`}>
-                    <Label htmlFor="location" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
-                      <MapPin className="w-4 h-4" />
-                      Location
-                    </Label>
-                    <LocationAutocomplete
-                      value={location}
-                      onChange={setLocation}
-                      placeholder="Start typing a city or location..."
-                      className="w-full bg-white border-gray-300 text-black placeholder:text-gray-400"
-                    />
-                    <p className={`text-xs mt-1 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
-                      Start typing to see location suggestions
-                    </p>
-                  </Card>
-
-                  {/* Website Card */}
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-4 shadow-sm`}>
-                    <Label htmlFor="website" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
-                      <Globe className="w-4 h-4" />
-                      Website
-                    </Label>
-                    <Input
-                      id="website"
-                      type="text"
-                      value={website}
-                      onChange={(e) => setWebsite(e.target.value)}
-                      placeholder="example.com or https://example.com"
-                      className="w-full bg-white border-gray-300 text-black placeholder:text-gray-400"
-                    />
-                    <p className={`text-xs mt-1 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
-                      Your personal or professional website
-                    </p>
-                  </Card>
-
-                  {/* Discipline Card */}
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-4 shadow-sm`}>
-                    <Label htmlFor="discipline" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
-                      <Users className="w-4 h-4" />
-                      Discipline
-                    </Label>
-                    <Input
-                      id="discipline"
-                      type="text"
-                      value={discipline}
-                      onChange={(e) => setDiscipline(e.target.value)}
-                      placeholder="e.g., Design, Engineering, Marketing"
-                      className="w-full bg-white border-gray-300 text-black placeholder:text-gray-400"
-                    />
-                    <p className={`text-xs mt-1 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-gray-500'}`}>
-                      Your department or team. This helps personalize your horoscope.
-                    </p>
-                  </Card>
+                  {/* Row 5: Discipline and Profile Picture */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-4`}>
+                      <Label htmlFor="discipline" className={`text-sm font-semibold mb-2 flex items-center gap-2 ${getFieldCardStyle().label}`}>
+                        <Users className="w-4 h-4" />
+                        Discipline
+                      </Label>
+                      <Input
+                        id="discipline"
+                        type="text"
+                        value={discipline}
+                        onChange={(e) => setDiscipline(e.target.value)}
+                        placeholder="e.g., Design, Engineering, Marketing"
+                        className={`w-full ${getInputFieldStyle()}`}
+                      />
+                      <p className={`text-xs mt-1 ${getFieldCardStyle().hint}`}>
+                        Your department or team. This helps personalize your horoscope.
+                      </p>
+                    </Card>
+                    <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-4`}>
+                      <Label className={`text-sm font-semibold mb-3 block ${getFieldCardStyle().label}`}>
+                        Profile Picture
+                      </Label>
+                      <div className="flex items-center gap-4">
+                        {displayAvatarUrl ? (
+                          <img
+                            src={displayAvatarUrl}
+                            alt={fullName || user.email || 'User'}
+                            className={`w-20 h-20 ${getRoundedClass('rounded-full')} object-cover border-2`}
+                            style={{ borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#000000' }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = 'none'
+                            }}
+                          />
+                        ) : null}
+                        <div 
+                          className={`avatar-fallback w-20 h-20 ${getRoundedClass('rounded-full')} flex items-center justify-center text-2xl font-semibold border-2 ${displayAvatarUrl ? 'hidden' : ''}`}
+                          style={{ 
+                            backgroundColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#000000',
+                            borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#000000',
+                            color: '#FFFFFF'
+                          }}
+                        >
+                          {initials}
+                        </div>
+                        <div className="flex-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploading}
+                            className={`${mode === 'chaos' ? 'border-[#00C896] text-[#00C896] hover:bg-[#00C896]/10' : mode === 'chill' ? 'border-[#C8D961] text-[#C8D961] hover:bg-[#C8D961]/10' : 'border-black text-black hover:bg-black/10'}`}
+                          >
+                            {uploading ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4 mr-2" />
+                                Upload Photo
+                              </>
+                            )}
+                          </Button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handlePhotoUpload}
+                            className="hidden"
+                          />
+                          <p className={`text-xs mt-2 ${getFieldCardStyle().hint}`}>
+                            JPG, PNG or GIF. Max size 5MB
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
                   
                   {/* Save Button Card */}
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-4 shadow-sm`}>
+                  <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-4`}>
                     <div className="flex justify-end gap-2">
                       <Button
                         type="button"
@@ -924,44 +962,83 @@ export default function ProfilePage() {
                 </div>
 
                 {loadingActivity ? (
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-12 shadow-sm`}>
+                  <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-12`}>
                     <div className="flex items-center justify-center">
-                      <Loader2 className={`w-6 h-6 animate-spin ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
+                      <Loader2 className={`w-6 h-6 animate-spin ${getFieldCardStyle().text}`} />
                     </div>
                   </Card>
                 ) : activities.length > 0 ? (
-                  <div className="space-y-2">
-                    {activities.map((activity) => (
-                      <Card
-                        key={`${activity.type}-${activity.id}`}
-                        className={`bg-white ${getRoundedClass('rounded-xl')} p-4 shadow-sm`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              {activity.type === 'snap' && <Sparkles className={`w-4 h-4 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-black/60'}`} />}
-                              {activity.type === 'work_sample' && <FileText className={`w-4 h-4 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-black/60'}`} />}
-                              {activity.type === 'pipeline_project' && <Briefcase className={`w-4 h-4 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-black/60'}`} />}
-                              <span className={`text-sm font-semibold uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
-                                {activity.type === 'snap' ? 'Snap' : activity.type === 'work_sample' ? 'Work Sample' : 'Pipeline Project'}
-                              </span>
-                              <span className={`text-xs ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-black/60'}`}>
-                                {new Date(activity.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                              </span>
+                  (() => {
+                    // Group activities by type
+                    const groupedActivities = activities.reduce((acc, activity) => {
+                      if (!acc[activity.type]) {
+                        acc[activity.type] = []
+                      }
+                      acc[activity.type].push(activity)
+                      return acc
+                    }, {} as Record<string, typeof activities>)
+
+                    // Define type order and labels
+                    const typeOrder = ['snap', 'work_sample', 'pipeline_project']
+                    const typeLabels = {
+                      snap: 'Snaps',
+                      work_sample: 'Work Samples',
+                      pipeline_project: 'Pipeline Projects'
+                    }
+                    const typeIcons = {
+                      snap: Sparkles,
+                      work_sample: FileText,
+                      pipeline_project: Briefcase
+                    }
+
+                    return (
+                      <div className="space-y-6">
+                        {typeOrder.map((type) => {
+                          const typeActivities = groupedActivities[type] || []
+                          if (typeActivities.length === 0) return null
+
+                          const IconComponent = typeIcons[type as keyof typeof typeIcons]
+
+                          return (
+                            <div key={type} className="space-y-2">
+                              {/* Section Header */}
+                              <div className="flex items-center gap-3 mb-3">
+                                <IconComponent className={`w-5 h-5 ${getFieldCardStyle().text}`} />
+                                <h2 className={`text-xl font-black uppercase ${getFieldCardStyle().text}`}>
+                                  {typeLabels[type as keyof typeof typeLabels]} ({typeActivities.length})
+                                </h2>
+                              </div>
+                              {/* Activities in this group */}
+                              {typeActivities.map((activity) => (
+                                <Card
+                                  key={`${activity.type}-${activity.id}`}
+                                  className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-4`}
+                                >
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className={`text-xs ${getFieldCardStyle().hint}`}>
+                                          {new Date(activity.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </span>
+                                      </div>
+                                      <h3 className={`font-bold ${getFieldCardStyle().text} mb-1`}>{activity.title}</h3>
+                                      {activity.description && (
+                                        <p className={`text-sm ${getFieldCardStyle().hint} line-clamp-2`}>{activity.description}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </Card>
+                              ))}
                             </div>
-                            <h3 className={`font-bold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'} mb-1`}>{activity.title}</h3>
-                            {activity.description && (
-                              <p className={`text-sm ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-black/70'} line-clamp-2`}>{activity.description}</p>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()
                 ) : (
-                  <Card className={`bg-white ${getRoundedClass('rounded-xl')} p-12 shadow-sm text-center`}>
-                    <Activity className={`w-12 h-12 mx-auto mb-4 opacity-50 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
-                    <p className={mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}>
+                  <Card className={`${getFieldCardStyle().bg} ${getFieldCardStyle().border} ${getRoundedClass('rounded-xl')} p-12 text-center`}>
+                    <Activity className={`w-12 h-12 mx-auto mb-4 opacity-50 ${getFieldCardStyle().text}`} />
+                    <p className={getFieldCardStyle().text}>
                       No activity yet. Start contributing to see your activity here.
                     </p>
                   </Card>
