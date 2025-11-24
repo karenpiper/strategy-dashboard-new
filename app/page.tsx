@@ -1085,9 +1085,17 @@ export default function TeamDashboard() {
           // If image_url is in the text response, use it immediately (from n8n)
           if (textData.image_url) {
             console.log('✅ Using image URL from horoscope text response:', textData.image_url)
+            console.log('   Image URL length:', textData.image_url.length)
+            console.log('   Image URL type:', typeof textData.image_url)
             setHoroscopeImage(textData.image_url)
             setHoroscopeImageLoading(false)
             setHoroscopeImageError(null)
+          } else {
+            console.warn('⚠️ No image_url in text response:', {
+              hasImageUrl: !!textData.image_url,
+              imageUrl: textData.image_url,
+              responseKeys: Object.keys(textData)
+            })
           }
         }
         
@@ -1110,10 +1118,18 @@ export default function TeamDashboard() {
             setHoroscopeImageError(imageData.error || 'Failed to load horoscope image')
           }
         } else if (imageData && imageData.image_url) {
-          console.log('Horoscope image received:', imageData)
+          console.log('Horoscope image received from avatar endpoint:', imageData)
+          console.log('   Image URL:', imageData.image_url)
+          console.log('   Image URL length:', imageData.image_url?.length || 0)
           console.log('Reasoning received:', imageData.prompt_slots_reasoning)
           // Only set today's image - historical images remain in database
-          setHoroscopeImage(imageData.image_url)
+          // Only overwrite if we don't already have an image from text response
+          if (!horoscopeImage || !textData.image_url) {
+            console.log('   Setting image from avatar endpoint')
+            setHoroscopeImage(imageData.image_url)
+          } else {
+            console.log('   Keeping image from text response, not overwriting with avatar endpoint')
+          }
           setHoroscopeImagePrompt(imageData.image_prompt || null)
           setHoroscopeImageSlots(imageData.prompt_slots || null)
           setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
@@ -1121,7 +1137,11 @@ export default function TeamDashboard() {
           console.log('Reasoning state set to:', imageData.prompt_slots_reasoning)
         } else if (textData.image_url) {
           // Image URL was already set from text response above
-          console.log('✅ Image URL already set from text response')
+          console.log('✅ Image URL already set from text response:', textData.image_url)
+        } else {
+          console.warn('⚠️ No image URL found in either text or avatar response')
+          console.warn('   Text response keys:', Object.keys(textData))
+          console.warn('   Image data:', imageData)
         }
       } catch (error: any) {
         console.error('Error fetching horoscope data:', error)
