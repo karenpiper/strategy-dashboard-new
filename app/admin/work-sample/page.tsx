@@ -49,6 +49,7 @@ interface WorkSample {
   file_url: string | null
   file_link: string | null
   file_name: string | null
+  pitch_won: boolean | null
   type?: WorkSampleType | null
   author?: User | null
   created_by_profile?: User | null
@@ -96,6 +97,7 @@ export default function WorkSampleAdmin() {
     file_url: '',
     file_link: '',
     file_name: '',
+    pitch_won: false,
   })
 
   // Theme-aware styling helpers
@@ -562,6 +564,7 @@ export default function WorkSampleAdmin() {
           file_url: formData.file_url || null,
           file_link: formData.file_link || null,
           file_name: formData.file_name || null,
+          pitch_won: formData.pitch_won || false,
         }),
       })
 
@@ -597,6 +600,7 @@ export default function WorkSampleAdmin() {
       file_url: item.file_url || '',
       file_link: item.file_link || '',
       file_name: item.file_name || '',
+      pitch_won: item.pitch_won || false,
     })
     setThumbnailPreview(item.thumbnail_url)
     setSelectedFile(null)
@@ -623,6 +627,7 @@ export default function WorkSampleAdmin() {
         file_url: formData.file_url || null,
         file_link: formData.file_link || null,
         file_name: formData.file_name || null,
+        pitch_won: formData.pitch_won || false,
         // created_by is not updated - keeps original creator
       }
 
@@ -712,6 +717,7 @@ export default function WorkSampleAdmin() {
       file_url: '',
       file_link: '',
       file_name: '',
+      pitch_won: false,
     })
     setThumbnailPreview(null)
     setSelectedFile(null)
@@ -800,7 +806,15 @@ export default function WorkSampleAdmin() {
                     <div className="flex gap-2">
                       <select
                         value={formData.type_id}
-                        onChange={(e) => setFormData({ ...formData, type_id: e.target.value })}
+                        onChange={(e) => {
+                          const selectedType = allTypes.find(t => t.id === e.target.value)
+                          const isPitch = selectedType?.name.toLowerCase() === 'pitch'
+                          setFormData({ 
+                            ...formData, 
+                            type_id: e.target.value,
+                            pitch_won: isPitch ? formData.pitch_won : false
+                          })
+                        }}
                         className={`flex-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                       >
                         <option value="">No Type</option>
@@ -883,6 +897,22 @@ export default function WorkSampleAdmin() {
                       className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                     />
                   </div>
+                  {(() => {
+                    const selectedType = allTypes.find(t => t.id === formData.type_id)
+                    const isPitch = selectedType?.name.toLowerCase() === 'pitch'
+                    return isPitch ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="pitch_won"
+                          checked={formData.pitch_won}
+                          onChange={(e) => setFormData({ ...formData, pitch_won: e.target.checked })}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="pitch_won" className={cardStyle.text}>Won</Label>
+                      </div>
+                    ) : null
+                  })()}
                 </div>
 
                 {/* Right Column */}
@@ -1189,7 +1219,15 @@ export default function WorkSampleAdmin() {
                   <Label className={cardStyle.text}>Type (optional)</Label>
                   <select
                     value={formData.type_id}
-                    onChange={(e) => setFormData({ ...formData, type_id: e.target.value })}
+                    onChange={(e) => {
+                      const selectedType = allTypes.find(t => t.id === e.target.value)
+                      const isPitch = selectedType?.name.toLowerCase() === 'pitch'
+                      setFormData({ 
+                        ...formData, 
+                        type_id: e.target.value,
+                        pitch_won: isPitch ? formData.pitch_won : false
+                      })
+                    }}
                     className={`w-full ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} p-2 ${getRoundedClass('rounded-md')}`}
                   >
                     <option value="">No Type</option>
@@ -1218,6 +1256,22 @@ export default function WorkSampleAdmin() {
                     className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                   />
                 </div>
+                {(() => {
+                  const selectedType = allTypes.find(t => t.id === formData.type_id)
+                  const isPitch = selectedType?.name.toLowerCase() === 'pitch'
+                  return isPitch ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="edit_pitch_won"
+                        checked={formData.pitch_won}
+                        onChange={(e) => setFormData({ ...formData, pitch_won: e.target.checked })}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="edit_pitch_won" className={cardStyle.text}>Won</Label>
+                    </div>
+                  ) : null
+                })()}
               </div>
 
               {/* Right Column */}

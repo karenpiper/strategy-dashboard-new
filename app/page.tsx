@@ -63,6 +63,7 @@ export default function TeamDashboard() {
     thumbnail_url?: string | null
     file_url?: string | null
     file_link?: string | null
+    pitch_won?: boolean | null
   }>>([])
   const [workSamplesSearchQuery, setWorkSamplesSearchQuery] = useState('')
   const [horoscopeImage, setHoroscopeImage] = useState<string | null>(null)
@@ -2965,36 +2966,44 @@ export default function TeamDashboard() {
                     {workSamples.length > 0 ? (
                       workSamples.map((sample) => (
                         <div key={sample.id} className="flex flex-col">
-                          {sample.thumbnail_url ? (
-                            <img 
-                              src={
-                                // Use proxy immediately for Airtable URLs (they're expired)
-                                sample.thumbnail_url.includes('airtable.com') || sample.thumbnail_url.includes('airtableusercontent.com')
-                                  ? `/api/work-samples/thumbnail?url=${encodeURIComponent(sample.thumbnail_url)}`
-                                  // For Supabase URLs, try direct first, fallback to proxy on error
-                                  : sample.thumbnail_url
-                              }
-                              alt={sample.project_name}
-                              className={`w-full aspect-video object-cover ${getRoundedClass('rounded-xl')} mb-3 border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'}`}
-                              onError={(e) => {
-                                // Try proxy if direct URL fails (for Supabase URLs)
-                                const target = e.target as HTMLImageElement
-                                const originalSrc = target.src
-                                if (originalSrc.includes('supabase') && !originalSrc.includes('/api/work-samples/thumbnail')) {
-                                  target.src = `/api/work-samples/thumbnail?url=${encodeURIComponent(originalSrc)}`
-                                } else {
-                                  // Hide broken image and show placeholder
-                                  target.style.display = 'none'
-                                  const placeholder = target.nextElementSibling as HTMLElement
-                                  if (placeholder) {
-                                    placeholder.style.display = 'flex'
-                                  }
+                          <div className="relative mb-3">
+                            {sample.thumbnail_url ? (
+                              <img 
+                                src={
+                                  // Use proxy immediately for Airtable URLs (they're expired)
+                                  sample.thumbnail_url.includes('airtable.com') || sample.thumbnail_url.includes('airtableusercontent.com')
+                                    ? `/api/work-samples/thumbnail?url=${encodeURIComponent(sample.thumbnail_url)}`
+                                    // For Supabase URLs, try direct first, fallback to proxy on error
+                                    : sample.thumbnail_url
                                 }
-                              }}
-                            />
-                          ) : null}
-                          <div className={`w-full aspect-video ${getRoundedClass('rounded-xl')} mb-3 bg-gray-200 flex items-center justify-center border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${sample.thumbnail_url ? 'hidden' : ''}`}>
-                            <span className="text-gray-400 text-xs">No Image</span>
+                                alt={sample.project_name}
+                                className={`w-full aspect-video object-cover ${getRoundedClass('rounded-xl')} border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'}`}
+                                onError={(e) => {
+                                  // Try proxy if direct URL fails (for Supabase URLs)
+                                  const target = e.target as HTMLImageElement
+                                  const originalSrc = target.src
+                                  if (originalSrc.includes('supabase') && !originalSrc.includes('/api/work-samples/thumbnail')) {
+                                    target.src = `/api/work-samples/thumbnail?url=${encodeURIComponent(originalSrc)}`
+                                  } else {
+                                    // Hide broken image and show placeholder
+                                    target.style.display = 'none'
+                                    const placeholder = target.nextElementSibling as HTMLElement
+                                    if (placeholder) {
+                                      placeholder.style.display = 'flex'
+                                    }
+                                  }
+                                }}
+                              />
+                            ) : null}
+                            <div className={`w-full aspect-video ${getRoundedClass('rounded-xl')} bg-gray-200 flex items-center justify-center border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${sample.thumbnail_url ? 'hidden' : ''}`}>
+                              <span className="text-gray-400 text-xs">No Image</span>
+                            </div>
+                            {/* Won Badge - appears over thumbnail when pitch is won */}
+                            {sample.type?.name?.toLowerCase() === 'pitch' && sample.pitch_won && (
+                              <div className={`absolute top-2 right-2 px-2 py-1 ${getRoundedClass('rounded-full')} bg-[#C4F500] text-black shadow-lg flex items-center gap-1 z-10`}>
+                                <span className="text-xs font-black uppercase">Won</span>
+                              </div>
+                            )}
                           </div>
                           <div className="flex flex-col gap-2">
                             {/* Date */}

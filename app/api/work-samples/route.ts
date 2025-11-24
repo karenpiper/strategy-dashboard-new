@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
         thumbnail_url,
         file_url,
         file_link,
-        file_name
+        file_name,
+        pitch_won
       `)
 
     // Apply sorting
@@ -180,7 +181,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { project_name, description, type_id, client, author_id, date, thumbnail_url, file_url, file_link, file_name } = body
+    const { project_name, description, type_id, client, author_id, date, thumbnail_url, file_url, file_link, file_name, pitch_won } = body
 
     if (!project_name || !description) {
       return NextResponse.json(
@@ -237,6 +238,7 @@ export async function POST(request: NextRequest) {
       file_url: file_url || null,
       file_link: file_link || null,
       file_name: file_name || null,
+      pitch_won: pitch_won !== undefined ? pitch_won : false,
     }
 
     const { data, error } = await supabase
@@ -257,6 +259,7 @@ export async function POST(request: NextRequest) {
         file_url,
         file_link,
         file_name,
+        pitch_won,
         type:work_sample_types(id, name),
         author:profiles!author_id(id, email, full_name),
         created_by_profile:profiles!created_by(id, email, full_name)
@@ -301,7 +304,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, project_name, description, type_id, client, author_id, date, thumbnail_url, file_url, file_link, file_name } = body
+    const { id, project_name, description, type_id, client, author_id, date, thumbnail_url, file_url, file_link, file_name, pitch_won } = body
 
     if (!id) {
       return NextResponse.json(
@@ -352,6 +355,7 @@ export async function PUT(request: NextRequest) {
       file_url: file_url || null,
       file_link: file_link || null,
       file_name: file_name || null,
+      pitch_won: pitch_won !== undefined ? pitch_won : false,
     }
 
     // created_by is not included in update - keeps original value
@@ -375,6 +379,7 @@ export async function PUT(request: NextRequest) {
         file_url,
         file_link,
         file_name,
+        pitch_won,
         type:work_sample_types(id, name),
         author:profiles!author_id(id, email, full_name),
         created_by_profile:profiles!created_by(id, email, full_name)

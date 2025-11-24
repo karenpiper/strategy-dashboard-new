@@ -24,6 +24,7 @@ interface WorkSample {
   thumbnail_url?: string | null
   file_url?: string | null
   file_link?: string | null
+  pitch_won?: boolean | null
 }
 
 export default function WorkSamplesPage() {
@@ -355,36 +356,44 @@ export default function WorkSamplesPage() {
                 <Card key={sample.id} className={`${getBgClass()} border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${getRoundedClass('rounded-2xl')} overflow-hidden p-2`}>
                   <div className="flex flex-col">
                     {/* Thumbnail */}
-                    {sample.thumbnail_url ? (
-                      <img 
-                        src={
-                          // Use proxy immediately for Airtable URLs (they're expired)
-                          sample.thumbnail_url.includes('airtable.com') || sample.thumbnail_url.includes('airtableusercontent.com')
-                            ? `/api/work-samples/thumbnail?url=${encodeURIComponent(sample.thumbnail_url)}`
-                            // For Supabase URLs, try direct first, fallback to proxy on error
-                            : sample.thumbnail_url
-                        }
-                        alt={sample.project_name}
-                        className={`w-full aspect-video object-cover ${getRoundedClass('rounded-2xl')}`}
-                        onError={(e) => {
-                          // Try proxy if direct URL fails (for Supabase URLs)
-                          const target = e.target as HTMLImageElement
-                          const originalSrc = target.src
-                          if (originalSrc.includes('supabase') && !originalSrc.includes('/api/work-samples/thumbnail')) {
-                            target.src = `/api/work-samples/thumbnail?url=${encodeURIComponent(originalSrc)}`
-                          } else {
-                            // Hide broken image and show placeholder
-                            target.style.display = 'none'
-                            const placeholder = target.nextElementSibling as HTMLElement
-                            if (placeholder) {
-                              placeholder.style.display = 'flex'
-                            }
+                    <div className="relative">
+                      {sample.thumbnail_url ? (
+                        <img 
+                          src={
+                            // Use proxy immediately for Airtable URLs (they're expired)
+                            sample.thumbnail_url.includes('airtable.com') || sample.thumbnail_url.includes('airtableusercontent.com')
+                              ? `/api/work-samples/thumbnail?url=${encodeURIComponent(sample.thumbnail_url)}`
+                              // For Supabase URLs, try direct first, fallback to proxy on error
+                              : sample.thumbnail_url
                           }
-                        }}
-                      />
-                    ) : null}
-                    <div className={`w-full aspect-video ${getRoundedClass('rounded-2xl')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''} border-b ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'}`}>
-                      <span className="text-gray-400 text-xs">No Image</span>
+                          alt={sample.project_name}
+                          className={`w-full aspect-video object-cover ${getRoundedClass('rounded-2xl')}`}
+                          onError={(e) => {
+                            // Try proxy if direct URL fails (for Supabase URLs)
+                            const target = e.target as HTMLImageElement
+                            const originalSrc = target.src
+                            if (originalSrc.includes('supabase') && !originalSrc.includes('/api/work-samples/thumbnail')) {
+                              target.src = `/api/work-samples/thumbnail?url=${encodeURIComponent(originalSrc)}`
+                            } else {
+                              // Hide broken image and show placeholder
+                              target.style.display = 'none'
+                              const placeholder = target.nextElementSibling as HTMLElement
+                              if (placeholder) {
+                                placeholder.style.display = 'flex'
+                              }
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-full aspect-video ${getRoundedClass('rounded-2xl')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''} border-b ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'}`}>
+                        <span className="text-gray-400 text-xs">No Image</span>
+                      </div>
+                      {/* Won Badge - appears over thumbnail when pitch is won */}
+                      {sample.type?.name?.toLowerCase() === 'pitch' && sample.pitch_won && (
+                        <div className={`absolute top-2 right-2 px-2 py-1 ${getRoundedClass('rounded-full')} bg-[#C4F500] text-black shadow-lg flex items-center gap-1 z-10`}>
+                          <span className="text-xs font-black uppercase">Won</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Content */}
@@ -452,7 +461,7 @@ export default function WorkSamplesPage() {
                 <Card key={sample.id} className={`${getBgClass()} border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${getRoundedClass('rounded-2xl')} overflow-hidden`}>
                   <div className="flex flex-col md:flex-row gap-6 p-6">
                     {/* Thumbnail - Smaller in list view */}
-                    <div className="flex-shrink-0 w-full md:w-48">
+                    <div className="flex-shrink-0 w-full md:w-48 relative">
                       {sample.thumbnail_url ? (
                         <img 
                           src={
@@ -480,6 +489,12 @@ export default function WorkSamplesPage() {
                       <div className={`w-full h-32 md:h-full ${getRoundedClass('rounded-xl')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''} border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'}`}>
                         <span className="text-gray-400 text-xs">No Image</span>
                       </div>
+                      {/* Won Badge - appears over thumbnail when pitch is won */}
+                      {sample.type?.name?.toLowerCase() === 'pitch' && sample.pitch_won && (
+                        <div className={`absolute top-2 right-2 px-2 py-1 ${getRoundedClass('rounded-full')} bg-[#C4F500] text-black shadow-lg flex items-center gap-1 z-10`}>
+                          <span className="text-xs font-black uppercase">Won</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Content */}
