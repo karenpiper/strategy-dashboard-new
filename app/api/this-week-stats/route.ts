@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 /**
  * GET - Fetch this week stats configuration and calculated values
- * Returns the 4 stats with their current values
+ * Returns the 3 stats with their current values
  */
 export async function GET(request: NextRequest) {
   try {
@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
 
 /**
  * PUT - Update this week stats configuration
- * Expects an array of 4 stat configurations
+ * Expects an array of 3 stat configurations
  */
 export async function PUT(request: NextRequest) {
   try {
@@ -166,25 +166,25 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { stats } = body
 
-    if (!Array.isArray(stats) || stats.length !== 4) {
+    if (!Array.isArray(stats) || stats.length !== 3) {
       return NextResponse.json(
-        { error: 'Must provide exactly 4 stats' },
+        { error: 'Must provide exactly 3 stats' },
         { status: 400 }
       )
     }
 
-    // Validate positions are 1-4
+    // Validate positions are 1-3
     const positions = stats.map((s: any) => s.position).sort()
-    if (JSON.stringify(positions) !== JSON.stringify([1, 2, 3, 4])) {
+    if (JSON.stringify(positions) !== JSON.stringify([1, 2, 3])) {
       return NextResponse.json(
-        { error: 'Stats must have positions 1, 2, 3, and 4' },
+        { error: 'Stats must have positions 1, 2, and 3' },
         { status: 400 }
       )
     }
 
     // Validate each stat
     for (const stat of stats) {
-      if (!stat.position || stat.position < 1 || stat.position > 4) {
+      if (!stat.position || stat.position < 1 || stat.position > 3) {
         return NextResponse.json(
           { error: `Invalid position for stat: ${stat.position}` },
           { status: 400 }
