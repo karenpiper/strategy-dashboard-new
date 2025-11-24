@@ -2181,7 +2181,9 @@ export default function TeamDashboard() {
             // Generate week days for Gantt chart
             const getWeekDays = () => {
               const days = []
-              const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+              // Use local date to avoid timezone issues
+              const today = new Date()
+              today.setHours(0, 0, 0, 0) // Set to local midnight
               for (let i = 0; i < 7; i++) {
                 const day = new Date(today)
                 day.setDate(today.getDate() + i)
@@ -2192,29 +2194,37 @@ export default function TeamDashboard() {
 
             // Calculate event span across days
             const getEventSpan = (event: typeof calendarEvents[0]) => {
-              const start = event.start.dateTime 
-                ? new Date(event.start.dateTime)
-                : event.start.date
-                  ? new Date(event.start.date)
-                  : null
+              let start: Date | null = null
+              let end: Date | null = null
               
-              let end = event.end.dateTime 
-                ? new Date(event.end.dateTime)
-                : event.end.date
-                  ? new Date(event.end.date)
-                  : null
+              if (event.start.dateTime) {
+                // Timed event - parse as-is (includes timezone info)
+                start = new Date(event.start.dateTime)
+              } else if (event.start.date) {
+                // All-day event - parse date string as local date (YYYY-MM-DD)
+                // Split and create date in local timezone to avoid UTC conversion issues
+                const [year, month, day] = event.start.date.split('-').map(Number)
+                start = new Date(year, month - 1, day)
+                start.setHours(0, 0, 0, 0)
+              }
               
-              if (!start) return { startDay: 0, endDay: 0, isMultiDay: false }
-              
-              // For all-day events, Google Calendar uses exclusive end dates (next day)
-              // So we need to subtract 1 day to get the actual last day
-              if (event.end.date && end) {
+              if (event.end.dateTime) {
+                end = new Date(event.end.dateTime)
+              } else if (event.end.date) {
+                // All-day event - parse date string as local date
+                const [year, month, day] = event.end.date.split('-').map(Number)
+                end = new Date(year, month - 1, day)
+                end.setHours(0, 0, 0, 0)
+                // For all-day events, Google Calendar uses exclusive end dates (next day)
+                // So we need to subtract 1 day to get the actual last day
                 end = new Date(end.getTime() - 24 * 60 * 60 * 1000)
               }
               
+              if (!start) return { startDay: 0, endDay: 0, isMultiDay: false }
               if (!end) end = start
               
-              const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+              // Use local date for week start to match
+              const weekStart = new Date()
               weekStart.setHours(0, 0, 0, 0)
               
               // Calculate days relative to week start
@@ -2408,7 +2418,7 @@ export default function TeamDashboard() {
                         })}
                       </div>
 
-                      {/* Events as Gantt bars */}
+                      {/* Events as Gantt bars - use grid for aligned columns */}
                       <div className="space-y-2">
                         {filteredEvents.map((event) => {
                           const eventColor = getEventColor(event)
@@ -2434,15 +2444,15 @@ export default function TeamDashboard() {
                           
                           return (
                             <div key={event.id} className="relative mb-2">
-                              {/* Event bar spanning days - merged boxes */}
-                              <div className="flex">
+                              {/* Event bar spanning days - use grid for aligned columns */}
+                              <div className="grid grid-cols-7">
                                 {getWeekDays().map((day, index) => {
                                   const isInSpan = index >= span.startDay && index <= span.endDay
                                   if (!isInSpan) {
                                     return (
                                       <div 
                                         key={index} 
-                                        className={`flex-1 ${eventHeight}`}
+                                        className={`${eventHeight}`}
                                         style={{ 
                                           borderRight: index < 6 ? `1px solid ${mode === 'chaos' ? 'rgba(14, 165, 233, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)'}` : 'none'
                                         }}
@@ -2456,7 +2466,7 @@ export default function TeamDashboard() {
                                   return (
                                     <div
                                       key={index}
-                                      className={`flex-1 ${eventHeight} ${getRoundedClass(isStart && isEnd ? 'rounded-lg' : isStart ? 'rounded-l-lg' : isEnd ? 'rounded-r-lg' : '')} flex items-center px-2`}
+                                      className={`${eventHeight} ${getRoundedClass(isStart && isEnd ? 'rounded-lg' : isStart ? 'rounded-l-lg' : isEnd ? 'rounded-r-lg' : '')} flex items-center px-2`}
                                       style={{ 
                                         backgroundColor: `${eventColor}88`,
                                         borderLeft: isStart ? `3px solid ${eventColor}` : 'none',
