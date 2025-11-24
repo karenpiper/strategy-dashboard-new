@@ -500,45 +500,15 @@ function buildPromptString(
     }
   }
 
-  // Build style text - prefer style reference, only add medium if it complements
-  // Avoid redundant combinations (e.g., "Rubber Hose Cartoon. Marker Illustration")
-  let styleText = ''
-  if (styleReference) {
-    styleText = styleReference.label
-    // Only add medium if it's different and complementary
-    // Skip if medium is already implied by the style reference
-    if (styleMedium && !styleReference.label.toLowerCase().includes(styleMedium.label.toLowerCase().split(' ')[0])) {
-      // Check if they conflict (both are illustration styles, both are cartoon styles, etc.)
-      const styleRefLower = styleReference.label.toLowerCase()
-      const mediumLower = styleMedium.label.toLowerCase()
-      const isIllustration = mediumLower.includes('illustration') || mediumLower.includes('sketch') || mediumLower.includes('drawing')
-      const isCartoon = styleRefLower.includes('cartoon') || styleRefLower.includes('animation')
-      const isDigital = mediumLower.includes('digital') || mediumLower.includes('cg') || mediumLower.includes('3d')
-      
-      // Only add medium if it adds meaningful information
-      if (!(isIllustration && isCartoon) && !(isDigital && styleRefLower.includes('cg'))) {
-        styleText += `. ${styleMedium.label}`
-      }
-    }
-  } else if (styleMedium) {
-    styleText = styleMedium.label
-  }
+  // Build style text - use both style reference and medium (original working format)
+  const styleText = styleReference
+    ? `${styleReference.label}${styleMedium ? `. ${styleMedium.label}` : ''}`
+    : styleMedium?.label || ''
 
-  // Build activity text - integrate naturally and check for contradictions
-  let activityText = ''
-  if (activity) {
-    const activityLabel = activity.label.toLowerCase()
-    // Check if activity contradicts the setting (e.g., "flying" in "library")
-    const isFlyingActivity = activityLabel.includes('flying') || activityLabel.includes('air') || activityLabel.includes('sky')
-    const isIndoorSetting = settingText.includes('library') || settingText.includes('room') || settingText.includes('house') || settingText.includes('building')
-    
-    // Only include activity if it makes sense with the setting
-    if (!(isFlyingActivity && isIndoorSetting)) {
-      activityText = ` ${activityLabel}`
-    }
-  }
-
-  // Build setting text with proper grammar
+  // Build activity text
+  const activityText = activity ? ` ${activity.label.toLowerCase()}` : ''
+  
+  // Build setting text
   const settingText = settingPlace?.label.toLowerCase() || 'a setting'
   let timeText = settingTime?.label.toLowerCase() || 'a time'
   // Fix grammar: "at stormy afternoon" -> "during a stormy afternoon"
@@ -557,49 +527,11 @@ function buildPromptString(
   const colorText = colorPalette?.label.toLowerCase() || 'colorful'
   const lightingText = lightingStyle?.label.toLowerCase() || 'natural lighting'
 
-  // Handle camera frame - avoid contradictions
-  let cameraFrameText = cameraFrame?.label || 'Portrait'
-  // If constraints mention "portrait ratio" or "face", don't use "Top Down View"
-  const hasPortraitConstraint = constraints.some(c => 
-    c.label.toLowerCase().includes('portrait') || 
-    c.label.toLowerCase().includes('face') ||
-    c.label.toLowerCase().includes('close-up')
-  )
-  if (hasPortraitConstraint && cameraFrameText.toLowerCase().includes('top down')) {
-    cameraFrameText = 'Portrait'
-  }
-
   // Build constraints text
-  const constraintsText = constraints.length > 0 
-    ? constraints.map((c) => c.label.toLowerCase()).join(', ')
-    : ''
+  const constraintsText = constraints.map((c) => c.label.toLowerCase()).join(', ')
 
-  // Build the prompt with better structure
-  let prompt = ''
-  
-  // Style
-  if (styleText) {
-    prompt += `${styleText}. `
-  }
-  
-  // Camera frame and subject
-  prompt += `${cameraFrameText} of ${subjectClause}`
-  
-  // Activity (already filtered for contradictions above)
-  if (activityText) {
-    prompt += activityText
-  }
-  
-  // Setting and time
-  prompt += `. They are in ${settingText} ${timeText}. `
-  
-  // Mood, color, lighting
-  prompt += `${moodText} mood, ${colorText} palette, ${lightingText}`
-  
-  // Constraints
-  if (constraintsText) {
-    prompt += `. ${constraintsText}`
-  }
+  // Build prompt following the original working format
+  const prompt = `${styleText}. ${cameraFrame?.label || 'Portrait'} of ${subjectClause}${activityText}. They are in ${settingText} ${timeText}. ${moodText} mood, ${colorText} palette, ${lightingText}. ${constraintsText}.`
 
   return prompt.trim()
 }
