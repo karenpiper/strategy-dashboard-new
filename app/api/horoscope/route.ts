@@ -496,6 +496,153 @@ export async function GET(request: NextRequest) {
         imageUrl: imageUrl.substring(0, 100) + '...'
       })
       
+      // OPTIMIZATION: Start image download/upload in parallel with avatar state update
+      // These operations are independent and can run concurrently
+      console.log('⚡ Starting parallel operations: image upload + avatar state update...')
+      
+      const [permanentImageUrl] = await Promise.all([
+        // Download and upload image to Supabase storage
+        (async () => {
+          console.log('📥 Downloading image from OpenAI and uploading to Supabase storage...')
+          console.log('   Source image URL:', imageUrl.substring(0, 100) + '...')
+          
+          try {
+            // Download the image
+            console.log('   Fetching image from OpenAI...')
+            const imageResponse = await fetch(imageUrl)
+            if (!imageResponse.ok) {
+              throw new Error(`Failed to download image: ${imageResponse.statusText} (${imageResponse.status})`)
+            }
+            console.log('   Image downloaded successfully, size:', imageResponse.headers.get('content-length') || 'unknown')
+            const imageBlob = await imageResponse.blob()
+            const imageBuffer = Buffer.from(await imageBlob.arrayBuffer())
+            console.log('   Image buffer size:', imageBuffer.length, 'bytes')
+            
+            // Upload to Supabase storage (horoscope-avatars bucket - separate from profile avatars)
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+            const fileName = `horoscope-${userId}-${todayDate}-${timestamp}.png`
+            const filePath = `${userId}/${fileName}`
+            const bucketName = 'horoscope-avatars'
+            
+            console.log('📤 Uploading image to Supabase storage...')
+            console.log('   Bucket:', bucketName)
+            console.log('   File path:', filePath)
+            console.log('   File size:', imageBuffer.length, 'bytes')
+            
+            const { error: uploadError } = await supabaseAdmin.storage
+              .from(bucketName)
+              .upload(filePath, imageBuffer, {
+                contentType: 'image/png',
+                upsert: false,
+              })
+            
+            if (uploadError) {
+              console.error('❌ CRITICAL: Error uploading image to Supabase storage:', uploadError)
+              throw new Error(`Failed to upload image to Supabase storage: ${uploadError.message}. Cannot save horoscope with temporary image URL.`)
+            }
+            
+            // Get public URL from Supabase storage
+            const { data: urlData } = supabaseAdmin.storage
+              .from(bucketName)
+              .getPublicUrl(filePath)
+            
+            if (!urlData || !urlData.publicUrl) {
+              console.error('❌ CRITICAL: Failed to get public URL from Supabase storage')
+              throw new Error('Failed to get public URL for uploaded image. Upload may have succeeded but URL generation failed.')
+            }
+            
+            const permanentUrl = urlData.publicUrl
+            console.log('✅ Image uploaded to Supabase storage successfully')
+            console.log('   Public URL:', permanentUrl.substring(0, 100) + '...')
+            
+            // Verify the URL is a Supabase URL
+            if (permanentUrl === imageUrl) {
+              console.error('❌ CRITICAL: Permanent URL is same as original URL - upload failed!')
+              throw new Error('Image upload failed - permanent URL matches temporary OpenAI URL')
+            }
+            
+            if (!permanentUrl.includes('supabase.co') && !permanentUrl.includes('supabase')) {
+              console.error('❌ CRITICAL: Permanent URL does not appear to be a Supabase URL!')
+              throw new Error('Image upload may have failed - URL is not a Supabase storage URL')
+            }
+            
+            // Verify the uploaded file exists
+            const { data: fileData, error: fileCheckError } = await supabaseAdmin.storage
+              .from(bucketName)
+              .list(userId, {
+                limit: 1,
+                search: fileName
+              })
+            
+            if (fileCheckError) {
+              console.warn('⚠️ Could not verify uploaded file exists:', fileCheckError)
+            } else if (!fileData || fileData.length === 0) {
+              console.error('❌ CRITICAL: Uploaded file not found in storage!')
+              throw new Error('Image upload verification failed - file not found in storage after upload')
+            } else {
+              console.log('✅ Verified uploaded file exists in storage:', fileData[0].name)
+            }
+            
+            return permanentUrl
+          } catch (imageError: any) {
+            console.error('❌ CRITICAL: Error processing image upload:', imageError)
+            throw imageError // Re-throw to fail the request
+          }
+        })(),
+        // Update user avatar state (parallel with image upload)
+        (async () => {
+          const { data: styleReference } = await supabaseAdmin
+            .from('prompt_slot_catalogs')
+            .select('style_group_id')
+            .eq('id', promptSlots.style_reference_id)
+            .single()
+          
+          const selectedStyleGroupId = styleReference?.style_group_id
+          
+          const { data: avatarState } = await supabaseAdmin
+            .from('user_avatar_state')
+            .select('*')
+        .eq('user_id', userId)
+            .single()
+          
+          const recentStyleGroupIds = avatarState?.recent_style_group_ids || []
+          const recentStyleReferenceIds = avatarState?.recent_style_reference_ids || []
+          const recentSubjectRoleIds = avatarState?.recent_subject_role_ids || []
+          const recentSettingPlaceIds = avatarState?.recent_setting_place_ids || []
+          
+          const updatedStyleGroupIds = selectedStyleGroupId
+            ? [...recentStyleGroupIds.filter((id) => id !== selectedStyleGroupId), selectedStyleGroupId].slice(-7)
+            : recentStyleGroupIds
+          
+          const updatedStyleReferenceIds = [
+            ...recentStyleReferenceIds.filter((id) => id !== promptSlots.style_reference_id),
+            promptSlots.style_reference_id,
+          ].slice(-7)
+          
+          const updatedSubjectRoleIds = [
+            ...recentSubjectRoleIds.filter((id) => id !== promptSlots.subject_role_id),
+            promptSlots.subject_role_id,
+          ].slice(-7)
+          
+          const updatedSettingPlaceIds = [
+            ...recentSettingPlaceIds.filter((id) => id !== promptSlots.setting_place_id),
+            promptSlots.setting_place_id,
+          ].slice(-7)
+          
+          await updateUserAvatarState(supabaseAdmin, userId, {
+            last_generated_date: todayDate,
+            recent_style_group_ids: updatedStyleGroupIds,
+            recent_style_reference_ids: updatedStyleReferenceIds,
+            recent_subject_role_ids: updatedSubjectRoleIds,
+            recent_setting_place_ids: updatedSettingPlaceIds,
+          })
+          
+          console.log('✅ Updated user avatar state')
+        })()
+      ])
+      
+      imageUrl = permanentImageUrl
+      
       const elapsedTime = Date.now() - startTime
       console.log(`✅ Horoscope generation completed via n8n in ${elapsedTime}ms`)
       
@@ -504,7 +651,7 @@ export async function GET(request: NextRequest) {
         dosCount: horoscopeDos.length,
         dontsCount: horoscopeDonts.length,
         hasImageUrl: !!imageUrl,
-        imageUrl: imageUrl || 'MISSING',
+        imageUrl: imageUrl?.substring(0, 100) + '...' || 'MISSING',
         imageUrlLength: imageUrl?.length || 0
       })
       
@@ -512,7 +659,6 @@ export async function GET(request: NextRequest) {
       if (!imageUrl || imageUrl.trim() === '') {
         console.error('❌ CRITICAL ERROR: imageUrl is empty before saving to database!')
         console.error('   n8nResult.imageUrl:', n8nResult.imageUrl)
-        console.error('   permanentImageUrl:', permanentImageUrl)
         throw new Error('Cannot save horoscope: imageUrl is empty. n8n generation may have failed.')
       }
     } catch (error: any) {
