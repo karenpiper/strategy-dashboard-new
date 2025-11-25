@@ -1731,67 +1731,70 @@ export default function TeamDashboard() {
             </TooltipContent>
           </Tooltip>
         )}
-        <button
-          type="button"
-          onClick={async () => {
-            try {
-              setHoroscopeLoading(true)
-              setHoroscopeImageLoading(true)
-              setHoroscopeError(null)
-              setHoroscopeImageError(null)
-              
-              // Force regenerate by calling with force=true
-              const [textResponse, imageResponse] = await Promise.all([
-                fetch('/api/horoscope?force=true'),
-                fetch('/api/horoscope/avatar')
-              ])
-              
-              const textData = await textResponse.json()
-              const imageData = await imageResponse.json()
-              
-              if (textResponse.ok) {
-                setHoroscope({
-                  star_sign: textData.star_sign,
-                  horoscope_text: textData.horoscope_text,
-                  horoscope_dos: textData.horoscope_dos || [],
-                  horoscope_donts: textData.horoscope_donts || [],
-                })
-                if (textData.star_sign) {
-                  setCharacterName(textData.character_name || generateSillyCharacterName(textData.star_sign))
+        {/* Reload button - admin only */}
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                setHoroscopeLoading(true)
+                setHoroscopeImageLoading(true)
+                setHoroscopeError(null)
+                setHoroscopeImageError(null)
+                
+                // Force regenerate by calling with force=true
+                const [textResponse, imageResponse] = await Promise.all([
+                  fetch('/api/horoscope?force=true'),
+                  fetch('/api/horoscope/avatar')
+                ])
+                
+                const textData = await textResponse.json()
+                const imageData = await imageResponse.json()
+                
+                if (textResponse.ok) {
+                  setHoroscope({
+                    star_sign: textData.star_sign,
+                    horoscope_text: textData.horoscope_text,
+                    horoscope_dos: textData.horoscope_dos || [],
+                    horoscope_donts: textData.horoscope_donts || [],
+                  })
+                  if (textData.star_sign) {
+                    setCharacterName(textData.character_name || generateSillyCharacterName(textData.star_sign))
+                  }
                 }
+                
+                if (imageResponse.ok) {
+                  setHoroscopeImage(imageData.image_url)
+                  setHoroscopeImagePrompt(imageData.image_prompt || null)
+                  setHoroscopeImageSlots(imageData.prompt_slots || null)
+                  setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
+                  setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
+                }
+                
+                setHoroscopeLoading(false)
+                setHoroscopeImageLoading(false)
+              } catch (error) {
+                console.error('Error regenerating horoscope:', error)
+                setHoroscopeError('Failed to regenerate horoscope')
+                setHoroscopeImageError('Failed to regenerate horoscope image')
+                setHoroscopeLoading(false)
+                setHoroscopeImageLoading(false)
               }
-              
-              if (imageResponse.ok) {
-                setHoroscopeImage(imageData.image_url)
-                setHoroscopeImagePrompt(imageData.image_prompt || null)
-                setHoroscopeImageSlots(imageData.prompt_slots || null)
-                setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
-                setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
-              }
-              
-              setHoroscopeLoading(false)
-              setHoroscopeImageLoading(false)
-            } catch (error) {
-              console.error('Error regenerating horoscope:', error)
-              setHoroscopeError('Failed to regenerate horoscope')
-              setHoroscopeImageError('Failed to regenerate horoscope image')
-              setHoroscopeLoading(false)
-              setHoroscopeImageLoading(false)
-            }
-          }}
-          className={`p-2 ${getRoundedClass('rounded-full')} border-2 transition-all hover:opacity-80 ${
-            mode === 'chaos' ? 'bg-black/20 border-[#C4F500]/40 hover:bg-black/30' :
-            mode === 'chill' ? 'bg-[#F5E6D3]/30 border-[#FFC043]/40 hover:bg-[#F5E6D3]/40' :
-            'bg-black/20 border-white/20 hover:bg-black/30'
-          }`}
-          title="Regenerate horoscope"
-        >
-          <RefreshCw className={`w-4 h-4 ${
-            mode === 'chaos' ? 'text-[#C4F500]' :
-            mode === 'chill' ? 'text-[#FFC043]' :
-            'text-white'
-          }`} />
-        </button>
+            }}
+            className={`p-2 ${getRoundedClass('rounded-full')} border-2 transition-all hover:opacity-80 ${
+              mode === 'chaos' ? 'bg-black/20 border-[#C4F500]/40 hover:bg-black/30' :
+              mode === 'chill' ? 'bg-[#F5E6D3]/30 border-[#FFC043]/40 hover:bg-[#F5E6D3]/40' :
+              'bg-black/20 border-white/20 hover:bg-black/30'
+            }`}
+            title="Regenerate horoscope (Admin only)"
+          >
+            <RefreshCw className={`w-4 h-4 ${
+              mode === 'chaos' ? 'text-[#C4F500]' :
+              mode === 'chill' ? 'text-[#FFC043]' :
+              'text-white'
+            }`} />
+          </button>
+        )}
         <button
           type="button"
           onClick={async () => {
