@@ -1889,8 +1889,8 @@ export default function TeamDashboard() {
                       <div 
                         className="absolute top-1/2 z-20 pointer-events-none"
                         style={{ 
-                          right: '100px',
-                          transform: 'translateY(-50%) translateX(20px) rotate(75deg)',
+                          right: '0',
+                          transform: 'translateY(-50%) translateX(80px) rotate(82deg)',
                           transformOrigin: 'right center'
                         }}
                       >
@@ -1953,8 +1953,8 @@ export default function TeamDashboard() {
                   <div 
                     className="absolute top-1/2 z-20 pointer-events-none"
                     style={{ 
-                      right: '100px',
-                      transform: 'translateY(-50%) translateX(20px) rotate(75deg)',
+                      right: '0',
+                      transform: 'translateY(-50%) translateX(80px) rotate(82deg)',
                       transformOrigin: 'right center'
                     }}
                   >
@@ -3592,8 +3592,9 @@ export default function TeamDashboard() {
               }
 
               const renderWonLostItem = (project: typeof pipelineData[0], index: number) => {
-                const client = project.type || project.description || ''
-                const displayText = client ? `${client} - ${project.name}` : project.name
+                const clientName = project.name || ''
+                const type = project.type || project.description || ''
+                const displayText = type ? `${clientName} - ${type}` : clientName
                 return (
                   <div key={project.id} className="flex items-center gap-2 py-1">
                     {/* Dot on the left */}
