@@ -245,24 +245,37 @@ export async function GET(request: NextRequest) {
       allRecordsError: allRecordsError?.message
     })
     
-    // TEMPORARY: Cache check disabled for debugging n8n integration
-    // TODO: Re-enable cache check once n8n is working properly
+    // CACHE CHECK: Return cached horoscope if it exists and force regeneration is not requested
     // This ensures horoscope text is generated ONCE per day per user and cached in the database
     // This prevents hitting billing limits by regenerating unnecessarily
-    
-    // SAFETY CHECK: DISABLED - Always generate to debug n8n
-    // if (cachedHoroscope && !forceRegenerate) {
-    //   ... (cache check code commented out)
-    // }
-    
-    console.log('🔄 CACHE CHECK DISABLED - Generating new horoscope via n8n every time (debugging mode)')
-    if (cachedHoroscope) {
-      console.log('   Found cached horoscope but ignoring it:', {
-        date: cachedHoroscope.date,
-        generated_at: cachedHoroscope.generated_at,
-        hasText: !!cachedHoroscope.horoscope_text,
-        textLength: cachedHoroscope.horoscope_text?.length || 0
-      })
+    if (cachedHoroscope && !forceRegenerate) {
+      // Verify the cached horoscope has all required data
+      if (cachedHoroscope.horoscope_text && cachedHoroscope.image_url) {
+        console.log('✅ Returning cached horoscope from database')
+        console.log('   Date:', cachedHoroscope.date)
+        console.log('   Generated at:', cachedHoroscope.generated_at)
+        console.log('   Text length:', cachedHoroscope.horoscope_text.length)
+        console.log('   Has image URL:', !!cachedHoroscope.image_url)
+        
+        return NextResponse.json({
+          star_sign: cachedHoroscope.star_sign,
+          horoscope_text: cachedHoroscope.horoscope_text,
+          horoscope_dos: cachedHoroscope.horoscope_dos || [],
+          horoscope_donts: cachedHoroscope.horoscope_donts || [],
+          image_url: cachedHoroscope.image_url,
+          character_name: cachedHoroscope.character_name || null,
+          cached: true,
+        })
+      } else {
+        console.log('⚠️ Cached horoscope found but missing required data')
+        console.log('   Has text:', !!cachedHoroscope.horoscope_text)
+        console.log('   Has image:', !!cachedHoroscope.image_url)
+        console.log('   Will regenerate to ensure complete data')
+      }
+    } else if (cachedHoroscope && forceRegenerate) {
+      console.log('🔄 FORCE REGENERATION requested - ignoring cached horoscope')
+    } else {
+      console.log('📝 No cached horoscope found - will generate new one')
     }
     
     // CRITICAL SAFETY CHECK: Before generating, verify database is working
@@ -686,14 +699,14 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // CRITICAL SAFETY CHECK: DISABLED for debugging
+    // CRITICAL SAFETY CHECK: Only save if we're not forcing regeneration and no cache exists
     // This prevents race conditions if multiple requests come in simultaneously
-    // TODO: Re-enable once n8n is working properly
-    // if (!forceRegenerate) {
-    //   ... (safety check code commented out)
-    // }
-    
-    console.log('🔄 SAFETY CHECK DISABLED - Will always save new n8n-generated horoscope (debugging mode)')
+    // If forceRegenerate is true, we always save (user explicitly requested regeneration)
+    // If cachedHoroscope exists and we're not forcing, we should have returned early above
+    // So if we get here, either:
+    // 1. No cached horoscope exists (first generation of the day)
+    // 2. forceRegenerate is true (user wants new generation)
+    // In both cases, we should save the new horoscope
     
     // Save horoscope text to database
     // Use upsert to handle both insert and update in one operation
