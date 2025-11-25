@@ -1837,7 +1837,7 @@ export default function TeamDashboard() {
     <div className={`flex flex-col ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       <SiteHeader rightContent={horoscopeImageActions} />
 
-      <main className="max-w-[1200px] mx-auto px-6 py-4 flex-1 pb-0 pt-24">
+      <main className="max-w-[1200px] mx-auto px-6 py-4 flex-1 pb-0 pt-24 relative">
         {/* Hero Section - Full Width */}
         <section className="mb-12 relative">
           {(() => {
@@ -2028,26 +2028,27 @@ export default function TeamDashboard() {
             </Card>
             )
           })()}
-          {/* Text along right edge - positioned outside Card */}
-          {horoscopeImage && characterName && (
-            <div 
-              className="absolute top-1/2 z-30 pointer-events-none"
-              style={{ 
-                right: '-120px',
-                transform: 'translateY(-50%) rotate(82deg)',
-                transformOrigin: 'right center'
-              }}
-            >
-              <div 
-                className={`font-black text-base md:text-lg whitespace-nowrap uppercase tracking-tight ${
-                  mode === 'chill' ? 'text-[#FFC043]' : 'text-white'
-                }`}
-              >
-                TODAY, YOU'RE GIVING...
-              </div>
-            </div>
-          )}
         </section>
+        {/* Text along right edge - positioned outside Card and section */}
+        {horoscopeImage && characterName && (
+          <div 
+            className="fixed z-30 pointer-events-none"
+            style={{ 
+              right: '20px',
+              top: '50%',
+              transform: 'translateY(-50%) rotate(82deg)',
+              transformOrigin: 'right center'
+            }}
+          >
+            <div 
+              className={`font-black text-base md:text-lg whitespace-nowrap uppercase tracking-tight ${
+                mode === 'chill' ? 'text-[#FFC043]' : 'text-white'
+              }`}
+            >
+              TODAY, YOU'RE GIVING...
+            </div>
+          </div>
+        )}
 
         {/* Time Zones - 100% width, very short, between hero and horoscope */}
         <section className="mb-6">
