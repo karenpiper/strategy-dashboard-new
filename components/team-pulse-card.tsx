@@ -438,20 +438,15 @@ export function TeamPulseCard() {
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), 0 0 0 3px ${mode === 'chaos' ? 'rgba(255,255,255,0.4)' : mode === 'chill' ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.2)'} !important;
         }
       `}</style>
-      <Card className={`${style.bg} ${style.border} !rounded-[2.5rem] flex flex-col overflow-hidden h-full`}>
-        <div className="p-6 pb-4 flex-shrink-0">
+      <Card className={`${style.bg} ${style.border} !rounded-[2.5rem] p-6 flex flex-col overflow-hidden h-full`}>
+        <div className="flex-shrink-0">
           {/* Small label to match horoscope spacing */}
           <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.secondary }}>
             <span className="uppercase tracking-wider font-black text-xs">But... did it go well?</span>
           </div>
           {/* Header matching horoscope header style */}
-          <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.secondary }}>PULSE<br/>CHECK</h2>
-          
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Lock className="w-3 h-3" style={{ color: '#6B2E8C' }} />
-              <p className="text-xs" style={{ color: '#6B2E8C' }}>Your response is private and only added to the group average</p>
-            </div>
+          <div className="flex items-start justify-between mb-4">
+            <h2 className={`text-4xl font-black uppercase leading-tight`} style={{ color: style.secondary }}>PULSE<br/>CHECK</h2>
             {hasSubmitted && (
               <Button
                 onClick={() => {
@@ -464,10 +459,15 @@ export function TeamPulseCard() {
               </Button>
             )}
           </div>
+          
+          <div className="flex items-center gap-2">
+            <Lock className="w-3 h-3 flex-shrink-0" style={{ color: '#6B2E8C' }} />
+            <p className="text-xs leading-relaxed" style={{ color: '#6B2E8C' }}>Your response is private and only added to the group average</p>
+          </div>
         </div>
         
-        <div className="flex-1 px-6 pb-4">
-          <div className="space-y-4">
+        <div className="flex-1">
+          <div className="space-y-6">
             {questions.map((question, index) => {
               const response = responses[question.question_key]
               const score = response?.score ?? 50
@@ -476,60 +476,62 @@ export function TeamPulseCard() {
               const scoreInterpretation = getScoreInterpretation(score)
               
               return (
-                <div key={question.question_key} className="space-y-2">
+                <div key={question.question_key} className="space-y-4">
                   <p className={`text-lg font-black ${style.text} leading-tight`}>
                     {question.question_text}
                   </p>
                   
-                  <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0">
-                      <span 
-                        className={`text-2xl font-black ${scoreInterpretation.color}`}
-                      >
-                        {score}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <div 
-                        className="pulse-slider-wrapper"
-                        data-score={score}
-                        style={{
-                          '--slider-gradient': getSliderColor(score)
-                        } as React.CSSProperties}
-                      >
-                        <Slider
-                          value={[score]}
-                          onValueChange={(value) => handleScoreChange(question.question_key, value)}
-                          min={0}
-                          max={100}
-                          step={1}
-                          className="w-full"
-                        />
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-shrink-0 w-12">
+                        <span 
+                          className={`text-2xl font-black ${scoreInterpretation.color}`}
+                        >
+                          {score}
+                        </span>
                       </div>
-                      <div className="flex justify-between mt-1">
-                        <span className={`text-[10px] font-black ${style.text}/70 uppercase tracking-wider`}>Low</span>
-                        <span className={`text-[10px] font-black ${style.text}/70 uppercase tracking-wider`}>High</span>
-                      </div>
+                      <div className="flex-1">
+                        <div 
+                          className="pulse-slider-wrapper"
+                          data-score={score}
+                          style={{
+                            '--slider-gradient': getSliderColor(score)
+                          } as React.CSSProperties}
+                        >
+                          <Slider
+                            value={[score]}
+                            onValueChange={(value) => handleScoreChange(question.question_key, value)}
+                            min={0}
+                            max={100}
+                            step={1}
+                            className="w-full"
+                          />
+                        </div>
+                        <div className="flex justify-between mt-1.5">
+                          <span className={`text-[10px] font-black ${style.text}/70 uppercase tracking-wider`}>Low</span>
+                          <span className={`text-[10px] font-black ${style.text}/70 uppercase tracking-wider`}>High</span>
+                        </div>
                       </div>
                     </div>
                   
-                  {/* Optional comment */}
-                  <div className="mt-6">
-                    <label className={`text-[10px] font-black mb-1 block ${style.text} uppercase tracking-wider`}>
-                      Comment
-                    </label>
-                    <Textarea
-                      value={comment}
-                      onChange={(e) => handleCommentChange(question.question_key, e.target.value)}
-                      placeholder="Share your thoughts..."
-                      className={`${getRoundedClass('rounded-lg')} min-h-[40px] resize-none font-medium text-xs p-2 ${
-                        mode === 'chaos' 
-                          ? 'bg-white border-2 border-black/30 text-black placeholder:text-black/50 focus:border-black/50 focus:ring-2 focus:ring-black/20' 
-                          : mode === 'chill' 
-                          ? 'bg-white border-2 border-[#4A1818]/30 text-[#4A1818] placeholder:text-[#4A1818]/50 focus:border-[#4A1818]/50 focus:ring-2 focus:ring-[#4A1818]/20' 
-                          : 'bg-white/10 border-2 border-white/30 text-white placeholder:text-white/50 focus:border-white/50 focus:ring-2 focus:ring-white/20'
-                      }`}
-                    />
+                    {/* Optional comment */}
+                    <div className="pt-2">
+                      <label className={`text-[10px] font-black mb-2 block ${style.text} uppercase tracking-wider`}>
+                        Comment
+                      </label>
+                      <Textarea
+                        value={comment}
+                        onChange={(e) => handleCommentChange(question.question_key, e.target.value)}
+                        placeholder="Share your thoughts..."
+                        className={`${getRoundedClass('rounded-lg')} min-h-[80px] resize-none font-medium text-xs p-3 ${
+                          mode === 'chaos' 
+                            ? 'bg-white border-2 border-black/30 text-black placeholder:text-black/50 focus:border-black/50 focus:ring-2 focus:ring-black/20' 
+                            : mode === 'chill' 
+                            ? 'bg-white border-2 border-[#4A1818]/30 text-[#4A1818] placeholder:text-[#4A1818]/50 focus:border-[#4A1818]/50 focus:ring-2 focus:ring-[#4A1818]/20' 
+                            : 'bg-white/10 border-2 border-white/30 text-white placeholder:text-white/50 focus:border-white/50 focus:ring-2 focus:ring-white/20'
+                        }`}
+                      />
+                    </div>
                   </div>
                 </div>
               )
@@ -537,11 +539,11 @@ export function TeamPulseCard() {
           </div>
         </div>
         
-        <div className="p-6 pt-2 flex-shrink-0 border-t border-opacity-10" style={{ borderColor: mode === 'chaos' ? 'rgba(0,0,0,0.1)' : mode === 'chill' ? 'rgba(74,24,24,0.1)' : 'rgba(255,255,255,0.1)' }}>
+        <div className="pt-4 mt-auto flex-shrink-0 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(0,0,0,0.1)' : mode === 'chill' ? 'rgba(74,24,24,0.1)' : 'rgba(255,255,255,0.1)' }}>
           <Button
             onClick={handleSubmit}
             disabled={!allAnswered || isSubmitting}
-            className={`w-full ${getRoundedClass('rounded-full')} h-10 ${
+            className={`w-full ${getRoundedClass('rounded-full')} h-12 ${
               mode === 'chaos' ? 'bg-[#C5F547] text-black hover:bg-[#C5F547]/80' :
               mode === 'chill' ? 'bg-[#C5F547] text-[#4A1818] hover:bg-[#C5F547]/80' :
               'bg-[#C5F547] text-black hover:bg-[#C5F547]/80'
