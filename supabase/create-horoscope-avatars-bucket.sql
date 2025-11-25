@@ -12,6 +12,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Service role can manage horoscope avatars" ON storage.objects;
 DROP POLICY IF EXISTS "Public can view horoscope avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Users can list their own horoscope avatars" ON storage.objects;
 
 -- Allow service role (API) to upload/update/delete horoscope avatars
 -- The API uses service role key, so it can manage these files
@@ -27,3 +28,11 @@ ON storage.objects FOR SELECT
 TO public
 USING (bucket_id = 'horoscope-avatars');
 
+-- Allow authenticated users to list their own horoscope avatars
+CREATE POLICY "Users can list their own horoscope avatars"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'horoscope-avatars' 
+  AND (storage.foldername(name))[1] = auth.uid()::text
+);
