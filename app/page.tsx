@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useMode } from "@/contexts/mode-context"
 import { useAuth } from "@/contexts/auth-context"
+import { usePermissions } from "@/contexts/permissions-context"
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useEffect, useState, useRef } from 'react'
@@ -33,7 +34,11 @@ export const dynamic = 'force-dynamic'
 export default function TeamDashboard() {
   const { mode } = useMode()
   const { user, loading: authLoading, signOut } = useAuth()
+  const { permissions } = usePermissions()
   const router = useRouter()
+  
+  // Check if user is admin (can manage horoscopes)
+  const isAdmin = permissions?.canManageHoroscopes || false
 
   // Show loading state while checking authentication
   if (authLoading) {
@@ -1571,11 +1576,12 @@ export default function TeamDashboard() {
     return text
   }
 
-  // Horoscope Image Actions - Tooltip and Download
+  // Horoscope Image Actions - Tooltip, Reload (admin only), and Download
   const horoscopeImageActions = horoscopeImage && (
     <TooltipProvider>
       <div className="flex items-center gap-2">
-        {(horoscopeImageSlotsLabels || horoscopeImagePrompt) && (
+        {/* Info button - admin only */}
+        {isAdmin && (horoscopeImageSlotsLabels || horoscopeImagePrompt) && (
           <Tooltip>
             <TooltipTrigger asChild>
               <button 
@@ -1917,25 +1923,6 @@ export default function TeamDashboard() {
                     ) : null}
                   </div>
                 )}
-                {/* Text along right edge - aligned with inner edge of Card */}
-                {horoscopeImage && characterName && (
-                  <div 
-                    className="absolute top-1/2 z-30 pointer-events-none"
-                    style={{ 
-                      right: '20px',
-                      transform: 'translateY(-50%) rotate(82deg)',
-                      transformOrigin: 'right center'
-                    }}
-                  >
-                    <div 
-                      className={`font-black text-base md:text-lg whitespace-nowrap uppercase tracking-tight ${
-                        mode === 'chill' ? 'text-[#FFC043]' : 'text-white'
-                      }`}
-                    >
-                      TODAY, YOU'RE GIVING...
-                    </div>
-                  </div>
-                )}
                 <div className="relative z-10 p-6 md:p-8 h-full flex flex-col justify-between">
                   <div>
                     {mode !== 'chaos' && (
@@ -2038,6 +2025,25 @@ export default function TeamDashboard() {
             </Card>
             )
           })()}
+          {/* Text along right edge - positioned outside Card */}
+          {horoscopeImage && characterName && (
+            <div 
+              className="absolute top-1/2 z-30 pointer-events-none"
+              style={{ 
+                right: '0',
+                transform: 'translateY(-50%) translateX(20px) rotate(82deg)',
+                transformOrigin: 'right center'
+              }}
+            >
+              <div 
+                className={`font-black text-base md:text-lg whitespace-nowrap uppercase tracking-tight ${
+                  mode === 'chill' ? 'text-[#FFC043]' : 'text-white'
+                }`}
+              >
+                TODAY, YOU'RE GIVING...
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Time Zones - 100% width, very short, between hero and horoscope */}
