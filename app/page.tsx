@@ -1933,8 +1933,8 @@ export default function TeamDashboard() {
                   <div 
                     className="absolute top-1/2 z-30 pointer-events-none"
                     style={{ 
-                      right: '10px',
-                      transform: 'translateY(-50%) rotate(90deg)',
+                      right: '90px',
+                      transform: 'translateY(-50%) rotate(80deg)',
                       transformOrigin: 'right center'
                     }}
                   >
@@ -4040,7 +4040,7 @@ export default function TeamDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-stretch">
           {/* Ask The Hive */}
-          {(() => {
+          {/* {(() => {
             // RED SYSTEM: Coral Red bg with Crimson accent (no colored borders on colored backgrounds)
             const hiveStyle = mode === 'chaos' 
               ? { bg: 'bg-[#FF4C4C]', border: 'border-0', glow: '', text: 'text-black', accent: '#C41E3A' } // Coral Red bg with Crimson accent
@@ -4072,6 +4072,52 @@ export default function TeamDashboard() {
               Ask Question
             </Button>
           </Card>
+            )
+          })()} */}
+
+          {/* Media (Playlist) */}
+          {(() => {
+            const playlistStyle = mode === 'chaos' ? getSpecificCardStyle('playlist') : getCardStyle('vibes')
+            return (
+              <Card id="playlist-section" className={`bg-transparent border-0 p-6 md:col-span-1 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
+              >
+                <div className="flex items-center gap-2 text-sm mb-3" style={{ color: playlistStyle.accent }}>
+                  <Music className="w-4 h-4" />
+                  <span className="uppercase tracking-wider font-black text-xs">Weekly</span>
+                </div>
+                <h2 className={`text-3xl font-black mb-4 uppercase ${playlistStyle.text}`}>MEDIA</h2>
+                {playlistLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin" style={{ color: playlistStyle.accent }} />
+                  </div>
+                ) : weeklyPlaylist ? (
+                  <div className="flex-1">
+                    <SpotifyPlayer
+                      playlist={{
+                        title: weeklyPlaylist.title || 'Untitled Playlist',
+                        curator: weeklyPlaylist.curator,
+                        curatorPhotoUrl: weeklyPlaylist.curator_photo_url || undefined,
+                        coverUrl: weeklyPlaylist.cover_url || undefined,
+                        description: weeklyPlaylist.description || undefined,
+                        spotifyUrl: weeklyPlaylist.spotify_url || undefined,
+                        tracks: [],
+                        totalDuration: weeklyPlaylist.total_duration || undefined,
+                        trackCount: weeklyPlaylist.track_count || undefined,
+                        artistsList: weeklyPlaylist.artists_list || undefined,
+                      }}
+                      onSpotifyLink={() => {
+                        if (weeklyPlaylist.spotify_url) {
+                          window.open(weeklyPlaylist.spotify_url, '_blank')
+                        }
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className={`text-sm ${playlistStyle.text}/60`}>No playlist this week</p>
+                  </div>
+                )}
+              </Card>
             )
           })()}
 
