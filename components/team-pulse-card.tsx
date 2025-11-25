@@ -442,7 +442,7 @@ export function TeamPulseCard() {
         <div className="p-6 pb-4 flex-shrink-0">
           {/* Small label to match horoscope spacing */}
           <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.secondary }}>
-            <span className="uppercase tracking-wider font-black text-xs">Pulse Check</span>
+            <span className="uppercase tracking-wider font-black text-xs">But... did it go well?</span>
           </div>
           {/* Header matching horoscope header style */}
           <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.secondary }}>PULSE<br/>CHECK</h2>

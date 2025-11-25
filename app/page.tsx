@@ -2156,13 +2156,13 @@ export default function TeamDashboard() {
           {mode === 'code' ? (
             <>
               <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
-              <span className="text-[#808080]">PERSONALIZED INFORMATION</span>
+              <span className="text-[#808080]">FOR YOU</span>
               <span className="text-[#FFFFFF]">════════════════════════════════════════</span>
             </>
           ) : (
             <>
               <span className={`w-8 h-px ${mode === 'chaos' ? 'bg-[#333333]' : mode === 'chill' ? 'bg-[#8B4444]/30' : 'bg-[#333333]'}`}></span>
-          Personalized Information
+          For You
               {(() => {
                 const colors = getSectionAccentColors('vibes')
                 return (
@@ -2187,7 +2187,7 @@ export default function TeamDashboard() {
               >
                   <div className="flex items-center gap-2 text-sm mb-3" style={{ color: style.accent }}>
                 <Sparkles className="w-4 h-4" />
-                    <span className="uppercase tracking-wider font-black text-xs">The universe tagged you in some feedback</span>
+                    <span className="uppercase tracking-wider font-black text-xs">Horoscope</span>
               </div>
                   <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.accent }}>
                     {mode === 'code' ? `:: The universe tagged you in some feedback` : `The universe tagged you in some feedback`}
