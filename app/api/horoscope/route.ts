@@ -541,6 +541,15 @@ export async function GET(request: NextRequest) {
       
       console.log('🚀 Calling n8n workflow for text and image generation...')
       console.log('   This will generate both the horoscope text AND the image via n8n')
+      console.log('🔍 DEBUG: n8n call parameters:', {
+        starSign,
+        imagePromptLength: imagePrompt?.length || 0,
+        userId,
+        date: todayDate,
+        dateType: typeof todayDate,
+        cafeAstrologyTextLength: cafeAstrologyText?.length || 0
+      })
+      const n8nStartTime = Date.now()
       
       // Call n8n workflow for both text transformation and image generation
       const n8nResult = await generateHoroscopeViaN8n({
@@ -553,6 +562,9 @@ export async function GET(request: NextRequest) {
         date: todayDate,
       })
       
+      const n8nElapsed = Date.now() - n8nStartTime
+      console.log(`✅ n8n workflow completed in ${n8nElapsed}ms`)
+      
       // Validate n8n result before using it
       console.log('📥 Received n8n result:', {
         hasHoroscope: !!n8nResult.horoscope,
@@ -564,6 +576,17 @@ export async function GET(request: NextRequest) {
         dontsCount: n8nResult.donts?.length || 0,
         hasImageUrl: !!n8nResult.imageUrl,
         imageUrl: n8nResult.imageUrl || 'MISSING',
+        imageUrlLength: n8nResult.imageUrl?.length || 0,
+        imageUrlPreview: n8nResult.imageUrl?.substring(0, 100) || 'MISSING'
+      })
+      console.log('🔍 DEBUG: n8n result validation:', {
+        allFieldsPresent: !!(n8nResult.horoscope && n8nResult.dos && n8nResult.donts && n8nResult.imageUrl),
+        missingFields: [
+          !n8nResult.horoscope && 'horoscope',
+          !n8nResult.dos && 'dos',
+          !n8nResult.donts && 'donts',
+          !n8nResult.imageUrl && 'imageUrl'
+        ].filter(Boolean)
       })
 
       if (!n8nResult.horoscope || !n8nResult.dos || !n8nResult.donts) {
@@ -744,6 +767,18 @@ export async function GET(request: NextRequest) {
         imageUrl: imageUrl?.substring(0, 100) + '...' || 'MISSING',
         imageUrlLength: imageUrl?.length || 0
       })
+      console.log('🔍 DEBUG: Generation complete, ready to save:', {
+        hasText: !!horoscopeText,
+        textLength: horoscopeText?.length || 0,
+        hasDos: !!horoscopeDos,
+        dosCount: horoscopeDos?.length || 0,
+        hasDonts: !!horoscopeDonts,
+        dontsCount: horoscopeDonts?.length || 0,
+        hasImageUrl: !!imageUrl,
+        imageUrlLength: imageUrl?.length || 0,
+        todayDate,
+        dateType: typeof todayDate
+      })
       
       // CRITICAL: Verify imageUrl is set before saving
       if (!imageUrl || imageUrl.trim() === '') {
@@ -805,17 +840,50 @@ export async function GET(request: NextRequest) {
     // Save horoscope text to database
     // Delete old horoscope records (keep only today's) - we only want to save the image, not historical horoscopes
     // This ensures the avatar gallery has all images, but we don't keep old horoscope text
-    const { error: deleteOldError } = await supabaseAdmin
+    console.log('🗑️ DEBUG: About to delete old horoscope records (keeping date:', todayDate, ')')
+    const { data: recordsBeforeDelete, error: checkBeforeDeleteError } = await supabaseAdmin
+      .from('horoscopes')
+      .select('id, date, user_id')
+      .eq('user_id', userId)
+    
+    console.log('🗑️ DEBUG: Records before delete:', {
+      count: recordsBeforeDelete?.length || 0,
+      records: recordsBeforeDelete?.map(r => ({ id: r.id, date: r.date, dateString: String(r.date) })) || [],
+      todayDate,
+      error: checkBeforeDeleteError?.message
+    })
+    
+    const { error: deleteOldError, data: deleteResult } = await supabaseAdmin
       .from('horoscopes')
       .delete()
       .eq('user_id', userId)
       .neq('date', todayDate) // Delete all records except today's
+      .select('id, date') // Return deleted records for debugging
     
     if (deleteOldError) {
       console.warn('⚠️ Warning: Could not delete old horoscope records:', deleteOldError)
+      console.warn('   Error details:', deleteOldError.message, deleteOldError.code)
       // Don't fail - continue with save
     } else {
       console.log('🗑️ Deleted old horoscope records (keeping only today\'s)')
+      console.log('🗑️ DEBUG: Deleted records:', {
+        count: deleteResult?.length || 0,
+        deletedDates: deleteResult?.map(r => ({ id: r.id, date: r.date, dateString: String(r.date) })) || []
+      })
+      
+      // Verify today's record still exists after delete
+      const { data: todayRecordAfterDelete } = await supabaseAdmin
+        .from('horoscopes')
+        .select('id, date')
+        .eq('user_id', userId)
+        .eq('date', todayDate)
+        .maybeSingle()
+      
+      console.log('🗑️ DEBUG: Today\'s record after delete:', {
+        exists: !!todayRecordAfterDelete,
+        date: todayRecordAfterDelete?.date,
+        dateString: todayRecordAfterDelete?.date ? String(todayRecordAfterDelete.date) : null
+      })
     }
     
     // Check if today's record exists (we'll upsert it)
@@ -897,6 +965,16 @@ export async function GET(request: NextRequest) {
     
     console.log('💾 Executing database upsert...')
     console.log('   Upsert data image_url:', upsertData.image_url.substring(0, 150) + '...')
+    console.log('🔍 DEBUG: Upsert operation details:', {
+      table: 'horoscopes',
+      conflictColumns: 'user_id,date',
+      dateBeingSaved: upsertData.date,
+      dateType: typeof upsertData.date,
+      dateString: String(upsertData.date),
+      hasImageUrl: !!upsertData.image_url,
+      hasText: !!upsertData.horoscope_text,
+      textLength: upsertData.horoscope_text?.length || 0
+    })
     
     const { data: upsertResult, error: upsertError } = await supabaseAdmin
       .from('horoscopes')
@@ -905,6 +983,20 @@ export async function GET(request: NextRequest) {
         ignoreDuplicates: false // Update existing records
       })
       .select('id, user_id, date, image_url, horoscope_text, generated_at') // Explicitly select image_url
+    
+    console.log('🔍 DEBUG: Upsert result:', {
+      success: !upsertError,
+      error: upsertError?.message || null,
+      errorCode: upsertError?.code || null,
+      resultCount: upsertResult?.length || 0,
+      result: upsertResult?.map(r => ({
+        id: r.id,
+        date: r.date,
+        dateString: String(r.date),
+        hasImageUrl: !!r.image_url,
+        hasText: !!r.horoscope_text
+      })) || null
+    })
     
     if (upsertError) {
       // This is critical - if we can't save, we've wasted an API call
