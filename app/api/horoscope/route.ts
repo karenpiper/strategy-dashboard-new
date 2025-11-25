@@ -434,8 +434,9 @@ export async function GET(request: NextRequest) {
         console.log('🗑️ Deleted old horoscope record from previous day')
       }
       
-      // Set cachedHoroscope to null so we proceed to generation
+      // Clear cachedHoroscope so we proceed to generation
       // This ensures the code below doesn't think we have a valid cached horoscope
+      cachedHoroscope = null as any
     } else if (cachedHoroscope && forceRegenerate) {
       console.log('🔄 FORCE REGENERATION requested - ignoring cached horoscope')
     } else {
