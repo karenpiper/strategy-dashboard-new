@@ -433,6 +433,9 @@ export async function GET(request: NextRequest) {
       } else {
         console.log('🗑️ Deleted old horoscope record from previous day')
       }
+      
+      // Set cachedHoroscope to null so we proceed to generation
+      // This ensures the code below doesn't think we have a valid cached horoscope
     } else if (cachedHoroscope && forceRegenerate) {
       console.log('🔄 FORCE REGENERATION requested - ignoring cached horoscope')
     } else {
@@ -479,11 +482,15 @@ export async function GET(request: NextRequest) {
     }
     */
     
-    // Only generate new horoscope if there's NO cached text at all
+    // Only generate new horoscope if there's NO cached text at all OR it's from a previous day
     // Generation is now enabled even when database is empty
     // BUT: We should have already found it in the checks above
-    // If we get here, something is wrong with our logic
+    // If we get here, either no cache exists OR it was from a previous day (and we deleted it)
     console.log('⚠️ NO cached horoscope text found in database for user', userId, 'on date', todayDate, '(user timezone:', userTimezone, ')')
+    console.log('   This could mean:')
+    console.log('   1. No horoscope exists for today')
+    console.log('   2. Horoscope exists but was generated on a different day (EST)')
+    console.log('   3. Old horoscope was deleted and we need to generate a new one')
     console.log('   🔍 DEBUG: Generation decision details:', {
       cachedHoroscopeExists: !!cachedHoroscope,
       cachedDate: cachedHoroscope?.date || null,
