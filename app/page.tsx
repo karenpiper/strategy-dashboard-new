@@ -111,6 +111,7 @@ export default function TeamDashboard() {
   const [userName, setUserName] = useState<string>('Friend')
   const [userFirstName, setUserFirstName] = useState<string>('')
   const [temperature, setTemperature] = useState<string | null>(null)
+  const [weatherCondition, setWeatherCondition] = useState<string | null>(null)
   const [characterName, setCharacterName] = useState<string | null>(null)
   const [userTimeZone, setUserTimeZone] = useState<string | null>(null)
   const [timeZones, setTimeZones] = useState<Array<{ label: string; city: string; time: string; offset: number }>>([])
@@ -493,6 +494,7 @@ export default function TeamDashboard() {
     async function fetchWeather() {
       if (!user) {
         setTemperature(null)
+        setWeatherCondition(null)
         return
       }
       
@@ -506,6 +508,7 @@ export default function TeamDashboard() {
         
         if (!profile?.location) {
           setTemperature(null)
+        setWeatherCondition(null)
           return
         }
         
@@ -533,12 +536,16 @@ export default function TeamDashboard() {
               if (weatherData.temperature) {
                 setTemperature(`${weatherData.temperature}°F`)
               }
+              if (weatherData.condition) {
+                setWeatherCondition(weatherData.condition.toLowerCase())
+              }
             }
           }
         }
       } catch (err) {
         console.error('Error fetching weather:', err)
         setTemperature(null)
+        setWeatherCondition(null)
       }
     }
     
@@ -1941,69 +1948,39 @@ export default function TeamDashboard() {
                     </h2>
                     <p className={`text-[clamp(1.25rem,3vw+0.5rem,2rem)] font-bold max-w-2xl leading-tight ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                       {mode === 'code' 
-                        ? `It's ${todayDate || 'Loading...'}${temperature ? ` and ${temperature}` : ''}`
-                        : `It's ${todayDate || 'Loading...'}${temperature ? ` and ${temperature}` : ''}`
+                        ? `It's ${todayDate || 'Loading...'}${temperature ? ` and ${temperature}` : ''}${weatherCondition ? ` and ${weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1)}` : ''}`
+                        : `It's ${todayDate || 'Loading...'}${temperature ? ` and ${temperature}` : ''}${weatherCondition ? ` and ${weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1)}` : ''}`
                       }
                     </p>
+                    {characterName && (
+                      <p className={`text-[clamp(1rem,2.5vw+0.5rem,1.5rem)] font-semibold max-w-2xl leading-tight mt-2 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
+                        ...today, you're giving
+                      </p>
+                    )}
                   </div>
-                  <div className="relative z-10 flex items-center gap-3 md:gap-4 flex-wrap mt-8">
-                    {(() => {
-                      // Determine if background is light (for button contrast)
-                      const isLightBg = style.text === 'text-black'
-                      
-                      return (
-                        <>
-                          {['Give Snap', 'Need Help', 'Add Win'].map((label) => {
-                            // Determine button colors based on mode - always use dark background with white text for good contrast
-                      let buttonStyle: React.CSSProperties = {}
-                      let buttonClasses = ''
-                      
-                      if (mode === 'chaos') {
-                        // Use dark background with white text for good contrast
-                        buttonStyle = {
-                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
-                          color: '#FFFFFF'
-                        }
-                        buttonClasses = `${isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]'} hover:scale-105`
-                      } else if (mode === 'chill') {
-                        buttonStyle = {
-                          backgroundColor: '#4A1818',
-                          color: '#FFFFFF'
-                        }
-                        buttonClasses = 'hover:bg-[#3A1414]'
-                      } else if (mode === 'code') {
-                        buttonStyle = {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        }
-                        buttonClasses = 'hover:bg-[#1a1a1a] border border-[#FFFFFF]'
-                      } else {
-                        buttonStyle = {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        }
-                        buttonClasses = 'hover:bg-[#1a1a1a]'
-                      }
-                      
-                      return (
-                        <Button 
-                          key={label} 
-                          onClick={label === 'Give Snap' ? () => setShowAddSnapDialog(true) : undefined}
-                          className={`${buttonClasses} font-semibold ${getRoundedClass('rounded-full')} py-3 md:py-4 px-6 md:px-8 text-base md:text-lg tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
-                          style={buttonStyle}
-                        >
-                          {mode === 'code' ? `[${label.toUpperCase().replace(' ', ' ')}]` : label} {mode !== 'code' && <ArrowRight className="w-4 h-4 ml-2" />}
-                        </Button>
-                      )
-                    })}
-                          <Button 
-                      onClick={() => {
-                        const playlistSection = document.getElementById('playlist-section')
-                        if (playlistSection) {
-                          playlistSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                        }
-                      }}
-                      className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-3 md:py-4 px-6 md:px-8 text-base md:text-lg tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
+              </div>
+            </Card>
+            )
+          })()}
+        </section>
+
+        {/* Quick Actions Bar - same height as This Week stats bar */}
+        <section className="mb-6">
+          {(() => {
+            const style = mode === 'chaos' ? getSpecificCardStyle('friday-drop') : getCardStyle('work')
+            const isLightBg = style.text === 'text-black'
+            
+            return (
+              <Card 
+                className={`${style.bg} ${style.border} py-3 px-6 ${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-center justify-between`}
+                style={{ flex: '0 0 auto', height: 'auto', minHeight: '70px' }}
+              >
+                <div className="flex items-center gap-4 flex-1">
+                  {/* Quick Actions */}
+                  <div className="flex items-center gap-3">
+                    <Button 
+                      onClick={() => setShowAddSnapDialog(true)}
+                      className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
                       style={mode === 'chaos' ? {
                         backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
                         color: '#FFFFFF'
@@ -2018,37 +1995,43 @@ export default function TeamDashboard() {
                         color: '#FFFFFF'
                       }}
                     >
-                      {mode === 'code' ? '[PLAYLIST]' : 'Playlist'} {mode !== 'code' && <Music className="w-4 h-4 ml-2" />}
-                          </Button>
-                        </>
-                      )
-                    })()}
+                      {mode === 'code' ? '[GIVE SNAP]' : 'Give Snap'} {mode !== 'code' && <ArrowRight className="w-3 h-3 ml-2" />}
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        const playlistSection = document.getElementById('playlist-section')
+                        if (playlistSection) {
+                          playlistSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }
+                      }}
+                      className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
+                      style={mode === 'chaos' ? {
+                        backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
+                        color: '#FFFFFF'
+                      } : mode === 'chill' ? {
+                        backgroundColor: '#4A1818',
+                        color: '#FFFFFF'
+                      } : mode === 'code' ? {
+                        backgroundColor: '#000000',
+                        color: '#FFFFFF'
+                      } : {
+                        backgroundColor: '#000000',
+                        color: '#FFFFFF'
+                      }}
+                    >
+                      {mode === 'code' ? '[PLAYLIST]' : 'Playlist'} {mode !== 'code' && <Music className="w-3 h-3 ml-2" />}
+                    </Button>
+                  </div>
+                  
+                  {/* News Updates */}
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className={`text-sm ${style.text}/60`}>News updates coming soon...</p>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
             )
           })()}
         </section>
-        {/* Text along right edge - positioned outside Card and section */}
-        {horoscopeImage && characterName && (
-          <div 
-            className="absolute z-30 pointer-events-none"
-            style={{ 
-              right: '-20px',
-              top: 'calc(50% + 140px)',
-              transform: 'translateY(-50%) rotate(75deg)',
-              transformOrigin: 'right center'
-            }}
-          >
-            <div 
-              className={`font-black text-base md:text-lg whitespace-nowrap uppercase tracking-tight ${
-                mode === 'chill' ? 'text-[#FFC043]' : 'text-white'
-              }`}
-            >
-              TODAY, YOU'RE GIVING...
-            </div>
-          </div>
-        )}
 
         {/* Time Zones - 100% width, very short, between hero and horoscope */}
         <section className="mb-6">
