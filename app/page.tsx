@@ -2033,8 +2033,8 @@ export default function TeamDashboard() {
             <div 
               className="absolute top-1/2 z-30 pointer-events-none"
               style={{ 
-                right: '0',
-                transform: 'translateY(-50%) translateX(20px) rotate(82deg)',
+                right: '-120px',
+                transform: 'translateY(-50%) rotate(82deg)',
                 transformOrigin: 'right center'
               }}
             >
