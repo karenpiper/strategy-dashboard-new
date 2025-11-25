@@ -1930,25 +1930,45 @@ export default function TeamDashboard() {
                 )}
                 {/* Text along right edge - aligned with inner edge of Card */}
                 {horoscopeImage && characterName && (
-                  <div 
-                    className="absolute top-1/2 z-30 pointer-events-none"
-                    style={{ 
-                      right: '90px',
-                      transform: 'translateY(-50%) rotate(80deg)',
-                      transformOrigin: 'right center'
-                    }}
-                  >
+                  <>
                     <div 
-                      className={`font-bold text-sm md:text-base whitespace-nowrap ${
-                        mode === 'chill' ? 'text-[#FFC043]' : 'text-white'
-                      }`}
-                      style={{
-                        textShadow: mode === 'chill' ? '0 0 8px rgba(255, 192, 67, 0.8)' : '0 0 8px rgba(255, 255, 255, 0.8)'
+                      className="absolute top-1/2 z-30 pointer-events-none"
+                      style={{ 
+                        right: '90px',
+                        transform: 'translateY(-50%) rotate(80deg)',
+                        transformOrigin: 'right center'
                       }}
                     >
-                      Today, you're giving...
+                      <div 
+                        className={`font-bold text-sm md:text-base whitespace-nowrap ${
+                          mode === 'chill' ? 'text-[#FFC043]' : 'text-white'
+                        }`}
+                        style={{
+                          textShadow: mode === 'chill' ? '0 0 8px rgba(255, 192, 67, 0.8)' : '0 0 8px rgba(255, 255, 255, 0.8)'
+                        }}
+                      >
+                        Today, you're giving...
+                      </div>
                     </div>
-                  </div>
+                    {/* Arrow between text and image */}
+                    <div 
+                      className="absolute top-1/2 z-30 pointer-events-none"
+                      style={{ 
+                        right: '50px',
+                        transform: 'translateY(-50%) rotate(80deg)',
+                        transformOrigin: 'center center'
+                      }}
+                    >
+                      <ArrowRight 
+                        className={`w-6 h-6 ${
+                          mode === 'chill' ? 'text-[#FFC043]' : 'text-white'
+                        }`}
+                        style={{
+                          filter: mode === 'chill' ? 'drop-shadow(0 0 4px rgba(255, 192, 67, 0.8))' : 'drop-shadow(0 0 4px rgba(255, 255, 255, 0.8))'
+                        }}
+                      />
+                    </div>
+                  </>
                 )}
                 <div className="relative z-10 p-6 md:p-8 h-full flex flex-col justify-between">
                   <div>
@@ -4262,7 +4282,7 @@ export default function TeamDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-stretch">
           {/* Playlist */}
-          {(() => {
+          {/* {(() => {
             const playlistStyle = mode === 'chaos' ? getSpecificCardStyle('playlist') : getCardStyle('vibes')
             return (
               <Card id="playlist-section" className={`bg-transparent border-0 p-6 md:col-span-1 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
@@ -4305,10 +4325,10 @@ export default function TeamDashboard() {
                 )}
               </Card>
             )
-          })()}
+          })()} */}
 
           {/* Inspiration War */}
-          {(() => {
+          {/* {(() => {
             const inspirationStyle = mode === 'chaos' ? getSpecificCardStyle('inspiration-war') : getCardStyle('hero')
             return (
               <Card className={`${inspirationStyle.bg} ${inspirationStyle.border} p-6 md:col-span-2 ${getRoundedClass('rounded-[2.5rem]')} h-full flex flex-col`}
@@ -4343,7 +4363,7 @@ export default function TeamDashboard() {
                 </div>
               </Card>
             )
-          })()}
+          })()} */}
         </div>
 
         <div className="mb-6">
