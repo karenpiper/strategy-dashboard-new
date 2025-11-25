@@ -1934,7 +1934,7 @@ export default function TeamDashboard() {
                     <div 
                       className="absolute top-1/2 z-30 pointer-events-none"
                       style={{ 
-                        right: '130px',
+                        right: '20px',
                         transform: 'translateY(-50%) rotate(82deg)',
                         transformOrigin: 'right center'
                       }}
@@ -1954,7 +1954,7 @@ export default function TeamDashboard() {
                     <div 
                       className="absolute top-1/2 z-30 pointer-events-none"
                       style={{ 
-                        right: '90px',
+                        right: '60px',
                         transform: 'translateY(-50%) rotate(82deg)',
                         transformOrigin: 'center center'
                       }}

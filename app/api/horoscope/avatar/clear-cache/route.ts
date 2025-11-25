@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getTodayDateUTC } from '@/lib/utils'
 
 /**
  * Clear today's horoscope cache to force regeneration
@@ -39,12 +40,14 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Calculate today's date in local timezone
-    const today = new Date()
-    const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    const todayDate = localDate.toISOString().split('T')[0] // YYYY-MM-DD format
+    // Calculate today's date using UTC (consistent across all timezones)
+    const todayDate = getTodayDateUTC()
+    const now = new Date()
 
-    console.log(`Clearing horoscope cache for user ${userId} on date ${todayDate}`)
+    console.log(`Clearing horoscope cache for user ${userId}`)
+    console.log('   Today (UTC):', todayDate)
+    console.log('   Current UTC time:', now.toISOString())
+    console.log('   Current local time:', now.toLocaleString())
 
     // Delete today's horoscope record
     const { error: deleteError } = await supabaseAdmin

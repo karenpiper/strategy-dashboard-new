@@ -16,6 +16,7 @@ import { fetchHoroscopeConfig } from '@/lib/horoscope-config'
 import { buildHoroscopePrompt, type UserProfile as PromptUserProfile } from '@/lib/horoscope-prompt-builder'
 import { updateUserAvatarState } from '@/lib/horoscope-catalogs'
 import { createClient } from '@/lib/supabase/server'
+import { getTodayDateUTC } from '@/lib/utils'
 
 // Supabase client setup - uses service role for database operations
 // This bypasses RLS so the API can insert/update horoscopes
@@ -124,12 +125,14 @@ export async function GET(request: NextRequest) {
     // Use admin client for database operations (bypasses RLS)
     const supabaseAdmin = await getSupabaseAdminClient()
     
-    // Get today's date in YYYY-MM-DD format (use local timezone for midnight local time)
-    const today = new Date()
-    const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    const todayDate = localDate.toISOString().split('T')[0] // YYYY-MM-DD format
+    // Get today's date in YYYY-MM-DD format using UTC (consistent across all timezones)
+    const todayDate = getTodayDateUTC()
+    const now = new Date()
     
-    console.log('🔍 Checking database for cached horoscope text - user:', userId, 'date:', todayDate, 'local time:', today.toLocaleString())
+    console.log('🔍 Checking database for cached horoscope text - user:', userId)
+    console.log('   Today (UTC):', todayDate)
+    console.log('   Current UTC time:', now.toISOString())
+    console.log('   Current local time:', now.toLocaleString())
     
     // CRITICAL: Check database FIRST before any generation
     // This is the primary check to prevent unnecessary API calls
@@ -160,9 +163,9 @@ export async function GET(request: NextRequest) {
     
     // SAFETY CHECK: Also check for records from the last 2 days as a fallback
     // This catches timezone issues or date calculation problems
-    const yesterday = new Date(localDate)
-    yesterday.setDate(yesterday.getDate() - 1)
-    const yesterdayDate = yesterday.toISOString().split('T')[0]
+    const yesterdayUTC = new Date(now)
+    yesterdayUTC.setUTCDate(yesterdayUTC.getUTCDate() - 1)
+    const yesterdayDate = `${yesterdayUTC.getUTCFullYear()}-${String(yesterdayUTC.getUTCMonth() + 1).padStart(2, '0')}-${String(yesterdayUTC.getUTCDate()).padStart(2, '0')}`
     
     const { data: recentRecords, error: recentRecordsError } = await supabaseAdmin
       .from('horoscopes')
@@ -229,11 +232,21 @@ export async function GET(request: NextRequest) {
       textLength: cachedHoroscope?.horoscope_text?.length || 0,
       textPreview: cachedHoroscope?.horoscope_text?.substring(0, 50) || 'none',
       hasImage: !!cachedHoroscope?.image_url,
-      date: cachedHoroscope?.date,
+      cachedDate: cachedHoroscope?.date,
+      cachedDateType: typeof cachedHoroscope?.date,
       expectedDate: todayDate,
+      expectedDateType: typeof todayDate,
       datesMatch: cachedHoroscope?.date === todayDate,
+      dateComparison: {
+        cached: cachedHoroscope?.date,
+        expected: todayDate,
+        match: cachedHoroscope?.date === todayDate,
+        cachedIsString: typeof cachedHoroscope?.date === 'string',
+        expectedIsString: typeof todayDate === 'string'
+      },
       recentHoroscopes: recentHoroscopes?.map(h => ({ 
-        date: h.date, 
+        date: h.date,
+        dateType: typeof h.date,
         hasText: !!h.horoscope_text,
         textLength: h.horoscope_text?.length || 0,
         hasImage: !!h.image_url
@@ -252,7 +265,9 @@ export async function GET(request: NextRequest) {
       // Verify the cached horoscope has all required data
       if (cachedHoroscope.horoscope_text && cachedHoroscope.image_url) {
         console.log('✅ Returning cached horoscope from database')
-        console.log('   Date:', cachedHoroscope.date)
+        console.log('   Cached date:', cachedHoroscope.date, '(type:', typeof cachedHoroscope.date, ')')
+        console.log('   Expected date:', todayDate, '(type:', typeof todayDate, ')')
+        console.log('   Dates match:', cachedHoroscope.date === todayDate)
         console.log('   Generated at:', cachedHoroscope.generated_at)
         console.log('   Text length:', cachedHoroscope.horoscope_text.length)
         console.log('   Has image URL:', !!cachedHoroscope.image_url)

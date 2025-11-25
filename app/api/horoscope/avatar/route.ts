@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchHoroscopeConfig } from '@/lib/horoscope-config'
 import { createClient } from '@/lib/supabase/server'
+import { getTodayDateUTC } from '@/lib/utils'
 
 // Supabase client setup - uses service role for database operations
 async function getSupabaseAdminClient() {
@@ -90,12 +91,14 @@ export async function GET(request: NextRequest) {
     const { userProfile, resolvedChoices, starSign } = config
     
     // Check for cached image - only generate once per user per day
-    // Use local timezone for date calculation (midnight local time)
-    const today = new Date()
-    const localDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    const todayDate = localDate.toISOString().split('T')[0] // YYYY-MM-DD format
+    // Use UTC for date calculation (consistent across all timezones)
+    const todayDate = getTodayDateUTC()
+    const now = new Date()
     
-    console.log('🔍 Checking database for cached image - user:', userId, 'date:', todayDate, 'local time:', today.toLocaleString())
+    console.log('🔍 Checking database for cached image - user:', userId)
+    console.log('   Today (UTC):', todayDate)
+    console.log('   Current UTC time:', now.toISOString())
+    console.log('   Current local time:', now.toLocaleString())
     
     // CRITICAL: Check database FIRST before any generation
     // This is the primary check to prevent unnecessary API calls
@@ -128,10 +131,24 @@ export async function GET(request: NextRequest) {
       hasImage: !!cachedHoroscope?.image_url,
       imageUrlLength: cachedHoroscope?.image_url?.length || 0,
       hasPromptSlots: !!cachedHoroscope?.prompt_slots_json,
-      date: cachedHoroscope?.date,
+      cachedDate: cachedHoroscope?.date,
+      cachedDateType: typeof cachedHoroscope?.date,
       expectedDate: todayDate,
+      expectedDateType: typeof todayDate,
       datesMatch: cachedHoroscope?.date === todayDate,
-      recentHoroscopes: recentHoroscopes?.map(h => ({ date: h.date, hasImage: !!h.image_url, hasSlots: !!h.prompt_slots_json }))
+      dateComparison: {
+        cached: cachedHoroscope?.date,
+        expected: todayDate,
+        match: cachedHoroscope?.date === todayDate,
+        cachedIsString: typeof cachedHoroscope?.date === 'string',
+        expectedIsString: typeof todayDate === 'string'
+      },
+      recentHoroscopes: recentHoroscopes?.map(h => ({ 
+        date: h.date,
+        dateType: typeof h.date,
+        hasImage: !!h.image_url, 
+        hasSlots: !!h.prompt_slots_json 
+      }))
     })
     
     // IMPORTANT: Only regenerate if there's NO cached image at all
