@@ -14,12 +14,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Fetch all horoscopes for the user, ordered by date descending
+    // Fetch all horoscopes for the user, ordered by generated_at descending to show all avatars
     const { data: horoscopes, error: fetchError } = await supabase
       .from('horoscopes')
       .select('id, image_url, date, star_sign, generated_at')
       .eq('user_id', user.id)
-      .order('date', { ascending: false })
+      .not('image_url', 'is', null)
+      .order('generated_at', { ascending: false })
 
     if (fetchError) {
       console.error('Error fetching horoscope avatars:', fetchError)
@@ -29,9 +30,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Filter out any entries without image_url
+    console.log(`Found ${horoscopes?.length || 0} horoscopes with image_url for user ${user.id}`)
+
+    // Map all horoscopes with image_url to avatars
     const avatars = (horoscopes || [])
-      .filter(h => h.image_url)
+      .filter(h => h.image_url) // Double-check filter
       .map(h => ({
         id: h.id,
         url: h.image_url,
@@ -39,6 +42,8 @@ export async function GET(request: NextRequest) {
         star_sign: h.star_sign,
         generated_at: h.generated_at
       }))
+
+    console.log(`Returning ${avatars.length} avatars`)
 
     return NextResponse.json({ data: avatars })
   } catch (error: any) {

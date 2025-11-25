@@ -305,7 +305,23 @@ export default function ProfilePage() {
         const response = await fetch('/api/profile/horoscope-avatars')
         if (response.ok) {
           const result = await response.json()
+          console.log('Avatar gallery API response:', result)
+          console.log(`Received ${result.data?.length || 0} avatars`)
+          if (result.data) {
+            result.data.forEach((avatar: any, index: number) => {
+              console.log(`Avatar ${index + 1}:`, {
+                id: avatar.id,
+                date: avatar.date,
+                generated_at: avatar.generated_at,
+                has_url: !!avatar.url,
+                url_length: avatar.url?.length || 0
+              })
+            })
+          }
           setAvatarGallery(result.data || [])
+        } else {
+          const errorData = await response.json()
+          console.error('Avatar gallery API error:', response.status, errorData)
         }
       } catch (err) {
         console.error('Error loading avatar gallery:', err)
