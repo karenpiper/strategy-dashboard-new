@@ -1884,57 +1884,22 @@ export default function TeamDashboard() {
                         />
                       </div>
                     ) : null}
-                    {/* Curvy arrow pointing to character image - Chaos mode */}
+                    {/* Text along right edge - Chaos mode */}
                     {horoscopeImage && characterName && (
-                      <div className="absolute top-1/2 right-[40%] -translate-y-1/2 z-20 pointer-events-none" style={{ transform: 'translateY(-50%) translateX(-20px)' }}>
-                        <div className="relative">
-                          {/* Curvy hand-drawn arrow SVG */}
-                          <svg 
-                            width="180" 
-                            height="120" 
-                            viewBox="0 0 180 120" 
-                            className="absolute"
-                            style={{ 
-                              transform: 'rotate(-15deg)',
-                              filter: 'drop-shadow(0 0 8px rgba(196, 245, 0, 0.5))'
-                            }}
-                          >
-                            {/* Curvy arrow path with hand-drawn style */}
-                            <path
-                              d="M 20 100 Q 40 80, 60 70 T 100 50 Q 120 45, 140 50 L 160 45 L 155 50 L 160 55 L 140 50"
-                              stroke="#C4F500"
-                              strokeWidth="3"
-                              fill="none"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              style={{
-                                strokeDasharray: '2,2',
-                                animation: 'dash 3s linear infinite'
-                              }}
-                            />
-                            {/* Additional wavy line for hand-drawn effect */}
-                            <path
-                              d="M 25 95 Q 45 75, 65 65 T 105 45"
-                              stroke="#C4F500"
-                              strokeWidth="1.5"
-                              fill="none"
-                              strokeLinecap="round"
-                              opacity="0.6"
-                            />
-                          </svg>
-                          {/* Text label */}
-                          <div 
-                            className="absolute top-[-10px] left-[60px] whitespace-nowrap"
-                            style={{
-                              color: '#C4F500',
-                              fontSize: '14px',
-                              fontWeight: 'bold',
-                              textShadow: '0 0 8px rgba(196, 245, 0, 0.8)',
-                              transform: 'rotate(-15deg)'
-                            }}
-                          >
-                            today, you're giving
-                          </div>
+                      <div 
+                        className="absolute top-1/2 right-0 -translate-y-1/2 z-20 pointer-events-none"
+                        style={{ 
+                          transform: 'translateY(-50%) translateX(20px) rotate(-12deg)',
+                          transformOrigin: 'right center'
+                        }}
+                      >
+                        <div 
+                          className="text-white font-bold text-sm md:text-base whitespace-nowrap"
+                          style={{
+                            textShadow: '0 0 8px rgba(255, 255, 255, 0.8)'
+                          }}
+                        >
+                          Today, you're giving...
                         </div>
                       </div>
                     )}
@@ -1979,57 +1944,23 @@ export default function TeamDashboard() {
                     ) : null}
                   </div>
                 )}
-                {/* Curvy arrow pointing to character image */}
-                {horoscopeImage && characterName && (
-                  <div className="absolute top-1/2 right-[45%] -translate-y-1/2 z-20 pointer-events-none" style={{ transform: 'translateY(-50%) translateX(-20px)' }}>
-                    <div className="relative">
-                      {/* Curvy hand-drawn arrow SVG */}
-                      <svg 
-                        width="180" 
-                        height="120" 
-                        viewBox="0 0 180 120" 
-                        className="absolute"
-                        style={{ 
-                          transform: 'rotate(-15deg)',
-                          filter: mode === 'chaos' ? 'drop-shadow(0 0 8px rgba(196, 245, 0, 0.5))' : mode === 'chill' ? 'drop-shadow(0 0 8px rgba(255, 192, 67, 0.5))' : 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))'
-                        }}
-                      >
-                        {/* Curvy arrow path with hand-drawn style */}
-                        <path
-                          d="M 20 100 Q 40 80, 60 70 T 100 50 Q 120 45, 140 50 L 160 45 L 155 50 L 160 55 L 140 50"
-                          stroke={mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF'}
-                          strokeWidth="3"
-                          fill="none"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          style={{
-                            strokeDasharray: '2,2',
-                            animation: 'dash 3s linear infinite'
-                          }}
-                        />
-                        {/* Additional wavy line for hand-drawn effect */}
-                        <path
-                          d="M 25 95 Q 45 75, 65 65 T 105 45"
-                          stroke={mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF'}
-                          strokeWidth="1.5"
-                          fill="none"
-                          strokeLinecap="round"
-                          opacity="0.6"
-                        />
-                      </svg>
-                      {/* Text label */}
-                      <div 
-                        className="absolute top-[-10px] left-[60px] whitespace-nowrap"
-                        style={{
-                          color: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF',
-                          fontSize: '14px',
-                          fontWeight: 'bold',
-                          textShadow: mode === 'chaos' ? '0 0 8px rgba(196, 245, 0, 0.8)' : mode === 'chill' ? '0 0 8px rgba(255, 192, 67, 0.8)' : '0 0 8px rgba(255, 255, 255, 0.8)',
-                          transform: 'rotate(-15deg)'
-                        }}
-                      >
-                        today, you're giving
-                      </div>
+                {/* Text along right edge - Non-chaos mode */}
+                {horoscopeImage && characterName && mode !== 'chaos' && (
+                  <div 
+                    className="absolute top-1/2 right-0 -translate-y-1/2 z-20 pointer-events-none"
+                    style={{ 
+                      transform: 'translateY(-50%) translateX(20px)',
+                      transformOrigin: 'right center'
+                    }}
+                  >
+                    <div 
+                      className="font-bold text-sm md:text-base whitespace-nowrap"
+                      style={{
+                        textShadow: mode === 'chill' ? '0 0 8px rgba(255, 192, 67, 0.8)' : '0 0 8px rgba(255, 255, 255, 0.8)',
+                        color: mode === 'chill' ? '#FFC043' : '#FFFFFF'
+                      }}
+                    >
+                      Today, you're giving...
                     </div>
                   </div>
                 )}
@@ -2258,13 +2189,9 @@ export default function TeamDashboard() {
                 <Sparkles className="w-4 h-4" />
                     <span className="uppercase tracking-wider font-black text-xs">The universe tagged you in some feedback</span>
               </div>
-                  {characterName ? (
-                    <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.accent }}>
-                      {mode === 'code' ? `:: Today you're giving '${characterName}'` : `Today you're giving '${characterName}'`}
-                    </h2>
-                  ) : (
-                    <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.accent }}>YOUR<br/>HOROSCOPE</h2>
-                  )}
+                  <h2 className={`text-4xl font-black mb-6 uppercase`} style={{ color: style.accent }}>
+                    {mode === 'code' ? `:: The universe tagged you in some feedback` : `The universe tagged you in some feedback`}
+                  </h2>
                   
                   {horoscopeLoading ? (
                     <div className="flex flex-col items-center justify-center py-8 gap-3">
