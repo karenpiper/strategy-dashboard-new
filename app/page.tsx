@@ -1934,28 +1934,28 @@ export default function TeamDashboard() {
                     <div 
                       className="absolute top-1/2 z-30 pointer-events-none"
                       style={{ 
-                        right: '90px',
-                        transform: 'translateY(-50%) rotate(80deg)',
+                        right: '130px',
+                        transform: 'translateY(-50%) rotate(82deg)',
                         transformOrigin: 'right center'
                       }}
                     >
                       <div 
-                        className={`font-bold text-sm md:text-base whitespace-nowrap ${
+                        className={`font-black text-base md:text-lg whitespace-nowrap uppercase tracking-tight ${
                           mode === 'chill' ? 'text-[#FFC043]' : 'text-white'
                         }`}
                         style={{
                           textShadow: mode === 'chill' ? '0 0 8px rgba(255, 192, 67, 0.8)' : '0 0 8px rgba(255, 255, 255, 0.8)'
                         }}
                       >
-                        Today, you're giving...
+                        TODAY, YOU'RE GIVING...
                       </div>
                     </div>
                     {/* Arrow between text and image */}
                     <div 
                       className="absolute top-1/2 z-30 pointer-events-none"
                       style={{ 
-                        right: '50px',
-                        transform: 'translateY(-50%) rotate(80deg)',
+                        right: '90px',
+                        transform: 'translateY(-50%) rotate(82deg)',
                         transformOrigin: 'center center'
                       }}
                     >
