@@ -399,15 +399,10 @@ export async function GET(request: NextRequest) {
     let promptReasoning: any
     
     try {
-      console.log('Fetching horoscope from Cafe Astrology...')
+      console.log('🚀 Starting optimized horoscope generation...')
       const startTime = Date.now()
       
-      // Fetch from Cafe Astrology
-      const cafeAstrologyText = await fetchCafeAstrologyHoroscope(starSign)
-      console.log('Fetched horoscope from Cafe Astrology')
-      
-      // Build image prompt using slot-based system (keep this logic in Next.js)
-      console.log('Building image prompt with slot-based system...')
+      // OPTIMIZATION: Parallelize Cafe Astrology fetch and prompt building (they're independent)
       const promptUserProfile: PromptUserProfile = {
         id: userId,
         name: profile.full_name || 'User',
@@ -422,28 +417,38 @@ export async function GET(request: NextRequest) {
         hates_clowns: profile.hates_clowns || false,
       }
       
-      const { prompt, slots, reasoning } = await buildHoroscopePrompt(
-        supabaseAdmin,
-        userId,
-        todayDate,
-        promptUserProfile,
-        userProfile.weekday,
-        userProfile.season
-      )
+      console.log('⚡ Running Cafe Astrology fetch and prompt building in parallel...')
+      const [cafeAstrologyText, promptResult] = await Promise.all([
+        // Fetch from Cafe Astrology (only needs starSign)
+        fetchCafeAstrologyHoroscope(starSign).then(text => {
+          console.log('✅ Fetched horoscope from Cafe Astrology')
+          return text
+        }),
+        // Build image prompt (needs user profile, already fetched)
+        buildHoroscopePrompt(
+          supabaseAdmin,
+          userId,
+          todayDate,
+          promptUserProfile,
+          userProfile.weekday,
+          userProfile.season
+        ).then(result => {
+          console.log('✅ Built image prompt:', result.prompt.substring(0, 200) + (result.prompt.length > 200 ? '...' : ''))
+          console.log('   Prompt length:', result.prompt.length)
+          console.log('   Prompt slots:', Object.keys(result.slots || {}))
+          return result
+        })
+      ])
       
-      imagePrompt = prompt
-      promptSlots = slots
-      promptReasoning = reasoning
+      imagePrompt = promptResult.prompt
+      promptSlots = promptResult.slots
+      promptReasoning = promptResult.reasoning
       
       // Validate prompt was built correctly
       if (!imagePrompt || imagePrompt.trim() === '') {
         throw new Error('Failed to build image prompt - prompt is empty')
       }
       
-      // Log the built prompt for debugging
-      console.log('✅ Built image prompt:', imagePrompt.substring(0, 200) + (imagePrompt.length > 200 ? '...' : ''))
-      console.log('Prompt length:', imagePrompt.length)
-      console.log('Prompt slots:', Object.keys(promptSlots || {}))
       console.log('🚀 Calling n8n workflow for text and image generation...')
       console.log('   This will generate both the horoscope text AND the image via n8n')
       
@@ -488,156 +493,8 @@ export async function GET(request: NextRequest) {
         horoscopeText: horoscopeText.substring(0, 100) + '...',
         dosCount: horoscopeDos.length,
         dontsCount: horoscopeDonts.length,
-        imageUrl: imageUrl
+        imageUrl: imageUrl.substring(0, 100) + '...'
       })
-      
-      // Update user avatar state (same logic as in generateHoroscopeImage)
-      const { data: styleReference } = await supabaseAdmin
-        .from('prompt_slot_catalogs')
-        .select('style_group_id')
-        .eq('id', promptSlots.style_reference_id)
-        .single()
-      
-      const selectedStyleGroupId = styleReference?.style_group_id
-      
-      const { data: avatarState } = await supabaseAdmin
-        .from('user_avatar_state')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-      
-      const recentStyleGroupIds = avatarState?.recent_style_group_ids || []
-      const recentStyleReferenceIds = avatarState?.recent_style_reference_ids || []
-      const recentSubjectRoleIds = avatarState?.recent_subject_role_ids || []
-      const recentSettingPlaceIds = avatarState?.recent_setting_place_ids || []
-      
-      const updatedStyleGroupIds = selectedStyleGroupId
-        ? [...recentStyleGroupIds.filter((id) => id !== selectedStyleGroupId), selectedStyleGroupId].slice(-7)
-        : recentStyleGroupIds
-      
-      const updatedStyleReferenceIds = [
-        ...recentStyleReferenceIds.filter((id) => id !== promptSlots.style_reference_id),
-        promptSlots.style_reference_id,
-      ].slice(-7)
-      
-      const updatedSubjectRoleIds = [
-        ...recentSubjectRoleIds.filter((id) => id !== promptSlots.subject_role_id),
-        promptSlots.subject_role_id,
-      ].slice(-7)
-      
-      const updatedSettingPlaceIds = [
-        ...recentSettingPlaceIds.filter((id) => id !== promptSlots.setting_place_id),
-        promptSlots.setting_place_id,
-      ].slice(-7)
-      
-      await updateUserAvatarState(supabaseAdmin, userId, {
-        last_generated_date: todayDate,
-        recent_style_group_ids: updatedStyleGroupIds,
-        recent_style_reference_ids: updatedStyleReferenceIds,
-        recent_subject_role_ids: updatedSubjectRoleIds,
-        recent_setting_place_ids: updatedSettingPlaceIds,
-      })
-      
-      // Download the image from OpenAI and upload to Supabase storage to prevent expiration
-      console.log('📥 Downloading image from OpenAI and uploading to Supabase storage...')
-      console.log('   Source image URL:', imageUrl)
-      let permanentImageUrl = imageUrl
-      try {
-        // Download the image
-        console.log('   Fetching image from:', imageUrl)
-        const imageResponse = await fetch(imageUrl)
-        if (!imageResponse.ok) {
-          throw new Error(`Failed to download image: ${imageResponse.statusText} (${imageResponse.status})`)
-        }
-        console.log('   Image downloaded successfully, size:', imageResponse.headers.get('content-length') || 'unknown')
-        const imageBlob = await imageResponse.blob()
-        const imageBuffer = Buffer.from(await imageBlob.arrayBuffer())
-        console.log('   Image buffer size:', imageBuffer.length, 'bytes')
-        
-        // Upload to Supabase storage (horoscope-avatars bucket - separate from profile avatars)
-        // These images will appear in the profile avatar gallery but are stored separately
-        // Use timestamp to preserve all generated images
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-        const fileName = `horoscope-${userId}-${todayDate}-${timestamp}.png`
-        const filePath = `${userId}/${fileName}`
-        const bucketName = 'horoscope-avatars' // Separate bucket for horoscope-generated images
-        
-        console.log('📤 Uploading image to Supabase storage...')
-        console.log('   Bucket:', bucketName)
-        console.log('   File path:', filePath)
-        console.log('   File size:', imageBuffer.length, 'bytes')
-        
-        const { error: uploadError } = await supabaseAdmin.storage
-          .from(bucketName)
-          .upload(filePath, imageBuffer, {
-            contentType: 'image/png',
-            upsert: false, // Don't overwrite - preserve all images
-          })
-        
-        if (uploadError) {
-          console.error('❌ CRITICAL: Error uploading image to Supabase storage:', uploadError)
-          console.error('   Upload error details:', {
-            message: uploadError.message,
-            statusCode: uploadError.statusCode,
-            error: uploadError.error
-          })
-          // CRITICAL: If upload fails, we should fail the request
-          // Don't use temporary OpenAI URLs that will expire
-          throw new Error(`Failed to upload image to Supabase storage: ${uploadError.message}. Cannot save horoscope with temporary image URL.`)
-        }
-        
-        // Get public URL from Supabase storage
-        const { data: urlData } = supabaseAdmin.storage
-          .from(bucketName)
-          .getPublicUrl(filePath)
-        
-        if (!urlData || !urlData.publicUrl) {
-          console.error('❌ CRITICAL: Failed to get public URL from Supabase storage')
-          throw new Error('Failed to get public URL for uploaded image. Upload may have succeeded but URL generation failed.')
-        }
-        
-        permanentImageUrl = urlData.publicUrl
-        console.log('✅ Image uploaded to Supabase storage successfully')
-        console.log('   File path:', filePath)
-        console.log('   Public URL:', permanentImageUrl)
-        console.log('   Original OpenAI URL:', imageUrl)
-        console.log('   URL length:', permanentImageUrl.length)
-        
-        // CRITICAL: Verify the URL is a Supabase URL, not OpenAI URL
-        if (permanentImageUrl === imageUrl) {
-          console.error('❌ CRITICAL: Permanent URL is same as original URL - upload failed!')
-          throw new Error('Image upload failed - permanent URL matches temporary OpenAI URL')
-        }
-        
-        if (!permanentImageUrl.includes('supabase.co') && !permanentImageUrl.includes('supabase')) {
-          console.error('❌ CRITICAL: Permanent URL does not appear to be a Supabase URL!')
-          console.error('   URL:', permanentImageUrl)
-          throw new Error('Image upload may have failed - URL is not a Supabase storage URL')
-        }
-        
-        // Verify the uploaded file exists by checking storage
-        const { data: fileData, error: fileCheckError } = await supabaseAdmin.storage
-          .from(bucketName)
-          .list(userId, {
-            limit: 1,
-            search: fileName
-          })
-        
-        if (fileCheckError) {
-          console.warn('⚠️ Could not verify uploaded file exists:', fileCheckError)
-        } else if (!fileData || fileData.length === 0) {
-          console.error('❌ CRITICAL: Uploaded file not found in storage!')
-          throw new Error('Image upload verification failed - file not found in storage after upload')
-        } else {
-          console.log('✅ Verified uploaded file exists in storage:', fileData[0].name)
-        }
-      } catch (imageError: any) {
-        console.error('⚠️ Error processing image upload:', imageError)
-        // Don't fail the request if image processing fails - use original URL
-        console.log('   Using original OpenAI image URL instead')
-      }
-      
-      imageUrl = permanentImageUrl
       
       const elapsedTime = Date.now() - startTime
       console.log(`✅ Horoscope generation completed via n8n in ${elapsedTime}ms`)
