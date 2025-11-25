@@ -216,14 +216,28 @@ export async function GET(request: NextRequest) {
       const generatedAtInUserTz = getTodayDateInTimezone(userTimezone, generatedAt)
       isFromToday = generatedAtInUserTz === todayDate
       
+      const hoursAgo = (now.getTime() - generatedAt.getTime()) / (1000 * 60 * 60)
+      
       console.log('🔍 DEBUG: Generated_at validation:', {
         generatedAt: cachedHoroscope.generated_at,
         generatedAtISO: generatedAt.toISOString(),
         generatedAtInUserTz,
         todayDate,
         isFromToday,
-        hoursAgo: (now.getTime() - generatedAt.getTime()) / (1000 * 60 * 60)
+        hoursAgo: hoursAgo.toFixed(2),
+        generatedAtLocal: generatedAt.toLocaleString('en-US', { timeZone: userTimezone }),
+        nowLocal: now.toLocaleString('en-US', { timeZone: userTimezone })
       })
+      
+      // If it was generated more than 24 hours ago, definitely regenerate
+      if (hoursAgo > 24) {
+        console.log('⚠️ Horoscope was generated more than 24 hours ago - will regenerate')
+        isFromToday = false
+      }
+    } else if (cachedHoroscope) {
+      // If there's no generated_at timestamp, assume it's old and regenerate
+      console.log('⚠️ Cached horoscope found but no generated_at timestamp - will regenerate')
+      isFromToday = false
     }
     
     console.log('🔍 DEBUG: Query result:', {
@@ -406,6 +420,19 @@ export async function GET(request: NextRequest) {
       console.log('   Generated at:', cachedHoroscope.generated_at)
       console.log('   Today (EST):', todayDate)
       console.log('   Will regenerate because it\'s from a previous day')
+      
+      // Delete the old record so we can generate a new one
+      const { error: deleteOldError } = await supabaseAdmin
+        .from('horoscopes')
+        .delete()
+        .eq('user_id', userId)
+        .eq('date', cachedHoroscope.date)
+      
+      if (deleteOldError) {
+        console.warn('⚠️ Could not delete old horoscope record:', deleteOldError)
+      } else {
+        console.log('🗑️ Deleted old horoscope record from previous day')
+      }
     } else if (cachedHoroscope && forceRegenerate) {
       console.log('🔄 FORCE REGENERATION requested - ignoring cached horoscope')
     } else {

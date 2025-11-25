@@ -161,14 +161,28 @@ export async function GET(request: NextRequest) {
       const generatedAtInUserTz = getTodayDateInTimezone(userTimezone, generatedAt)
       isFromToday = generatedAtInUserTz === todayDate
       
+      const hoursAgo = (now.getTime() - generatedAt.getTime()) / (1000 * 60 * 60)
+      
       console.log('🔍 DEBUG: Avatar generated_at validation:', {
         generatedAt: cachedHoroscope.generated_at,
         generatedAtISO: generatedAt.toISOString(),
         generatedAtInUserTz,
         todayDate,
         isFromToday,
-        hoursAgo: (now.getTime() - generatedAt.getTime()) / (1000 * 60 * 60)
+        hoursAgo: hoursAgo.toFixed(2),
+        generatedAtLocal: generatedAt.toLocaleString('en-US', { timeZone: userTimezone }),
+        nowLocal: now.toLocaleString('en-US', { timeZone: userTimezone })
       })
+      
+      // If it was generated more than 24 hours ago, definitely regenerate
+      if (hoursAgo > 24) {
+        console.log('⚠️ Avatar was generated more than 24 hours ago - will regenerate')
+        isFromToday = false
+      }
+    } else if (cachedHoroscope) {
+      // If there's no generated_at timestamp, assume it's old and regenerate
+      console.log('⚠️ Cached avatar found but no generated_at timestamp - will regenerate')
+      isFromToday = false
     }
     
     console.log('🔍 DEBUG: Avatar query result:', {
@@ -236,13 +250,16 @@ export async function GET(request: NextRequest) {
     // Images are generated ONCE per day per user and cached in the database
     // Even if the URL expires, we don't regenerate - we only generate once per day
     
-    // TEMPORARY: Cache check disabled for debugging n8n integration
-    // TODO: Re-enable cache check once n8n is working properly
-    // SAFETY CHECK: DISABLED - Always return latest from database
-    // The main /api/horoscope endpoint generates and saves the image, so we just return what's in the DB
-    console.log('🔄 CACHE CHECK DISABLED - Returning latest image from database (debugging mode)')
+    // CRITICAL: Only return cached image if it was generated today in the user's timezone
+    // This ensures images regenerate daily based on EST, not UTC
+    console.log('🔍 DEBUG: Avatar cache check decision:', {
+      hasCachedHoroscope: !!cachedHoroscope,
+      hasImage: !!cachedHoroscope?.image_url,
+      isFromToday,
+      willReturnCached: !!cachedHoroscope && cachedHoroscope.image_url && isFromToday
+    })
     
-    if (cachedHoroscope && cachedHoroscope.image_url && cachedHoroscope.image_url.trim() !== '') {
+    if (cachedHoroscope && cachedHoroscope.image_url && cachedHoroscope.image_url.trim() !== '' && isFromToday) {
       console.log('✅ Found image in database - returning latest data')
       console.log('   Image URL:', cachedHoroscope.image_url.substring(0, 100) + '...')
       console.log('   Date:', cachedHoroscope.date)
@@ -423,12 +440,20 @@ export async function GET(request: NextRequest) {
     // Image generation is now handled in the main horoscope route via n8n
     // This endpoint now just returns the cached image if it exists
     // If no image exists, it means the horoscope hasn't been generated yet
-    if (!cachedHoroscope?.image_url) {
-      console.log('⚠️ No image found in database. Image generation is now handled by the main horoscope route.')
-      console.log('   Please call /api/horoscope first to generate both text and image via n8n.')
+    if (!cachedHoroscope?.image_url || !isFromToday) {
+      if (!cachedHoroscope?.image_url) {
+        console.log('⚠️ No image found in database. Image generation is now handled by the main horoscope route.')
+        console.log('   Please call /api/horoscope first to generate both text and image via n8n.')
+      } else if (!isFromToday) {
+        console.log('⚠️ Image found but was generated on a different day (EST)')
+        console.log('   Cached date:', cachedHoroscope.date)
+        console.log('   Generated at:', cachedHoroscope.generated_at)
+        console.log('   Today (EST):', todayDate)
+        console.log('   Will need to regenerate via main horoscope route')
+      }
       return NextResponse.json(
         { 
-          error: 'Image not found. Please generate horoscope first by calling /api/horoscope endpoint.',
+          error: 'Image not found or needs regeneration. Please generate horoscope first by calling /api/horoscope endpoint.',
           details: 'Image generation is now combined with text generation in the main horoscope route.'
         },
         { status: 404 }
