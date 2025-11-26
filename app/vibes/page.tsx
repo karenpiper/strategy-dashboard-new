@@ -234,9 +234,9 @@ export default function VibesPage() {
     <div className={`flex flex-col min-h-screen ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       <SiteHeader />
 
-      <div className="flex flex-1 pt-24">
+      <div className="flex flex-1 pt-24 w-full">
         {/* Sidebar with curved edges */}
-        <aside className="sticky top-24 h-fit self-start ml-6 mr-8 hidden lg:block">
+        <aside className="sticky top-24 h-fit self-start ml-6 mr-8 hidden lg:block flex-shrink-0" style={{ width: '240px' }}>
           <nav 
             className={`${getRoundedClass('rounded-[2.5rem]')} p-6`}
             style={{
@@ -293,7 +293,8 @@ export default function VibesPage() {
           </nav>
         </aside>
 
-        <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1">
+        <main className="flex-1 px-6 py-10 min-w-0" style={{ maxWidth: 'calc(100vw - 300px)' }}>
+          <div className="max-w-[1200px] mx-auto">
         {/* Header */}
         <h1 className={`text-4xl font-black uppercase mb-8 ${getTextClass()}`}>VIBES</h1>
         
@@ -569,6 +570,7 @@ export default function VibesPage() {
         </div>
         
         <Footer />
+          </div>
         </main>
       </div>
     </div>
