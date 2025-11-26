@@ -355,8 +355,7 @@ export default function VibesPage() {
                     { name: 'Hongshaorou', count: 1 },
                   ]
                   
-                  const chartData = allData.filter(item => item.count > 1).sort((a, b) => b.count - a.count)
-                  const oneVoters = allData.filter(item => item.count === 1).map(item => item.name)
+                  const chartData = allData.filter(item => item.count > 0).sort((a, b) => b.count - a.count)
                   const maxCount = Math.max(...chartData.map(d => d.count))
                   
                   return (
@@ -488,8 +487,8 @@ export default function VibesPage() {
                   { name: 'Horseradish mashed potatoes', count: 1 },
                   { name: 'Hongshaorou', count: 1 },
                 ]
-                const chartData = allData.filter(item => item.count > 1)
-                const oneVoters = allData.filter(item => item.count === 1).map(item => item.name)
+                // Show full results in archive dialog
+                const fullData = allData.sort((a, b) => b.count - a.count)
                 
                 setSelectedPoll({
                   id: 'thanksgiving-grub',
@@ -497,8 +496,8 @@ export default function VibesPage() {
                   question: 'What are your top Thanksgiving dishes?',
                   date: 'November 2024',
                   totalResponses: 14,
-                  data: chartData,
-                  oneVoters: oneVoters
+                  data: fullData,
+                  oneVoters: []
                 })
                 setIsPollDialogOpen(true)
               }}
@@ -671,68 +670,30 @@ export default function VibesPage() {
                   
                   {/* Count-based Poll Display */}
                   {!selectedPoll.isRanking && selectedPoll.data && (
-                    <>
-                      {/* Bar Chart */}
-                      <div className="my-8">
-                        <div className="space-y-4">
-                          {selectedPoll.data
-                            .sort((a: any, b: any) => b.count - a.count)
-                            .map((item: any, index: number) => {
-                              const maxCount = Math.max(...selectedPoll.data.map((d: any) => d.count))
-                              const percentage = (item.count / maxCount) * 100
-                              const isTop = index === 0
-                              
-                              return (
-                                <div key={item.name} className="relative">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className={`text-sm font-semibold ${getTextClass()}`}>
-                                      {item.name}
-                                    </span>
-                                    <span 
-                                      className={`text-lg font-black ${getTextClass()}`}
-                                      style={{ color: isTop ? redSystem.primary : undefined }}
-                                    >
-                                      {item.count}
-                                    </span>
-                                  </div>
-                                  <div 
-                                    className={`${getRoundedClass('rounded-full')} h-8 overflow-hidden relative`}
-                                    style={{
-                                      backgroundColor: mode === 'chaos' 
-                                        ? 'rgba(255, 255, 255, 0.1)' 
-                                        : mode === 'chill'
-                                        ? 'rgba(74, 24, 24, 0.1)'
-                                        : 'rgba(255, 255, 255, 0.1)'
-                                    }}
-                                  >
-                                    <div
-                                      className="h-full transition-all duration-1000 flex items-center px-4"
-                                      style={{
-                                        width: `${percentage}%`,
-                                        backgroundColor: isTop 
-                                          ? redSystem.primary
-                                          : 'rgba(255, 76, 76, 0.4)'
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              )
-                            })}
-                        </div>
-                      </div>
-                      
-                      {/* And then there was one section */}
-                      {selectedPoll.oneVoters && selectedPoll.oneVoters.length > 0 && (
-                        <div className="mt-8 pt-8 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
-                          <p className={`text-xl font-black mb-3 ${getTextClass()}`}>
-                            And then there was one
-                          </p>
-                          <p className={`text-base ${getTextClass()} opacity-70`}>
-                            {selectedPoll.oneVoters.join(', ')}
-                          </p>
-                        </div>
-                      )}
-                    </>
+                    <div className="my-8">
+                      {/* Full Results List */}
+                      <ul className={`space-y-2 ${getTextClass()}`}>
+                        {selectedPoll.data
+                          .sort((a: any, b: any) => b.count - a.count)
+                          .map((item: any, index: number) => {
+                            const isTop = index === 0
+                            
+                            return (
+                              <li key={item.name} className="flex items-center justify-between py-2">
+                                <span className={`text-base font-semibold ${getTextClass()}`}>
+                                  {item.name}
+                                </span>
+                                <span 
+                                  className={`text-lg font-black ${getTextClass()}`}
+                                  style={{ color: isTop ? redSystem.primary : undefined }}
+                                >
+                                  {item.count}
+                                </span>
+                              </li>
+                            )
+                          })}
+                      </ul>
+                    </div>
                   )}
                 </div>
               </>
