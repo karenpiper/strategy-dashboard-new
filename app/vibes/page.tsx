@@ -8,10 +8,11 @@ import { useMode } from '@/contexts/mode-context'
 import { SiteHeader } from '@/components/site-header'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Trophy, Music, MessageCircle, Play, Star, Archive } from 'lucide-react'
+import { Trophy, Music, MessageCircle, Play, Star, Archive, BarChart3, X } from 'lucide-react'
 import Link from 'next/link'
 import { PlaylistCard } from '@/components/playlist-card'
 import { Footer } from '@/components/footer'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 interface BeastBabe {
   id: string
@@ -52,6 +53,8 @@ export default function VibesPage() {
   const [answers, setAnswers] = useState<QuestionAnswer[]>([])
   const [weeklyPlaylist, setWeeklyPlaylist] = useState<Playlist | null>(null)
   const [archivePlaylists, setArchivePlaylists] = useState<Playlist[]>([])
+  const [selectedPoll, setSelectedPoll] = useState<any>(null)
+  const [isPollDialogOpen, setIsPollDialogOpen] = useState(false)
 
   // Dashboard styling helpers
   const getBgClass = () => {
@@ -288,34 +291,6 @@ export default function VibesPage() {
               >
                 <MessageCircle className="w-4 h-4" />
                 <span className="text-sm font-semibold">Polls Archive</span>
-              </Link>
-              <Link
-                href="/vibes/thanksgiving-grub"
-                className={`flex items-center gap-3 ${getRoundedClass('rounded-xl')} px-4 py-3 transition-all hover:opacity-70`}
-                style={{
-                  backgroundColor: mode === 'chaos' 
-                    ? 'rgba(255, 255, 255, 0.05)' 
-                    : mode === 'chill'
-                    ? 'rgba(74, 24, 24, 0.05)'
-                    : 'rgba(255, 255, 255, 0.05)'
-                }}
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span className="text-sm font-semibold">Thanksgiving Grub</span>
-              </Link>
-              <Link
-                href="/vibes/soundtracks-of-our-strife"
-                className={`flex items-center gap-3 ${getRoundedClass('rounded-xl')} px-4 py-3 transition-all hover:opacity-70`}
-                style={{
-                  backgroundColor: mode === 'chaos' 
-                    ? 'rgba(255, 255, 255, 0.05)' 
-                    : mode === 'chill'
-                    ? 'rgba(74, 24, 24, 0.05)'
-                    : 'rgba(255, 255, 255, 0.05)'
-                }}
-              >
-                <Music className="w-4 h-4" />
-                <span className="text-sm font-semibold">Soundtracks of our Strife</span>
               </Link>
             </div>
           </nav>
@@ -570,6 +545,58 @@ export default function VibesPage() {
           })()}
         </div>
 
+        {/* Polls Section */}
+        <div className="mb-12">
+          <h2 className={`text-4xl font-black mb-6 ${getTextClass()}`}>Polls</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Thanksgiving Poll Card */}
+            <Card 
+              className={`${getRoundedClass('rounded-[2.5rem]')} p-6 cursor-pointer transition-all hover:scale-105 hover:shadow-2xl`}
+              style={{
+                backgroundColor: mode === 'chaos' 
+                  ? 'rgba(255, 255, 255, 0.05)' 
+                  : mode === 'chill'
+                  ? 'rgba(74, 24, 24, 0.05)'
+                  : 'rgba(255, 255, 255, 0.05)',
+                border: mode === 'chaos' 
+                  ? '1px solid rgba(255, 255, 255, 0.1)' 
+                  : mode === 'chill'
+                  ? '1px solid rgba(74, 24, 24, 0.1)'
+                  : '1px solid rgba(255, 255, 255, 0.1)'
+              }}
+              onClick={() => {
+                setSelectedPoll({
+                  id: 'thanksgiving-grub',
+                  title: 'Thanksgiving Grub',
+                  question: 'What are your top Thanksgiving dishes?',
+                  date: 'November 2024',
+                  totalResponses: 14,
+                  data: [
+                    { name: 'Stuffing', count: 7 },
+                    { name: 'Mashed potatoes', count: 3 },
+                    { name: 'Peking duck', count: 2 },
+                    { name: 'Pumpkin pie', count: 2 },
+                    { name: 'Gravy', count: 2 },
+                  ]
+                })
+                setIsPollDialogOpen(true)
+              }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <BarChart3 className="w-6 h-6" style={{ color: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF' }} />
+                <h3 className={`text-xl font-black uppercase ${getTextClass()}`}>Thanksgiving Grub</h3>
+              </div>
+              <p className={`text-sm mb-4 ${getTextClass()} opacity-70`}>
+                What are your top Thanksgiving dishes?
+              </p>
+              <div className={`flex items-center justify-between text-xs opacity-60 ${getTextClass()}`}>
+                <span>14 responses</span>
+                <span>Nov 2024</span>
+              </div>
+            </Card>
+          </div>
+        </div>
+
         {/* Archive Section */}
         <div className="mb-8">
           <h2 className={`text-4xl font-black mb-6 ${getTextClass()}`}>Archive</h2>
@@ -596,6 +623,93 @@ export default function VibesPage() {
             <p className={`text-lg ${getTextClass()} opacity-60`}>No archived playlists yet</p>
           )}
         </div>
+
+        {/* Poll Dialog */}
+        <Dialog open={isPollDialogOpen} onOpenChange={setIsPollDialogOpen}>
+          <DialogContent 
+            className={`${getRoundedClass('rounded-3xl')} max-w-4xl max-h-[90vh] overflow-y-auto`}
+            style={{
+              backgroundColor: mode === 'chaos' 
+                ? '#1A1A1A' 
+                : mode === 'chill'
+                ? '#F5E6D3'
+                : '#000000',
+              border: mode === 'chaos' 
+                ? '2px solid rgba(196, 245, 0, 0.3)' 
+                : mode === 'chill'
+                ? '2px solid rgba(255, 192, 67, 0.3)'
+                : '2px solid rgba(255, 255, 255, 0.3)'
+            }}
+          >
+            {selectedPoll && (
+              <>
+                <DialogHeader className="mb-6">
+                  <DialogTitle className={`text-3xl font-black uppercase mb-2 ${getTextClass()}`}>
+                    {selectedPoll.title}
+                  </DialogTitle>
+                  <p className={`text-sm ${getTextClass()} opacity-60`}>
+                    {selectedPoll.date} • {selectedPoll.totalResponses} responses
+                  </p>
+                </DialogHeader>
+                
+                <div className="mb-6">
+                  <h3 className={`text-xl font-black mb-4 ${getTextClass()}`}>
+                    {selectedPoll.question}
+                  </h3>
+                  
+                  {/* Bar Chart */}
+                  <div className="my-8">
+                    <div className="space-y-4">
+                      {selectedPoll.data
+                        .sort((a: any, b: any) => b.count - a.count)
+                        .map((item: any, index: number) => {
+                          const maxCount = Math.max(...selectedPoll.data.map((d: any) => d.count))
+                          const percentage = (item.count / maxCount) * 100
+                          const isTop = index === 0
+                          
+                          return (
+                            <div key={item.name} className="relative">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className={`text-sm font-semibold ${getTextClass()}`}>
+                                  {item.name}
+                                </span>
+                                <span 
+                                  className={`text-lg font-black ${getTextClass()}`}
+                                  style={{ color: isTop ? (mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF') : undefined }}
+                                >
+                                  {item.count}
+                                </span>
+                              </div>
+                              <div 
+                                className={`${getRoundedClass('rounded-full')} h-8 overflow-hidden relative`}
+                                style={{
+                                  backgroundColor: mode === 'chaos' 
+                                    ? 'rgba(255, 255, 255, 0.1)' 
+                                    : mode === 'chill'
+                                    ? 'rgba(74, 24, 24, 0.1)'
+                                    : 'rgba(255, 255, 255, 0.1)'
+                                }}
+                              >
+                                <div
+                                  className="h-full transition-all duration-1000 flex items-center px-4"
+                                  style={{
+                                    width: `${percentage}%`,
+                                    backgroundColor: isTop 
+                                      ? (mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF')
+                                      : (mode === 'chaos' ? 'rgba(196, 245, 0, 0.4)' : mode === 'chill' ? 'rgba(255, 192, 67, 0.4)' : 'rgba(255, 255, 255, 0.4)')
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )
+                        })}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
         
         <Footer />
           </div>
