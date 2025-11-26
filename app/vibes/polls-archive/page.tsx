@@ -6,24 +6,21 @@ import { useAuth } from '@/contexts/auth-context'
 import { useMode } from '@/contexts/mode-context'
 import { SiteHeader } from '@/components/site-header'
 import { Footer } from '@/components/footer'
-import { ArrowLeft, TrendingUp, TrendingDown, Users, MessageCircle, Calendar } from 'lucide-react'
+import { ArrowLeft, Users, MessageCircle, Calendar, Quote } from 'lucide-react'
 import Link from 'next/link'
 
+interface WeeklyQuestionAnswer {
+  id: string
+  answer_text: string
+  author: string
+  created_at: string
+}
+
 interface HistoricalWeek {
-  week_key: string
-  week_start: string
-  overall_mood: number
-  total_responses: number
-  unique_users: number
-  questions: Array<{
-    question_key: string
-    question_text: string
-    average: number
-    min: number
-    max: number
-    response_count: number
-    comments: string[]
-  }>
+  week_start_date: string
+  question_text: string
+  total_answers: number
+  answers: WeeklyQuestionAnswer[]
 }
 
 export default function PollsArchivePage() {
@@ -55,14 +52,12 @@ export default function PollsArchivePage() {
     return mode === 'code' ? 'rounded-none' : base
   }
 
-  const getScoreColor = (score: number) => {
-    if (score >= 75) return mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF'
-    if (score >= 50) return mode === 'chaos' ? '#FFD700' : mode === 'chill' ? '#FFB5D8' : '#CCCCCC'
-    return mode === 'chaos' ? '#FF4C4C' : mode === 'chill' ? '#8B4444' : '#999999'
+  const getAccentColor = () => {
+    return mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF'
   }
 
-  const formatWeekDate = (weekKey: string) => {
-    const date = new Date(weekKey)
+  const formatWeekDate = (weekStartDate: string) => {
+    const date = new Date(weekStartDate)
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
   }
 
@@ -74,7 +69,7 @@ export default function PollsArchivePage() {
 
     async function fetchHistoricalData() {
       try {
-        const response = await fetch('/api/team-pulse/historical')
+        const response = await fetch('/api/weekly-questions/historical')
         if (response.ok) {
           const data = await response.json()
           setWeeks(data.weeks || [])
@@ -118,7 +113,7 @@ export default function PollsArchivePage() {
           </Link>
           <h1 className={`text-6xl font-black uppercase mb-4 ${getTextClass()}`}>Polls Archive</h1>
           <p className={`text-xl ${getTextClass()} opacity-70`}>
-            A visual journey through team sentiment over time
+            A visual journey through weekly questions and team responses
           </p>
         </div>
 
@@ -129,12 +124,9 @@ export default function PollsArchivePage() {
         ) : (
           <div className="space-y-24">
             {weeks.map((week, weekIndex) => {
-              const prevWeek = weeks[weekIndex + 1]
-              const moodChange = prevWeek ? week.overall_mood - prevWeek.overall_mood : 0
-              
               return (
                 <section 
-                  key={week.week_key}
+                  key={week.week_start_date}
                   className="relative"
                   style={{ 
                     scrollMarginTop: '100px',
@@ -145,137 +137,110 @@ export default function PollsArchivePage() {
                   <div className="mb-12">
                     <div className="flex items-baseline gap-4 mb-4">
                       <h2 className={`text-5xl font-black uppercase ${getTextClass()}`}>
-                        {formatWeekDate(week.week_start)}
+                        {formatWeekDate(week.week_start_date)}
                       </h2>
                       <div className="flex items-center gap-3">
-                        <div 
-                          className={`text-6xl font-black ${getTextClass()}`}
-                          style={{ color: getScoreColor(week.overall_mood) }}
-                        >
-                          {week.overall_mood}
+                        <div className="flex items-center gap-2">
+                          <MessageCircle className="w-6 h-6" style={{ color: getAccentColor() }} />
+                          <span className={`text-2xl ${getTextClass()} opacity-70`}>
+                            {week.total_answers} {week.total_answers === 1 ? 'answer' : 'answers'}
+                          </span>
                         </div>
-                        <span className={`text-2xl ${getTextClass()} opacity-50`}>/100</span>
-                        {prevWeek && (
-                          <div className="flex items-center gap-1 ml-4">
-                            {moodChange > 0 ? (
-                              <TrendingUp className="w-6 h-6" style={{ color: getScoreColor(week.overall_mood) }} />
-                            ) : moodChange < 0 ? (
-                              <TrendingDown className="w-6 h-6" style={{ color: getScoreColor(week.overall_mood) }} />
-                            ) : null}
-                            {moodChange !== 0 && (
-                              <span 
-                                className="text-xl font-bold"
-                                style={{ color: getScoreColor(week.overall_mood) }}
-                              >
-                                {Math.abs(moodChange)}
-                              </span>
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-6 text-sm uppercase tracking-wider opacity-60">
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        <span>{week.unique_users} {week.unique_users === 1 ? 'person' : 'people'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MessageCircle className="w-4 h-4" />
-                        <span>{week.total_responses} {week.total_responses === 1 ? 'response' : 'responses'}</span>
-                      </div>
+                    <div className="flex items-center gap-6 text-sm uppercase tracking-wider opacity-60 mb-8">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
-                        <span>{week.questions.length} {week.questions.length === 1 ? 'question' : 'questions'}</span>
+                        <span>Week of {formatWeekDate(week.week_start_date)}</span>
                       </div>
+                    </div>
+
+                    {/* Question - Large Display */}
+                    <div 
+                      className={`${getRoundedClass('rounded-3xl')} p-12 mb-12 relative overflow-hidden`}
+                      style={{
+                        backgroundColor: mode === 'chaos' 
+                          ? 'rgba(196, 245, 0, 0.1)' 
+                          : mode === 'chill'
+                          ? 'rgba(255, 192, 67, 0.1)'
+                          : 'rgba(255, 255, 255, 0.05)',
+                        border: `2px solid ${getAccentColor()}40`
+                      }}
+                    >
+                      <Quote 
+                        className="absolute top-6 left-6 opacity-20" 
+                        style={{ color: getAccentColor() }}
+                        size={60}
+                      />
+                      <h3 className={`text-4xl font-black leading-tight relative z-10 ${getTextClass()}`}>
+                        {week.question_text}
+                      </h3>
                     </div>
                   </div>
 
-                  {/* Questions Grid - Infographic Style */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                    {week.questions.map((question, qIndex) => (
-                      <div
-                        key={question.question_key}
-                        className={`${getRoundedClass('rounded-3xl')} p-8 relative overflow-hidden`}
-                        style={{
-                          backgroundColor: mode === 'chaos' 
-                            ? 'rgba(255, 255, 255, 0.05)' 
-                            : mode === 'chill'
-                            ? 'rgba(74, 24, 24, 0.05)'
-                            : 'rgba(255, 255, 255, 0.05)',
-                          border: `2px solid ${getScoreColor(question.average)}40`,
-                          animation: `fadeInUp 0.6s ease-out ${(weekIndex * 0.1) + (qIndex * 0.05)}s both`
-                        }}
-                      >
-                        {/* Score Bar - Visual Indicator */}
-                        <div className="mb-6">
-                          <div className="flex items-baseline justify-between mb-2">
-                            <h3 className={`text-lg font-black uppercase ${getTextClass()}`}>
-                              {question.question_text}
-                            </h3>
-                            <div 
-                              className="text-4xl font-black"
-                              style={{ color: getScoreColor(question.average) }}
-                            >
-                              {question.average}
-                            </div>
-                          </div>
-                          
-                          {/* Progress Bar */}
-                          <div 
-                            className={`${getRoundedClass('rounded-full')} h-3 overflow-hidden`}
-                            style={{
-                              backgroundColor: mode === 'chaos' 
-                                ? 'rgba(255, 255, 255, 0.1)' 
-                                : mode === 'chill'
-                                ? 'rgba(74, 24, 24, 0.1)'
-                                : 'rgba(255, 255, 255, 0.1)'
-                            }}
+                  {/* Answers Grid - Infographic Style */}
+                  {week.answers.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                      {week.answers.map((answer, aIndex) => (
+                        <div
+                          key={answer.id}
+                          className={`${getRoundedClass('rounded-2xl')} p-6 relative overflow-hidden`}
+                          style={{
+                            backgroundColor: mode === 'chaos' 
+                              ? 'rgba(255, 255, 255, 0.05)' 
+                              : mode === 'chill'
+                              ? 'rgba(74, 24, 24, 0.05)'
+                              : 'rgba(255, 255, 255, 0.05)',
+                            border: `1px solid ${getAccentColor()}30`,
+                            animation: `fadeInUp 0.6s ease-out ${(weekIndex * 0.1) + (aIndex * 0.05)}s both`
+                          }}
+                        >
+                          <Quote 
+                            className="absolute top-4 right-4 opacity-10" 
+                            style={{ color: getAccentColor() }}
+                            size={40}
+                          />
+                          <p 
+                            className={`text-base leading-relaxed mb-4 relative z-10 ${getTextClass()}`}
+                            style={{ lineHeight: '1.8' }}
                           >
-                            <div
-                              className="h-full transition-all duration-1000"
-                              style={{
-                                width: `${question.average}%`,
-                                backgroundColor: getScoreColor(question.average)
-                              }}
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between mt-2 text-xs opacity-60">
-                            <span>Min: {question.min}</span>
-                            <span>Max: {question.max}</span>
-                            <span>{question.response_count} responses</span>
-                          </div>
-                        </div>
-
-                        {/* Comments Preview */}
-                        {question.comments.length > 0 && (
-                          <div className="mt-6 pt-6 border-t" style={{ 
+                            "{answer.answer_text}"
+                          </p>
+                          <div className="flex items-center gap-2 pt-4 border-t relative z-10" style={{ 
                             borderColor: mode === 'chaos' 
                               ? 'rgba(255, 255, 255, 0.1)' 
                               : mode === 'chill'
                               ? 'rgba(74, 24, 24, 0.1)'
                               : 'rgba(255, 255, 255, 0.1)'
                           }}>
-                            <p className={`text-xs uppercase tracking-wider mb-3 opacity-60 ${getTextClass()}`}>
-                              Sample Comments
-                            </p>
-                            <div className="space-y-2">
-                              {question.comments.slice(0, 2).map((comment, cIndex) => (
-                                <p 
-                                  key={cIndex}
-                                  className={`text-sm italic ${getTextClass()} opacity-80`}
-                                  style={{ lineHeight: '1.6' }}
-                                >
-                                  "{comment.length > 100 ? comment.substring(0, 100) + '...' : comment}"
-                                </p>
-                              ))}
+                            <div 
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black"
+                              style={{ 
+                                backgroundColor: getAccentColor(),
+                                color: mode === 'chaos' ? '#000000' : mode === 'chill' ? '#4A1818' : '#000000'
+                              }}
+                            >
+                              {answer.author.charAt(0).toUpperCase()}
                             </div>
+                            <span className={`text-sm font-semibold ${getTextClass()} opacity-80`}>
+                              {answer.author}
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={`${getRoundedClass('rounded-2xl')} p-12 text-center`} style={{
+                      backgroundColor: mode === 'chaos' 
+                        ? 'rgba(255, 255, 255, 0.05)' 
+                        : mode === 'chill'
+                        ? 'rgba(74, 24, 24, 0.05)'
+                        : 'rgba(255, 255, 255, 0.05)'
+                    }}>
+                      <p className={`text-lg ${getTextClass()} opacity-60`}>No answers yet for this week</p>
+                    </div>
+                  )}
 
                   {/* Divider */}
                   {weekIndex < weeks.length - 1 && (
@@ -314,4 +279,3 @@ export default function PollsArchivePage() {
     </div>
   )
 }
-
