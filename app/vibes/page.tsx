@@ -237,7 +237,7 @@ export default function VibesPage() {
           {/* Most Recent Poll */}
           <Card 
             className={`${getRoundedClass('rounded-[2.5rem]')} p-6 cursor-pointer transition-all hover:scale-105 hover:shadow-2xl`}
-                          style={{
+            style={{
               backgroundColor: mode === 'chaos' 
                 ? 'rgba(255, 255, 255, 0.05)' 
                 : mode === 'chill'
@@ -270,16 +270,68 @@ export default function VibesPage() {
             <div className="flex items-center gap-3 mb-4">
               <BarChart3 className="w-6 h-6" style={{ color: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF' }} />
               <h2 className={`text-2xl font-black uppercase ${getTextClass()}`}>Latest Poll</h2>
-                        </div>
+            </div>
             <h3 className={`text-xl font-black mb-3 ${getTextClass()}`}>Thanksgiving Grub</h3>
             <p className={`text-sm mb-4 ${getTextClass()} opacity-70`}>
               What are your top Thanksgiving dishes?
             </p>
+            
+            {/* Top Results - Mini Chart */}
+            <div className="mb-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className={`text-xs font-semibold ${getTextClass()}`}>Stuffing</span>
+                <span className={`text-sm font-black ${getTextClass()}`} style={{ color: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF' }}>7</span>
+              </div>
+              <div 
+                className={`${getRoundedClass('rounded-full')} h-2 overflow-hidden`}
+                style={{
+                  backgroundColor: mode === 'chaos' 
+                    ? 'rgba(255, 255, 255, 0.1)' 
+                    : mode === 'chill'
+                    ? 'rgba(74, 24, 24, 0.1)'
+                    : 'rgba(255, 255, 255, 0.1)'
+                }}
+              >
+                <div
+                  className="h-full"
+                  style={{
+                    width: '100%',
+                    backgroundColor: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF'
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs opacity-60">
+                <span>Mashed potatoes: 3</span>
+                <span>Peking duck: 2</span>
+              </div>
+            </div>
+
+            {/* Fun Fact */}
+            <div className="mb-4 pt-4 border-t" style={{ 
+              borderColor: mode === 'chaos' 
+                ? 'rgba(255, 255, 255, 0.1)' 
+                : mode === 'chill'
+                ? 'rgba(74, 24, 24, 0.1)'
+                : 'rgba(255, 255, 255, 0.1)'
+            }}>
+              <p className={`text-xs font-black mb-2 ${getTextClass()}`}>
+                Fun Fact: Statistically speaking, cigarettes appear as often as:
+              </p>
+              <ul className={`space-y-0.5 text-xs ${getTextClass()} opacity-70`}>
+                <li>• turkey</li>
+                <li>• custard</li>
+                <li>• caramel</li>
+                <li>• mashed potatoes with gravy</li>
+                <li>• empanadas</li>
+                <li>• jollof rice</li>
+              </ul>
+            </div>
+
             <div className={`flex items-center justify-between text-xs opacity-60 ${getTextClass()}`}>
               <span>14 responses</span>
               <span>Nov 2024</span>
-                </div>
-              </Card>
+            </div>
+          </Card>
 
           {/* Most Recent Playlist */}
           {(() => {
