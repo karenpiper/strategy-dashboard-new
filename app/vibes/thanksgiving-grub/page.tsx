@@ -289,7 +289,7 @@ export default function ThanksgivingPollPage() {
     )
   }
 
-  if (loading || !user) {
+  if (authLoading || !user) {
     return (
       <div className={`flex flex-col min-h-screen ${getBgClass()} ${getTextClass()}`}>
         <SiteHeader />
@@ -317,10 +317,13 @@ export default function ThanksgivingPollPage() {
           {/* Header */}
           <div className="mb-16">
             <h1 className={`text-6xl font-black uppercase mb-4 ${getTextClass()}`}>
-              The Thanksgiving Poll That Proves Stuffing Bangs
+              Thanksgiving Grub
             </h1>
             <p className={`text-xl ${getTextClass()} opacity-70 mb-8`}>
               {pollData.totalPeople} people, {pollData.totalMentions} mentions, {pollData.uniqueItems} unique items. Complete menu chaos in the best way.
+            </p>
+            <p className={`text-lg ${getTextClass()} opacity-60 mb-8`}>
+              The Thanksgiving poll that proves stuffing bangs.
             </p>
             {/* Hero Image - Thanksgiving table chaos */}
             <div className="relative w-full h-96 rounded-3xl overflow-hidden mb-8">

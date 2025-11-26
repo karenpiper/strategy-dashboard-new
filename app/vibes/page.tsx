@@ -289,6 +289,34 @@ export default function VibesPage() {
                 <MessageCircle className="w-4 h-4" />
                 <span className="text-sm font-semibold">Polls Archive</span>
               </Link>
+              <Link
+                href="/vibes/thanksgiving-grub"
+                className={`flex items-center gap-3 ${getRoundedClass('rounded-xl')} px-4 py-3 transition-all hover:opacity-70`}
+                style={{
+                  backgroundColor: mode === 'chaos' 
+                    ? 'rgba(255, 255, 255, 0.05)' 
+                    : mode === 'chill'
+                    ? 'rgba(74, 24, 24, 0.05)'
+                    : 'rgba(255, 255, 255, 0.05)'
+                }}
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span className="text-sm font-semibold">Thanksgiving Grub</span>
+              </Link>
+              <Link
+                href="/vibes/soundtracks-of-our-strife"
+                className={`flex items-center gap-3 ${getRoundedClass('rounded-xl')} px-4 py-3 transition-all hover:opacity-70`}
+                style={{
+                  backgroundColor: mode === 'chaos' 
+                    ? 'rgba(255, 255, 255, 0.05)' 
+                    : mode === 'chill'
+                    ? 'rgba(74, 24, 24, 0.05)'
+                    : 'rgba(255, 255, 255, 0.05)'
+                }}
+              >
+                <Music className="w-4 h-4" />
+                <span className="text-sm font-semibold">Soundtracks of our Strife</span>
+              </Link>
             </div>
           </nav>
         </aside>
