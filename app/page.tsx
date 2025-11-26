@@ -1969,10 +1969,7 @@ export default function TeamDashboard() {
                     )}
                     {characterName && (
                       <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
-                        {mode === 'code' 
-                          ? `and today, you're giving ${characterName}`
-                          : `and today, you're giving ${characterName}`
-                        }
+                        {characterName}
                       </p>
                     )}
                   </div>
@@ -2022,9 +2019,9 @@ export default function TeamDashboard() {
               
               return (
                 <>
-                  {/* Quick Actions Card - 1/4 width */}
+                  {/* Quick Actions Card - 1/3 width */}
                   <Card 
-                    className={`${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-center justify-center py-3 px-6 w-1/4`}
+                    className={`${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-center justify-center py-3 px-6 w-1/3`}
                     style={{ 
                       flex: '0 0 auto', 
                       height: 'auto', 
@@ -2033,8 +2030,8 @@ export default function TeamDashboard() {
                       border: 'none'
                     }}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className={`text-3xl font-black uppercase leading-none ${heroStyle.text} whitespace-nowrap`}>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className={`text-3xl font-black uppercase leading-none ${heroStyle.text}`}>
                         Quick Actions
                       </span>
                       <Button 
@@ -2083,10 +2080,10 @@ export default function TeamDashboard() {
                     </div>
                   </Card>
                   
-                  {/* News/Updates Card - 3/4 width, only shown if there's news for today */}
+                  {/* News/Updates Card - 2/3 width, only shown if there's news for today */}
                   {hasNews && (
                     <Card 
-                      className={`${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-center py-3 px-6 w-3/4`}
+                      className={`${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-center py-3 px-6 w-2/3`}
                       style={{ 
                         flex: '0 0 auto', 
                         height: 'auto', 
