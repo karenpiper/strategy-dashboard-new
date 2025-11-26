@@ -2030,11 +2030,13 @@ export default function TeamDashboard() {
                       border: 'none'
                     }}
                   >
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className={`text-3xl font-black uppercase leading-none ${heroStyle.text}`}>
-                        Quick Actions
-                      </span>
-                      <Button 
+                    <div className="flex items-center gap-3">
+                      <div className={`text-3xl font-black uppercase leading-none ${heroStyle.text} flex flex-col`}>
+                        <span>Quick</span>
+                        <span>Links</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Button 
                         onClick={() => setShowAddSnapDialog(true)}
                         className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
                         style={mode === 'chaos' ? {
@@ -2077,6 +2079,7 @@ export default function TeamDashboard() {
                       >
                         {mode === 'code' ? '[PLAYLIST]' : 'Playlist'} {mode !== 'code' && <Music className="w-3 h-3 ml-2" />}
                       </Button>
+                      </div>
                     </div>
                   </Card>
                   
