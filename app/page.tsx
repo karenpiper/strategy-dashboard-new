@@ -1884,8 +1884,8 @@ export default function TeamDashboard() {
               
               return (
                 <>
-                  {/* Hero Card - 2/3 width */}
-                  <Card className={`${style.bg} ${style.border} p-0 ${mode === 'chaos' ? getRoundedClass('rounded-[2.5rem]') : getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden group min-h-[300px] flex flex-col justify-between w-2/3`}
+                  {/* Hero Card - 3/4 width */}
+                  <Card className={`${style.bg} ${style.border} p-0 ${mode === 'chaos' ? getRoundedClass('rounded-[2.5rem]') : getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden group min-h-[300px] flex flex-col justify-between w-3/4`}
                         style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
                   >
                 {/* Black masked section on the right with transform/rotation - contains horoscope image */}
@@ -2004,64 +2004,77 @@ export default function TeamDashboard() {
                   </div>
                   </Card>
                   
-                  {/* Quick Links Card - 1/3 width, matches hero height */}
+                  {/* Quick Links Card - 1/4 width, matches hero height */}
                   <Card 
-                    className={`${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-center py-3 px-6 w-1/3 min-h-[300px]`}
+                    className={`${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-start py-3 px-6 w-1/4 min-h-[300px]`}
                     style={{ 
                       backgroundColor: darkBgColor,
                       border: 'none'
                     }}
                   >
-                    <div className="flex items-center justify-between gap-3 h-full w-full">
-                      <div className={`text-3xl font-black uppercase leading-none ${heroStyle.text} flex flex-col`}>
-                        <span>Quick</span>
-                        <span>Links</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Button 
-                          onClick={() => setShowAddSnapDialog(true)}
-                          className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
-                          style={mode === 'chaos' ? {
-                            backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
-                            color: '#FFFFFF'
-                          } : mode === 'chill' ? {
-                            backgroundColor: '#4A1818',
-                            color: '#FFFFFF'
-                          } : mode === 'code' ? {
-                            backgroundColor: '#000000',
-                            color: '#FFFFFF'
-                          } : {
-                            backgroundColor: '#000000',
-                            color: '#FFFFFF'
-                          }}
-                        >
-                          {mode === 'code' ? '[GIVE SNAP]' : 'Give Snap'} {mode !== 'code' && <ArrowRight className="w-3 h-3 ml-2" />}
-                        </Button>
-                        <Button 
-                          onClick={() => {
-                            const playlistSection = document.getElementById('playlist-section')
-                            if (playlistSection) {
-                              playlistSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                            }
-                          }}
-                          className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
-                          style={mode === 'chaos' ? {
-                            backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
-                            color: '#FFFFFF'
-                          } : mode === 'chill' ? {
-                            backgroundColor: '#4A1818',
-                            color: '#FFFFFF'
-                          } : mode === 'code' ? {
-                            backgroundColor: '#000000',
-                            color: '#FFFFFF'
-                          } : {
-                            backgroundColor: '#000000',
-                            color: '#FFFFFF'
-                          }}
-                        >
-                          {mode === 'code' ? '[VIBES]' : 'Vibes'} {mode !== 'code' && <Music className="w-3 h-3 ml-2" />}
-                        </Button>
-                      </div>
+                    <div className="flex flex-col items-start gap-3 h-full w-full">
+                      <Button 
+                        onClick={() => setShowAddSnapDialog(true)}
+                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
+                        style={mode === 'chaos' ? {
+                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
+                          color: '#FFFFFF'
+                        } : mode === 'chill' ? {
+                          backgroundColor: '#4A1818',
+                          color: '#FFFFFF'
+                        } : mode === 'code' ? {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        } : {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        {mode === 'code' ? '[GIVE SNAP]' : 'Give Snap'} {mode !== 'code' && <ArrowRight className="w-3 h-3 ml-2" />}
+                      </Button>
+                      <Button 
+                        onClick={() => router.push('/work-samples')}
+                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
+                        style={mode === 'chaos' ? {
+                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
+                          color: '#FFFFFF'
+                        } : mode === 'chill' ? {
+                          backgroundColor: '#4A1818',
+                          color: '#FFFFFF'
+                        } : mode === 'code' ? {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        } : {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        {mode === 'code' ? '[BROWSE WORK]' : 'Browse Work'} {mode !== 'code' && <ArrowRight className="w-3 h-3 ml-2" />}
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          const playlistSection = document.getElementById('playlist-section')
+                          if (playlistSection) {
+                            playlistSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          }
+                        }}
+                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
+                        style={mode === 'chaos' ? {
+                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
+                          color: '#FFFFFF'
+                        } : mode === 'chill' ? {
+                          backgroundColor: '#4A1818',
+                          color: '#FFFFFF'
+                        } : mode === 'code' ? {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        } : {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        {mode === 'code' ? '[JUST VIBES]' : 'Just Vibes'} {mode !== 'code' && <Music className="w-3 h-3 ml-2" />}
+                      </Button>
                     </div>
                   </Card>
                 </>
