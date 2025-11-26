@@ -1852,14 +1852,42 @@ export default function TeamDashboard() {
       <SiteHeader rightContent={horoscopeImageActions} />
 
       <main className="max-w-[1200px] mx-auto px-6 py-4 flex-1 pb-0 pt-24 relative">
-        {/* Hero Section - Full Width */}
+        {/* Hero Section and Quick Links - Side by Side */}
         <section className="mb-12 relative">
-          {(() => {
-            const style = mode === 'chaos' ? getSpecificCardStyle('hero-large') : getCardStyle('hero')
-            return (
-              <Card className={`${style.bg} ${style.border} p-0 ${mode === 'chaos' ? getRoundedClass('rounded-[2.5rem]') : getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden group min-h-[300px] flex flex-col justify-between`}
-                    style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
-              >
+          <div className="flex items-stretch gap-4">
+            {(() => {
+              const style = mode === 'chaos' ? getSpecificCardStyle('hero-large') : getCardStyle('hero')
+              const heroStyle = mode === 'chaos' ? getSpecificCardStyle('hero-large') : getCardStyle('hero')
+              const isLightBg = heroStyle.text === 'text-black'
+              
+              // Extract color from gradient or use accent color for dark background
+              let heroBgColor = heroStyle.accent
+              if (mode === 'chaos') {
+                const timeGradient = getTimeBasedGradient()
+                heroBgColor = timeGradient.accent
+              } else if (mode === 'chill') {
+                const timeGradientChill = getTimeBasedGradientChill()
+                heroBgColor = timeGradientChill.accent
+              } else {
+                heroBgColor = '#FFFFFF'
+              }
+              
+              // Convert hex to rgba with 30% opacity
+              const hexToRgba = (hex: string, alpha: number) => {
+                const r = parseInt(hex.slice(1, 3), 16)
+                const g = parseInt(hex.slice(3, 5), 16)
+                const b = parseInt(hex.slice(5, 7), 16)
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`
+              }
+              
+              const darkBgColor = hexToRgba(heroBgColor, 0.3)
+              
+              return (
+                <>
+                  {/* Hero Card - 2/3 width */}
+                  <Card className={`${style.bg} ${style.border} p-0 ${mode === 'chaos' ? getRoundedClass('rounded-[2.5rem]') : getRoundedClass('rounded-[2.5rem]')} relative overflow-hidden group min-h-[300px] flex flex-col justify-between w-2/3`}
+                        style={style.glow ? { boxShadow: `0 0 40px ${style.glow}` } : {}}
+                  >
                 {/* Black masked section on the right with transform/rotation - contains horoscope image */}
                 {mode === 'chaos' && (
                   <div className={`absolute top-1/2 right-0 -translate-y-1/2 w-[40%] aspect-[5/4] ${getBgClass()} ${getRoundedClass('rounded-[2.5rem]')} transform -translate-x-[100px] -rotate-12 overflow-hidden border-4 border-white shadow-2xl`} style={{ boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(255, 255, 255, 0.3)' }}>
@@ -1973,148 +2001,133 @@ export default function TeamDashboard() {
                       </p>
                     )}
                   </div>
-              </div>
-            </Card>
-            )
-          })()}
-        </section>
-
-        {/* Quick Actions Bar and News/Updates - same height as This Week stats bar */}
-        <section className="mb-6">
-          <div className="flex items-center gap-4">
-            {(() => {
-              // Get hero style to use its color with 30% opacity
-              const heroStyle = mode === 'chaos' ? getSpecificCardStyle('hero-large') : getCardStyle('hero')
-              const isLightBg = heroStyle.text === 'text-black'
-              
-              // Extract color from gradient or use accent color for dark background
-              // For 30% opacity dark version, we'll use the accent color or a dark variant
-              let heroBgColor = heroStyle.accent
-              if (mode === 'chaos') {
-                const timeGradient = getTimeBasedGradient()
-                // Use the accent color from the gradient
-                heroBgColor = timeGradient.accent
-              } else if (mode === 'chill') {
-                const timeGradientChill = getTimeBasedGradientChill()
-                heroBgColor = timeGradientChill.accent
-              } else {
-                // Code mode - use white accent
-                heroBgColor = '#FFFFFF'
-              }
-              
-              // Convert hex to rgba with 30% opacity
-              const hexToRgba = (hex: string, alpha: number) => {
-                const r = parseInt(hex.slice(1, 3), 16)
-                const g = parseInt(hex.slice(3, 5), 16)
-                const b = parseInt(hex.slice(5, 7), 16)
-                return `rgba(${r}, ${g}, ${b}, ${alpha})`
-              }
-              
-              const darkBgColor = hexToRgba(heroBgColor, 0.3)
-              
-              // Filter news for today
-              const today = new Date().toISOString().split('T')[0]
-              const todaysNews = dailyNews.filter(news => news.date === today)
-              const hasNews = todaysNews.length > 0
-              
-              return (
-                <>
-                  {/* Quick Actions Card - 1/3 width */}
+                  </div>
+                  </Card>
+                  
+                  {/* Quick Links Card - 1/3 width, matches hero height */}
                   <Card 
-                    className={`${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-center justify-center py-3 px-6 w-1/3`}
+                    className={`${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-center py-3 px-6 w-1/3 min-h-[300px]`}
                     style={{ 
-                      flex: '0 0 auto', 
-                      height: 'auto', 
-                      minHeight: '70px',
                       backgroundColor: darkBgColor,
                       border: 'none'
                     }}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between gap-3 h-full w-full">
                       <div className={`text-3xl font-black uppercase leading-none ${heroStyle.text} flex flex-col`}>
                         <span>Quick</span>
                         <span>Links</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <Button 
-                        onClick={() => setShowAddSnapDialog(true)}
-                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
-                        style={mode === 'chaos' ? {
-                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
-                          color: '#FFFFFF'
-                        } : mode === 'chill' ? {
-                          backgroundColor: '#4A1818',
-                          color: '#FFFFFF'
-                        } : mode === 'code' ? {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        } : {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        }}
-                      >
-                        {mode === 'code' ? '[GIVE SNAP]' : 'Give Snap'} {mode !== 'code' && <ArrowRight className="w-3 h-3 ml-2" />}
-                      </Button>
-                      <Button 
-                        onClick={() => {
-                          const playlistSection = document.getElementById('playlist-section')
-                          if (playlistSection) {
-                            playlistSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                          }
-                        }}
-                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
-                        style={mode === 'chaos' ? {
-                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
-                          color: '#FFFFFF'
-                        } : mode === 'chill' ? {
-                          backgroundColor: '#4A1818',
-                          color: '#FFFFFF'
-                        } : mode === 'code' ? {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        } : {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        }}
-                      >
-                        {mode === 'code' ? '[PLAYLIST]' : 'Playlist'} {mode !== 'code' && <Music className="w-3 h-3 ml-2" />}
-                      </Button>
+                          onClick={() => setShowAddSnapDialog(true)}
+                          className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
+                          style={mode === 'chaos' ? {
+                            backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
+                            color: '#FFFFFF'
+                          } : mode === 'chill' ? {
+                            backgroundColor: '#4A1818',
+                            color: '#FFFFFF'
+                          } : mode === 'code' ? {
+                            backgroundColor: '#000000',
+                            color: '#FFFFFF'
+                          } : {
+                            backgroundColor: '#000000',
+                            color: '#FFFFFF'
+                          }}
+                        >
+                          {mode === 'code' ? '[GIVE SNAP]' : 'Give Snap'} {mode !== 'code' && <ArrowRight className="w-3 h-3 ml-2" />}
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            const playlistSection = document.getElementById('playlist-section')
+                            if (playlistSection) {
+                              playlistSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                            }
+                          }}
+                          className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
+                          style={mode === 'chaos' ? {
+                            backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
+                            color: '#FFFFFF'
+                          } : mode === 'chill' ? {
+                            backgroundColor: '#4A1818',
+                            color: '#FFFFFF'
+                          } : mode === 'code' ? {
+                            backgroundColor: '#000000',
+                            color: '#FFFFFF'
+                          } : {
+                            backgroundColor: '#000000',
+                            color: '#FFFFFF'
+                          }}
+                        >
+                          {mode === 'code' ? '[VIBES]' : 'Vibes'} {mode !== 'code' && <Music className="w-3 h-3 ml-2" />}
+                        </Button>
                       </div>
                     </div>
                   </Card>
-                  
-                  {/* News/Updates Card - 2/3 width, only shown if there's news for today */}
-                  {hasNews && (
-                    <Card 
-                      className={`${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-center py-3 px-6 w-2/3`}
-                      style={{ 
-                        flex: '0 0 auto', 
-                        height: 'auto', 
-                        minHeight: '70px',
-                        backgroundColor: darkBgColor,
-                        border: 'none'
-                      }}
-                    >
-                      <div className="flex items-center gap-4 w-full">
-                        <span className={`font-black text-sm uppercase tracking-wider ${heroStyle.text} flex-shrink-0`}>
-                          {mode === 'code' ? '[NEWS]' : 'News & Updates'}
-                        </span>
-                        <div className="flex-1 flex items-center gap-3 overflow-x-auto">
-                          {todaysNews.map((news, index) => (
-                            <div key={news.id} className="flex items-center gap-2 flex-shrink-0">
-                              {index > 0 && <span className={`${heroStyle.text}/30`}>•</span>}
-                              <span className={`text-sm ${heroStyle.text}`}>{news.title}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </Card>
-                  )}
                 </>
               )
             })()}
           </div>
         </section>
+
+        {/* News/Updates Card - Full width, only shown if there's news for today */}
+        {(() => {
+          const heroStyle = mode === 'chaos' ? getSpecificCardStyle('hero-large') : getCardStyle('hero')
+          
+          // Extract color from gradient or use accent color for dark background
+          let heroBgColor = heroStyle.accent
+          if (mode === 'chaos') {
+            const timeGradient = getTimeBasedGradient()
+            heroBgColor = timeGradient.accent
+          } else if (mode === 'chill') {
+            const timeGradientChill = getTimeBasedGradientChill()
+            heroBgColor = timeGradientChill.accent
+          } else {
+            heroBgColor = '#FFFFFF'
+          }
+          
+          // Convert hex to rgba with 30% opacity
+          const hexToRgba = (hex: string, alpha: number) => {
+            const r = parseInt(hex.slice(1, 3), 16)
+            const g = parseInt(hex.slice(3, 5), 16)
+            const b = parseInt(hex.slice(5, 7), 16)
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`
+          }
+          
+          const darkBgColor = hexToRgba(heroBgColor, 0.3)
+          
+          // Filter news for today
+          const today = new Date().toISOString().split('T')[0]
+          const todaysNews = dailyNews.filter(news => news.date === today)
+          const hasNews = todaysNews.length > 0
+          
+          return hasNews ? (
+            <section className="mb-6">
+              <Card 
+                className={`${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-center py-3 px-6 w-full`}
+                style={{ 
+                  backgroundColor: darkBgColor,
+                  border: 'none',
+                  minHeight: '70px'
+                }}
+              >
+                <div className="flex items-center gap-4 w-full">
+                  <span className={`font-black text-sm uppercase tracking-wider ${heroStyle.text} flex-shrink-0`}>
+                    {mode === 'code' ? '[NEWS]' : 'News & Updates'}
+                  </span>
+                  <div className="flex-1 flex items-center gap-3 overflow-x-auto">
+                    {todaysNews.map((news, index) => (
+                      <div key={news.id} className="flex items-center gap-2 flex-shrink-0">
+                        {index > 0 && <span className={`${heroStyle.text}/30`}>•</span>}
+                        <span className={`text-sm ${heroStyle.text}`}>{news.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            </section>
+          ) : null
+        })()}
 
         {/* Time Zones - 100% width, very short, between hero and horoscope */}
         <section className="mb-6">
