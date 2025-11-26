@@ -1946,14 +1946,14 @@ export default function TeamDashboard() {
                     <h2 className={`text-[clamp(2rem,6vw+0.5rem,6rem)] font-black mb-2 md:mb-3 leading-[0.85] tracking-tight uppercase ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                       {mode === 'code' ? `${userFirstName || userName}` : `${userFirstName || userName}`}
                     </h2>
-                    <p className={`text-[clamp(1.25rem,3vw+0.5rem,2rem)] font-bold max-w-2xl leading-tight ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
+                    <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                       {mode === 'code' 
                         ? `It's ${todayDate || 'Loading...'}`
                         : `It's ${todayDate || 'Loading...'}`
                       }
                     </p>
                     {(temperature || weatherCondition) && (
-                      <p className={`text-[clamp(1.25rem,3vw+0.5rem,2rem)] font-bold max-w-2xl leading-tight mt-2 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
+                      <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                         {mode === 'code' 
                           ? `${temperature || ''}${temperature && weatherCondition ? ' and ' : ''}${weatherCondition ? weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1) : ''}`
                           : `${temperature || ''}${temperature && weatherCondition ? ' and ' : ''}${weatherCondition ? weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1) : ''}`
@@ -1961,10 +1961,10 @@ export default function TeamDashboard() {
                       </p>
                     )}
                     {characterName && (
-                      <p className={`text-[clamp(1.25rem,3vw+0.5rem,2rem)] font-bold max-w-2xl leading-tight mt-2 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
+                      <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                         {mode === 'code' 
-                          ? `and you're giving ${characterName}`
-                          : `and you're giving ${characterName}`
+                          ? `and today, you're giving ${characterName}`
+                          : `and today, you're giving ${characterName}`
                         }
                       </p>
                     )}
