@@ -1952,11 +1952,9 @@ export default function TeamDashboard() {
                         : `It's ${todayDate || 'Loading...'}${temperature ? ` and ${temperature}` : ''}${weatherCondition ? ` and ${weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1)}` : ''}`
                       }
                     </p>
-                    {characterName && (
-                      <p className={`text-[clamp(1rem,2.5vw+0.5rem,1.5rem)] font-semibold max-w-2xl leading-tight mt-2 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
-                        ...today, you're giving
-                      </p>
-                    )}
+                    <p className={`text-[clamp(1rem,2.5vw+0.5rem,1.5rem)] font-semibold max-w-2xl leading-tight mt-2 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
+                      ...today, you're giving
+                    </p>
                   </div>
               </div>
             </Card>
