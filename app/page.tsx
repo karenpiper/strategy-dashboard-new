@@ -2005,14 +2005,10 @@ export default function TeamDashboard() {
                   </Card>
                   
                   {/* Quick Links Card - 1/4 width, matches hero height */}
-                  <Card 
-                    className={`${getRoundedClass('rounded-[2.5rem]')} transition-all duration-300 flex items-start py-3 px-6 w-1/4 min-h-[300px]`}
-                    style={{ 
-                      backgroundColor: darkBgColor,
-                      border: 'none'
-                    }}
+                  <div 
+                    className={`transition-all duration-300 flex items-end justify-end py-3 px-6 w-1/4 min-h-[300px]`}
                   >
-                    <div className="flex flex-col items-start gap-3 h-full w-full">
+                    <div className="flex flex-col items-end gap-3 h-full w-full">
                       <Button 
                         onClick={() => setShowAddSnapDialog(true)}
                         className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
@@ -2075,8 +2071,46 @@ export default function TeamDashboard() {
                       >
                         {mode === 'code' ? '[JUST VIBES]' : 'Just Vibes'} {mode !== 'code' && <Music className="w-3 h-3 ml-2" />}
                       </Button>
+                      <Button 
+                        onClick={() => router.push('/grail')}
+                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
+                        style={mode === 'chaos' ? {
+                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
+                          color: '#FFFFFF'
+                        } : mode === 'chill' ? {
+                          backgroundColor: '#4A1818',
+                          color: '#FFFFFF'
+                        } : mode === 'code' ? {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        } : {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        {mode === 'code' ? '[GRAIL]' : 'Grail'} {mode !== 'code' && <ArrowRight className="w-3 h-3 ml-2" />}
+                      </Button>
+                      <Button 
+                        onClick={() => router.push('/brief')}
+                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
+                        style={mode === 'chaos' ? {
+                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
+                          color: '#FFFFFF'
+                        } : mode === 'chill' ? {
+                          backgroundColor: '#4A1818',
+                          color: '#FFFFFF'
+                        } : mode === 'code' ? {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        } : {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        {mode === 'code' ? '[BRIEF]' : 'Brief'} {mode !== 'code' && <ArrowRight className="w-3 h-3 ml-2" />}
+                      </Button>
                     </div>
-                  </Card>
+                  </div>
                 </>
               )
             })()}
