@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,7 +21,11 @@ import {
   ShieldOff,
   Save,
   Star,
-  BarChart3
+  BarChart3,
+  Upload,
+  X,
+  FileText,
+  BarChart
 } from 'lucide-react'
 
 interface PollOption {
@@ -77,7 +81,7 @@ export default function ChannelPollsAdmin() {
     asked_by: '',
     date: getTodayDate(),
     total_responses: 0,
-    is_ranking: false,
+    is_ranking: true, // Always ranking polls
     is_active: true,
     is_featured: false,
     image_url: '',
@@ -92,6 +96,27 @@ export default function ChannelPollsAdmin() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  
+  // User search state
+  const [allProfiles, setAllProfiles] = useState<Array<{ id: string; full_name: string | null; email: string | null }>>([])
+  const [userSearchQuery, setUserSearchQuery] = useState('')
+  const [userSuggestions, setUserSuggestions] = useState<Array<{ id: string; full_name: string | null; email: string | null }>>([])
+  const [showUserSuggestions, setShowUserSuggestions] = useState(false)
+  const [selectedUserIndex, setSelectedUserIndex] = useState(-1)
+  const userSearchRef = useRef<HTMLInputElement>(null)
+  const userSuggestionsRef = useRef<HTMLDivElement>(null)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // Image upload state
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const imageUploadRef = useRef<HTMLInputElement>(null)
+  
+  // Fun fact type state
+  const [funFactType, setFunFactType] = useState<'text' | 'chart'>('text')
+  
+  // CSV paste state
+  const [csvPasteText, setCsvPasteText] = useState('')
 
   // Theme-aware styling helpers
   const getBgClass = () => {
@@ -171,7 +196,85 @@ export default function ChannelPollsAdmin() {
 
   useEffect(() => {
     fetchPolls()
+    fetchProfiles()
   }, [])
+  
+  // Fetch profiles for user search
+  const fetchProfiles = async () => {
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .order('full_name', { ascending: true })
+      
+      if (!error && data) {
+        setAllProfiles(data)
+      }
+    } catch (err) {
+      console.error('Error fetching profiles:', err)
+    }
+  }
+  
+  // Debounced user search
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    
+    if (userSearchQuery.length < 1) {
+      setUserSuggestions([])
+      setShowUserSuggestions(false)
+      return
+    }
+    
+    debounceTimerRef.current = setTimeout(() => {
+      const searchLower = userSearchQuery.toLowerCase()
+      const filtered = allProfiles.filter(profile => {
+        const name = profile.full_name?.toLowerCase() || ''
+        const email = profile.email?.toLowerCase() || ''
+        return name.includes(searchLower) || email.includes(searchLower)
+      }).slice(0, 5)
+      
+      setUserSuggestions(filtered)
+      setShowUserSuggestions(filtered.length > 0)
+      setSelectedUserIndex(-1)
+    }, 200)
+    
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [userSearchQuery, allProfiles])
+  
+  // Handle user search keyboard navigation
+  const handleUserSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showUserSuggestions || userSuggestions.length === 0) return
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setSelectedUserIndex(prev => (prev < userSuggestions.length - 1 ? prev + 1 : prev))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setSelectedUserIndex(prev => (prev > 0 ? prev - 1 : -1))
+    } else if (e.key === 'Enter' && selectedUserIndex >= 0) {
+      e.preventDefault()
+      const selected = userSuggestions[selectedUserIndex]
+      setFormData({ ...formData, asked_by: selected.full_name || selected.email || '' })
+      setUserSearchQuery('')
+      setShowUserSuggestions(false)
+    } else if (e.key === 'Escape') {
+      setShowUserSuggestions(false)
+    }
+  }
+  
+  const handleSelectUser = (profile: { full_name: string | null; email: string | null }) => {
+    setFormData({ ...formData, asked_by: profile.full_name || profile.email || '' })
+    setUserSearchQuery('')
+    setShowUserSuggestions(false)
+    userSearchRef.current?.blur()
+  }
 
   // Handle add
   const handleAdd = async () => {
@@ -193,8 +296,17 @@ export default function ChannelPollsAdmin() {
         try {
           funFactContent = JSON.parse(formData.fun_fact_content)
         } catch {
-          // If not valid JSON, treat as comma-separated list
-          funFactContent = formData.fun_fact_content.split(',').map(item => item.trim()).filter(Boolean)
+          // If not valid JSON and it's text type, treat as comma-separated list
+          if (funFactType === 'text') {
+            funFactContent = formData.fun_fact_content.split(',').map(item => item.trim()).filter(Boolean)
+          } else {
+            // For chart type, try to parse as JSON object
+            try {
+              funFactContent = JSON.parse(formData.fun_fact_content)
+            } catch {
+              funFactContent = { type: 'bar', data: formData.fun_fact_content.split(',').map(item => item.trim()).filter(Boolean) }
+            }
+          }
         }
       }
 
@@ -267,6 +379,28 @@ export default function ChannelPollsAdmin() {
       display_order: item.display_order,
     })
     setPollOptions(item.options || [])
+    setUserSearchQuery(item.asked_by || '')
+    setImagePreview(item.image_url || null)
+    
+    // Determine fun fact type
+    if (item.fun_fact_content) {
+      try {
+        const parsed = typeof item.fun_fact_content === 'string' 
+          ? JSON.parse(item.fun_fact_content) 
+          : item.fun_fact_content
+        // If it's an object with chart data structure, it's a chart
+        if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) && parsed.type) {
+          setFunFactType('chart')
+        } else {
+          setFunFactType('text')
+        }
+      } catch {
+        setFunFactType('text')
+      }
+    } else {
+      setFunFactType('text')
+    }
+    
     setIsEditDialogOpen(true)
   }
 
@@ -291,7 +425,17 @@ export default function ChannelPollsAdmin() {
         try {
           funFactContent = JSON.parse(formData.fun_fact_content)
         } catch {
-          funFactContent = formData.fun_fact_content.split(',').map(item => item.trim()).filter(Boolean)
+          // If not valid JSON and it's text type, treat as comma-separated list
+          if (funFactType === 'text') {
+            funFactContent = formData.fun_fact_content.split(',').map(item => item.trim()).filter(Boolean)
+          } else {
+            // For chart type, try to parse as JSON object
+            try {
+              funFactContent = JSON.parse(formData.fun_fact_content)
+            } catch {
+              funFactContent = { type: 'bar', data: formData.fun_fact_content.split(',').map(item => item.trim()).filter(Boolean) }
+            }
+          }
         }
       }
 
@@ -422,6 +566,106 @@ export default function ChannelPollsAdmin() {
   const removeOption = (index: number) => {
     setPollOptions(pollOptions.filter((_, i) => i !== index))
   }
+  
+  // Handle CSV paste for options
+  const handleCsvPaste = () => {
+    if (!csvPasteText.trim()) return
+    
+    try {
+      const lines = csvPasteText.trim().split('\n')
+      const newOptions: PollOption[] = []
+      
+      lines.forEach((line, idx) => {
+        const trimmed = line.trim()
+        if (!trimmed) return
+        
+        // Try to parse CSV format: "Option Name,Rating" or just "Option Name"
+        const parts = trimmed.split(',').map(p => p.trim())
+        const name = parts[0]
+        const rating = parts[1] ? parseInt(parts[1]) : null
+        
+        if (name) {
+          newOptions.push({
+            name,
+            rank: rating !== null && !isNaN(rating) ? rating : (idx + 1),
+            display_order: pollOptions.length + newOptions.length + 1,
+          })
+        }
+      })
+      
+      if (newOptions.length > 0) {
+        setPollOptions([...pollOptions, ...newOptions])
+        setCsvPasteText('')
+        setError(null)
+      } else {
+        setError('No valid options found in CSV. Format: "Option Name,Rating" or "Option Name"')
+      }
+    } catch (err: any) {
+      setError('Failed to parse CSV: ' + err.message)
+    }
+  }
+  
+  // Handle image upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be less than 5MB')
+      return
+    }
+
+    setUploadingImage(true)
+    setError(null)
+
+    try {
+      const supabase = createClient()
+      const fileExt = file.name.split('.').pop()
+      const fileName = `poll-image-${Date.now()}.${fileExt}`
+      const filePath = `${user.id}/${fileName}`
+
+      // Preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+
+      // Upload to Supabase storage (using work-sample-thumbnails bucket or create a new one)
+      const { error: uploadError } = await supabase.storage
+        .from('work-sample-thumbnails')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('work-sample-thumbnails')
+        .getPublicUrl(filePath)
+
+      setFormData({ ...formData, image_url: publicUrl })
+      
+      // Reset file input
+      if (imageUploadRef.current) {
+        imageUploadRef.current.value = ''
+      }
+    } catch (err: any) {
+      console.error('Error uploading image:', err)
+      setError(err.message || 'Failed to upload image')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
 
   const resetForm = () => {
     setFormData({
@@ -430,7 +674,7 @@ export default function ChannelPollsAdmin() {
       asked_by: '',
       date: getTodayDate(),
       total_responses: 0,
-      is_ranking: false,
+      is_ranking: true, // Always ranking polls
       is_active: true,
       is_featured: false,
       image_url: '',
@@ -443,6 +687,10 @@ export default function ChannelPollsAdmin() {
     setNewOptionValue('')
     setError(null)
     setSuccess(false)
+    setUserSearchQuery('')
+    setImagePreview(null)
+    setCsvPasteText('')
+    setFunFactType('text')
   }
 
   const filteredPolls = polls.filter(poll => {
@@ -543,14 +791,59 @@ export default function ChannelPollsAdmin() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="relative">
                     <Label className={cardStyle.text}>Asked By</Label>
                     <Input
-                      value={formData.asked_by}
-                      onChange={(e) => setFormData({ ...formData, asked_by: e.target.value })}
+                      ref={userSearchRef}
+                      value={userSearchQuery || formData.asked_by}
+                      onChange={(e) => {
+                        setUserSearchQuery(e.target.value)
+                        setFormData({ ...formData, asked_by: e.target.value })
+                      }}
+                      onKeyDown={handleUserSearchKeyDown}
+                      onFocus={() => {
+                        if (userSearchQuery) {
+                          const searchLower = userSearchQuery.toLowerCase()
+                          const filtered = allProfiles.filter(profile => {
+                            const name = profile.full_name?.toLowerCase() || ''
+                            const email = profile.email?.toLowerCase() || ''
+                            return name.includes(searchLower) || email.includes(searchLower)
+                          }).slice(0, 5)
+                          setUserSuggestions(filtered)
+                          setShowUserSuggestions(filtered.length > 0)
+                        }
+                      }}
                       className={`mt-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="Rebecca Smith"
+                      placeholder="Search user..."
                     />
+                    {showUserSuggestions && userSuggestions.length > 0 && (
+                      <div
+                        ref={userSuggestionsRef}
+                        className={`absolute z-50 w-full mt-1 ${cardStyle.bg} ${cardStyle.border} border rounded-lg shadow-lg max-h-48 overflow-y-auto`}
+                      >
+                        {userSuggestions.map((profile, idx) => (
+                          <div
+                            key={profile.id}
+                            onClick={() => handleSelectUser(profile)}
+                            className={`px-4 py-2 cursor-pointer hover:bg-opacity-20 ${
+                              idx === selectedUserIndex ? 'bg-opacity-20' : ''
+                            }`}
+                            style={{
+                              backgroundColor: idx === selectedUserIndex ? cardStyle.accent + '40' : 'transparent'
+                            }}
+                          >
+                            <div className={cardStyle.text}>
+                              {profile.full_name || profile.email}
+                            </div>
+                            {profile.full_name && profile.email && (
+                              <div className={`text-xs ${cardStyle.text}/60`}>
+                                {profile.email}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Label className={cardStyle.text}>Total Responses</Label>
@@ -565,13 +858,56 @@ export default function ChannelPollsAdmin() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className={cardStyle.text}>Image URL</Label>
-                    <Input
-                      value={formData.image_url}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                      className={`mt-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                      placeholder="/thxgiving.png"
-                    />
+                    <Label className={cardStyle.text}>Image</Label>
+                    <div className="mt-1 space-y-2">
+                      {imagePreview && (
+                        <div className="relative inline-block">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="max-w-full h-32 object-contain rounded border"
+                            style={{ borderColor: cardStyle.accent + '40' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setImagePreview(null)
+                              setFormData({ ...formData, image_url: '' })
+                            }}
+                            className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white hover:bg-red-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <Input
+                          value={formData.image_url}
+                          onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                          className={`flex-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                          placeholder="/thxgiving.png or upload"
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => imageUploadRef.current?.click()}
+                          disabled={uploadingImage}
+                          className={`${cardStyle.border} border ${cardStyle.text} h-10 px-3`}
+                        >
+                          {uploadingImage ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Upload className="w-4 h-4" />
+                          )}
+                        </Button>
+                        <input
+                          ref={imageUploadRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <Label className={cardStyle.text}>Display Order</Label>
@@ -595,25 +931,66 @@ export default function ChannelPollsAdmin() {
                 </div>
 
                 <div>
-                  <Label className={cardStyle.text}>Fun Fact Content (JSON array or comma-separated)</Label>
-                  <Textarea
-                    value={formData.fun_fact_content}
-                    onChange={(e) => setFormData({ ...formData, fun_fact_content: e.target.value })}
-                    className={`mt-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                    placeholder='["turkey", "custard", "caramel"] or turkey, custard, caramel'
-                    rows={2}
-                  />
+                  <div className="flex items-center gap-4 mb-2">
+                    <Label className={cardStyle.text}>Fun Fact Type</Label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="funFactType"
+                          checked={funFactType === 'text'}
+                          onChange={() => setFunFactType('text')}
+                          className="w-4 h-4"
+                        />
+                        <span className={cardStyle.text}>Text</span>
+                        <FileText className="w-4 h-4" />
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="funFactType"
+                          checked={funFactType === 'chart'}
+                          onChange={() => setFunFactType('chart')}
+                          className="w-4 h-4"
+                        />
+                        <span className={cardStyle.text}>Chart</span>
+                        <BarChart className="w-4 h-4" />
+                      </label>
+                    </div>
+                  </div>
+                  {funFactType === 'text' ? (
+                    <Textarea
+                      value={formData.fun_fact_content}
+                      onChange={(e) => setFormData({ ...formData, fun_fact_content: e.target.value })}
+                      className={`mt-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                      placeholder='["turkey", "custard", "caramel"] or turkey, custard, caramel'
+                      rows={3}
+                    />
+                  ) : (
+                    <Textarea
+                      value={formData.fun_fact_content}
+                      onChange={(e) => setFormData({ ...formData, fun_fact_content: e.target.value })}
+                      className={`mt-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} font-mono text-sm`}
+                      placeholder='{"type": "bar", "data": [{"label": "Option 1", "value": 10}, {"label": "Option 2", "value": 20}]}'
+                      rows={6}
+                    />
+                  )}
+                  <p className={`text-xs mt-1 ${cardStyle.text}/60`}>
+                    {funFactType === 'text' 
+                      ? 'Enter as JSON array or comma-separated values'
+                      : 'Enter as JSON object with chart configuration (type, data, etc.)'}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-6">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label className="flex items-center gap-2 cursor-pointer opacity-60">
                     <input
                       type="checkbox"
                       checked={formData.is_ranking}
-                      onChange={(e) => setFormData({ ...formData, is_ranking: e.target.checked })}
+                      disabled
                       className="w-4 h-4"
                     />
-                    <span className={cardStyle.text}>Ranking Poll</span>
+                    <span className={cardStyle.text}>Ranking Poll (always enabled)</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -795,13 +1172,59 @@ export default function ChannelPollsAdmin() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="relative">
                   <Label className={cardStyle.text}>Asked By</Label>
                   <Input
-                    value={formData.asked_by}
-                    onChange={(e) => setFormData({ ...formData, asked_by: e.target.value })}
+                    ref={userSearchRef}
+                    value={userSearchQuery || formData.asked_by}
+                    onChange={(e) => {
+                      setUserSearchQuery(e.target.value)
+                      setFormData({ ...formData, asked_by: e.target.value })
+                    }}
+                    onKeyDown={handleUserSearchKeyDown}
+                    onFocus={() => {
+                      if (userSearchQuery) {
+                        const searchLower = userSearchQuery.toLowerCase()
+                        const filtered = allProfiles.filter(profile => {
+                          const name = profile.full_name?.toLowerCase() || ''
+                          const email = profile.email?.toLowerCase() || ''
+                          return name.includes(searchLower) || email.includes(searchLower)
+                        }).slice(0, 5)
+                        setUserSuggestions(filtered)
+                        setShowUserSuggestions(filtered.length > 0)
+                      }
+                    }}
                     className={`mt-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    placeholder="Search user..."
                   />
+                  {showUserSuggestions && userSuggestions.length > 0 && (
+                    <div
+                      ref={userSuggestionsRef}
+                      className={`absolute z-50 w-full mt-1 ${cardStyle.bg} ${cardStyle.border} border rounded-lg shadow-lg max-h-48 overflow-y-auto`}
+                    >
+                      {userSuggestions.map((profile, idx) => (
+                        <div
+                          key={profile.id}
+                          onClick={() => handleSelectUser(profile)}
+                          className={`px-4 py-2 cursor-pointer hover:bg-opacity-20 ${
+                            idx === selectedUserIndex ? 'bg-opacity-20' : ''
+                          }`}
+                          style={{
+                            backgroundColor: idx === selectedUserIndex ? cardStyle.accent + '40' : 'transparent'
+                          }}
+                        >
+                          <div className={cardStyle.text}>
+                            {profile.full_name || profile.email}
+                          </div>
+                          {profile.full_name && profile.email && (
+                            <div className={`text-xs ${cardStyle.text}/60`}>
+                              {profile.email}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Label className={cardStyle.text}>Total Responses</Label>
@@ -816,12 +1239,56 @@ export default function ChannelPollsAdmin() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className={cardStyle.text}>Image URL</Label>
-                  <Input
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    className={`mt-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                  />
+                  <Label className={cardStyle.text}>Image</Label>
+                  <div className="mt-1 space-y-2">
+                    {imagePreview && (
+                      <div className="relative inline-block">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="max-w-full h-32 object-contain rounded border"
+                          style={{ borderColor: cardStyle.accent + '40' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImagePreview(null)
+                            setFormData({ ...formData, image_url: '' })
+                          }}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white hover:bg-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Input
+                        value={formData.image_url}
+                        onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                        className={`flex-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                        placeholder="/thxgiving.png or upload"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => imageUploadRef.current?.click()}
+                        disabled={uploadingImage}
+                        className={`${cardStyle.border} border ${cardStyle.text} h-10 px-3`}
+                      >
+                        {uploadingImage ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Upload className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <input
+                        ref={imageUploadRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <Label className={cardStyle.text}>Display Order</Label>
@@ -844,24 +1311,65 @@ export default function ChannelPollsAdmin() {
               </div>
 
               <div>
-                <Label className={cardStyle.text}>Fun Fact Content</Label>
-                <Textarea
-                  value={formData.fun_fact_content}
-                  onChange={(e) => setFormData({ ...formData, fun_fact_content: e.target.value })}
-                  className={`mt-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
-                  rows={2}
-                />
+                <div className="flex items-center gap-4 mb-2">
+                  <Label className={cardStyle.text}>Fun Fact Type</Label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="funFactTypeEdit"
+                        checked={funFactType === 'text'}
+                        onChange={() => setFunFactType('text')}
+                        className="w-4 h-4"
+                      />
+                      <span className={cardStyle.text}>Text</span>
+                      <FileText className="w-4 h-4" />
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="funFactTypeEdit"
+                        checked={funFactType === 'chart'}
+                        onChange={() => setFunFactType('chart')}
+                        className="w-4 h-4"
+                      />
+                      <span className={cardStyle.text}>Chart</span>
+                      <BarChart className="w-4 h-4" />
+                    </label>
+                  </div>
+                </div>
+                {funFactType === 'text' ? (
+                  <Textarea
+                    value={formData.fun_fact_content}
+                    onChange={(e) => setFormData({ ...formData, fun_fact_content: e.target.value })}
+                    className={`mt-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
+                    rows={3}
+                  />
+                ) : (
+                  <Textarea
+                    value={formData.fun_fact_content}
+                    onChange={(e) => setFormData({ ...formData, fun_fact_content: e.target.value })}
+                    className={`mt-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} font-mono text-sm`}
+                    placeholder='{"type": "bar", "data": [{"label": "Option 1", "value": 10}, {"label": "Option 2", "value": 20}]}'
+                    rows={6}
+                  />
+                )}
+                <p className={`text-xs mt-1 ${cardStyle.text}/60`}>
+                  {funFactType === 'text' 
+                    ? 'Enter as JSON array or comma-separated values'
+                    : 'Enter as JSON object with chart configuration (type, data, etc.)'}
+                </p>
               </div>
 
               <div className="flex items-center gap-6">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer opacity-60">
                   <input
                     type="checkbox"
                     checked={formData.is_ranking}
-                    onChange={(e) => setFormData({ ...formData, is_ranking: e.target.checked })}
+                    disabled
                     className="w-4 h-4"
                   />
-                  <span className={cardStyle.text}>Ranking Poll</span>
+                  <span className={cardStyle.text}>Ranking Poll (always enabled)</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -928,6 +1436,29 @@ export default function ChannelPollsAdmin() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
+              {/* CSV Paste Section */}
+              <div className="p-4 border rounded-lg" style={{ borderColor: cardStyle.accent + '40' }}>
+                <Label className={cardStyle.text}>Paste CSV (Option Name, Rating)</Label>
+                <Textarea
+                  value={csvPasteText}
+                  onChange={(e) => setCsvPasteText(e.target.value)}
+                  className={`mt-1 ${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} font-mono text-sm`}
+                  placeholder="Option 1, 5&#10;Option 2, 4&#10;Option 3, 3"
+                  rows={4}
+                />
+                <Button
+                  onClick={handleCsvPaste}
+                  className={`mt-2 ${cardStyle.border} border ${cardStyle.text}`}
+                  disabled={!csvPasteText.trim()}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add from CSV
+                </Button>
+                <p className={`text-xs mt-1 ${cardStyle.text}/60`}>
+                  Format: Option Name, Rating (one per line). Rating is optional.
+                </p>
+              </div>
+              
               <div className="flex gap-2">
                 <Input
                   value={newOptionName}
