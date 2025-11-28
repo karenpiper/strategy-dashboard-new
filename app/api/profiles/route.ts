@@ -164,3 +164,157 @@ export async function PUT(request: NextRequest) {
   }
 }
 
+// POST - Create a new user (admin only)
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    // Check if user is admin
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('base_role')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile || profile.base_role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const { email, password, ...profileData } = body
+
+    if (!email || !email.trim()) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
+    }
+
+    // Use admin client to create user
+    const supabaseAdmin = await getSupabaseAdminClient()
+
+    // Create auth user first
+    let authUserId: string
+    if (password && password.trim()) {
+      // Create user with password
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: email.trim(),
+        password: password,
+        email_confirm: true, // Auto-confirm email
+      })
+
+      if (authError) {
+        console.error('Error creating auth user:', authError)
+        return NextResponse.json({ error: 'Failed to create user', details: authError.message }, { status: 500 })
+      }
+
+      if (!authData.user) {
+        return NextResponse.json({ error: 'Failed to create user account' }, { status: 500 })
+      }
+
+      authUserId = authData.user.id
+    } else {
+      // Create user without password (they'll need to reset password)
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: email.trim(),
+        email_confirm: true,
+      })
+
+      if (authError) {
+        console.error('Error creating auth user:', authError)
+        return NextResponse.json({ error: 'Failed to create user', details: authError.message }, { status: 500 })
+      }
+
+      if (!authData.user) {
+        return NextResponse.json({ error: 'Failed to create user account' }, { status: 500 })
+      }
+
+      authUserId = authData.user.id
+    }
+
+    // Format birthday if provided
+    if (profileData.birthday) {
+      const birthdayRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])$/
+      if (!birthdayRegex.test(profileData.birthday)) {
+        // Clean up auth user if profile creation fails
+        await supabaseAdmin.auth.admin.deleteUser(authUserId)
+        return NextResponse.json({ error: 'Birthday must be in MM/DD format (e.g., 03/15)' }, { status: 400 })
+      }
+    }
+
+    // Format start_date if provided
+    if (profileData.start_date) {
+      const date = new Date(profileData.start_date)
+      if (isNaN(date.getTime())) {
+        await supabaseAdmin.auth.admin.deleteUser(authUserId)
+        return NextResponse.json({ error: 'Invalid start date format' }, { status: 400 })
+      }
+    }
+
+    // Validate website URL if provided
+    if (profileData.website && profileData.website.trim() !== '') {
+      try {
+        const url = profileData.website.startsWith('http://') || profileData.website.startsWith('https://') 
+          ? profileData.website 
+          : `https://${profileData.website}`
+        new URL(url)
+      } catch {
+        await supabaseAdmin.auth.admin.deleteUser(authUserId)
+        return NextResponse.json({ error: 'Invalid website URL format' }, { status: 400 })
+      }
+    }
+
+    // Validate base_role if provided
+    if (profileData.base_role && !['user', 'contributor', 'leader', 'admin'].includes(profileData.base_role)) {
+      await supabaseAdmin.auth.admin.deleteUser(authUserId)
+      return NextResponse.json({ error: 'Invalid base_role' }, { status: 400 })
+    }
+
+    // Prepare profile data
+    const profileInsertData: any = {
+      id: authUserId,
+      email: email.trim(),
+      base_role: profileData.base_role || 'user',
+      is_active: profileData.is_active !== undefined ? Boolean(profileData.is_active) : true,
+      ...profileData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
+    // Convert empty strings to null for optional fields
+    const optionalFields = ['full_name', 'avatar_url', 'birthday', 'discipline', 'role', 'bio', 'location', 'website', 'pronouns', 'slack_id', 'manager_id']
+    optionalFields.forEach(field => {
+      if (profileInsertData[field] === '') {
+        profileInsertData[field] = null
+      }
+    })
+
+    // Create profile
+    const { data: newProfile, error: profileInsertError } = await supabaseAdmin
+      .from('profiles')
+      .insert(profileInsertData)
+      .select('*')
+      .single()
+
+    if (profileInsertError) {
+      console.error('Error creating profile:', profileInsertError)
+      // Clean up auth user if profile creation fails
+      await supabaseAdmin.auth.admin.deleteUser(authUserId)
+      return NextResponse.json({ error: 'Failed to create profile', details: profileInsertError.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ data: newProfile }, { status: 201 })
+  } catch (error: any) {
+    console.error('Error in profiles API POST:', error)
+    return NextResponse.json({ error: error.message || 'Failed to create user' }, { status: 500 })
+  }
+}
+

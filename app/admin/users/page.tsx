@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { useMode } from '@/contexts/mode-context'
 import { usePermissions } from '@/contexts/permissions-context'
-import { Users, Search, Save, Loader2, User, Mail, Calendar, Briefcase, Building, Globe, MapPin, Image as ImageIcon, Upload } from 'lucide-react'
+import { Users, Search, Save, Loader2, User, Mail, Calendar, Briefcase, Building, Globe, MapPin, Image as ImageIcon, Upload, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/auth-context'
 import { LocationAutocomplete } from '@/components/location-autocomplete'
@@ -49,6 +49,13 @@ export default function UsersAdminPage() {
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active')
+  const [isCreatingUser, setIsCreatingUser] = useState(false)
+  const [newUser, setNewUser] = useState<Partial<UserProfile>>({
+    email: '',
+    full_name: '',
+    base_role: 'user',
+    is_active: true,
+  })
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const getBorderColor = () => {
@@ -206,6 +213,54 @@ export default function UsersAdminPage() {
     }
   }
 
+  const handleCreateUser = async () => {
+    if (!newUser.email || !newUser.email.trim()) {
+      setError('Email is required')
+      return
+    }
+
+    try {
+      setSaving(true)
+      setError(null)
+
+      const response = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create user')
+      }
+
+      const result = await response.json()
+      
+      // Add to local state
+      setUsers(prev => [...prev, result.data].sort((a, b) => {
+        const nameA = a.full_name || a.email || ''
+        const nameB = b.full_name || b.email || ''
+        return nameA.localeCompare(nameB)
+      }))
+      
+      // Select the new user
+      setSelectedUser(result.data)
+      setEditingUser(result.data)
+      setIsCreatingUser(false)
+      setNewUser({
+        email: '',
+        full_name: '',
+        base_role: 'user',
+        is_active: true,
+      })
+    } catch (err: any) {
+      console.error('Error creating user:', err)
+      setError(err.message || 'Failed to create user')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const filteredUsers = users.filter(user => {
     // Filter by active/inactive status
     const isActive = user.is_active !== false // Default to true if null
@@ -252,6 +307,27 @@ export default function UsersAdminPage() {
             USER MANAGER
           </h1>
         </div>
+        <Button
+          onClick={() => {
+            setIsCreatingUser(true)
+            setNewUser({
+              email: '',
+              full_name: '',
+              base_role: 'user',
+              is_active: true,
+            })
+            setSelectedUser(null)
+            setEditingUser(null)
+          }}
+          className="flex items-center gap-2"
+          style={{
+            backgroundColor: getBorderColor(),
+            color: mode === 'chaos' ? '#000000' : '#FFFFFF',
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          Add User
+        </Button>
       </div>
 
       {error && (
@@ -363,8 +439,142 @@ export default function UsersAdminPage() {
           </div>
         </Card>
 
+        {/* Create User Form */}
+        {isCreatingUser && (
+          <Card
+            className="lg:col-span-2 flex flex-col h-[calc(100vh-12rem)]"
+            style={{
+              backgroundColor: '#ffffff',
+              borderColor: getBorderColor(),
+              borderWidth: '2px',
+            }}
+          >
+            <div className="p-6 border-b overflow-y-auto flex-1" style={{ borderColor: `${getBorderColor()}40` }}>
+              <h2 className="text-xl font-semibold text-black mb-6">Create New User</h2>
+              
+              <div className="space-y-6">
+                {/* Email (required) */}
+                <div>
+                  <Label className="text-black flex items-center gap-2 mb-2">
+                    <Mail className="w-4 h-4" />
+                    Email *
+                  </Label>
+                  <Input
+                    value={newUser.email || ''}
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                    placeholder="user@example.com"
+                    className="bg-white text-black border-gray-300"
+                    type="email"
+                  />
+                </div>
+
+                {/* Password (optional) */}
+                <div>
+                  <Label className="text-black mb-2">Password (optional)</Label>
+                  <Input
+                    value={(newUser as any).password || ''}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value } as any)}
+                    placeholder="Leave empty to send password reset email"
+                    className="bg-white text-black border-gray-300"
+                    type="password"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    If no password is provided, user will receive a password reset email
+                  </p>
+                </div>
+
+                {/* Full Name */}
+                <div>
+                  <Label className="text-black flex items-center gap-2 mb-2">
+                    <User className="w-4 h-4" />
+                    Full Name
+                  </Label>
+                  <Input
+                    value={newUser.full_name || ''}
+                    onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
+                    placeholder="Full Name"
+                    className="bg-white text-black border-gray-300"
+                  />
+                </div>
+
+                {/* Base Role */}
+                <div>
+                  <Label className="text-black flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4" />
+                    Base Role
+                  </Label>
+                  <select
+                    value={newUser.base_role || 'user'}
+                    onChange={(e) => setNewUser({ ...newUser, base_role: e.target.value as any })}
+                    className="w-full h-9 rounded-md border border-gray-300 bg-white text-black px-3"
+                  >
+                    <option value="user">User</option>
+                    <option value="contributor">Contributor</option>
+                    <option value="leader">Leader</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+                {/* Active Status */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="new_user_is_active"
+                    checked={newUser.is_active !== false}
+                    onChange={(e) => setNewUser({ ...newUser, is_active: e.target.checked })}
+                    className="w-4 h-4 rounded border-gray-300 text-black focus:ring-2 focus:ring-black"
+                  />
+                  <Label htmlFor="new_user_is_active" className="text-black cursor-pointer">
+                    Active
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t flex items-center justify-end gap-4" style={{ borderColor: `${getBorderColor()}40` }}>
+              <Button
+                onClick={() => {
+                  setIsCreatingUser(false)
+                  setNewUser({
+                    email: '',
+                    full_name: '',
+                    base_role: 'user',
+                    is_active: true,
+                  })
+                  setError(null)
+                }}
+                variant="outline"
+                className="border-gray-300 text-black"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateUser}
+                disabled={saving || !newUser.email}
+                className="flex items-center gap-2"
+                style={{
+                  backgroundColor: getBorderColor(),
+                  color: mode === 'chaos' ? '#000000' : '#FFFFFF',
+                }}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    Create User
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Edit Form */}
-        {editingUser && (
+        {editingUser && !isCreatingUser && (
           <Card
             className="lg:col-span-2 flex flex-col h-[calc(100vh-12rem)]"
             style={{
