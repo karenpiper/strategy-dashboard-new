@@ -111,8 +111,8 @@ export default function BeastHistoryPage() {
     <div className={`flex flex-col min-h-screen ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       <SiteHeader />
 
-      <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
-        <div className="flex gap-6">
+      <main className="w-full max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
+        <div className="flex gap-6 w-full">
           {/* Left Sidebar Card */}
           <Card className={`w-80 flex-shrink-0 min-w-80 ${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`} style={{ 
             borderColor: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.primaryPair : '#FFFFFF',

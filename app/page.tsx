@@ -1883,7 +1883,7 @@ export default function TeamDashboard() {
     <div className={`flex flex-col ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       <SiteHeader rightContent={horoscopeImageActions} />
 
-      <main className="max-w-[1200px] mx-auto px-6 py-4 flex-1 pb-0 pt-24 relative">
+      <main className="w-full max-w-[1200px] mx-auto px-6 py-4 flex-1 pb-0 pt-24 relative">
         {/* Hero Section and Quick Links - Side by Side */}
         <section className="mb-12 relative">
           <div className="flex items-stretch gap-4 w-full">

@@ -160,7 +160,7 @@ export default function WorkSamplesPage() {
     <div className={`flex flex-col ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       <SiteHeader />
 
-      <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
+      <main className="w-full max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">

@@ -565,8 +565,8 @@ export default function ProfilePage() {
     <div className={`flex flex-col ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       <SiteHeader />
 
-      <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
-        <div className="flex gap-6">
+      <main className="w-full max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
+        <div className="flex gap-6 w-full">
           {/* Left Sidebar Card - Matching Admin Panel Style */}
           <Card className={`w-1/4 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-4 flex flex-col sticky top-24 h-fit`} style={{ 
             borderColor: mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF',
