@@ -2141,20 +2141,25 @@ export default function TeamDashboard() {
                       >
                         {mode === 'code' ? '[BRIEF]' : 'Brief'} {mode !== 'code' && <FileText className="w-3 h-3 ml-2" />}
                       </Button>
-                      {/* Chatbot text link */}
-                      <button
+                      <Button 
                         onClick={() => setShowChatbot(true)}
-                        className={`text-sm font-semibold hover:opacity-70 transition-opacity flex items-center gap-2 ${mode === 'code' ? 'font-mono' : ''}`}
-                        style={{
-                          color: mode === 'chaos' 
-                            ? (isLightBg ? '#000000' : '#FFFFFF')
-                            : mode === 'chill'
-                            ? '#4A1818'
-                            : '#FFFFFF'
+                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
+                        style={mode === 'chaos' ? {
+                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
+                          color: '#FFFFFF'
+                        } : mode === 'chill' ? {
+                          backgroundColor: '#4A1818',
+                          color: '#FFFFFF'
+                        } : mode === 'code' ? {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        } : {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
                         }}
                       >
                         {mode === 'code' ? '[DECKTALK]' : 'DeckTalk'} {mode !== 'code' && <MessageSquare className="w-3 h-3 ml-2" />}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </>
