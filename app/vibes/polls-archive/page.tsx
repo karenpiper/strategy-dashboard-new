@@ -6,8 +6,9 @@ import { useAuth } from '@/contexts/auth-context'
 import { useMode } from '@/contexts/mode-context'
 import { SiteHeader } from '@/components/site-header'
 import { Footer } from '@/components/footer'
-import { ArrowLeft, Users, MessageCircle, Calendar, Quote } from 'lucide-react'
+import { ArrowLeft, Users, MessageCircle, Calendar, Quote, Archive, Music } from 'lucide-react'
 import Link from 'next/link'
+import { Card } from '@/components/ui/card'
 
 interface WeeklyQuestionAnswer {
   id: string
@@ -55,6 +56,18 @@ export default function PollsArchivePage() {
   const getAccentColor = () => {
     return mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF'
   }
+
+  // RED SYSTEM colors for vibes page
+  const getRedSystemColors = () => {
+    return {
+      primary: '#FF4C4C',    // Coral Red
+      secondary: '#C41E3A',  // Crimson
+      lightest: '#FFD4C4',  // Peach
+      button: '#00A3E0'     // Ocean Blue (buttons only)
+    }
+  }
+
+  const redSystem = getRedSystemColors()
 
   const formatWeekDate = (weekStartDate: string) => {
     const date = new Date(weekStartDate)

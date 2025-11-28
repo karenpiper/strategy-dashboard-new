@@ -521,3 +521,8 @@ body {
     stroke-dashoffset: -20;
   }
 }
+
+/* Ensure dialogs never exceed site's max-width (1200px including margins) */
+[role="dialog"] {
+  max-width: min(100%, 1200px) !important;
+}

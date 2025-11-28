@@ -291,7 +291,10 @@ export default function TeamDirectoryPage() {
       {/* Profile Dialog */}
       {selectedProfile && (
         <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-          <DialogContent className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'}`}>
+          <DialogContent className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} max-w-2xl max-h-[90vh] overflow-y-auto`} style={{ 
+            borderColor: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF',
+            borderWidth: mode === 'chaos' ? '2px' : '0px'
+          }}>
             <DialogHeader>
               <DialogTitle className={mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}>
                 {selectedProfile.full_name || selectedProfile.email || 'Unknown'}
