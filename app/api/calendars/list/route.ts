@@ -63,10 +63,12 @@ export async function GET(request: NextRequest) {
     // Provide more helpful error messages
     let errorMessage = error.message || 'Failed to list calendars'
     let statusCode = 500
+    let tokenExpired = false
     
-    if (error.code === 401 || error.message?.includes('Invalid Credentials')) {
+    if (error.code === 401 || error.message?.includes('Invalid Credentials') || error.message?.includes('invalid_token')) {
       errorMessage = 'Invalid or expired access token. Please re-authenticate with calendar permissions.'
       statusCode = 401
+      tokenExpired = true
     } else if (error.code === 403 || error.message?.includes('Insufficient Permission')) {
       errorMessage = 'Access token does not have calendar permissions. Please grant calendar access.'
       statusCode = 403
@@ -75,6 +77,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         error: errorMessage,
+        tokenExpired,
         details: process.env.NODE_ENV === 'development' ? error.toString() : undefined,
       },
       { status: statusCode }
