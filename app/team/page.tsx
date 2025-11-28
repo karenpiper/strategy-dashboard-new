@@ -1044,9 +1044,9 @@ export default function TeamPage() {
 
           </div>
         </div>
+
+        <Footer />
       </main>
-      
-      <Footer />
       
       {/* Profile View Dialog */}
       <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>

@@ -1206,9 +1206,9 @@ export default function VibesPage() {
             )}
           </DialogContent>
         </Dialog>
-      </main>
 
-      <Footer />
+        <Footer />
+      </main>
     </div>
   )
 }

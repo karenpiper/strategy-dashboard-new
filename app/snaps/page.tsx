@@ -599,9 +599,9 @@ export default function SnapsPage() {
             </div>
           </div>
         </div>
-      </main>
 
-      <Footer />
+        <Footer />
+      </main>
 
       <AddSnapDialog
         open={showAddDialog}
