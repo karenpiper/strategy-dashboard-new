@@ -253,8 +253,9 @@ export default function TeamDirectoryPage() {
                   <span className="font-black uppercase text-sm">Birthdays</span>
                 </Link>
                 
+                {/* Links to separate pages */}
                 <Link
-                  href="/team"
+                  href="/team/beast-history"
                   className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
                     mode === 'chaos'
                       ? 'bg-[#00C896]/30 text-white/80 hover:bg-[#00C896]/50 text-white'
@@ -263,11 +264,10 @@ export default function TeamDirectoryPage() {
                       : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
                   }`}
                 >
-                  <Trophy className="w-4 h-4" />
-                  <span className="font-black uppercase text-sm">Leaderboard</span>
+                  <Crown className="w-4 h-4" />
+                  <span className="font-black uppercase text-sm">History of the Beast</span>
                 </Link>
                 
-                {/* Links to separate pages */}
                 <Link
                   href="/team/directory"
                   className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${

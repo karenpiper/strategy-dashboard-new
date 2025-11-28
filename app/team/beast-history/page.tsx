@@ -231,20 +231,6 @@ export default function BeastHistoryPage() {
                   <span className="font-black uppercase text-sm">Birthdays</span>
                 </Link>
                 
-                <Link
-                  href="/team"
-                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
-                    mode === 'chaos'
-                      ? 'bg-[#00C896]/30 text-white/80 hover:bg-[#00C896]/50 text-white'
-                      : mode === 'chill'
-                      ? 'bg-white/30 text-[#4A1818]/60 hover:bg-white/50 text-[#4A1818]'
-                      : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
-                  }`}
-                >
-                  <Trophy className="w-4 h-4" />
-                  <span className="font-black uppercase text-sm">Leaderboard</span>
-                </Link>
-                
                 {/* Links to separate pages */}
                 <Link
                   href="/team/directory"
@@ -291,153 +277,143 @@ export default function BeastHistoryPage() {
           </div>
           
           {beastBabeHistory.length > 0 ? (
-            <div className="relative">
+            <div className="relative" style={{ minHeight: `${Math.max(600, beastBabeHistory.length * 100)}px`, padding: '2rem 0' }}>
+              {/* Curving Path SVG */}
+              <svg 
+                className="absolute inset-0 w-full h-full" 
+                style={{ overflow: 'visible', pointerEvents: 'none' }}
+                viewBox="0 0 1000 1000"
+                preserveAspectRatio="xMidYMid meet"
+              >
+                <defs>
+                  <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor={greenColors.primary} stopOpacity="0.8" />
+                    <stop offset="50%" stopColor={greenColors.complementary} stopOpacity="0.6" />
+                    <stop offset="100%" stopColor={greenColors.primaryPair} stopOpacity="0.4" />
+                  </linearGradient>
+                </defs>
+                {/* Curving path - candyland style */}
+                <path
+                  d={(() => {
+                    const total = beastBabeHistory.length
+                    let path = `M 100 50`
+                    
+                    for (let i = 1; i < total; i++) {
+                      const progress = i / (total - 1)
+                      // Create a curving path that snakes across
+                      const baseX = 100 + progress * 700
+                      const baseY = 50 + progress * 900
+                      const curveX = baseX + Math.sin(progress * Math.PI * 6) * 80
+                      const curveY = baseY + Math.cos(progress * Math.PI * 4) * 60
+                      
+                      if (i === 1) {
+                        path += ` Q ${baseX - 50} ${baseY - 30}, ${curveX} ${curveY}`
+                      } else {
+                        const prevProgress = (i - 1) / (total - 1)
+                        const prevX = 100 + prevProgress * 700 + Math.sin(prevProgress * Math.PI * 6) * 80
+                        const prevY = 50 + prevProgress * 900 + Math.cos(prevProgress * Math.PI * 4) * 60
+                        const cp1x = prevX + (curveX - prevX) * 0.3
+                        const cp1y = prevY + (curveY - prevY) * 0.3
+                        const cp2x = prevX + (curveX - prevX) * 0.7
+                        const cp2y = prevY + (curveY - prevY) * 0.7
+                        path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${curveX} ${curveY}`
+                      }
+                    }
+                    return path
+                  })()}
+                  fill="none"
+                  stroke="url(#pathGradient)"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ filter: 'drop-shadow(0 0 6px rgba(0, 200, 150, 0.4))' }}
+                />
+              </svg>
+              
+              {/* Avatars positioned along the path */}
               {beastBabeHistory.map((entry, index) => {
-                const isLast = index === beastBabeHistory.length - 1
+                const progress = index / (beastBabeHistory.length - 1)
+                // Calculate position along the curving path
+                const baseX = 100 + progress * 700
+                const baseY = 50 + progress * 900
+                const pathX = baseX + Math.sin(progress * Math.PI * 6) * 80
+                const pathY = baseY + Math.cos(progress * Math.PI * 4) * 60
+                
+                // Position avatar offset to the side of the path
+                const angle = Math.atan2(
+                  Math.cos(progress * Math.PI * 4) * -60,
+                  Math.sin(progress * Math.PI * 6) * 80
+                )
+                const offsetX = Math.cos(angle + Math.PI / 2) * 100
+                const offsetY = Math.sin(angle + Math.PI / 2) * 100
                 
                 return (
-                  <div key={entry.id} className="relative pb-8">
-                    {/* Rounded Connecting Line */}
-                    {!isLast && (
-                      <div className="absolute left-8 top-20 z-0" style={{ width: '2px', height: 'calc(100% - 0.5rem)' }}>
-                        {/* Curved SVG line */}
-                        <svg 
-                          className="absolute inset-0 w-full h-full" 
-                          style={{ overflow: 'visible' }}
-                        >
-                          <path
-                            d={`M 0 0 Q 20 ${(beastBabeHistory.length - index) * 10} 0 ${(beastBabeHistory.length - index) * 20} L 0 100%`}
-                            fill="none"
-                            stroke={greenColors.primary}
-                            strokeWidth="2"
-                            strokeDasharray="4 4"
-                            opacity="0.6"
-                            className="animate-pulse"
-                          />
-                          {/* Animated dot */}
-                          <circle
-                            cx="0"
-                            cy="0"
-                            r="4"
-                            fill={greenColors.primary}
-                            opacity="0.8"
-                            className="animate-ping"
-                            style={{
-                              animationDelay: `${index * 0.5}s`,
-                              animationDuration: '2s'
-                            }}
-                          />
-                        </svg>
-                        {/* Straight line with gradient */}
-                        <div 
-                          className="absolute top-0 left-0 w-0.5 h-full"
-                          style={{
-                            background: `linear-gradient(to bottom, ${greenColors.primary}60, ${greenColors.complementary}60, transparent)`,
-                            borderRadius: '2px'
-                          }}
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="flex items-start gap-4 relative z-10">
-                      {/* Avatar with animated border */}
+                  <div
+                    key={entry.id}
+                    className="absolute z-10"
+                    style={{
+                      left: `${((pathX + offsetX) / 1000) * 100}%`,
+                      top: `${((pathY + offsetY) / 1000) * 100}%`,
+                      transform: 'translate(-50%, -50%)'
+                    }}
+                  >
+                    <div className="relative group">
+                      {/* Avatar */}
                       <div className="relative">
-                        <div 
-                          className="absolute inset-0 rounded-full animate-pulse"
-                          style={{
-                            backgroundColor: greenColors.primary + '30',
-                            transform: 'scale(1.1)'
-                          }}
-                        />
                         {entry.user?.avatar_url ? (
                           <img
                             src={entry.user.avatar_url}
                             alt={entry.user.full_name || 'User'}
-                            className="w-16 h-16 rounded-full object-cover border-2 relative z-10"
-                            style={{ borderColor: greenColors.primary }}
+                            className="w-12 h-12 rounded-full object-cover border-2 cursor-pointer transition-transform hover:scale-125"
+                            style={{ 
+                              borderColor: index === 0 ? greenColors.primary : greenColors.complementary,
+                              borderWidth: index === 0 ? '3px' : '2px',
+                              boxShadow: index === 0 ? `0 0 16px ${greenColors.primary}90` : `0 0 8px ${greenColors.complementary}50`
+                            }}
                           />
                         ) : (
                           <div 
-                            className="w-16 h-16 rounded-full flex items-center justify-center border-2 relative z-10"
+                            className="w-12 h-12 rounded-full flex items-center justify-center border-2 cursor-pointer transition-transform hover:scale-125"
                             style={{ 
-                              backgroundColor: greenColors.primaryPair + '40',
-                              borderColor: greenColors.primary
+                              backgroundColor: greenColors.primaryPair + '60',
+                              borderColor: index === 0 ? greenColors.primary : greenColors.complementary,
+                              borderWidth: index === 0 ? '3px' : '2px',
+                              boxShadow: index === 0 ? `0 0 16px ${greenColors.primary}90` : `0 0 8px ${greenColors.complementary}50`
                             }}
                           >
-                            <Crown className="w-8 h-8" style={{ color: greenColors.primary }} />
+                            <Crown className="w-6 h-6" style={{ color: index === 0 ? greenColors.primary : greenColors.complementary }} />
                           </div>
                         )}
                         {/* Crown badge for current */}
                         {index === 0 && (
                           <div 
-                            className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center animate-bounce z-20"
+                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center animate-bounce z-20"
                             style={{ backgroundColor: greenColors.primary }}
                           >
-                            <Crown className="w-4 h-4 text-white" />
+                            <Crown className="w-3 h-3 text-white" />
                           </div>
                         )}
                       </div>
                       
-                      {/* Content */}
-                      <div className="flex-1 pt-1">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <p className={`text-lg font-black ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
+                      {/* Tooltip on hover */}
+                      <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30 whitespace-nowrap">
+                        <div 
+                          className={`px-3 py-2 ${getRoundedClass('rounded-lg')} shadow-lg`}
+                          style={{ 
+                            backgroundColor: mode === 'chaos' ? '#2A2A2A' : mode === 'chill' ? '#FFFFFF' : '#1a1a1a',
+                            border: `1px solid ${greenColors.primary}`
+                          }}
+                        >
+                          <p className={`text-sm font-black ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
                             {entry.user?.full_name || entry.user?.email || 'Unknown'}
                           </p>
-                          {index === 0 && (
-                            <span 
-                              className="text-xs px-2 py-0.5 rounded-full font-black uppercase animate-pulse"
-                              style={{ 
-                                backgroundColor: greenColors.primary,
-                                color: mode === 'chaos' ? '#000' : '#fff'
-                              }}
-                            >
-                              Current
-                            </span>
-                          )}
-                        </div>
-                        
-                        {entry.achievement && (
-                          <p className={`text-sm italic mb-2 ${mode === 'chill' ? 'text-[#4A1818]/80' : 'text-white/80'}`}>
-                            "{entry.achievement}"
+                          <p className={`text-xs ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`}>
+                            {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </p>
-                        )}
-                        
-                        <div className="flex items-center gap-3 text-xs flex-wrap">
-                          <span className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>
-                            {new Date(entry.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                          </span>
-                          
-                          {entry.passed_by && (
-                            <>
-                              <span className={`${mode === 'chill' ? 'text-[#4A1818]/40' : 'text-white/40'}`}>•</span>
-                              <div className="flex items-center gap-2">
-                                <span className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>Passed from</span>
-                                <div className="flex items-center gap-1">
-                                  {entry.passed_by.avatar_url ? (
-                                    <img
-                                      src={entry.passed_by.avatar_url}
-                                      alt={entry.passed_by.full_name || 'User'}
-                                      className="w-5 h-5 rounded-full object-cover border"
-                                      style={{ borderColor: greenColors.complementary }}
-                                    />
-                                  ) : (
-                                    <div 
-                                      className="w-5 h-5 rounded-full flex items-center justify-center border"
-                                      style={{ 
-                                        backgroundColor: greenColors.complementary + '40',
-                                        borderColor: greenColors.complementary
-                                      }}
-                                    >
-                                      <Users className="w-3 h-3" style={{ color: greenColors.complementary }} />
-                                    </div>
-                                  )}
-                                  <span className={`font-semibold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
-                                    {entry.passed_by.full_name || entry.passed_by.email || 'Unknown'}
-                                  </span>
-                                </div>
-                              </div>
-                            </>
+                          {entry.achievement && (
+                            <p className={`text-xs italic mt-1 ${mode === 'chill' ? 'text-[#4A1818]/80' : 'text-white/80'}`}>
+                              "{entry.achievement}"
+                            </p>
                           )}
                         </div>
                       </div>

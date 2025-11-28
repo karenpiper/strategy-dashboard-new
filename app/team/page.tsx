@@ -458,7 +458,7 @@ export default function TeamPage() {
     return mode === 'code' ? 'rounded-none' : defaultClass
   }
   
-  const [activeFilter, setActiveFilter] = useState<'all' | 'anniversaries' | 'birthdays' | 'leaderboard'>('all')
+  const [activeFilter, setActiveFilter] = useState<'all' | 'anniversaries' | 'birthdays'>('all')
 
   if (authLoading || loading) {
     return (
@@ -515,7 +515,7 @@ export default function TeamPage() {
                 ▼ SECTIONS
               </h3>
               <div className="space-y-2">
-                {(['all', 'anniversaries', 'birthdays', 'leaderboard'] as const).map((filter) => (
+                {(['all', 'anniversaries', 'birthdays'] as const).map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setActiveFilter(filter)}
@@ -536,7 +536,6 @@ export default function TeamPage() {
                     {filter === 'all' && <Users className="w-4 h-4" />}
                     {filter === 'anniversaries' && <PartyPopper className="w-4 h-4" />}
                     {filter === 'birthdays' && <Cake className="w-4 h-4" />}
-                    {filter === 'leaderboard' && <Trophy className="w-4 h-4" />}
                     <span className="font-black uppercase text-sm">
                       {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
                     </span>
@@ -544,6 +543,20 @@ export default function TeamPage() {
                 ))}
                 
                 {/* Links to separate pages */}
+                <Link
+                  href="/team/beast-history"
+                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
+                    mode === 'chaos'
+                      ? 'bg-[#00C896]/30 text-white/80 hover:bg-[#00C896]/50 text-white'
+                      : mode === 'chill'
+                      ? 'bg-white/30 text-[#4A1818]/60 hover:bg-white/50 text-[#4A1818]'
+                      : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
+                  }`}
+                >
+                  <Crown className="w-4 h-4" />
+                  <span className="font-black uppercase text-sm">History of the Beast</span>
+                </Link>
+                
                 <Link
                   href="/team/directory"
                   className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
@@ -654,62 +667,10 @@ export default function TeamPage() {
               </Card>
             </div>
 
-            {/* Beast Babe and Snap Leaderboard - Side by Side (1/2 each) - Show for 'all' and 'leaderboard' */}
-            {(activeFilter === 'all' || activeFilter === 'leaderboard') && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                {/* Beast Babe - 1/2 width - Only show for 'all' */}
-                {activeFilter === 'all' && (
-                  <div className="w-full">
-                    <BeastBabeCard />
-                  </div>
-                )}
-                
-                {/* Snap Leaderboard - 1/2 width, full width if only leaderboard */}
-                <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-6 min-h-[600px] flex flex-col ${activeFilter === 'leaderboard' ? 'md:col-span-2' : ''}`} style={{
-                  borderColor: mode === 'chaos' ? '#333333' : mode === 'chill' ? '#E5E5E5' : '#333333',
-                  borderWidth: '1px'
-                }}>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className={`w-12 h-12 ${getRoundedClass('rounded-lg')} flex items-center justify-center`} style={{ backgroundColor: greenColors.primary }}>
-                      <Trophy className="w-6 h-6 text-white" />
-                    </div>
-                    <h2 className={`text-2xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>Snap Leaderboard</h2>
-                  </div>
-                  
-                  <div className="flex-1 overflow-y-auto">
-                    {snapLeaderboard.length > 0 ? (
-                      <div className="space-y-3">
-                        {snapLeaderboard.map((user, index) => (
-                          <div key={user.id} className="flex items-center gap-3">
-                            <div className={`w-10 h-10 ${getRoundedClass('rounded-full')} flex items-center justify-center text-sm font-bold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`} style={{ backgroundColor: greenColors.primary + '20' }}>
-                              {index + 1}
-                            </div>
-                            {user.full_name || user.email ? (
-                              <>
-                                <div className="flex-1 min-w-0">
-                                  <p className={`text-sm font-semibold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'} truncate`}>
-                                    {user.full_name || user.email || 'Unknown'}
-                                  </p>
-                                  <p className={`text-xs ${mode === 'chill' ? 'text-[#4A1818]/50' : 'text-white/50'}`}>
-                                    {user.count} {user.count === 1 ? 'snap' : 'snaps'}
-                                  </p>
-                                </div>
-                              </>
-                            ) : (
-                              <div className="flex-1">
-                                <p className={`text-sm ${mode === 'chill' ? 'text-[#4A1818]/50' : 'text-white/50'}`}>Unknown user</p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <p className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>No snaps yet</p>
-                      </div>
-                    )}
-                  </div>
-                </Card>
+            {/* Beast Babe - Show for 'all' */}
+            {activeFilter === 'all' && (
+              <div className="mb-6">
+                <BeastBabeCard />
               </div>
             )}
 
