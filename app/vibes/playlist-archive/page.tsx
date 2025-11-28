@@ -8,8 +8,9 @@ import { useMode } from '@/contexts/mode-context'
 import { SiteHeader } from '@/components/site-header'
 import { Footer } from '@/components/footer'
 import { PlaylistCard } from '@/components/playlist-card'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Archive, Music, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
+import { Card } from '@/components/ui/card'
 
 interface Playlist {
   id: string
@@ -54,6 +55,18 @@ export default function PlaylistArchivePage() {
   const getRoundedClass = (base: string) => {
     return mode === 'code' ? 'rounded-none' : base
   }
+
+  // RED SYSTEM colors for vibes page
+  const getRedSystemColors = () => {
+    return {
+      primary: '#FF4C4C',    // Coral Red
+      secondary: '#C41E3A',  // Crimson
+      lightest: '#FFD4C4',  // Peach
+      button: '#00A3E0'     // Ocean Blue (buttons only)
+    }
+  }
+
+  const redSystem = getRedSystemColors()
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -113,7 +126,79 @@ export default function PlaylistArchivePage() {
     <div className={`flex flex-col min-h-screen ${getBgClass()} ${getTextClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       <SiteHeader />
 
-      <main className="max-w-[1400px] mx-auto px-6 py-10 flex-1 pt-24">
+      <main className="max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
+        <div className="flex gap-6">
+          {/* Sidebar */}
+          <Card className={`w-80 flex-shrink-0 min-w-80 hidden lg:block ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`}
+            style={{
+              backgroundColor: mode === 'chaos' 
+                ? 'rgba(255, 255, 255, 0.05)' 
+                : mode === 'chill'
+                ? 'rgba(74, 24, 24, 0.05)'
+                : 'rgba(255, 255, 255, 0.05)',
+              border: mode === 'chaos' 
+                ? '1px solid rgba(255, 255, 255, 0.1)' 
+                : mode === 'chill'
+                ? '1px solid rgba(74, 24, 24, 0.1)'
+                : '1px solid rgba(255, 255, 255, 0.1)'
+            }}
+          >
+            <div className="flex items-center gap-2 mb-6">
+              <Archive className="w-5 h-5" style={{ 
+                color: redSystem.primary
+              }} />
+              <h3 className={`text-sm uppercase tracking-wider font-black ${getTextClass()}`}>
+                Archive
+              </h3>
+            </div>
+            <div className="space-y-3">
+              <Link
+                href="/vibes"
+                className={`flex items-center gap-3 ${getRoundedClass('rounded-xl')} px-4 py-3 transition-all hover:opacity-70`}
+                style={{
+                  backgroundColor: mode === 'chaos' 
+                    ? 'rgba(255, 255, 255, 0.05)' 
+                    : mode === 'chill'
+                    ? 'rgba(74, 24, 24, 0.05)'
+                    : 'rgba(255, 255, 255, 0.05)'
+                }}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="text-sm font-semibold">Vibes</span>
+              </Link>
+              <Link
+                href="/vibes/playlist-archive"
+                className={`flex items-center gap-3 ${getRoundedClass('rounded-xl')} px-4 py-3 transition-all hover:opacity-70`}
+                style={{
+                  backgroundColor: mode === 'chaos' 
+                    ? 'rgba(255, 255, 255, 0.05)' 
+                    : mode === 'chill'
+                    ? 'rgba(74, 24, 24, 0.05)'
+                    : 'rgba(255, 255, 255, 0.05)'
+                }}
+              >
+                <Music className="w-4 h-4" />
+                <span className="text-sm font-semibold">Playlist Archive</span>
+              </Link>
+              <Link
+                href="/vibes/polls-archive"
+                className={`flex items-center gap-3 ${getRoundedClass('rounded-xl')} px-4 py-3 transition-all hover:opacity-70`}
+                style={{
+                  backgroundColor: mode === 'chaos' 
+                    ? 'rgba(255, 255, 255, 0.05)' 
+                    : mode === 'chill'
+                    ? 'rgba(74, 24, 24, 0.05)'
+                    : 'rgba(255, 255, 255, 0.05)'
+                }}
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span className="text-sm font-semibold">Polls Archive</span>
+              </Link>
+            </div>
+          </Card>
+
+          {/* Main Content Area */}
+          <div className="flex-1 min-w-0">
         {/* Header */}
         <div className="mb-12">
           <Link 
@@ -157,6 +242,8 @@ export default function PlaylistArchivePage() {
             ))}
           </div>
         )}
+          </div>
+        </div>
         
         <Footer />
       </main>
