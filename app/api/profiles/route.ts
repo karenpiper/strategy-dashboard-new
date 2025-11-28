@@ -295,31 +295,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid base_role' }, { status: 400 })
     }
 
-    // Prepare profile data
+    // Prepare profile data - only include valid profile fields
+    const validProfileFields = [
+      'full_name', 'avatar_url', 'birthday', 'discipline', 'role', 
+      'bio', 'location', 'website', 'pronouns', 'slack_id', 'manager_id',
+      'base_role', 'is_active', 'special_access'
+    ]
+    
     const profileInsertData: any = {
       id: authUserId,
       email: email.trim(),
       base_role: profileData.base_role || 'user',
-      is_active: profileData.is_active !== undefined ? Boolean(profileData.is_active) : true,
-      ...profileData,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
-
-    // Convert empty strings to null for optional fields
-    const optionalFields = ['full_name', 'avatar_url', 'birthday', 'discipline', 'role', 'bio', 'location', 'website', 'pronouns', 'slack_id', 'manager_id']
-    optionalFields.forEach(field => {
-      if (profileInsertData[field] === '') {
-        profileInsertData[field] = null
+    
+    // Only include is_active if the field exists in the database
+    if (profileData.is_active !== undefined) {
+      profileInsertData.is_active = Boolean(profileData.is_active)
+    }
+    
+    // Add only valid profile fields from profileData
+    validProfileFields.forEach(field => {
+      if (profileData[field] !== undefined && profileData[field] !== null) {
+        const value = profileData[field]
+        // Convert empty strings to null for optional fields
+        if (value === '') {
+          profileInsertData[field] = null
+        } else {
+          profileInsertData[field] = value
+        }
       }
     })
 
     // Check if profile already exists (created by trigger)
+    // Use maybeSingle() to avoid throwing error if profile doesn't exist
     const { data: existingProfile, error: checkError } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', authUserId)
-      .single()
+      .maybeSingle()
+
+    // If there's an error checking (other than "not found"), log it but continue
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking for existing profile:', checkError)
+    }
 
     let newProfile
     if (existingProfile) {
@@ -394,10 +414,21 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error in profiles API POST:', error)
     console.error('Error stack:', error.stack)
+    console.error('Error type:', error.constructor?.name)
+    console.error('Error message:', error.message)
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
+    
+    // Extract more details from the error
+    const errorMessage = error.message || 'Failed to create user'
+    const errorDetails = error.details || error.toString()
+    const errorCode = error.code || error.constructor?.name || 'UNKNOWN'
+    
     return NextResponse.json({ 
-      error: error.message || 'Failed to create user',
-      details: error.toString(),
-      type: error.constructor?.name
+      error: errorMessage,
+      details: `Database error creating new user: ${errorDetails}`,
+      code: errorCode,
+      type: error.constructor?.name,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }, { status: 500 })
   }
 }
