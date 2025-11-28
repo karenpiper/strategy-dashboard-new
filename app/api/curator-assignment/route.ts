@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
         curator_name,
         curator_profile_id,
         assignment_date,
+        start_date,
+        end_date,
         is_manual_override,
         assigned_by,
         created_at,
@@ -56,12 +58,27 @@ export async function GET(request: NextRequest) {
       recentAssignments.map(a => a.curator_name.toLowerCase().trim())
     )
 
-    // Get curator counts per person
+    // Get curator counts per person from curator_assignments
     const curatorCounts: Record<string, number> = {}
     assignments?.forEach(assignment => {
       const name = assignment.curator_name.toLowerCase().trim()
       curatorCounts[name] = (curatorCounts[name] || 0) + 1
     })
+
+    // Also count curators from playlists table (historical data)
+    const { data: playlists, error: playlistsError } = await supabase
+      .from('playlists')
+      .select('curator, date')
+      .not('curator', 'is', null)
+
+    if (!playlistsError && playlists) {
+      playlists.forEach(playlist => {
+        if (playlist.curator) {
+          const name = playlist.curator.toLowerCase().trim()
+          curatorCounts[name] = (curatorCounts[name] || 0) + 1
+        }
+      })
+    }
 
     return NextResponse.json({
       assignments: assignments || [],

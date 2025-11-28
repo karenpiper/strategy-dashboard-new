@@ -16,6 +16,8 @@ interface CuratorAssignment {
   curator_name: string
   curator_profile_id: string | null
   assignment_date: string
+  start_date: string
+  end_date: string
   is_manual_override: boolean
   assigned_by: string | null
   created_at: string
@@ -56,6 +58,8 @@ export default function CuratorRotationPage() {
   const [curatorCounts, setCuratorCounts] = useState<Record<string, number>>({})
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
   const [assigning, setAssigning] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     assignment_date: new Date().toISOString().split('T')[0],
     curator_name: '',
@@ -152,7 +156,8 @@ export default function CuratorRotationPage() {
 
   const handleRandomAssign = async () => {
     if (!formData.assignment_date) {
-      alert('Please select a date')
+      setErrorMessage('Please select a date')
+      setTimeout(() => setErrorMessage(null), 5000)
       return
     }
 
@@ -169,14 +174,15 @@ export default function CuratorRotationPage() {
 
       if (!response.ok) {
         const errorText = await response.text()
-        let errorMessage = 'Failed to assign curator'
+        let errorMsg = 'Failed to assign curator'
         try {
           const errorData = JSON.parse(errorText)
-          errorMessage = errorData.error || errorMessage
+          errorMsg = errorData.error || errorMsg
         } catch {
-          errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`
+          errorMsg = errorText || `HTTP ${response.status}: ${response.statusText}`
         }
-        alert(`Error: ${errorMessage}`)
+        setErrorMessage(errorMsg)
+        setTimeout(() => setErrorMessage(null), 5000)
         return
       }
 
@@ -184,7 +190,8 @@ export default function CuratorRotationPage() {
       await fetchData()
       const startDate = new Date(data.assignment.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
       const endDate = new Date(data.assignment.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-      alert(`Curator assigned: ${data.selectedCurator?.full_name || 'Unknown'}\n\nThey've been notified via Slack.\nCuration period: ${startDate} - ${endDate}`)
+      setSuccessMessage(`Curator assigned: ${data.selectedCurator?.full_name || 'Unknown'}. They've been notified via Slack. Curation period: ${startDate} - ${endDate}`)
+      setTimeout(() => setSuccessMessage(null), 5000)
       setIsAssignDialogOpen(false)
       setFormData({
         assignment_date: new Date().toISOString().split('T')[0],
@@ -194,7 +201,8 @@ export default function CuratorRotationPage() {
       })
     } catch (error: any) {
       console.error('Error assigning curator:', error)
-      alert(`Error: ${error.message || 'Failed to assign curator. Please check the console for details.'}`)
+      setErrorMessage(error.message || 'Failed to assign curator. Please check the console for details.')
+      setTimeout(() => setErrorMessage(null), 5000)
     } finally {
       setAssigning(false)
     }
@@ -202,7 +210,8 @@ export default function CuratorRotationPage() {
 
   const handleManualAssign = async () => {
     if (!formData.assignment_date || !formData.curator_name) {
-      alert('Please fill in all required fields')
+      setErrorMessage('Please fill in all required fields')
+      setTimeout(() => setErrorMessage(null), 5000)
       return
     }
 
@@ -229,13 +238,16 @@ export default function CuratorRotationPage() {
           curator_profile_id: '',
           is_manual_override: false
         })
-        alert('Curator assigned successfully!\n\nThey now have curator permissions to create playlists.')
+        setSuccessMessage('Curator assigned successfully! They now have curator permissions to create playlists.')
+        setTimeout(() => setSuccessMessage(null), 5000)
       } else {
-        alert(`Error: ${data.error}`)
+        setErrorMessage(data.error || 'Failed to assign curator')
+        setTimeout(() => setErrorMessage(null), 5000)
       }
     } catch (error: any) {
       console.error('Error assigning curator:', error)
-      alert(`Error: ${error.message}`)
+      setErrorMessage(error.message || 'Failed to assign curator')
+      setTimeout(() => setErrorMessage(null), 5000)
     } finally {
       setAssigning(false)
     }
@@ -259,6 +271,19 @@ export default function CuratorRotationPage() {
         <div className="mb-4">
           <h1 className={`text-2xl font-black uppercase tracking-wider ${getTextClass()} mb-1`}>Curator Rotation</h1>
           <p className={`${getTextClass()}/70 text-sm font-normal mb-2`}>Assign curators independently of playlists. They'll be notified via Slack and have 3 days to create their playlist. Their curation period lasts 7 days after the playlist goes live.</p>
+          
+          {/* Success/Error Messages */}
+          {successMessage && (
+            <div className={`mb-4 p-4 ${getRoundedClass('rounded-xl')}`} style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.2)', borderWidth: '1px' }}>
+              <p className={getCardStyle().text} style={{ color: '#22c55e' }}>{successMessage}</p>
+            </div>
+          )}
+          {errorMessage && (
+            <div className={`mb-4 p-4 ${getRoundedClass('rounded-xl')}`} style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.2)', borderWidth: '1px' }}>
+              <p className={getCardStyle().text} style={{ color: '#ef4444' }}>{errorMessage}</p>
+        </div>
+          )}
+          
           <div className={`${cardStyle.bg} ${cardStyle.border} border ${getRoundedClass('rounded-xl')} p-3 ${cardStyle.text}/80 text-sm mb-2`}>
             <strong>How it works:</strong> Curators are assigned first, then they create playlists. Click "Assign Curator" → Select assignment date → Click "Random Assign". They'll receive a Slack DM immediately. Their curation period starts 3 days later and lasts 1 week. Next curator is auto-assigned 3 days before current period ends.
           </div>
@@ -273,23 +298,26 @@ export default function CuratorRotationPage() {
                 
                 if (!response.ok) {
                   const errorText = await response.text()
-                  let errorMessage = 'Failed to assign curator'
+                  let errorMsg = 'Failed to assign curator'
                   try {
                     const errorData = JSON.parse(errorText)
-                    errorMessage = errorData.error || errorMessage
+                    errorMsg = errorData.error || errorMsg
                   } catch {
-                    errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`
+                    errorMsg = errorText || `HTTP ${response.status}: ${response.statusText}`
                   }
-                  alert(`Error: ${errorMessage}`)
+                  setErrorMessage(errorMsg)
+                  setTimeout(() => setErrorMessage(null), 5000)
                   return
                 }
 
                 const data = await response.json()
                 await fetchData()
-                alert(`Next curator automatically assigned: ${data.selectedCurator?.full_name || 'Unknown'}`)
+                setSuccessMessage(`Next curator automatically assigned: ${data.selectedCurator?.full_name || 'Unknown'}`)
+                setTimeout(() => setSuccessMessage(null), 5000)
               } catch (error: any) {
                 console.error('Error auto-assigning curator:', error)
-                alert(`Error: ${error.message || 'Failed to assign curator. Please check the console for details.'}`)
+                setErrorMessage(error.message || 'Failed to assign curator. Please check the console for details.')
+                setTimeout(() => setErrorMessage(null), 5000)
               } finally {
                 setAssigning(false)
               }
@@ -458,7 +486,7 @@ export default function CuratorRotationPage() {
                           })}
                         </div>
                         <div className={`text-xs ${cardStyle.text}/60 mb-2`}>
-                          Curation Period: {new Date(assignment.start_date).toLocaleDateString()} - {new Date(assignment.end_date).toLocaleDateString()}
+                          Curation Period: {assignment.start_date ? new Date(assignment.start_date).toLocaleDateString() : 'Invalid Date'} - {assignment.end_date ? new Date(assignment.end_date).toLocaleDateString() : 'Invalid Date'}
                         </div>
                         {assignment.playlists ? (
                           <div className="flex items-center gap-2">
@@ -479,7 +507,7 @@ export default function CuratorRotationPage() {
                           </div>
                         ) : (
                           <div className={`text-xs ${cardStyle.text}/60 mt-1`}>
-                            Playlist not created yet (curator has until {new Date(assignment.start_date).toLocaleDateString()} to create it)
+                            Playlist not created yet (curator has until {assignment.start_date ? new Date(assignment.start_date).toLocaleDateString() : 'Invalid Date'} to create it)
                           </div>
                         )}
                       </div>

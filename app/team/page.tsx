@@ -944,7 +944,7 @@ export default function TeamPage() {
       
       {/* Profile View Dialog */}
       <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-        <DialogContent className={`${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} max-w-2xl max-h-[90vh] overflow-y-auto`} style={{ 
+        <DialogContent className={`${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} max-w-[400px] max-h-[90vh] overflow-y-auto`} style={{ 
           borderColor: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF',
           borderWidth: mode === 'chaos' ? '2px' : '0px'
         }}>
