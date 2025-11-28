@@ -69,9 +69,19 @@ export default function WorkSamplesPage() {
 
   const getRoundedClass = (base: string) => {
     if (mode === 'code') {
+      // For rounded-[...] classes, keep them as-is to match site styling
+      if (base.includes('rounded-[')) {
+        return base.replace(/rounded(-[tblr]{1,2})?(-\[[^\]]+\])/g, (match, direction) => {
+          return direction ? `rounded${direction}-none` : 'rounded-none'
+        })
+      }
       return base.replace(/rounded(-[tblr]{1,2})?(-\w+)?/g, (match, direction) => {
         return direction ? `rounded${direction}-none` : 'rounded-none'
       })
+    }
+    // For rounded-[...] classes, keep them as-is to match the rest of the site
+    if (base.includes('rounded-[')) {
+      return base
     }
     if (mode === 'chaos') {
       // Replace rounded classes, preserving direction (t, b, l, r, tl, tr, bl, br)
@@ -206,7 +216,7 @@ export default function WorkSamplesPage() {
       <main className="w-full max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
         <div className="flex gap-6 w-full">
           {/* Left Sidebar Card - Curved, Non-scrolling - BLUE SYSTEM background */}
-          <Card className={`w-80 flex-shrink-0 min-w-80 ${mode === 'chaos' ? 'bg-[#1E3A5F]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-2xl')} p-6 flex flex-col h-fit sticky top-24 self-start`} style={{ 
+          <Card className={`w-80 flex-shrink-0 min-w-80 ${mode === 'chaos' ? 'bg-[#1E3A5F]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit sticky top-24 self-start`} style={{ 
             borderColor: mode === 'chaos' ? blueColors.primary : mode === 'chill' ? blueColors.primaryPair : '#FFFFFF',
             borderWidth: mode === 'chaos' ? '2px' : '0px'
           }}>
@@ -457,7 +467,7 @@ export default function WorkSamplesPage() {
             /* Thumbnail Grid View */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {workSamples.map((sample) => (
-                <Card key={sample.id} className={`${getBgClass()} border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${getRoundedClass('rounded-2xl')} overflow-hidden p-2`}>
+                <Card key={sample.id} className={`${getBgClass()} border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${getRoundedClass('rounded-xl')} overflow-hidden p-2`}>
                   <div className="flex flex-col">
                     {/* Thumbnail */}
                     <div className="relative">
@@ -471,7 +481,7 @@ export default function WorkSamplesPage() {
                               : sample.thumbnail_url
                           }
                           alt={sample.project_name}
-                          className={`w-full aspect-video object-cover ${getRoundedClass('rounded-2xl')}`}
+                          className={`w-full aspect-video object-cover ${getRoundedClass('rounded-xl')}`}
                           onError={(e) => {
                             // Try proxy if direct URL fails (for Supabase URLs)
                             const target = e.target as HTMLImageElement
@@ -489,7 +499,7 @@ export default function WorkSamplesPage() {
                           }}
                         />
                       ) : null}
-                      <div className={`w-full aspect-video ${getRoundedClass('rounded-2xl')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''} border-b ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'}`}>
+                      <div className={`w-full aspect-video ${getRoundedClass('rounded-xl')} bg-gray-200 flex items-center justify-center ${sample.thumbnail_url ? 'hidden' : ''} border-b ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'}`}>
                         <span className="text-gray-400 text-xs">No Image</span>
                       </div>
                       {/* Won Badge - appears over thumbnail when pitch is won */}
@@ -562,7 +572,7 @@ export default function WorkSamplesPage() {
             /* List View */
             <div className="space-y-4">
               {workSamples.map((sample) => (
-                <Card key={sample.id} className={`${getBgClass()} border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${getRoundedClass('rounded-2xl')} overflow-hidden`}>
+                <Card key={sample.id} className={`${getBgClass()} border ${mode === 'chaos' ? 'border-gray-800' : mode === 'chill' ? 'border-gray-300' : 'border-gray-700'} ${getRoundedClass('rounded-xl')} overflow-hidden`}>
                   <div className="flex flex-col md:flex-row gap-6 p-6">
                     {/* Thumbnail - Smaller in list view */}
                     <div className="flex-shrink-0 w-full md:w-48 relative">
