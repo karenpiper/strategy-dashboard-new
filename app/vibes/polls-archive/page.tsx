@@ -662,6 +662,681 @@ export default function PollsArchivePage() {
           </div>
         </div>
 
+        {/* Poll Dialog */}
+        <Dialog open={isPollDialogOpen} onOpenChange={setIsPollDialogOpen}>
+          <DialogContent 
+            className={`${getRoundedClass('rounded-3xl')} max-w-4xl max-h-[90vh] overflow-y-auto`}
+            style={{
+              backgroundColor: mode === 'chaos' 
+                ? '#1A1A1A' 
+                : mode === 'chill'
+                ? '#F5E6D3'
+                : '#000000',
+              border: `2px solid ${redSystem.primary}40`
+            }}
+          >
+            {selectedPoll && (
+              <>
+                <DialogHeader className="mb-6">
+                  <DialogTitle className={`text-3xl font-black uppercase mb-2 ${getTextClass()}`}>
+                    {selectedPoll.title}
+                  </DialogTitle>
+                  <p className={`text-sm ${getTextClass()} opacity-60`}>
+                    {selectedPoll.askedBy ? `Asked by ${selectedPoll.askedBy} • ` : ''}{selectedPoll.date} • {selectedPoll.totalResponses} responses
+                  </p>
+                </DialogHeader>
+                
+                <div className="mb-6">
+                  <h3 className={`text-xl font-black mb-4 ${getTextClass()}`}>
+                    {selectedPoll.question}
+                  </h3>
+                  
+                  {/* Ranking Poll Display - Movie Soundtracks */}
+                  {selectedPoll.isRanking && selectedPoll.ranking && (
+                    <div className="my-8">
+                      <div className="space-y-3 mb-6">
+                        {selectedPoll.ranking.map((item: any) => {
+                          const maxRank = Math.min(...selectedPoll.ranking.map((r: any) => r.rank))
+                          const percentage = ((selectedPoll.ranking.length - item.rank + 1) / selectedPoll.ranking.length) * 100
+                          const isTopVoted = item.rank <= 5
+                          
+                          return (
+                            <div key={item.rank} className="space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <span 
+                                    className={`text-lg font-black ${getTextClass()}`}
+                                    style={{ color: isTopVoted ? redSystem.primary : undefined, minWidth: '2rem' }}
+                                  >
+                                    {item.rank}.
+                                  </span>
+                                  <span className={`text-base font-semibold ${getTextClass()}`}>
+                                    {item.name}
+                                  </span>
+                                </div>
+                                {isTopVoted && (
+                                  <span 
+                                    className="animated-emoji text-5xl"
+                                    style={{ animationDelay: `${item.rank * 0.1}s` }}
+                                  >
+                                    {getPollItemEmoji(item.name)}
+                                  </span>
+                                )}
+                              </div>
+                              <div 
+                                className={`${getRoundedClass('rounded-full')} h-4 overflow-hidden`}
+                                style={{
+                                  backgroundColor: mode === 'chaos' 
+                                    ? 'rgba(255, 255, 255, 0.1)' 
+                                    : mode === 'chill'
+                                    ? 'rgba(74, 24, 24, 0.1)'
+                                    : 'rgba(255, 255, 255, 0.1)'
+                                }}
+                              >
+                                <div
+                                  className="h-full transition-all duration-1000"
+                                  style={{
+                                    width: `${percentage}%`,
+                                    backgroundColor: isTopVoted 
+                                      ? redSystem.primary
+                                      : 'rgba(255, 76, 76, 0.4)'
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      
+                      <div className="mt-8 pt-8 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                        <p className={`text-xl font-black mb-4 ${getTextClass()}`}>
+                          Slouching Protagonists vs Significant Chairs
+                        </p>
+                        <div className="flex justify-center">
+                          <img 
+                            src="/venn_movies.png" 
+                            alt="Venn diagram showing Slouching Protagonists vs Significant Chairs"
+                            className="max-w-full h-auto"
+                            style={{ maxHeight: '500px' }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement
+                              target.style.display = 'none'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Count-based Poll Display - Thanksgiving */}
+                  {!selectedPoll.isRanking && !selectedPoll.isShowsToBinge && !selectedPoll.isButtRock && selectedPoll.data && (
+                    <div className="my-8">
+                      {(() => {
+                        const allData = selectedPoll.data.sort((a: any, b: any) => b.count - a.count)
+                        const nonZeroData = allData.filter((item: any) => item.count > 0)
+                        const zeroData = allData.filter((item: any) => item.count === 0)
+                        const maxCount = Math.max(...nonZeroData.map((d: any) => d.count))
+                        
+                        return (
+                          <>
+                            <div className="space-y-3 mb-6">
+                              {nonZeroData.map((item: any, index: number) => {
+                                const percentage = (item.count / maxCount) * 100
+                                const isTop = index === 0
+                                
+                                return (
+                                  <div key={item.name} className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className={`text-base font-semibold ${getTextClass()}`}>
+                                        {item.name}
+                                      </span>
+                                      <div className="flex items-center gap-3">
+                                        <span 
+                                          className={`text-base font-black ${getTextClass()}`}
+                                          style={{ color: isTop ? redSystem.primary : undefined }}
+                                        >
+                                          {item.count}
+                                        </span>
+                                        {isTop && (
+                                          <span 
+                                            className="animated-emoji text-5xl"
+                                          >
+                                            {getPollItemEmoji(item.name)}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div 
+                                      className={`${getRoundedClass('rounded-full')} h-4 overflow-hidden`}
+                                      style={{
+                                        backgroundColor: mode === 'chaos' 
+                                          ? 'rgba(255, 255, 255, 0.1)' 
+                                          : mode === 'chill'
+                                          ? 'rgba(74, 24, 24, 0.1)'
+                                          : 'rgba(255, 255, 255, 0.1)'
+                                      }}
+                                    >
+                                      <div
+                                        className="h-full transition-all duration-1000"
+                                        style={{
+                                          width: `${percentage}%`,
+                                          backgroundColor: isTop 
+                                            ? redSystem.primary
+                                            : 'rgba(255, 76, 76, 0.4)'
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                            
+                            {zeroData.length > 0 && (
+                              <div className="mt-6 pt-6 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                                <p className={`text-base font-black mb-3 ${getTextClass()}`}>
+                                  And then there was one
+                                </p>
+                                <p className={`text-sm ${getTextClass()} opacity-70`}>
+                                  {zeroData.map((item: any) => item.name).join(', ')}
+                                </p>
+                              </div>
+                            )}
+                            
+                            <div className="mt-8 pt-8 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                              <div className="flex justify-center">
+                                <img 
+                                  src="/thxgiving.png" 
+                                  alt="Thanksgiving visualization"
+                                  className="max-w-full h-auto"
+                                  style={{ maxHeight: '500px' }}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement
+                                    target.style.display = 'none'
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )
+                      })()}
+                    </div>
+                  )}
+                  
+                  {/* Shows to Binge Infographic Display */}
+                  {selectedPoll.isShowsToBinge && selectedPoll.shows && (
+                    <div className="my-8">
+                      {(() => {
+                        const shows = selectedPoll.shows
+                        const maxSecrets = Math.max(...shows.map((s: any) => s.secretsPerSeason))
+                        const maxGasps = Math.max(...shows.map((s: any) => s.gaspsPerMinute))
+                        
+                        return (
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-3 gap-4 mb-8">
+                              <div className={`${getRoundedClass('rounded-2xl')} p-4 text-center`}
+                                style={{
+                                  backgroundColor: mode === 'chaos' 
+                                    ? 'rgba(255, 76, 76, 0.1)' 
+                                    : mode === 'chill'
+                                    ? 'rgba(255, 76, 76, 0.15)'
+                                    : 'rgba(255, 76, 76, 0.1)',
+                                  border: `1px solid ${redSystem.primary}40`
+                                }}
+                              >
+                                <Lock className="w-6 h-6 mx-auto mb-2" style={{ color: redSystem.primary }} />
+                                <p className={`text-xs uppercase tracking-wider ${getTextClass()} opacity-70 mb-1`}>Secrets</p>
+                                <p className={`text-2xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                  {maxSecrets}
+                                </p>
+                                <p className={`text-xs ${getTextClass()} opacity-60`}>per season (max)</p>
+                              </div>
+                              <div className={`${getRoundedClass('rounded-2xl')} p-4 text-center`}
+                                style={{
+                                  backgroundColor: mode === 'chaos' 
+                                    ? 'rgba(255, 76, 76, 0.1)' 
+                                    : mode === 'chill'
+                                    ? 'rgba(255, 76, 76, 0.15)'
+                                    : 'rgba(255, 76, 76, 0.1)',
+                                  border: `1px solid ${redSystem.primary}40`
+                                }}
+                              >
+                                <span className="text-4xl mb-2 block">😱</span>
+                                <p className={`text-xs uppercase tracking-wider ${getTextClass()} opacity-70 mb-1`}>Gasps</p>
+                                <p className={`text-2xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                  {maxGasps.toFixed(2)}
+                                </p>
+                                <p className={`text-xs ${getTextClass()} opacity-60`}>per minute (max)</p>
+                              </div>
+                              <div className={`${getRoundedClass('rounded-2xl')} p-4 text-center`}
+                                style={{
+                                  backgroundColor: mode === 'chaos' 
+                                    ? 'rgba(255, 76, 76, 0.1)' 
+                                    : mode === 'chill'
+                                    ? 'rgba(255, 76, 76, 0.15)'
+                                    : 'rgba(255, 76, 76, 0.1)',
+                                  border: `1px solid ${redSystem.primary}40`
+                                }}
+                              >
+                                <TrendingUp className="w-6 h-6 mx-auto mb-2" style={{ color: redSystem.primary }} />
+                                <p className={`text-xs uppercase tracking-wider ${getTextClass()} opacity-70 mb-1`}>Change</p>
+                                <p className={`text-2xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                  81%
+                                </p>
+                                <p className={`text-xs ${getTextClass()} opacity-60`}>that change nothing (max)</p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {shows.map((show: any, index: number) => {
+                                const secretsPercentage = (show.secretsPerSeason / maxSecrets) * 100
+                                const gaspsPercentage = (show.gaspsPerMinute / maxGasps) * 100
+                                const isTopSecrets = show.secretsPerSeason === maxSecrets
+                                const isTopGasps = show.gaspsPerMinute === maxGasps
+                                
+                                return (
+                                  <div 
+                                    key={show.name}
+                                    className={`${getRoundedClass('rounded-2xl')} p-6 relative overflow-hidden`}
+                                    style={{
+                                      backgroundColor: mode === 'chaos' 
+                                        ? 'rgba(255, 255, 255, 0.05)' 
+                                        : mode === 'chill'
+                                        ? 'rgba(74, 24, 24, 0.05)'
+                                        : 'rgba(255, 255, 255, 0.05)',
+                                      border: `2px solid ${isTopSecrets || isTopGasps ? redSystem.primary : 'rgba(255, 76, 76, 0.2)'}`
+                                    }}
+                                  >
+                                    <h4 className={`text-xl font-black mb-4 ${getTextClass()}`} style={{ 
+                                      color: (isTopSecrets || isTopGasps) ? redSystem.primary : undefined 
+                                    }}>
+                                      {show.name}
+                                    </h4>
+
+                                    <div className="mb-4">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                          <Lock className="w-4 h-4" style={{ color: redSystem.primary }} />
+                                          <span className={`text-sm font-semibold ${getTextClass()}`}>Secrets per season</span>
+                                        </div>
+                                        <span className={`text-lg font-black ${getTextClass()}`} style={{ 
+                                          color: isTopSecrets ? redSystem.primary : undefined 
+                                        }}>
+                                          {show.secretsPerSeason}
+                                        </span>
+                                      </div>
+                                      <div 
+                                        className={`${getRoundedClass('rounded-full')} h-3 overflow-hidden relative`}
+                                        style={{
+                                          backgroundColor: mode === 'chaos' 
+                                            ? 'rgba(255, 255, 255, 0.1)' 
+                                            : mode === 'chill'
+                                            ? 'rgba(74, 24, 24, 0.1)'
+                                            : 'rgba(255, 255, 255, 0.1)'
+                                        }}
+                                      >
+                                        <div
+                                          className="h-full transition-all duration-1000"
+                                          style={{
+                                            width: `${secretsPercentage}%`,
+                                            backgroundColor: isTopSecrets 
+                                              ? redSystem.primary
+                                              : 'rgba(255, 76, 76, 0.5)'
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="mb-4">
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-lg">😱</span>
+                                          <span className={`text-sm font-semibold ${getTextClass()}`}>Gasps per minute</span>
+                                        </div>
+                                        <span className={`text-lg font-black ${getTextClass()}`} style={{ 
+                                          color: isTopGasps ? redSystem.primary : undefined 
+                                        }}>
+                                          {show.gaspsPerMinute.toFixed(2)}
+                                        </span>
+                                      </div>
+                                      <div 
+                                        className={`${getRoundedClass('rounded-full')} h-3 overflow-hidden relative`}
+                                        style={{
+                                          backgroundColor: mode === 'chaos' 
+                                            ? 'rgba(255, 255, 255, 0.1)' 
+                                            : mode === 'chill'
+                                            ? 'rgba(74, 24, 24, 0.1)'
+                                            : 'rgba(255, 255, 255, 0.1)'
+                                        }}
+                                      >
+                                        <div
+                                          className="h-full transition-all duration-1000"
+                                          style={{
+                                            width: `${gaspsPercentage}%`,
+                                            backgroundColor: isTopGasps 
+                                              ? redSystem.primary
+                                              : 'rgba(255, 76, 76, 0.5)'
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <Zap className="w-4 h-4" style={{ color: redSystem.secondary }} />
+                                        <span className={`text-sm font-semibold ${getTextClass()}`}>Change nothing</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <div 
+                                          className="relative w-12 h-12"
+                                          style={{
+                                            background: `conic-gradient(${redSystem.primary} ${show.percentChangeNothing * 3.6}deg, rgba(255, 76, 76, 0.2) ${show.percentChangeNothing * 3.6}deg)`,
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                          }}
+                                        >
+                                          <div 
+                                            className="absolute inset-1 rounded-full"
+                                            style={{
+                                              backgroundColor: mode === 'chaos' 
+                                                ? '#1A1A1A' 
+                                                : mode === 'chill'
+                                                ? '#F5E6D3'
+                                                : '#000000'
+                                            }}
+                                          >
+                                            <div className="h-full flex items-center justify-center">
+                                              <span className={`text-xs font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                                {show.percentChangeNothing}%
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Butt Rock Edition Display */}
+                  {selectedPoll.isButtRock && (
+                    <div className="my-8 space-y-8">
+                      <div>
+                        <h4 className={`text-2xl font-black mb-4 ${getTextClass()}`}>
+                          Top Songs by Number of Mentions
+                        </h4>
+                        <div className="space-y-3">
+                          {selectedPoll.topSongs && selectedPoll.topSongs.map((song: any, index: number) => {
+                            const maxCount = Math.max(...selectedPoll.topSongs.map((s: any) => s.count))
+                            const percentage = (song.count / maxCount) * 100
+                            const isTop = index === 0
+                            
+                            return (
+                              <div key={`${song.name}-${song.artist}`} className="space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <span className={`text-base font-semibold ${getTextClass()}`}>
+                                      {song.name}
+                                    </span>
+                                    <span className={`text-sm ${getTextClass()} opacity-70 ml-2`}>
+                                      — {song.artist}
+                                    </span>
+                                  </div>
+                                  <span 
+                                    className={`text-base font-black ${getTextClass()}`}
+                                    style={{ color: isTop ? redSystem.primary : undefined }}
+                                  >
+                                    ({song.count})
+                                  </span>
+                                </div>
+                                <div 
+                                  className={`${getRoundedClass('rounded-full')} h-4 overflow-hidden`}
+                                  style={{
+                                    backgroundColor: mode === 'chaos' 
+                                      ? 'rgba(255, 255, 255, 0.1)' 
+                                      : mode === 'chill'
+                                      ? 'rgba(74, 24, 24, 0.1)'
+                                      : 'rgba(255, 255, 255, 0.1)'
+                                  }}
+                                >
+                                  <div
+                                    className="h-full transition-all duration-1000"
+                                    style={{
+                                      width: `${percentage}%`,
+                                      backgroundColor: isTop 
+                                        ? redSystem.primary
+                                        : 'rgba(255, 76, 76, 0.4)'
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {selectedPoll.singleMentionTracks && selectedPoll.singleMentionTracks.length > 0 && (
+                        <div className="pt-6 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                          <h4 className={`text-2xl font-black mb-4 ${getTextClass()}`}>
+                            Single-Mention Tracks
+                          </h4>
+                          <div className="space-y-2">
+                            {selectedPoll.singleMentionTracks.map((track: any) => (
+                              <div key={`${track.name}-${track.artist}`} className={`text-base ${getTextClass()}`}>
+                                <span className="font-semibold">{track.name}</span>
+                                <span className={`opacity-70 ml-2`}>— {track.artist}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedPoll.artistFrequency && selectedPoll.artistFrequency.length > 0 && (
+                        <div className="pt-6 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                          <h4 className={`text-2xl font-black mb-4 ${getTextClass()}`}>
+                            Artist Frequency
+                          </h4>
+                          <p className={`text-base ${getTextClass()} opacity-70 mb-2`}>
+                            {selectedPoll.artistFrequency.join(', ')}
+                          </p>
+                          <p className={`text-sm ${getTextClass()} opacity-60 italic`}>
+                            Each earns at least two separate mentions.
+                          </p>
+                          <p className={`text-sm ${getTextClass()} opacity-60 italic mt-2`}>
+                            This gives a very tight "butt rock core seven."
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="pt-8 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                        <h4 className={`text-3xl font-black mb-6 ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                          Butt Rock Perfect Storm Index
+                        </h4>
+                        
+                        <p className={`text-lg ${getTextClass()} opacity-80 mb-8`}>
+                          When you score each song by three traits:
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                          <div className={`${getRoundedClass('rounded-2xl')} p-6 text-center`}
+                            style={{
+                              backgroundColor: mode === 'chaos' 
+                                ? 'rgba(255, 76, 76, 0.1)' 
+                                : mode === 'chill'
+                                ? 'rgba(255, 76, 76, 0.15)'
+                                : 'rgba(255, 76, 76, 0.1)',
+                              border: `2px solid ${redSystem.primary}40`
+                            }}
+                          >
+                            <span className="text-4xl mb-3 block">🎤</span>
+                            <p className={`text-sm font-black uppercase tracking-wider ${getTextClass()} mb-2`}>
+                              Growly male vocal
+                            </p>
+                          </div>
+                          <div className={`${getRoundedClass('rounded-2xl')} p-6 text-center`}
+                            style={{
+                              backgroundColor: mode === 'chaos' 
+                                ? 'rgba(255, 76, 76, 0.1)' 
+                                : mode === 'chill'
+                                ? 'rgba(255, 76, 76, 0.15)'
+                                : 'rgba(255, 76, 76, 0.1)',
+                              border: `2px solid ${redSystem.primary}40`
+                            }}
+                          >
+                            <span className="text-4xl mb-3 block">💭</span>
+                            <p className={`text-sm font-black uppercase tracking-wider ${getTextClass()} mb-2`}>
+                              One-word emotional noun in the chorus
+                            </p>
+                          </div>
+                          <div className={`${getRoundedClass('rounded-2xl')} p-6 text-center`}
+                            style={{
+                              backgroundColor: mode === 'chaos' 
+                                ? 'rgba(255, 76, 76, 0.1)' 
+                                : mode === 'chill'
+                                ? 'rgba(255, 76, 76, 0.15)'
+                                : 'rgba(255, 76, 76, 0.1)',
+                              border: `2px solid ${redSystem.primary}40`
+                            }}
+                          >
+                            <span className="text-4xl mb-3 block">🏭</span>
+                            <p className={`text-sm font-black uppercase tracking-wider ${getTextClass()} mb-2`}>
+                              Music video set in warehouse, pit, or parking lot
+                            </p>
+                          </div>
+                        </div>
+
+                        <p className={`text-lg ${getTextClass()} opacity-80 mb-8`}>
+                          You get this:
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                          <div className={`${getRoundedClass('rounded-2xl')} p-6`}
+                            style={{
+                              backgroundColor: mode === 'chaos' 
+                                ? 'rgba(255, 76, 76, 0.15)' 
+                                : mode === 'chill'
+                                ? 'rgba(255, 76, 76, 0.2)'
+                                : 'rgba(255, 76, 76, 0.15)',
+                              border: `2px solid ${redSystem.primary}`
+                            }}
+                          >
+                            <div className="flex items-center justify-center mb-4">
+                              <div 
+                                className="relative w-24 h-24"
+                                style={{
+                                  background: `conic-gradient(${redSystem.primary} 360deg, rgba(255, 76, 76, 0.2) 360deg)`,
+                                  borderRadius: '50%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <div 
+                                  className="absolute inset-2 rounded-full"
+                                  style={{
+                                    backgroundColor: mode === 'chaos' 
+                                      ? '#1A1A1A' 
+                                      : mode === 'chill'
+                                      ? '#F5E6D3'
+                                      : '#000000'
+                                  }}
+                                >
+                                  <div className="h-full flex items-center justify-center">
+                                    <span className={`text-3xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                      100%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <p className={`text-base ${getTextClass()} text-center font-semibold`}>
+                              of the group's top-vote songs check at least two boxes
+                            </p>
+                          </div>
+
+                          <div className={`${getRoundedClass('rounded-2xl')} p-6`}
+                            style={{
+                              backgroundColor: mode === 'chaos' 
+                                ? 'rgba(255, 76, 76, 0.15)' 
+                                : mode === 'chill'
+                                ? 'rgba(255, 76, 76, 0.2)'
+                                : 'rgba(255, 76, 76, 0.15)',
+                              border: `2px solid ${redSystem.primary}`
+                            }}
+                          >
+                            <div className="flex items-center justify-center mb-4">
+                              <div 
+                                className="relative w-24 h-24"
+                                style={{
+                                  background: `conic-gradient(${redSystem.primary} ${71 * 3.6}deg, rgba(255, 76, 76, 0.2) ${71 * 3.6}deg)`,
+                                  borderRadius: '50%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <div 
+                                  className="absolute inset-2 rounded-full"
+                                  style={{
+                                    backgroundColor: mode === 'chaos' 
+                                      ? '#1A1A1A' 
+                                      : mode === 'chill'
+                                      ? '#F5E6D3'
+                                      : '#000000'
+                                  }}
+                                >
+                                  <div className="h-full flex items-center justify-center">
+                                    <span className={`text-3xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                      71%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <p className={`text-base ${getTextClass()} text-center font-semibold`}>
+                              check all three
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className={`${getRoundedClass('rounded-2xl')} p-6`}
+                          style={{
+                            backgroundColor: mode === 'chaos' 
+                              ? 'rgba(255, 255, 255, 0.05)' 
+                              : mode === 'chill'
+                              ? 'rgba(74, 24, 24, 0.05)'
+                              : 'rgba(255, 255, 255, 0.05)',
+                            border: `2px solid ${redSystem.secondary}60`
+                          }}
+                        >
+                          <div className="flex items-start gap-4">
+                            <span className="text-4xl">✨</span>
+                            <div className="flex-1">
+                              <p className={`text-base font-black ${getTextClass()} mb-2`}>
+                                The only outlier is <span style={{ color: redSystem.secondary }}>Butterfly by Crazy Town</span>
+                              </p>
+                              <p className={`text-sm ${getTextClass()} opacity-70 italic`}>
+                                which swaps "warehouse angst" for "shirtless fairy energy."
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
         <Footer />
       </main>
 

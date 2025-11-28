@@ -274,7 +274,7 @@ export default function ResourcesPage() {
         )}
         <div className="flex gap-6 w-full">
           {/* Left Sidebar Card */}
-          <Card className={`w-80 flex-shrink-0 min-w-80 ${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`} style={{ 
+          <Card className={`w-80 flex-shrink-0 min-w-80 ${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit sticky top-24 self-start`} style={{ 
             borderColor: mode === 'chaos' ? orangeColors.primary : mode === 'chill' ? orangeColors.primaryPair : '#FFFFFF',
             borderWidth: mode === 'chaos' ? '2px' : '0px'
           }}>
@@ -381,7 +381,7 @@ export default function ResourcesPage() {
                 {mostUsed[0] && (
                   <div className="mb-4">
                     <p className="text-2xl font-black text-white mb-1 line-clamp-1">{mostUsed[0].name}</p>
-                    <p className="text-xs font-medium text-white/90">{mostUsed[0].view_count} views</p>
+                    <p className="text-xs font-medium text-white/90">{(mostUsed[0] as any).click_count || mostUsed[0].view_count || 0} clicks</p>
                   </div>
                 )}
                 {mostUsed.length > 1 && (

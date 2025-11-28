@@ -55,12 +55,34 @@ export async function GET(request: Request) {
       }
     }
 
-    // Get most used resources (by view count)
-    const { data: mostUsed } = await supabase
+    // Get most used resources (by actual clicks from resource_views table)
+    const { data: viewCounts } = await supabase
+      .from('resource_views')
+      .select('resource_id')
+    
+    // Count clicks per resource
+    const clickCounts: Record<string, number> = {}
+    if (viewCounts) {
+      viewCounts.forEach((view: any) => {
+        if (view.resource_id) {
+          clickCounts[view.resource_id] = (clickCounts[view.resource_id] || 0) + 1
+        }
+      })
+    }
+    
+    // Get resources sorted by click count
+    const { data: allResources } = await supabase
       .from('resources')
       .select('*')
-      .order('view_count', { ascending: false })
-      .limit(5)
+    
+    // Sort by click count and get top 5
+    const mostUsed = (allResources || [])
+      .map(resource => ({
+        ...resource,
+        click_count: clickCounts[resource.id] || 0
+      }))
+      .sort((a, b) => b.click_count - a.click_count)
+      .slice(0, 5)
 
     return NextResponse.json({
       data: resources || [],

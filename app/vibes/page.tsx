@@ -237,7 +237,7 @@ export default function VibesPage() {
       <main className="w-full max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
         <div className="flex gap-6 w-full">
           {/* Sidebar */}
-          <Card className={`w-80 flex-shrink-0 min-w-80 hidden lg:block ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`}
+          <Card className={`w-80 flex-shrink-0 min-w-80 hidden lg:block ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit sticky top-24 self-start`}
             style={{
               backgroundColor: mode === 'chaos' 
                 ? 'rgba(255, 255, 255, 0.05)' 

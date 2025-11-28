@@ -324,7 +324,7 @@ export default function MediaPage() {
         )}
         <div className="flex gap-6 w-full">
           {/* Left Sidebar Card - RED SYSTEM background */}
-          <Card className={`w-80 flex-shrink-0 min-w-80 ${mode === 'chaos' ? 'bg-[#FF4C4C]' : mode === 'chill' ? 'bg-[#FFD4C4]' : 'bg-[#C41E3A]'} ${getRoundedClass('rounded-2xl')} p-6 flex flex-col h-fit border-0`}>
+          <Card className={`w-80 flex-shrink-0 min-w-80 ${mode === 'chaos' ? 'bg-[#FF4C4C]' : mode === 'chill' ? 'bg-[#FFD4C4]' : 'bg-[#C41E3A]'} ${getRoundedClass('rounded-2xl')} p-6 flex flex-col h-fit border-0 sticky top-24 self-start`}>
             {/* Navigation Section */}
             <div className="mb-6">
               <h3 className={`text-xs uppercase tracking-wider font-black mb-4 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
