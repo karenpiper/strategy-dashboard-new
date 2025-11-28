@@ -1,18 +1,17 @@
 -- Curator assignments table
 -- Tracks curator assignments to ensure fair rotation
--- Curators are assigned for specific weeks/dates and get curator permissions
+-- Curators are assigned independently of playlists - they curate content during their period
 CREATE TABLE IF NOT EXISTS public.curator_assignments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  playlist_id UUID REFERENCES public.playlists(id) ON DELETE SET NULL,
+  playlist_id UUID REFERENCES public.playlists(id) ON DELETE SET NULL, -- Optional: playlist created during this curation period
   curator_name TEXT NOT NULL,
   curator_profile_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-  assignment_date DATE NOT NULL, -- Date when curator is selected/notified
-  start_date DATE NOT NULL, -- Date when curation period starts (assignment_date + 3 days)
-  end_date DATE NOT NULL, -- Date when curation period ends (start_date + 7 days)
+  assignment_date DATE NOT NULL, -- Date when curator is selected and notified
+  start_date DATE NOT NULL, -- Date when curation period starts (assignment_date + 3 days) - when playlist goes live
+  end_date DATE NOT NULL, -- Date when curation period ends (start_date + 7 days) - when playlist period ends
   is_manual_override BOOLEAN DEFAULT false,
   assigned_by UUID REFERENCES auth.users(id),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
-  UNIQUE(playlist_id) -- Only one assignment per playlist if playlist_id is set
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
 );
 
 -- Indexes

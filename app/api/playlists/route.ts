@@ -394,25 +394,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Auto-assign curator if not provided
+    // Find the active curator for this date
     let finalCurator = curator
     let finalCuratorPhotoUrl = curator_photo_url
-    let autoAssignedCurator = null
-    let curatorProfileId = null
 
     if (!curator || !curator.trim()) {
-      // Auto-assign using random rotation
-      autoAssignedCurator = await selectRandomCurator(supabase, date)
-      if (autoAssignedCurator) {
-        finalCurator = autoAssignedCurator.full_name
-        finalCuratorPhotoUrl = autoAssignedCurator.avatar_url || null
-        curatorProfileId = autoAssignedCurator.id
-        
-        // Grant curator permissions
-        await grantCuratorPermissions(supabase, autoAssignedCurator.id)
+      // Find the current curator assignment for this date
+      const { data: activeAssignment } = await supabase
+        .from('curator_assignments')
+        .select('curator_name, curator_profile_id, profiles(avatar_url)')
+        .lte('start_date', date)
+        .gte('end_date', date)
+        .order('assignment_date', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (activeAssignment) {
+        finalCurator = activeAssignment.curator_name
+        if (activeAssignment.profiles && Array.isArray(activeAssignment.profiles) && activeAssignment.profiles[0]?.avatar_url) {
+          finalCuratorPhotoUrl = activeAssignment.profiles[0].avatar_url
+        } else if (activeAssignment.profiles && !Array.isArray(activeAssignment.profiles) && activeAssignment.profiles.avatar_url) {
+          finalCuratorPhotoUrl = activeAssignment.profiles.avatar_url
+        }
       } else {
         return NextResponse.json(
-          { error: 'No eligible curators found for auto-assignment' },
+          { error: 'No active curator found for this date. Please assign a curator first via Curator Rotation.' },
           { status: 400 }
         )
       }
@@ -420,18 +426,13 @@ export async function POST(request: NextRequest) {
       // Look up curator profile if name is provided
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id, avatar_url, special_access')
+        .select('id, avatar_url')
         .or(`full_name.ilike.%${curator}%,email.ilike.%${curator}%`)
         .limit(1)
         .single()
       
-      if (profile) {
-        curatorProfileId = profile.id
-        if (!finalCuratorPhotoUrl && profile.avatar_url) {
-          finalCuratorPhotoUrl = profile.avatar_url
-        }
-        // Grant curator permissions if not already granted
-        await grantCuratorPermissions(supabase, profile.id)
+      if (profile && !finalCuratorPhotoUrl && profile.avatar_url) {
+        finalCuratorPhotoUrl = profile.avatar_url
       }
     }
 
@@ -480,74 +481,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create curator assignment record if curator was auto-assigned or if we have a profile ID
-    if (playlist && (autoAssignedCurator || curatorProfileId)) {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      // Calculate start_date (assignment_date + 3 days) and end_date (start_date + 7 days)
-      const assignmentDateObj = new Date(date)
-      const startDateObj = new Date(assignmentDateObj)
-      startDateObj.setDate(startDateObj.getDate() + 3)
-      const endDateObj = new Date(startDateObj)
-      endDateObj.setDate(endDateObj.getDate() + 7)
-
-      const start_date = startDateObj.toISOString().split('T')[0]
-      const end_date = endDateObj.toISOString().split('T')[0]
-
-      const { data: assignment } = await supabase
+    // Link playlist to current curator assignment if curator matches
+    // Find the active curator assignment for this date
+    if (playlist && finalCurator) {
+      const { data: activeAssignment } = await supabase
         .from('curator_assignments')
-        .insert({
-          playlist_id: playlist.id,
-          curator_name: finalCurator,
-          curator_profile_id: curatorProfileId || autoAssignedCurator?.id || null,
-          assignment_date: date,
-          start_date,
-          end_date,
-          is_manual_override: !autoAssignedCurator, // Manual if curator was provided
-          assigned_by: user?.id || null
-        })
-        .select()
+        .select('id')
+        .eq('curator_name', finalCurator)
+        .lte('start_date', date)
+        .gte('end_date', date)
+        .limit(1)
         .single()
 
-      // Send Slack notification if curator was auto-assigned
-      if (autoAssignedCurator && assignment) {
-        const { data: curatorProfile } = await supabase
-          .from('profiles')
-          .select('slack_id, full_name')
-          .eq('id', autoAssignedCurator.id)
-          .single()
-
-        if (curatorProfile?.slack_id) {
-          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-          const curationUrl = `${baseUrl}/curate?assignment=${assignment.id}`
-          
-          try {
-            await fetch(`${baseUrl}/api/slack/notify-curator`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                slack_id: curatorProfile.slack_id,
-                curator_name: curatorProfile.full_name || autoAssignedCurator.full_name,
-                curation_url: curationUrl,
-                start_date,
-                end_date
-              })
-            })
-          } catch (slackError) {
-            console.error('Error sending Slack notification:', slackError)
-            // Don't fail the playlist creation if Slack fails
-          }
-        }
+      if (activeAssignment) {
+        // Link playlist to the curator assignment
+        await supabase
+          .from('curator_assignments')
+          .update({ playlist_id: playlist.id })
+          .eq('id', activeAssignment.id)
       }
     }
 
-    return NextResponse.json({
-      ...playlist,
-      autoAssignedCurator: autoAssignedCurator ? {
-        id: autoAssignedCurator.id,
-        full_name: autoAssignedCurator.full_name
-      } : null
-    }, { status: 201 })
+    return NextResponse.json(playlist, { status: 201 })
   } catch (error: any) {
     console.error('Error in POST /api/playlists:', error)
     return NextResponse.json(

@@ -158,26 +158,21 @@ export default function CuratorRotationPage() {
 
     setAssigning(true)
     try {
-      const response = await fetch('/api/curator-assignment', {
+      // Use auto-assign endpoint which calculates next assignment date automatically if needed
+      const response = await fetch('/api/curator-assignment/auto-assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          assignment_date: formData.assignment_date,
-          is_manual_override: false
+          assignment_date: formData.assignment_date
         })
       })
 
       const data = await response.json()
       if (response.ok) {
-        if (data.selectedCurator) {
-          setFormData({
-            ...formData,
-            curator_name: data.selectedCurator.full_name,
-            curator_profile_id: data.selectedCurator.id
-          })
-        }
         await fetchData()
-        alert(`Curator assigned: ${data.selectedCurator?.full_name || 'Unknown'}\n\nThey now have curator permissions to create playlists.`)
+        const startDate = new Date(data.assignment.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        const endDate = new Date(data.assignment.end_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+        alert(`Curator assigned: ${data.selectedCurator?.full_name || 'Unknown'}\n\nThey've been notified via Slack.\nCuration period: ${startDate} - ${endDate}`)
         setIsAssignDialogOpen(false)
         setFormData({
           assignment_date: new Date().toISOString().split('T')[0],
@@ -254,10 +249,45 @@ export default function CuratorRotationPage() {
       <div className="max-w-[1400px] mx-auto">
         <div className="mb-4">
           <h1 className={`text-2xl font-black uppercase tracking-wider ${getTextClass()} mb-1`}>Curator Rotation</h1>
-          <p className={`${getTextClass()}/70 text-sm font-normal mb-2`}>Assign curators for upcoming weeks. They'll be notified via Slack and can create playlists during their curation period.</p>
-          <div className={`${cardStyle.bg} ${cardStyle.border} border ${getRoundedClass('rounded-lg')} p-3 ${cardStyle.text}/80 text-sm`}>
-            <strong>How it works:</strong> Click "Assign Curator" → Select a date → Click "Random Assign" to automatically select a curator. They'll receive a Slack notification with a link to their curator dashboard. Their curation period starts 3 days after assignment and lasts 1 week.
+          <p className={`${getTextClass()}/70 text-sm font-normal mb-2`}>Assign curators independently of playlists. They'll be notified via Slack and have 3 days to create their playlist. Their curation period lasts 7 days after the playlist goes live.</p>
+          <div className={`${cardStyle.bg} ${cardStyle.border} border ${getRoundedClass('rounded-lg')} p-3 ${cardStyle.text}/80 text-sm mb-2`}>
+            <strong>How it works:</strong> Curators are assigned first, then they create playlists. Click "Assign Curator" → Select assignment date → Click "Random Assign". They'll receive a Slack DM immediately. Their curation period starts 3 days later and lasts 1 week. Next curator is auto-assigned 3 days before current period ends.
           </div>
+          <Button
+            onClick={async () => {
+              setAssigning(true)
+              try {
+                const response = await fetch('/api/curator-assignment/auto-assign', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' }
+                })
+                const data = await response.json()
+                if (response.ok) {
+                  await fetchData()
+                  alert(`Next curator automatically assigned: ${data.selectedCurator?.full_name || 'Unknown'}`)
+                } else {
+                  alert(`Error: ${data.error}`)
+                }
+              } catch (error: any) {
+                alert(`Error: ${error.message}`)
+              } finally {
+                setAssigning(false)
+              }
+            }}
+            disabled={assigning}
+            className={`${getRoundedClass('rounded-lg')} ${
+              mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
+              mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
+              'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
+            } font-black uppercase tracking-wider text-sm`}
+          >
+            {assigning ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Shuffle className="w-4 h-4 mr-2" />
+            )}
+            Auto-Assign Next Curator
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -407,7 +437,10 @@ export default function CuratorRotationPage() {
                             day: 'numeric'
                           })}
                         </div>
-                        {assignment.playlists && (
+                        <div className={`text-xs ${cardStyle.text}/60 mb-2`}>
+                          Curation Period: {new Date(assignment.start_date).toLocaleDateString()} - {new Date(assignment.end_date).toLocaleDateString()}
+                        </div>
+                        {assignment.playlists ? (
                           <div className="flex items-center gap-2">
                             <Music className={`w-4 h-4 ${cardStyle.text}/60`} />
                             <span className={`text-sm ${cardStyle.text}/80`}>
@@ -424,10 +457,9 @@ export default function CuratorRotationPage() {
                               </a>
                             )}
                           </div>
-                        )}
-                        {!assignment.playlists && (
+                        ) : (
                           <div className={`text-xs ${cardStyle.text}/60 mt-1`}>
-                            No playlist created yet
+                            Playlist not created yet (curator has until {new Date(assignment.start_date).toLocaleDateString()} to create it)
                           </div>
                         )}
                       </div>

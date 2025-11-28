@@ -616,7 +616,7 @@ export default function TeamPage() {
                   }`}
                 >
                   <Crown className="w-4 h-4" />
-                  <span className="font-black uppercase text-sm">History of the Best</span>
+                  <span className="font-black uppercase text-sm">History of the Beast</span>
                 </Link>
                 
                 <Link

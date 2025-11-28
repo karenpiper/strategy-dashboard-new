@@ -38,53 +38,49 @@ export default function BeastHistoryPage() {
   const fetchBeastBabeHistory = async () => {
     try {
       setLoading(true)
+      // Simple query - just get the history data
       const { data: history, error } = await supabase
         .from('beast_babe_history')
-        .select(`
-          *,
-          user:profiles!beast_babe_history_user_id_fkey(id, full_name, email, avatar_url),
-          passed_by:profiles!beast_babe_history_passed_by_user_id_fkey(id, full_name, email, avatar_url)
-        `)
+        .select('*')
         .order('date', { ascending: false })
       
       if (error) {
         console.error('Error fetching beast babe history:', error)
-        // Try without foreign key names in case they don't match
-        const { data: historyAlt, error: errorAlt } = await supabase
-          .from('beast_babe_history')
-          .select('*')
-          .order('date', { ascending: false })
+        setBeastBabeHistory([])
+        return
+      }
+      
+      if (!history || history.length === 0) {
+        setBeastBabeHistory([])
+        return
+      }
+      
+      // Manually fetch user profiles
+      const userIds = [...new Set(history.map((h: any) => h.user_id).filter(Boolean))]
+      const passedByIds = [...new Set(history.map((h: any) => h.passed_by_user_id).filter(Boolean))]
+      const allIds = [...new Set([...userIds, ...passedByIds])]
+      
+      if (allIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, avatar_url')
+          .in('id', allIds)
         
-        if (!errorAlt && historyAlt) {
-          // Manually fetch user profiles
-          const userIds = [...new Set(historyAlt.map(h => h.user_id).filter(Boolean))]
-          const passedByIds = [...new Set(historyAlt.map(h => h.passed_by_user_id).filter(Boolean))]
-          const allIds = [...new Set([...userIds, ...passedByIds])]
-          
-          if (allIds.length > 0) {
-            const { data: profiles } = await supabase
-              .from('profiles')
-              .select('id, full_name, email, avatar_url')
-              .in('id', allIds)
-            
-            const profileMap = new Map(profiles?.map(p => [p.id, p]) || [])
-            
-            const enrichedHistory = historyAlt.map(entry => ({
-              ...entry,
-              user: profileMap.get(entry.user_id) || null,
-              passed_by: entry.passed_by_user_id ? profileMap.get(entry.passed_by_user_id) || null : null
-            }))
-            
-            setBeastBabeHistory(enrichedHistory)
-          } else {
-            setBeastBabeHistory(historyAlt)
-          }
-        }
-      } else if (history) {
+        const profileMap = new Map(profiles?.map((p: any) => [p.id, p]) || [])
+        
+        const enrichedHistory = history.map((entry: any) => ({
+          ...entry,
+          user: profileMap.get(entry.user_id) || null,
+          passed_by: entry.passed_by_user_id ? profileMap.get(entry.passed_by_user_id) || null : null
+        }))
+        
+        setBeastBabeHistory(enrichedHistory)
+      } else {
         setBeastBabeHistory(history)
       }
     } catch (error) {
       console.error('Error fetching beast babe history:', error)
+      setBeastBabeHistory([])
     } finally {
       setLoading(false)
     }
@@ -262,7 +258,7 @@ export default function BeastHistoryPage() {
                   }`}
                 >
                   <Crown className="w-4 h-4" />
-                  <span className="font-black uppercase text-sm">History of the Best</span>
+                  <span className="font-black uppercase text-sm">History of the Beast</span>
                 </Link>
                 
                 <Link
@@ -292,10 +288,14 @@ export default function BeastHistoryPage() {
             <div className={`w-12 h-12 ${getRoundedClass('rounded-lg')} flex items-center justify-center`} style={{ backgroundColor: greenColors.primary }}>
               <Crown className="w-6 h-6 text-white" />
             </div>
-            <h1 className={`text-3xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>History of the Best</h1>
+            <h1 className={`text-3xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>History of the Beast</h1>
           </div>
           
-          {beastBabeHistory.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF' }} />
+            </div>
+          ) : beastBabeHistory.length > 0 ? (
             <div className="relative" style={{ minHeight: `${Math.max(600, beastBabeHistory.length * 100)}px`, padding: '2rem 0' }}>
               {/* Curving Path SVG */}
               <svg 
@@ -442,7 +442,12 @@ export default function BeastHistoryPage() {
               })}
             </div>
           ) : (
-            <p className={`text-center py-8 ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>No beast babe history found</p>
+            <div className="text-center py-12">
+              <p className={`text-lg mb-2 ${mode === 'chill' ? 'text-[#4A1818]/80' : 'text-white/80'}`}>No beast babe history found</p>
+              <p className={`text-sm ${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>
+                Beast babe recipients will appear here once data is available.
+              </p>
+            </div>
           )}
         </Card>
           </div>

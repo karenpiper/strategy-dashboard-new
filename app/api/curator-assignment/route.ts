@@ -91,9 +91,18 @@ export async function POST(request: NextRequest) {
     const { playlist_id, curator_name, curator_profile_id, assignment_date, is_manual_override } = body
 
     // Validate required fields
-    if (!curator_name || !assignment_date) {
+    // For manual override, curator_name is required
+    // For random assignment, only assignment_date is required
+    if (is_manual_override && !curator_name) {
       return NextResponse.json(
-        { error: 'Missing required fields: curator_name and assignment_date are required' },
+        { error: 'Missing required field: curator_name is required for manual assignment' },
+        { status: 400 }
+      )
+    }
+
+    if (!assignment_date) {
+      return NextResponse.json(
+        { error: 'Missing required field: assignment_date is required' },
         { status: 400 }
       )
     }
@@ -167,10 +176,33 @@ export async function POST(request: NextRequest) {
 
       const start_date = startDateObj.toISOString().split('T')[0]
       const end_date = endDateObj.toISOString().split('T')[0]
+      // Calculate start_date (assignment_date + 3 days) and end_date (start_date + 7 days)
+      const assignmentDateObj = new Date(assignment_date)
+      const startDateObj = new Date(assignmentDateObj)
+      startDateObj.setDate(startDateObj.getDate() + 3)
+      const endDateObj = new Date(startDateObj)
+      endDateObj.setDate(endDateObj.getDate() + 7)
+
+      const start_date = startDateObj.toISOString().split('T')[0]
+      const end_date = endDateObj.toISOString().split('T')[0]
+
+      // Check for overlapping assignments
+      const { data: existing } = await supabase
+        .from('curator_assignments')
+        .select('id')
+        .or(`start_date.lte.${end_date},end_date.gte.${start_date}`)
+        .limit(1)
+
+      if (existing && existing.length > 0) {
+        return NextResponse.json(
+          { error: 'A curator is already assigned for this period' },
+          { status: 400 }
+        )
+      }
+
       const { data: assignment, error } = await supabase
         .from('curator_assignments')
-        .upsert({
-          playlist_id: playlist_id || null,
+        .insert({
           curator_name,
           curator_profile_id: finalCuratorProfileId || null,
           assignment_date,
@@ -178,8 +210,6 @@ export async function POST(request: NextRequest) {
           end_date,
           is_manual_override: true,
           assigned_by: user.id
-        }, {
-          onConflict: playlist_id ? 'playlist_id' : undefined
         })
         .select()
         .single()
@@ -190,14 +220,6 @@ export async function POST(request: NextRequest) {
           { error: error.message },
           { status: 500 }
         )
-      }
-
-      // Also update the playlist's curator field if playlist_id is provided
-      if (playlist_id) {
-        await supabase
-          .from('playlists')
-          .update({ curator: curator_name })
-          .eq('id', playlist_id)
       }
 
       // Send Slack notification if curator has slack_id
@@ -234,16 +256,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ assignment })
     }
 
-    // Otherwise, use random selection
-    const selectedCurator = await selectRandomCurator(supabase, assignment_date)
-
-    if (!selectedCurator) {
-      return NextResponse.json(
-        { error: 'No eligible curators found' },
-        { status: 400 }
-      )
-    }
-
     // Calculate start_date (assignment_date + 3 days) and end_date (start_date + 7 days)
     const assignmentDateObj = new Date(assignment_date)
     const startDateObj = new Date(assignmentDateObj)
@@ -253,6 +265,30 @@ export async function POST(request: NextRequest) {
 
     const start_date = startDateObj.toISOString().split('T')[0]
     const end_date = endDateObj.toISOString().split('T')[0]
+
+    // Check for overlapping assignments
+    const { data: existing } = await supabase
+      .from('curator_assignments')
+      .select('id')
+      .or(`start_date.lte.${end_date},end_date.gte.${start_date}`)
+      .limit(1)
+
+    if (existing && existing.length > 0) {
+      return NextResponse.json(
+        { error: 'A curator is already assigned for this period' },
+        { status: 400 }
+      )
+    }
+
+    // Otherwise, use random selection
+    const selectedCurator = await selectRandomCurator(supabase, assignment_date)
+
+    if (!selectedCurator) {
+      return NextResponse.json(
+        { error: 'No eligible curators found' },
+        { status: 400 }
+      )
+    }
 
     // Grant curator permissions
     const { data: selectedCuratorProfile } = await supabase
@@ -283,11 +319,10 @@ export async function POST(request: NextRequest) {
     const start_date = startDateObj.toISOString().split('T')[0]
     const end_date = endDateObj.toISOString().split('T')[0]
 
-    // Create assignment
+    // Create assignment (no playlist_id - curator is independent)
     const { data: assignment, error } = await supabase
       .from('curator_assignments')
       .insert({
-        playlist_id: playlist_id || null,
         curator_name: selectedCurator.full_name,
         curator_profile_id: selectedCurator.id,
         assignment_date,
@@ -305,17 +340,6 @@ export async function POST(request: NextRequest) {
         { error: error.message },
         { status: 500 }
       )
-    }
-
-    // Also update the playlist's curator field if playlist_id is provided
-    if (playlist_id) {
-      await supabase
-        .from('playlists')
-        .update({ 
-          curator: selectedCurator.full_name,
-          curator_photo_url: selectedCurator.avatar_url || null
-        })
-        .eq('id', playlist_id)
     }
 
     // Send Slack notification
