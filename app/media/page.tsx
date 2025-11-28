@@ -24,6 +24,7 @@ import {
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { VideoEmbed } from '@/components/video-embed'
+import { Footer } from '@/components/footer'
 
 interface MustRead {
   id: string
@@ -673,6 +674,8 @@ export default function MediaPage() {
             )}
           </div>
         </div>
+
+        <Footer />
       </main>
     </div>
   )

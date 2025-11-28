@@ -30,6 +30,7 @@ import {
   TrendingUp
 } from 'lucide-react'
 import Link from 'next/link'
+import { Footer } from '@/components/footer'
 
 interface PlaygroundTool {
   id: string
@@ -626,6 +627,8 @@ export default function PlaygroundPage() {
             )}
           </div>
         </div>
+
+        <Footer />
       </main>
 
       {/* Submit Tool Dialog */}

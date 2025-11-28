@@ -32,6 +32,7 @@ import { Card } from '@/components/ui/card'
 import { useEffect, useState } from 'react'
 import { getRoleDisplayName, getSpecialAccessDisplayName } from '@/lib/permissions'
 import { AccountMenu } from '@/components/account-menu'
+import { Footer } from '@/components/footer'
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const { mode } = useMode()
@@ -301,6 +302,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             {children}
           </div>
         </div>
+
+        <Footer />
       </main>
     </div>
   )
