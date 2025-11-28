@@ -156,18 +156,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Calculate start_date (assignment_date + 3 days) and end_date (start_date + 7 days)
-    const assignmentDateObj = new Date(assignment_date)
-    const startDateObj = new Date(assignmentDateObj)
-    startDateObj.setDate(startDateObj.getDate() + 3)
-    const endDateObj = new Date(startDateObj)
-    endDateObj.setDate(endDateObj.getDate() + 7)
-
-    const start_date = startDateObj.toISOString().split('T')[0]
-    const end_date = endDateObj.toISOString().split('T')[0]
-
     // If manual override, just assign directly
     if (is_manual_override) {
+      // Calculate start_date (assignment_date + 3 days) and end_date (start_date + 7 days)
+      const assignmentDateObj = new Date(assignment_date)
+      const startDateObj = new Date(assignmentDateObj)
+      startDateObj.setDate(startDateObj.getDate() + 3)
+      const endDateObj = new Date(startDateObj)
+      endDateObj.setDate(endDateObj.getDate() + 7)
+
+      const start_date = startDateObj.toISOString().split('T')[0]
+      const end_date = endDateObj.toISOString().split('T')[0]
       const { data: assignment, error } = await supabase
         .from('curator_assignments')
         .upsert({
@@ -202,7 +201,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Send Slack notification if curator has slack_id
-      if (finalCuratorProfileId) {
+      if (finalCuratorProfileId && assignment) {
         const { data: curatorProfile } = await supabase
           .from('profiles')
           .select('slack_id, full_name')
