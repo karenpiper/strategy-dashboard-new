@@ -32,7 +32,7 @@ import {
 import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { BeastBabeCard } from '@/components/beast-babe-card'
-import { OrgChartView } from '@/components/org-chart-view'
+import { OrgChartVisual } from '@/components/org-chart-visual'
 
 export default function TeamPage() {
   const { user, loading: authLoading } = useAuth()
@@ -1200,7 +1200,7 @@ export default function TeamPage() {
                     <h2 className={`text-xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>Org Chart</h2>
                   </div>
                   {allProfiles.length > 0 ? (
-                    <OrgChartView
+                    <OrgChartVisual
                       profiles={allProfiles}
                       mode={mode}
                       onProfileClick={handleProfileClick}
