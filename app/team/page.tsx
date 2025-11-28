@@ -570,20 +570,6 @@ export default function TeamPage() {
                   <Users className="w-4 h-4" />
                   <span className="font-black uppercase text-sm">Directory</span>
                 </Link>
-                
-                <Link
-                  href="/team/beast-history"
-                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
-                    mode === 'chaos'
-                      ? 'bg-[#00C896]/30 text-white/80 hover:bg-[#00C896]/50 text-white'
-                      : mode === 'chill'
-                      ? 'bg-white/30 text-[#4A1818]/60 hover:bg-white/50 text-[#4A1818]'
-                      : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
-                  }`}
-                >
-                  <Crown className="w-4 h-4" />
-                  <span className="font-black uppercase text-sm">History of the Beast</span>
-                </Link>
               </div>
             </div>
 
