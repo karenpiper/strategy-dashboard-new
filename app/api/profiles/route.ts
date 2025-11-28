@@ -185,7 +185,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const body = await request.json()
+    let body
+    try {
+      body = await request.json()
+      console.log('Received request body:', JSON.stringify(body, null, 2))
+    } catch (parseError: any) {
+      console.error('Error parsing request body:', parseError)
+      return NextResponse.json({ error: 'Invalid JSON in request body', details: parseError.message }, { status: 400 })
+    }
+
     const { email, password, ...profileData } = body
 
     if (!email || !email.trim()) {
@@ -315,15 +323,30 @@ export async function POST(request: NextRequest) {
 
     if (profileInsertError) {
       console.error('Error creating profile:', profileInsertError)
+      console.error('Profile insert data:', JSON.stringify(profileInsertData, null, 2))
       // Clean up auth user if profile creation fails
-      await supabaseAdmin.auth.admin.deleteUser(authUserId)
-      return NextResponse.json({ error: 'Failed to create profile', details: profileInsertError.message }, { status: 500 })
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(authUserId)
+      } catch (cleanupError) {
+        console.error('Error cleaning up auth user:', cleanupError)
+      }
+      return NextResponse.json({ 
+        error: 'Failed to create profile', 
+        details: profileInsertError.message,
+        code: profileInsertError.code,
+        hint: profileInsertError.hint
+      }, { status: 500 })
     }
 
     return NextResponse.json({ data: newProfile }, { status: 201 })
   } catch (error: any) {
     console.error('Error in profiles API POST:', error)
-    return NextResponse.json({ error: error.message || 'Failed to create user' }, { status: 500 })
+    console.error('Error stack:', error.stack)
+    return NextResponse.json({ 
+      error: error.message || 'Failed to create user',
+      details: error.toString(),
+      type: error.constructor?.name
+    }, { status: 500 })
   }
 }
 

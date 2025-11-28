@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useMode } from '@/contexts/mode-context'
 import { usePermissions } from '@/contexts/permissions-context'
 import { Users, Search, Save, Loader2, User, Mail, Calendar, Briefcase, Building, Globe, MapPin, Image as ImageIcon, Upload, Plus } from 'lucide-react'
@@ -307,9 +308,9 @@ export default function UsersAdminPage() {
             USER MANAGER
           </h1>
         </div>
-        <Button
-          onClick={() => {
-            setIsCreatingUser(true)
+        <Dialog open={isCreatingUser} onOpenChange={(open) => {
+          setIsCreatingUser(open)
+          if (open) {
             setNewUser({
               email: '',
               full_name: '',
@@ -318,16 +319,157 @@ export default function UsersAdminPage() {
             })
             setSelectedUser(null)
             setEditingUser(null)
-          }}
-          className="flex items-center gap-2"
-          style={{
-            backgroundColor: getBorderColor(),
-            color: mode === 'chaos' ? '#000000' : '#FFFFFF',
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          Add User
-        </Button>
+            setError(null)
+          }
+        }}>
+          <DialogTrigger asChild>
+            <Button
+              className="flex items-center gap-2"
+              style={{
+                backgroundColor: getBorderColor(),
+                color: mode === 'chaos' ? '#000000' : '#FFFFFF',
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              Add User
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" style={{
+            backgroundColor: mode === 'chill' ? '#F5E6D3' : mode === 'chaos' ? '#1A1A1A' : '#000000',
+            borderColor: getBorderColor(),
+            borderWidth: '2px',
+          }}>
+            <DialogHeader>
+              <DialogTitle className={getTextClass()}>Create New User</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6 mt-4">
+              {/* Email (required) */}
+              <div>
+                <Label className={`${getTextClass()} flex items-center gap-2 mb-2`}>
+                  <Mail className="w-4 h-4" />
+                  Email *
+                </Label>
+                <Input
+                  value={newUser.email || ''}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  placeholder="user@example.com"
+                  className={mode === 'chill' ? 'bg-white text-black border-gray-300' : 'bg-gray-800 text-white border-gray-600'}
+                  type="email"
+                />
+              </div>
+
+              {/* Password (optional) */}
+              <div>
+                <Label className={getTextClass()}>Password (optional)</Label>
+                <Input
+                  value={(newUser as any).password || ''}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value } as any)}
+                  placeholder="Leave empty to send password reset email"
+                  className={mode === 'chill' ? 'bg-white text-black border-gray-300' : 'bg-gray-800 text-white border-gray-600'}
+                  type="password"
+                />
+                <p className={`text-xs mt-1 ${mode === 'chill' ? 'text-gray-600' : 'text-gray-400'}`}>
+                  If no password is provided, user will receive a password reset email
+                </p>
+              </div>
+
+              {/* Full Name */}
+              <div>
+                <Label className={`${getTextClass()} flex items-center gap-2 mb-2`}>
+                  <User className="w-4 h-4" />
+                  Full Name
+                </Label>
+                <Input
+                  value={newUser.full_name || ''}
+                  onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
+                  placeholder="Full Name"
+                  className={mode === 'chill' ? 'bg-white text-black border-gray-300' : 'bg-gray-800 text-white border-gray-600'}
+                />
+              </div>
+
+              {/* Base Role */}
+              <div>
+                <Label className={`${getTextClass()} flex items-center gap-2 mb-2`}>
+                  <Users className="w-4 h-4" />
+                  Base Role
+                </Label>
+                <select
+                  value={newUser.base_role || 'user'}
+                  onChange={(e) => setNewUser({ ...newUser, base_role: e.target.value as any })}
+                  className={`w-full h-9 rounded-md border px-3 ${
+                    mode === 'chill' 
+                      ? 'bg-white text-black border-gray-300' 
+                      : 'bg-gray-800 text-white border-gray-600'
+                  }`}
+                >
+                  <option value="user">User</option>
+                  <option value="contributor">Contributor</option>
+                  <option value="leader">Leader</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              {/* Active Status */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="new_user_is_active"
+                  checked={newUser.is_active !== false}
+                  onChange={(e) => setNewUser({ ...newUser, is_active: e.target.checked })}
+                  className={`w-4 h-4 rounded border-gray-300 ${
+                    mode === 'chill' 
+                      ? 'text-black focus:ring-2 focus:ring-black' 
+                      : 'text-white focus:ring-2 focus:ring-white'
+                  }`}
+                />
+                <Label htmlFor="new_user_is_active" className={`${getTextClass()} cursor-pointer`}>
+                  Active
+                </Label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-4 mt-6 pt-4 border-t" style={{ borderColor: `${getBorderColor()}40` }}>
+              <Button
+                onClick={() => {
+                  setIsCreatingUser(false)
+                  setNewUser({
+                    email: '',
+                    full_name: '',
+                    base_role: 'user',
+                    is_active: true,
+                  })
+                  setError(null)
+                }}
+                variant="outline"
+                className={mode === 'chill' ? 'border-gray-300 text-black' : 'border-gray-600 text-white'}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateUser}
+                disabled={saving || !newUser.email}
+                className="flex items-center gap-2"
+                style={{
+                  backgroundColor: getBorderColor(),
+                  color: mode === 'chaos' ? '#000000' : '#FFFFFF',
+                }}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4" />
+                    Create User
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {error && (
@@ -439,142 +581,8 @@ export default function UsersAdminPage() {
           </div>
         </Card>
 
-        {/* Create User Form */}
-        {isCreatingUser && (
-          <Card
-            className="lg:col-span-2 flex flex-col h-[calc(100vh-12rem)]"
-            style={{
-              backgroundColor: '#ffffff',
-              borderColor: getBorderColor(),
-              borderWidth: '2px',
-            }}
-          >
-            <div className="p-6 border-b overflow-y-auto flex-1" style={{ borderColor: `${getBorderColor()}40` }}>
-              <h2 className="text-xl font-semibold text-black mb-6">Create New User</h2>
-              
-              <div className="space-y-6">
-                {/* Email (required) */}
-                <div>
-                  <Label className="text-black flex items-center gap-2 mb-2">
-                    <Mail className="w-4 h-4" />
-                    Email *
-                  </Label>
-                  <Input
-                    value={newUser.email || ''}
-                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    placeholder="user@example.com"
-                    className="bg-white text-black border-gray-300"
-                    type="email"
-                  />
-                </div>
-
-                {/* Password (optional) */}
-                <div>
-                  <Label className="text-black mb-2">Password (optional)</Label>
-                  <Input
-                    value={(newUser as any).password || ''}
-                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value } as any)}
-                    placeholder="Leave empty to send password reset email"
-                    className="bg-white text-black border-gray-300"
-                    type="password"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    If no password is provided, user will receive a password reset email
-                  </p>
-                </div>
-
-                {/* Full Name */}
-                <div>
-                  <Label className="text-black flex items-center gap-2 mb-2">
-                    <User className="w-4 h-4" />
-                    Full Name
-                  </Label>
-                  <Input
-                    value={newUser.full_name || ''}
-                    onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
-                    placeholder="Full Name"
-                    className="bg-white text-black border-gray-300"
-                  />
-                </div>
-
-                {/* Base Role */}
-                <div>
-                  <Label className="text-black flex items-center gap-2 mb-2">
-                    <Users className="w-4 h-4" />
-                    Base Role
-                  </Label>
-                  <select
-                    value={newUser.base_role || 'user'}
-                    onChange={(e) => setNewUser({ ...newUser, base_role: e.target.value as any })}
-                    className="w-full h-9 rounded-md border border-gray-300 bg-white text-black px-3"
-                  >
-                    <option value="user">User</option>
-                    <option value="contributor">Contributor</option>
-                    <option value="leader">Leader</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-
-                {/* Active Status */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="new_user_is_active"
-                    checked={newUser.is_active !== false}
-                    onChange={(e) => setNewUser({ ...newUser, is_active: e.target.checked })}
-                    className="w-4 h-4 rounded border-gray-300 text-black focus:ring-2 focus:ring-black"
-                  />
-                  <Label htmlFor="new_user_is_active" className="text-black cursor-pointer">
-                    Active
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 border-t flex items-center justify-end gap-4" style={{ borderColor: `${getBorderColor()}40` }}>
-              <Button
-                onClick={() => {
-                  setIsCreatingUser(false)
-                  setNewUser({
-                    email: '',
-                    full_name: '',
-                    base_role: 'user',
-                    is_active: true,
-                  })
-                  setError(null)
-                }}
-                variant="outline"
-                className="border-gray-300 text-black"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateUser}
-                disabled={saving || !newUser.email}
-                className="flex items-center gap-2"
-                style={{
-                  backgroundColor: getBorderColor(),
-                  color: mode === 'chaos' ? '#000000' : '#FFFFFF',
-                }}
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    Create User
-                  </>
-                )}
-              </Button>
-            </div>
-          </Card>
-        )}
-
         {/* Edit Form */}
-        {editingUser && !isCreatingUser && (
+        {editingUser && (
           <Card
             className="lg:col-span-2 flex flex-col h-[calc(100vh-12rem)]"
             style={{

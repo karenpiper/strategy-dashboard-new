@@ -29,7 +29,6 @@ import {
 import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { BeastBabeCard } from '@/components/beast-babe-card'
-import { OrgChartVisual } from '@/components/org-chart-visual'
 
 export default function TeamPage() {
   const { user, loading: authLoading } = useAuth()
@@ -459,7 +458,7 @@ export default function TeamPage() {
     return mode === 'code' ? 'rounded-none' : defaultClass
   }
   
-  const [activeFilter, setActiveFilter] = useState<'all' | 'anniversaries' | 'birthdays' | 'leaderboard' | 'org-chart'>('all')
+  const [activeFilter, setActiveFilter] = useState<'all' | 'anniversaries' | 'birthdays' | 'leaderboard'>('all')
 
   if (authLoading || loading) {
     return (
@@ -516,7 +515,7 @@ export default function TeamPage() {
                 ▼ SECTIONS
               </h3>
               <div className="space-y-2">
-                {(['all', 'anniversaries', 'birthdays', 'leaderboard', 'org-chart'] as const).map((filter) => (
+                {(['all', 'anniversaries', 'birthdays', 'leaderboard'] as const).map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setActiveFilter(filter)}
@@ -538,9 +537,8 @@ export default function TeamPage() {
                     {filter === 'anniversaries' && <PartyPopper className="w-4 h-4" />}
                     {filter === 'birthdays' && <Cake className="w-4 h-4" />}
                     {filter === 'leaderboard' && <Trophy className="w-4 h-4" />}
-                    {filter === 'org-chart' && <Briefcase className="w-4 h-4" />}
                     <span className="font-black uppercase text-sm">
-                      {filter === 'all' ? 'All' : filter === 'org-chart' ? 'Org Chart' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                      {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
                     </span>
                   </button>
                 ))}
@@ -866,35 +864,6 @@ export default function TeamPage() {
               </div>
             )}
 
-            {/* Additional Sections */}
-            <div className="space-y-4">
-              {/* Org Chart */}
-              {(activeFilter === 'all' || activeFilter === 'org-chart') && (
-                <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-4`} style={{
-                  borderColor: mode === 'chaos' ? '#333333' : mode === 'chill' ? '#E5E5E5' : '#333333',
-                  borderWidth: '1px'
-                }}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-10 h-10 ${getRoundedClass('rounded-lg')} flex items-center justify-center`} style={{ backgroundColor: greenColors.primaryPair }}>
-                      <Briefcase className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className={`text-xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>Org Chart</h2>
-                  </div>
-                  {allProfiles.length > 0 ? (
-                    <OrgChartVisual
-                      profiles={allProfiles}
-                      mode={mode}
-                      onProfileClick={handleProfileClick}
-                      getRoundedClass={getRoundedClass}
-                      getTextColor={() => mode === 'chill' ? '#4A1818' : '#FFFFFF'}
-                      greenColors={greenColors}
-                    />
-                  ) : (
-                    <p className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>No team members found</p>
-                  )}
-                </Card>
-              )}
-            </div>
           </div>
         </div>
         
