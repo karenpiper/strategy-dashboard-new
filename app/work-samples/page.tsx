@@ -206,7 +206,7 @@ export default function WorkSamplesPage() {
       <main className="w-full max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
         <div className="flex gap-6 w-full">
           {/* Left Sidebar Card - Curved, Non-scrolling - BLUE SYSTEM background */}
-          <Card className={`w-80 flex-shrink-0 min-w-80 ${mode === 'chaos' ? 'bg-[#4A90E2]' : mode === 'chill' ? 'bg-[#2DD4BF]' : 'bg-[#1E3A5F]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit border-0 sticky top-24 self-start`}>
+          <Card className={`w-80 flex-shrink-0 min-w-80 ${mode === 'chaos' ? 'bg-[#4A90E2]' : mode === 'chill' ? 'bg-[#2DD4BF]' : 'bg-[#1E3A5F]'} ${getRoundedClass('rounded-2xl')} p-6 flex flex-col h-fit border-0 sticky top-24 self-start`}>
             {/* Filters Section */}
             <div className="mb-6">
               <h3 className={`text-xs uppercase tracking-wider font-black mb-4 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
