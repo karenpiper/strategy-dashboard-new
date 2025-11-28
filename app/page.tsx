@@ -3153,7 +3153,7 @@ export default function TeamDashboard() {
                             )}
                           </div>
                         )}
-                        {(!googleCalendarToken && !tokenLoading) || needsAuth ? (
+                        {((!googleCalendarToken && !tokenLoading) || needsAuth) && (
                           <div className={`${getRoundedClass('rounded-lg')} p-2 mt-2`} style={{ backgroundColor: `${mintColor}22` }}>
                             <p className="font-semibold mb-1">Google Calendar Access Required</p>
                             {tokenError ? (
