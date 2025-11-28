@@ -358,73 +358,75 @@ export default function BeastHistoryPage() {
                 return (
                   <div
                     key={entry.id}
-                    className="absolute z-10 flex items-center gap-4"
+                    className="absolute z-10"
                     style={{
                       left: `${(x / 1000) * 100}%`,
                       top: `${(y / (beastBabeHistory.length * 120)) * 100}%`,
-                      transform: 'translate(-50%, -50%)',
-                      flexDirection: isRight ? 'row-reverse' : 'row',
-                      width: 'min(calc(50% - 2rem), 400px)',
-                      maxWidth: 'calc(100vw - 600px)'
+                      transform: 'translate(-50%, 0)'
                     }}
                   >
-                    {/* Avatar */}
-                    <div className="relative flex-shrink-0">
-                      {entry.user?.avatar_url ? (
-                        <img
-                          src={entry.user.avatar_url}
-                          alt={entry.user.full_name || 'User'}
-                          className="w-14 h-14 rounded-full object-cover border-2"
-                          style={{ 
-                            borderColor: index === 0 ? greenColors.primary : greenColors.complementary,
-                            borderWidth: index === 0 ? '3px' : '2px',
-                            boxShadow: index === 0 ? `0 0 12px ${greenColors.primary}80` : `0 0 6px ${greenColors.complementary}40`
-                          }}
-                        />
-                      ) : (
-                        <div 
-                          className="w-14 h-14 rounded-full flex items-center justify-center border-2"
-                          style={{ 
-                            backgroundColor: greenColors.primaryPair + '60',
-                            borderColor: index === 0 ? greenColors.primary : greenColors.complementary,
-                            borderWidth: index === 0 ? '3px' : '2px',
-                            boxShadow: index === 0 ? `0 0 12px ${greenColors.primary}80` : `0 0 6px ${greenColors.complementary}40`
-                          }}
-                        >
-                          <Crown className="w-7 h-7" style={{ color: index === 0 ? greenColors.primary : greenColors.complementary }} />
-                        </div>
-                      )}
-                      {/* Crown badge for current */}
-                      {index === 0 && (
-                        <div 
-                          className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center animate-bounce z-20"
-                          style={{ backgroundColor: greenColors.primary }}
-                        >
-                          <Crown className="w-3 h-3 text-white" />
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Content next to avatar */}
-                    <div 
-                      className={`flex-1 ${getRoundedClass('rounded-lg')} px-4 py-3 backdrop-blur-sm`}
-                      style={{ 
-                        backgroundColor: mode === 'chaos' ? 'rgba(42, 42, 42, 0.95)' : mode === 'chill' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(26, 26, 26, 0.95)',
-                        border: `1px solid ${greenColors.primary}40`,
-                        textAlign: isRight ? 'right' : 'left'
-                      }}
-                    >
-                      <p className={`text-sm font-semibold mb-1.5 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
-                        {entry.user?.full_name || entry.user?.email || 'Unknown'}
-                      </p>
-                      <p className={`text-xs mb-2 ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`}>
-                        {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </p>
-                      {entry.achievement && (
-                        <p className={`text-xs ${mode === 'chill' ? 'text-[#4A1818]/90' : 'text-white/90'} leading-relaxed`}>
-                          {entry.achievement}
+                    <div className="flex flex-col items-center">
+                      {/* Avatar - stays in original position */}
+                      <div className="relative mb-3">
+                        {entry.user?.avatar_url ? (
+                          <img
+                            src={entry.user.avatar_url}
+                            alt={entry.user.full_name || 'User'}
+                            className="w-14 h-14 rounded-full object-cover border-2"
+                            style={{ 
+                              borderColor: index === 0 ? greenColors.primary : greenColors.complementary,
+                              borderWidth: index === 0 ? '3px' : '2px',
+                              boxShadow: index === 0 ? `0 0 12px ${greenColors.primary}80` : `0 0 6px ${greenColors.complementary}40`
+                            }}
+                          />
+                        ) : (
+                          <div 
+                            className="w-14 h-14 rounded-full flex items-center justify-center border-2"
+                            style={{ 
+                              backgroundColor: greenColors.primaryPair + '60',
+                              borderColor: index === 0 ? greenColors.primary : greenColors.complementary,
+                              borderWidth: index === 0 ? '3px' : '2px',
+                              boxShadow: index === 0 ? `0 0 12px ${greenColors.primary}80` : `0 0 6px ${greenColors.complementary}40`
+                            }}
+                          >
+                            <Crown className="w-7 h-7" style={{ color: index === 0 ? greenColors.primary : greenColors.complementary }} />
+                          </div>
+                        )}
+                        {/* Crown badge for current */}
+                        {index === 0 && (
+                          <div 
+                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center animate-bounce z-20"
+                            style={{ backgroundColor: greenColors.primary }}
+                          >
+                            <Crown className="w-3 h-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Content box below avatar, aligned left or right */}
+                      <div 
+                        className={`${getRoundedClass('rounded-lg')} px-4 py-3 backdrop-blur-sm`}
+                        style={{ 
+                          backgroundColor: mode === 'chaos' ? 'rgba(42, 42, 42, 0.95)' : mode === 'chill' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(26, 26, 26, 0.95)',
+                          border: `1px solid ${greenColors.primary}40`,
+                          width: 'min(calc(50% - 2rem), 400px)',
+                          maxWidth: 'calc(100vw - 600px)',
+                          textAlign: isRight ? 'right' : 'left',
+                          alignSelf: isRight ? 'flex-end' : 'flex-start'
+                        }}
+                      >
+                        <p className={`text-sm font-semibold mb-1.5 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
+                          {entry.user?.full_name || entry.user?.email || 'Unknown'}
                         </p>
-                      )}
+                        <p className={`text-xs mb-2 ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`}>
+                          {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                        {entry.achievement && (
+                          <p className={`text-xs ${mode === 'chill' ? 'text-[#4A1818]/90' : 'text-white/90'} leading-relaxed`}>
+                            {entry.achievement}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )
