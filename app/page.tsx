@@ -2104,7 +2104,7 @@ export default function TeamDashboard() {
                         {mode === 'code' ? '[JUST VIBES]' : 'Just Vibes'} {mode !== 'code' && <Music className="w-3 h-3 ml-2" />}
                       </Button>
                       <Button 
-                        onClick={() => router.push('/grail')}
+                        onClick={() => window.open('https://grail.codeandtheory.net/', '_blank')}
                         className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
                         style={mode === 'chaos' ? {
                           backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
@@ -2123,7 +2123,7 @@ export default function TeamDashboard() {
                         {mode === 'code' ? '[GRAIL]' : 'Grail'} {mode !== 'code' && <Clock className="w-3 h-3 ml-2" />}
                       </Button>
                       <Button 
-                        onClick={() => router.push('/brief')}
+                        onClick={() => window.open('https://docs.google.com/document/d/1veJeGAgkhFgVqgdOs1qnH08YxFIDti_bEA0HXsSBq4s/edit?tab=t.0', '_blank')}
                         className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
                         style={mode === 'chaos' ? {
                           backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
