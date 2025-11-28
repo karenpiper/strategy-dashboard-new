@@ -29,6 +29,7 @@ interface UserProfile {
   website: string | null
   pronouns: string | null
   slack_id: string | null
+  manager_id: string | null
   is_active: boolean | null
   created_at: string
   updated_at: string
@@ -523,6 +524,31 @@ export default function UsersAdminPage() {
                       className="bg-white text-black border-gray-300"
                     />
                   </div>
+                </div>
+
+                {/* Manager Selection */}
+                <div>
+                  <Label className="text-black flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4" />
+                    Manager (for Org Chart)
+                  </Label>
+                  <select
+                    value={editingUser.manager_id || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, manager_id: e.target.value || null })}
+                    className="w-full h-9 rounded-md border border-gray-300 bg-white text-black px-3"
+                  >
+                    <option value="">No Manager (Top Level)</option>
+                    {users
+                      .filter(u => u.id !== editingUser.id && u.is_active !== false)
+                      .map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.full_name || user.email || 'Unnamed User'} {user.role ? `(${user.role})` : ''}
+                        </option>
+                      ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Select this person's manager for the org chart. Leave empty for top-level positions.
+                  </p>
                 </div>
 
                 {/* Base Role, Pronouns, and Slack ID */}

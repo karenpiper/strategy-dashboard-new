@@ -124,12 +124,17 @@ export async function PUT(request: NextRequest) {
     }
 
     // Convert empty strings to null for optional fields
-    const optionalFields = ['full_name', 'avatar_url', 'birthday', 'discipline', 'role', 'bio', 'location', 'website', 'pronouns', 'slack_id']
+    const optionalFields = ['full_name', 'avatar_url', 'birthday', 'discipline', 'role', 'bio', 'location', 'website', 'pronouns', 'slack_id', 'manager_id']
     optionalFields.forEach(field => {
       if (updateData[field] === '') {
         updateData[field] = null
       }
     })
+    
+    // Prevent circular references (person can't be their own manager)
+    if (updateData.manager_id === id) {
+      return NextResponse.json({ error: 'A person cannot be their own manager' }, { status: 400 })
+    }
     
     // Ensure is_active is a boolean (default to true if not provided)
     if (updateData.is_active === undefined || updateData.is_active === null) {
