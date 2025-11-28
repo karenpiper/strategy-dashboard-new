@@ -296,83 +296,72 @@ export default function BeastHistoryPage() {
               <Loader2 className="w-8 h-8 animate-spin" style={{ color: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF' }} />
             </div>
           ) : beastBabeHistory.length > 0 ? (
-            <div className="relative" style={{ minHeight: `${Math.max(600, beastBabeHistory.length * 100)}px`, padding: '2rem 0' }}>
-              {/* Curving Path SVG */}
+            <div className="relative" style={{ minHeight: `${beastBabeHistory.length * 120}px`, padding: '2rem 0' }}>
+              {/* Horizontal zigzag timeline SVG */}
               <svg 
                 className="absolute inset-0 w-full h-full" 
                 style={{ overflow: 'visible', pointerEvents: 'none' }}
-                viewBox="0 0 1000 1000"
-                preserveAspectRatio="xMidYMid meet"
+                viewBox={`0 0 1000 ${beastBabeHistory.length * 120}`}
+                preserveAspectRatio="none"
               >
                 <defs>
-                  <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor={greenColors.primary} stopOpacity="0.8" />
-                    <stop offset="50%" stopColor={greenColors.complementary} stopOpacity="0.6" />
-                    <stop offset="100%" stopColor={greenColors.primaryPair} stopOpacity="0.4" />
+                  <linearGradient id="timelineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor={greenColors.primary} stopOpacity="0.9" />
+                    <stop offset="50%" stopColor={greenColors.complementary} stopOpacity="0.7" />
+                    <stop offset="100%" stopColor={greenColors.primaryPair} stopOpacity="0.5" />
                   </linearGradient>
                 </defs>
-                {/* Curving path - candyland style */}
+                {/* Horizontal zigzag path */}
                 <path
                   d={(() => {
-                    const total = beastBabeHistory.length
-                    let path = `M 100 50`
+                    const segmentHeight = 120
+                    let path = `M 50 60`
                     
-                    for (let i = 1; i < total; i++) {
-                      const progress = i / (total - 1)
-                      // Create a curving path that snakes across
-                      const baseX = 100 + progress * 700
-                      const baseY = 50 + progress * 900
-                      const curveX = baseX + Math.sin(progress * Math.PI * 6) * 80
-                      const curveY = baseY + Math.cos(progress * Math.PI * 4) * 60
+                    for (let i = 1; i < beastBabeHistory.length; i++) {
+                      const y = 60 + (i * segmentHeight)
+                      // Alternate between left and right sides
+                      const isRight = i % 2 === 1
+                      const x = isRight ? 950 : 50
                       
                       if (i === 1) {
-                        path += ` Q ${baseX - 50} ${baseY - 30}, ${curveX} ${curveY}`
+                        // First segment goes right
+                        path += ` L 950 ${y}`
                       } else {
-                        const prevProgress = (i - 1) / (total - 1)
-                        const prevX = 100 + prevProgress * 700 + Math.sin(prevProgress * Math.PI * 6) * 80
-                        const prevY = 50 + prevProgress * 900 + Math.cos(prevProgress * Math.PI * 4) * 60
-                        const cp1x = prevX + (curveX - prevX) * 0.3
-                        const cp1y = prevY + (curveY - prevY) * 0.3
-                        const cp2x = prevX + (curveX - prevX) * 0.7
-                        const cp2y = prevY + (curveY - prevY) * 0.7
-                        path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${curveX} ${curveY}`
+                        // Subsequent segments zigzag
+                        const prevY = 60 + ((i - 1) * segmentHeight)
+                        const prevIsRight = (i - 1) % 2 === 1
+                        const prevX = prevIsRight ? 950 : 50
+                        
+                        // Vertical line down, then horizontal to the other side
+                        path += ` L ${prevX} ${y} L ${x} ${y}`
                       }
                     }
                     return path
                   })()}
                   fill="none"
-                  stroke="url(#pathGradient)"
-                  strokeWidth="8"
+                  stroke="url(#timelineGradient)"
+                  strokeWidth="6"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  style={{ filter: 'drop-shadow(0 0 6px rgba(0, 200, 150, 0.4))' }}
+                  style={{ filter: 'drop-shadow(0 0 4px rgba(0, 200, 150, 0.3))' }}
                 />
               </svg>
               
-              {/* Avatars positioned along the path */}
+              {/* Avatars positioned along the timeline */}
               {beastBabeHistory.map((entry, index) => {
-                const progress = index / (beastBabeHistory.length - 1)
-                // Calculate position along the curving path
-                const baseX = 100 + progress * 700
-                const baseY = 50 + progress * 900
-                const pathX = baseX + Math.sin(progress * Math.PI * 6) * 80
-                const pathY = baseY + Math.cos(progress * Math.PI * 4) * 60
-                
-                // Position avatar offset to the side of the path
-                const angle = Math.atan2(
-                  Math.cos(progress * Math.PI * 4) * -60,
-                  Math.sin(progress * Math.PI * 6) * 80
-                )
-                const offsetX = Math.cos(angle + Math.PI / 2) * 100
-                const offsetY = Math.sin(angle + Math.PI / 2) * 100
+                const segmentHeight = 120
+                const y = 60 + (index * segmentHeight)
+                // Alternate between left and right sides
+                const isRight = index % 2 === 1
+                const x = isRight ? 950 : 50
                 
                 return (
                   <div
                     key={entry.id}
                     className="absolute z-10"
                     style={{
-                      left: `${((pathX + offsetX) / 1000) * 100}%`,
-                      top: `${((pathY + offsetY) / 1000) * 100}%`,
+                      left: `${(x / 1000) * 100}%`,
+                      top: `${(y / (beastBabeHistory.length * 120)) * 100}%`,
                       transform: 'translate(-50%, -50%)'
                     }}
                   >
@@ -383,24 +372,24 @@ export default function BeastHistoryPage() {
                           <img
                             src={entry.user.avatar_url}
                             alt={entry.user.full_name || 'User'}
-                            className="w-12 h-12 rounded-full object-cover border-2 cursor-pointer transition-transform hover:scale-125"
+                            className="w-14 h-14 rounded-full object-cover border-2 cursor-pointer transition-transform hover:scale-110"
                             style={{ 
                               borderColor: index === 0 ? greenColors.primary : greenColors.complementary,
                               borderWidth: index === 0 ? '3px' : '2px',
-                              boxShadow: index === 0 ? `0 0 16px ${greenColors.primary}90` : `0 0 8px ${greenColors.complementary}50`
+                              boxShadow: index === 0 ? `0 0 12px ${greenColors.primary}80` : `0 0 6px ${greenColors.complementary}40`
                             }}
                           />
                         ) : (
                           <div 
-                            className="w-12 h-12 rounded-full flex items-center justify-center border-2 cursor-pointer transition-transform hover:scale-125"
+                            className="w-14 h-14 rounded-full flex items-center justify-center border-2 cursor-pointer transition-transform hover:scale-110"
                             style={{ 
                               backgroundColor: greenColors.primaryPair + '60',
                               borderColor: index === 0 ? greenColors.primary : greenColors.complementary,
                               borderWidth: index === 0 ? '3px' : '2px',
-                              boxShadow: index === 0 ? `0 0 16px ${greenColors.primary}90` : `0 0 8px ${greenColors.complementary}50`
+                              boxShadow: index === 0 ? `0 0 12px ${greenColors.primary}80` : `0 0 6px ${greenColors.complementary}40`
                             }}
                           >
-                            <Crown className="w-6 h-6" style={{ color: index === 0 ? greenColors.primary : greenColors.complementary }} />
+                            <Crown className="w-7 h-7" style={{ color: index === 0 ? greenColors.primary : greenColors.complementary }} />
                           </div>
                         )}
                         {/* Crown badge for current */}
@@ -414,26 +403,21 @@ export default function BeastHistoryPage() {
                         )}
                       </div>
                       
-                      {/* Tooltip on hover */}
-                      <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30 whitespace-nowrap">
+                      {/* Compact tooltip on hover */}
+                      <div className={`absolute ${isRight ? 'right-full mr-2' : 'left-full ml-2'} top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30`}>
                         <div 
-                          className={`px-3 py-2 ${getRoundedClass('rounded-lg')} shadow-lg`}
+                          className={`px-2 py-1 ${getRoundedClass('rounded-md')} shadow-lg backdrop-blur-sm`}
                           style={{ 
-                            backgroundColor: mode === 'chaos' ? '#2A2A2A' : mode === 'chill' ? '#FFFFFF' : '#1a1a1a',
-                            border: `1px solid ${greenColors.primary}`
+                            backgroundColor: mode === 'chaos' ? 'rgba(42, 42, 42, 0.95)' : mode === 'chill' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(26, 26, 26, 0.95)',
+                            border: `1px solid ${greenColors.primary}40`
                           }}
                         >
-                          <p className={`text-sm font-black ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
+                          <p className={`text-xs font-semibold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
                             {entry.user?.full_name || entry.user?.email || 'Unknown'}
                           </p>
-                          <p className={`text-xs ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`}>
+                          <p className={`text-[10px] ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`}>
                             {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </p>
-                          {entry.achievement && (
-                            <p className={`text-xs italic mt-1 ${mode === 'chill' ? 'text-[#4A1818]/80' : 'text-white/80'}`}>
-                              "{entry.achievement}"
-                            </p>
-                          )}
                         </div>
                       </div>
                     </div>
