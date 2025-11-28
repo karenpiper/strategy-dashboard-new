@@ -388,71 +388,55 @@ export async function POST(request: NextRequest) {
     }
 
     let newProfile
+    
+    // If profile exists, delete it first, then insert fresh
+    // This avoids any trigger/constraint issues
     if (existingProfile) {
-      // Profile exists (created by trigger), update it
-      console.log('Profile exists, updating:', authUserId)
+      console.log('Profile exists, deleting before insert:', authUserId)
       
-      // Remove id and created_at from update data (these shouldn't be updated)
-      const { id, created_at, ...updateData } = profileInsertData
-      
-      const { data: updatedProfile, error: updateError } = await supabaseAdmin
+      const { error: deleteError } = await supabaseAdmin
         .from('profiles')
-        .update(updateData)
+        .delete()
         .eq('id', authUserId)
-        .select('*')
-        .single()
 
-      if (updateError) {
-        console.error('Error updating profile:', JSON.stringify(updateError, null, 2))
-        console.error('Update data:', JSON.stringify(updateData, null, 2))
-        
-        // Clean up auth user if profile update fails
-        try {
-          await supabaseAdmin.auth.admin.deleteUser(authUserId)
-        } catch (cleanupError) {
-          console.error('Error cleaning up auth user:', cleanupError)
-        }
-        
-        return NextResponse.json({ 
-          error: 'Failed to update profile', 
-          details: `Database error: ${updateError.message || 'Unknown error'}. Code: ${updateError.code || 'UNKNOWN'}`,
-          code: updateError.code,
-          hint: updateError.hint
-        }, { status: 500 })
+      if (deleteError) {
+        console.error('Error deleting existing profile:', JSON.stringify(deleteError, null, 2))
+        // Continue anyway - try to insert
       }
-      
-      newProfile = updatedProfile
-    } else {
-      // Profile doesn't exist (trigger didn't fire or failed), create it
-      console.log('Profile does not exist, creating:', authUserId)
-      
-      const { data: createdProfile, error: profileInsertError } = await supabaseAdmin
-        .from('profiles')
-        .insert(profileInsertData)
-        .select('*')
-        .single()
-
-      if (profileInsertError) {
-        console.error('Error inserting profile:', JSON.stringify(profileInsertError, null, 2))
-        console.error('Profile insert data:', JSON.stringify(profileInsertData, null, 2))
-        
-        // Clean up auth user if profile insert fails
-        try {
-          await supabaseAdmin.auth.admin.deleteUser(authUserId)
-        } catch (cleanupError) {
-          console.error('Error cleaning up auth user:', cleanupError)
-        }
-        
-        return NextResponse.json({ 
-          error: 'Failed to create profile', 
-          details: `Database error: ${profileInsertError.message || 'Unknown error'}. Code: ${profileInsertError.code || 'UNKNOWN'}`,
-          code: profileInsertError.code,
-          hint: profileInsertError.hint
-        }, { status: 500 })
-      }
-      
-      newProfile = createdProfile
     }
+    
+    // Remove created_at - let the database set it automatically
+    const { created_at, ...insertData } = profileInsertData
+    
+    // Insert the profile
+    console.log('Inserting profile:', authUserId)
+    
+    const { data: createdProfile, error: profileInsertError } = await supabaseAdmin
+      .from('profiles')
+      .insert(insertData)
+      .select('*')
+      .single()
+
+    if (profileInsertError) {
+      console.error('Error inserting profile:', JSON.stringify(profileInsertError, null, 2))
+      console.error('Profile insert data:', JSON.stringify(insertData, null, 2))
+      
+      // Clean up auth user if profile insert fails
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(authUserId)
+      } catch (cleanupError) {
+        console.error('Error cleaning up auth user:', cleanupError)
+      }
+      
+      return NextResponse.json({ 
+        error: 'Failed to create profile', 
+        details: `Database error: ${profileInsertError.message || 'Unknown error'}. Code: ${profileInsertError.code || 'UNKNOWN'}`,
+        code: profileInsertError.code,
+        hint: profileInsertError.hint
+      }, { status: 500 })
+    }
+    
+    newProfile = createdProfile
 
     return NextResponse.json({ data: newProfile }, { status: 201 })
   } catch (error: any) {
