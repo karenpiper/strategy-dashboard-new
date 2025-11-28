@@ -25,9 +25,6 @@ import {
   Crown,
   Music,
   ExternalLink,
-  Search,
-  ChevronDown,
-  ChevronUp
 } from 'lucide-react'
 import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -55,8 +52,6 @@ export default function TeamPage() {
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
   const [loadingProfile, setLoadingProfile] = useState(false)
   const [currentCurator, setCurrentCurator] = useState<{ curator: string; curator_photo_url: string | null; spotify_url: string | null; id: string } | null>(null)
-  const [directorySearch, setDirectorySearch] = useState('')
-  const [isDirectoryCollapsed, setIsDirectoryCollapsed] = useState(true)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -79,7 +74,6 @@ export default function TeamPage() {
         fetchAnniversaries(),
         fetchSnapLeaderboard(),
         fetchAllProfiles(),
-        fetchBeastBabeHistory(),
         fetchCurrentCurator()
       ])
     } catch (error) {
@@ -356,17 +350,6 @@ export default function TeamPage() {
     }
   }
 
-  const fetchBeastBabeHistory = async () => {
-    try {
-      const response = await fetch('/api/beast-babe')
-      if (response.ok) {
-        const data = await response.json()
-        setBeastBabeHistory(data.history || [])
-      }
-    } catch (error) {
-      console.error('Error fetching beast babe history:', error)
-    }
-  }
 
   const fetchCurrentCurator = async () => {
     try {
@@ -476,8 +459,7 @@ export default function TeamPage() {
     return mode === 'code' ? 'rounded-none' : defaultClass
   }
   
-  const [activeFilter, setActiveFilter] = useState<'all' | 'anniversaries' | 'birthdays' | 'leaderboard' | 'directory' | 'org-chart' | 'beast-history'>('all')
-  const [beastBabeHistory, setBeastBabeHistory] = useState<any[]>([])
+  const [activeFilter, setActiveFilter] = useState<'all' | 'anniversaries' | 'birthdays' | 'leaderboard' | 'org-chart'>('all')
 
   if (authLoading || loading) {
     return (
@@ -534,7 +516,7 @@ export default function TeamPage() {
                 ▼ SECTIONS
               </h3>
               <div className="space-y-2">
-                {(['all', 'anniversaries', 'birthdays', 'leaderboard', 'directory', 'org-chart', 'beast-history'] as const).map((filter) => (
+                {(['all', 'anniversaries', 'birthdays', 'leaderboard', 'org-chart'] as const).map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setActiveFilter(filter)}
@@ -556,14 +538,41 @@ export default function TeamPage() {
                     {filter === 'anniversaries' && <PartyPopper className="w-4 h-4" />}
                     {filter === 'birthdays' && <Cake className="w-4 h-4" />}
                     {filter === 'leaderboard' && <Trophy className="w-4 h-4" />}
-                    {filter === 'directory' && <Users className="w-4 h-4" />}
                     {filter === 'org-chart' && <Briefcase className="w-4 h-4" />}
-                    {filter === 'beast-history' && <Crown className="w-4 h-4" />}
                     <span className="font-black uppercase text-sm">
-                      {filter === 'all' ? 'All' : filter === 'org-chart' ? 'Org Chart' : filter === 'beast-history' ? 'History of the Beast' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                      {filter === 'all' ? 'All' : filter === 'org-chart' ? 'Org Chart' : filter.charAt(0).toUpperCase() + filter.slice(1)}
                     </span>
                   </button>
                 ))}
+                
+                {/* Links to separate pages */}
+                <Link
+                  href="/team/directory"
+                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
+                    mode === 'chaos'
+                      ? 'bg-[#00C896]/30 text-white/80 hover:bg-[#00C896]/50 text-white'
+                      : mode === 'chill'
+                      ? 'bg-white/30 text-[#4A1818]/60 hover:bg-white/50 text-[#4A1818]'
+                      : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="font-black uppercase text-sm">Directory</span>
+                </Link>
+                
+                <Link
+                  href="/team/beast-history"
+                  className={`w-full text-left px-4 py-3 ${getRoundedClass('rounded-xl')} transition-all flex items-center gap-3 ${
+                    mode === 'chaos'
+                      ? 'bg-[#00C896]/30 text-white/80 hover:bg-[#00C896]/50 text-white'
+                      : mode === 'chill'
+                      ? 'bg-white/30 text-[#4A1818]/60 hover:bg-white/50 text-[#4A1818]'
+                      : 'bg-black/40 text-white/60 hover:bg-black/60 text-white'
+                  }`}
+                >
+                  <Crown className="w-4 h-4" />
+                  <span className="font-black uppercase text-sm">History of the Beast</span>
+                </Link>
               </div>
             </div>
 
@@ -859,334 +868,6 @@ export default function TeamPage() {
 
             {/* Additional Sections */}
             <div className="space-y-4">
-              {/* Team Directory */}
-              {(activeFilter === 'all' || activeFilter === 'directory') && (
-                <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-4`} style={{
-                  borderColor: mode === 'chaos' ? '#333333' : mode === 'chill' ? '#E5E5E5' : '#333333',
-                  borderWidth: '1px'
-                }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 ${getRoundedClass('rounded-lg')} flex items-center justify-center`} style={{ backgroundColor: greenColors.contrast }}>
-                        <Users className="w-5 h-5 text-white" />
-                      </div>
-                      <h2 className={`text-xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>Team Directory</h2>
-                    </div>
-                    <button
-                      onClick={() => setIsDirectoryCollapsed(!isDirectoryCollapsed)}
-                      className={`p-2 ${getRoundedClass('rounded-lg')} transition-colors ${
-                        mode === 'chaos'
-                          ? 'hover:bg-[#00C896]/20'
-                          : mode === 'chill'
-                          ? 'hover:bg-[#1A5D52]/10'
-                          : 'hover:bg-white/10'
-                      }`}
-                    >
-                      {isDirectoryCollapsed ? (
-                        <ChevronDown className={`w-5 h-5 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`} />
-                      ) : (
-                        <ChevronUp className={`w-5 h-5 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`} />
-                      )}
-                    </button>
-                  </div>
-                  
-                  {/* Search Bar - Always visible */}
-                  <div className="mb-4">
-                    <div className="relative">
-                      <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${mode === 'chill' ? 'text-[#4A1818]/50' : 'text-white/50'}`} />
-                      <input
-                        type="text"
-                        placeholder="Search team members..."
-                        value={directorySearch}
-                        onChange={(e) => {
-                          setDirectorySearch(e.target.value)
-                          // Auto-expand when searching
-                          if (e.target.value && isDirectoryCollapsed) {
-                            setIsDirectoryCollapsed(false)
-                          }
-                        }}
-                        className={`w-full pl-10 pr-4 py-2 ${getRoundedClass('rounded-lg')} ${
-                          mode === 'chaos'
-                            ? 'bg-[#1A1A1A] border border-[#00C896]/30 text-white placeholder-white/50'
-                            : mode === 'chill'
-                            ? 'bg-white/80 border border-[#1A5D52]/30 text-[#4A1818] placeholder-[#4A1818]/50'
-                            : 'bg-black/40 border border-white/20 text-white placeholder-white/50'
-                        } focus:outline-none focus:ring-2`}
-                        style={{
-                          '--tw-ring-color': mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.primaryPair : '#FFFFFF'
-                        } as React.CSSProperties}
-                      />
-                      {directorySearch && (
-                        <button
-                          onClick={() => setDirectorySearch('')}
-                          className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${mode === 'chill' ? 'text-[#4A1818]/50 hover:text-[#4A1818]' : 'text-white/50 hover:text-white'}`}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Directory Content - Collapsible, shows all when expanded or filtered results when searching */}
-                  {(!isDirectoryCollapsed || directorySearch) && (
-                    <>
-                      {allProfiles.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {allProfiles
-                            .filter(profile => {
-                              if (!directorySearch) return true
-                              const searchLower = directorySearch.toLowerCase()
-                              const fullName = (profile.full_name || '').toLowerCase()
-                              const email = (profile.email || '').toLowerCase()
-                              const role = (profile.role || '').toLowerCase()
-                              const discipline = (profile.discipline || '').toLowerCase()
-                              return fullName.includes(searchLower) || 
-                                     email.includes(searchLower) || 
-                                     role.includes(searchLower) || 
-                                     discipline.includes(searchLower)
-                            })
-                            .map((profile) => (
-                              <button
-                                key={profile.id}
-                                onClick={() => handleProfileClick(profile.id)}
-                                className={`p-3 ${getRoundedClass('rounded-xl')} border hover:opacity-80 transition-opacity text-left w-full ${mode === 'chaos' ? 'bg-[#00C896]/10 border-[#00C896]/30' : mode === 'chill' ? 'bg-white/50 border-[#C8D961]/30' : 'bg-black/40 border-white/20'}`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  {profile.avatar_url ? (
-                                    <img
-                                      src={profile.avatar_url}
-                                      alt={profile.full_name || 'User'}
-                                      className="w-10 h-10 rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: (mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF') + '33' }}>
-                                      <Users className="w-5 h-5" style={{ color: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF' }} />
-                                    </div>
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <p className={`font-semibold text-sm ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'} truncate`}>
-                                      {profile.full_name || profile.email || 'Unknown'}
-                                    </p>
-                                    {profile.role && (
-                                      <p className={`text-xs ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'} truncate`}>{profile.role}</p>
-                                    )}
-                                  </div>
-                                </div>
-                              </button>
-                            ))}
-                        </div>
-                      ) : (
-                        <p className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>
-                          {directorySearch ? `No team members found matching "${directorySearch}"` : 'No team members found'}
-                        </p>
-                      )}
-                    </>
-                  )}
-                  
-                  {/* Show count when searching */}
-                  {directorySearch && !isDirectoryCollapsed && (
-                    <p className={`text-xs mt-2 ${mode === 'chill' ? 'text-[#4A1818]/50' : 'text-white/50'}`}>
-                      {allProfiles.filter(profile => {
-                        const searchLower = directorySearch.toLowerCase()
-                        const fullName = (profile.full_name || '').toLowerCase()
-                        const email = (profile.email || '').toLowerCase()
-                        const role = (profile.role || '').toLowerCase()
-                        const discipline = (profile.discipline || '').toLowerCase()
-                        return fullName.includes(searchLower) || 
-                               email.includes(searchLower) || 
-                               role.includes(searchLower) || 
-                               discipline.includes(searchLower)
-                      }).length} result{allProfiles.filter(profile => {
-                        const searchLower = directorySearch.toLowerCase()
-                        const fullName = (profile.full_name || '').toLowerCase()
-                        const email = (profile.email || '').toLowerCase()
-                        const role = (profile.role || '').toLowerCase()
-                        const discipline = (profile.discipline || '').toLowerCase()
-                        return fullName.includes(searchLower) || 
-                               email.includes(searchLower) || 
-                               role.includes(searchLower) || 
-                               discipline.includes(searchLower)
-                      }).length !== 1 ? 's' : ''} found
-                    </p>
-                  )}
-                </Card>
-              )}
-
-              {/* History of the Beast */}
-              {(activeFilter === 'all' || activeFilter === 'beast-history') && (
-                <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-6`} style={{
-                  borderColor: mode === 'chaos' ? '#333333' : mode === 'chill' ? '#E5E5E5' : '#333333',
-                  borderWidth: '1px'
-                }}>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className={`w-12 h-12 ${getRoundedClass('rounded-lg')} flex items-center justify-center`} style={{ backgroundColor: greenColors.primary }}>
-                      <Crown className="w-6 h-6 text-white" />
-                    </div>
-                    <h2 className={`text-2xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>History of the Beast</h2>
-                  </div>
-                  
-                  {beastBabeHistory.length > 0 ? (
-                    <div className="relative">
-                      {beastBabeHistory.map((entry, index) => {
-                        const isLast = index === beastBabeHistory.length - 1
-                        
-                        return (
-                          <div key={entry.id} className="relative pb-8">
-                            {/* Rounded Connecting Line */}
-                            {!isLast && (
-                              <div className="absolute left-8 top-20 z-0" style={{ width: '2px', height: 'calc(100% - 0.5rem)' }}>
-                                {/* Curved SVG line */}
-                                <svg 
-                                  className="absolute inset-0 w-full h-full" 
-                                  style={{ overflow: 'visible' }}
-                                >
-                                  <path
-                                    d={`M 0 0 Q 20 ${(beastBabeHistory.length - index) * 10} 0 ${(beastBabeHistory.length - index) * 20} L 0 100%`}
-                                    fill="none"
-                                    stroke={greenColors.primary}
-                                    strokeWidth="2"
-                                    strokeDasharray="4 4"
-                                    opacity="0.6"
-                                    className="animate-pulse"
-                                  />
-                                  {/* Animated dot */}
-                                  <circle
-                                    cx="0"
-                                    cy="0"
-                                    r="4"
-                                    fill={greenColors.primary}
-                                    opacity="0.8"
-                                    className="animate-ping"
-                                    style={{
-                                      animationDelay: `${index * 0.5}s`,
-                                      animationDuration: '2s'
-                                    }}
-                                  />
-                                </svg>
-                                {/* Straight line with gradient */}
-                                <div 
-                                  className="absolute top-0 left-0 w-0.5 h-full"
-                                  style={{
-                                    background: `linear-gradient(to bottom, ${greenColors.primary}60, ${greenColors.complementary}60, transparent)`,
-                                    borderRadius: '2px'
-                                  }}
-                                />
-                              </div>
-                            )}
-                            
-                            <div className="flex items-start gap-4 relative z-10">
-                              {/* Avatar with animated border */}
-                              <div className="relative">
-                                <div 
-                                  className="absolute inset-0 rounded-full animate-pulse"
-                                  style={{
-                                    backgroundColor: greenColors.primary + '30',
-                                    transform: 'scale(1.1)'
-                                  }}
-                                />
-                                {entry.user?.avatar_url ? (
-                                  <img
-                                    src={entry.user.avatar_url}
-                                    alt={entry.user.full_name || 'User'}
-                                    className="w-16 h-16 rounded-full object-cover border-2 relative z-10"
-                                    style={{ borderColor: greenColors.primary }}
-                                  />
-                                ) : (
-                                  <div 
-                                    className="w-16 h-16 rounded-full flex items-center justify-center border-2 relative z-10"
-                                    style={{ 
-                                      backgroundColor: greenColors.primaryPair + '40',
-                                      borderColor: greenColors.primary
-                                    }}
-                                  >
-                                    <Crown className="w-8 h-8" style={{ color: greenColors.primary }} />
-                                  </div>
-                                )}
-                                {/* Crown badge for current */}
-                                {index === 0 && (
-                                  <div 
-                                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center animate-bounce z-20"
-                                    style={{ backgroundColor: greenColors.primary }}
-                                  >
-                                    <Crown className="w-4 h-4 text-white" />
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {/* Content */}
-                              <div className="flex-1 pt-1">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <p className={`text-lg font-black ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
-                                    {entry.user?.full_name || entry.user?.email || 'Unknown'}
-                                  </p>
-                                  {index === 0 && (
-                                    <span 
-                                      className="text-xs px-2 py-0.5 rounded-full font-black uppercase animate-pulse"
-                                      style={{ 
-                                        backgroundColor: greenColors.primary,
-                                        color: mode === 'chaos' ? '#000' : '#fff'
-                                      }}
-                                    >
-                                      Current
-                                    </span>
-                                  )}
-                                </div>
-                                
-                                {entry.achievement && (
-                                  <p className={`text-sm italic mb-2 ${mode === 'chill' ? 'text-[#4A1818]/80' : 'text-white/80'}`}>
-                                    "{entry.achievement}"
-                                  </p>
-                                )}
-                                
-                                <div className="flex items-center gap-3 text-xs flex-wrap">
-                                  <span className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>
-                                    {new Date(entry.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                  </span>
-                                  
-                                  {entry.passed_by && (
-                                    <>
-                                      <span className={`${mode === 'chill' ? 'text-[#4A1818]/40' : 'text-white/40'}`}>•</span>
-                                      <div className="flex items-center gap-2">
-                                        <span className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>Passed from</span>
-                                        <div className="flex items-center gap-1">
-                                          {entry.passed_by.avatar_url ? (
-                                            <img
-                                              src={entry.passed_by.avatar_url}
-                                              alt={entry.passed_by.full_name || 'User'}
-                                              className="w-5 h-5 rounded-full object-cover border"
-                                              style={{ borderColor: greenColors.complementary }}
-                                            />
-                                          ) : (
-                                            <div 
-                                              className="w-5 h-5 rounded-full flex items-center justify-center border"
-                                              style={{ 
-                                                backgroundColor: greenColors.complementary + '40',
-                                                borderColor: greenColors.complementary
-                                              }}
-                                            >
-                                              <Users className="w-3 h-3" style={{ color: greenColors.complementary }} />
-                                            </div>
-                                          )}
-                                          <span className={`font-semibold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
-                                            {entry.passed_by.full_name || entry.passed_by.email || 'Unknown'}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <p className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>No beast babe history found</p>
-                  )}
-                </Card>
-              )}
-
               {/* Org Chart */}
               {(activeFilter === 'all' || activeFilter === 'org-chart') && (
                 <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-4`} style={{
