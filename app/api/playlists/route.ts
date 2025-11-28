@@ -483,16 +483,62 @@ export async function POST(request: NextRequest) {
     // Create curator assignment record if curator was auto-assigned or if we have a profile ID
     if (playlist && (autoAssignedCurator || curatorProfileId)) {
       const { data: { user } } = await supabase.auth.getUser()
-      await supabase
+      
+      // Calculate start_date (assignment_date + 3 days) and end_date (start_date + 7 days)
+      const assignmentDateObj = new Date(date)
+      const startDateObj = new Date(assignmentDateObj)
+      startDateObj.setDate(startDateObj.getDate() + 3)
+      const endDateObj = new Date(startDateObj)
+      endDateObj.setDate(endDateObj.getDate() + 7)
+
+      const start_date = startDateObj.toISOString().split('T')[0]
+      const end_date = endDateObj.toISOString().split('T')[0]
+
+      const { data: assignment } = await supabase
         .from('curator_assignments')
         .insert({
           playlist_id: playlist.id,
           curator_name: finalCurator,
           curator_profile_id: curatorProfileId || autoAssignedCurator?.id || null,
           assignment_date: date,
+          start_date,
+          end_date,
           is_manual_override: !autoAssignedCurator, // Manual if curator was provided
           assigned_by: user?.id || null
         })
+        .select()
+        .single()
+
+      // Send Slack notification if curator was auto-assigned
+      if (autoAssignedCurator && assignment) {
+        const { data: curatorProfile } = await supabase
+          .from('profiles')
+          .select('slack_id, full_name')
+          .eq('id', autoAssignedCurator.id)
+          .single()
+
+        if (curatorProfile?.slack_id) {
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+          const curationUrl = `${baseUrl}/curate?assignment=${assignment.id}`
+          
+          try {
+            await fetch(`${baseUrl}/api/slack/notify-curator`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                slack_id: curatorProfile.slack_id,
+                curator_name: curatorProfile.full_name || autoAssignedCurator.full_name,
+                curation_url: curationUrl,
+                start_date,
+                end_date
+              })
+            })
+          } catch (slackError) {
+            console.error('Error sending Slack notification:', slackError)
+            // Don't fail the playlist creation if Slack fails
+          }
+        }
+      }
     }
 
     return NextResponse.json({

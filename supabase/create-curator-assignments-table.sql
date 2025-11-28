@@ -6,8 +6,9 @@ CREATE TABLE IF NOT EXISTS public.curator_assignments (
   playlist_id UUID REFERENCES public.playlists(id) ON DELETE SET NULL,
   curator_name TEXT NOT NULL,
   curator_profile_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
-  assignment_date DATE NOT NULL,
-  end_date DATE, -- Optional end date for the assignment period
+  assignment_date DATE NOT NULL, -- Date when curator is selected/notified
+  start_date DATE NOT NULL, -- Date when curation period starts (assignment_date + 3 days)
+  end_date DATE NOT NULL, -- Date when curation period ends (start_date + 7 days)
   is_manual_override BOOLEAN DEFAULT false,
   assigned_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
