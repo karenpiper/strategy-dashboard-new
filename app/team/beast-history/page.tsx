@@ -185,7 +185,7 @@ export default function BeastHistoryPage() {
       <main className="w-full max-w-[1200px] mx-auto px-6 py-10 flex-1 pt-24">
         <div className="flex gap-6 w-full">
           {/* Left Sidebar Card */}
-          <Card className={`w-80 flex-shrink-0 min-w-80 ${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit`} style={{ 
+          <Card className={`w-80 flex-shrink-0 min-w-80 ${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-6 flex flex-col h-fit sticky top-24 self-start`} style={{ 
             borderColor: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.primaryPair : '#FFFFFF',
             borderWidth: mode === 'chaos' ? '2px' : '0px'
           }}>
@@ -404,20 +404,25 @@ export default function BeastHistoryPage() {
                       </div>
                       
                       {/* Compact tooltip on hover */}
-                      <div className={`absolute ${isRight ? 'right-full mr-2' : 'left-full ml-2'} top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30`}>
+                      <div className={`absolute ${isRight ? 'right-full mr-2' : 'left-full ml-2'} top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30 max-w-xs`}>
                         <div 
-                          className={`px-2 py-1 ${getRoundedClass('rounded-md')} shadow-lg backdrop-blur-sm`}
+                          className={`px-3 py-2 ${getRoundedClass('rounded-md')} shadow-lg backdrop-blur-sm`}
                           style={{ 
                             backgroundColor: mode === 'chaos' ? 'rgba(42, 42, 42, 0.95)' : mode === 'chill' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(26, 26, 26, 0.95)',
                             border: `1px solid ${greenColors.primary}40`
                           }}
                         >
-                          <p className={`text-xs font-semibold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
+                          <p className={`text-xs font-semibold mb-1 ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
                             {entry.user?.full_name || entry.user?.email || 'Unknown'}
                           </p>
-                          <p className={`text-[10px] ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`}>
+                          <p className={`text-[10px] mb-1 ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`}>
                             {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </p>
+                          {entry.achievement && (
+                            <p className={`text-[10px] italic ${mode === 'chill' ? 'text-[#4A1818]/80' : 'text-white/80'} leading-tight`}>
+                              {entry.achievement}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
