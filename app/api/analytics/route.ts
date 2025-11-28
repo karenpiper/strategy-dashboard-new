@@ -24,8 +24,7 @@ export async function GET(request: NextRequest) {
     const startDateISO = startDate.toISOString()
     const startDateStr = startDate.toISOString().split('T')[0]
 
-    // 1. LOGINS - Query auth.users (requires admin access)
-    // Note: We'll use profiles table as a proxy since direct auth.users access may be limited
+    // 1. LOGINS - Get login data from analytics_events
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, created_at')
@@ -33,8 +32,59 @@ export async function GET(request: NextRequest) {
 
     const totalUsers = profiles?.length || 0
     
-    // For login tracking, we'll approximate using created_at dates
-    // In a production system, you'd want to track logins separately
+    // Get login events from analytics_events table
+    const { data: loginEvents, error: loginEventsError } = await supabase
+      .from('analytics_events')
+      .select('user_id, created_at')
+      .eq('event_type', 'login')
+      .gte('created_at', startDateISO)
+      .order('created_at', { ascending: false })
+
+    // Count unique users who logged in during period
+    const uniqueLoginUsers = new Set(loginEvents?.map(e => e.user_id).filter(Boolean) || []).size
+    
+    // Get login events over time (daily)
+    const loginsByDate: Record<string, number> = {}
+    loginEvents?.forEach(event => {
+      if (!event.created_at) return
+      const dateKey = new Date(event.created_at).toISOString().split('T')[0]
+      loginsByDate[dateKey] = (loginsByDate[dateKey] || 0) + 1
+    })
+
+    // Get login counts per user with profile data
+    const loginCountsPerUser: Record<string, number> = {}
+    loginEvents?.forEach(event => {
+      if (event.user_id) {
+        loginCountsPerUser[event.user_id] = (loginCountsPerUser[event.user_id] || 0) + 1
+      }
+    })
+
+    // Fetch profile data for users with logins
+    const userIdsWithLogins = Object.keys(loginCountsPerUser)
+    const loginUsersWithProfiles: Array<{ userId: string; count: number; full_name: string | null; email: string | null; avatar_url: string | null }> = []
+    
+    if (userIdsWithLogins.length > 0) {
+      const { data: userProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url')
+        .in('id', userIdsWithLogins)
+      
+      userIdsWithLogins.forEach(userId => {
+        const profile = userProfiles?.find(p => p.id === userId)
+        loginUsersWithProfiles.push({
+          userId,
+          count: loginCountsPerUser[userId],
+          full_name: profile?.full_name || null,
+          email: profile?.email || null,
+          avatar_url: profile?.avatar_url || null
+        })
+      })
+      
+      // Sort by count descending
+      loginUsersWithProfiles.sort((a, b) => b.count - a.count)
+    }
+
+    // New signups (from profiles table)
     const newSignups = profiles?.filter(p => {
       if (!p.created_at) return false
       return new Date(p.created_at) >= startDate
@@ -189,7 +239,13 @@ export async function GET(request: NextRequest) {
       logins: {
         totalUsers,
         newSignups,
-        activeUsers: totalUsers // Approximation - would need login tracking for accurate data
+        activeUsers: uniqueLoginUsers, // Users who logged in during period
+        totalLogins: loginEvents?.length || 0,
+        loginsOverTime: Object.entries(loginsByDate)
+          .filter(([date]) => date >= startDateStr)
+          .map(([date, count]) => ({ date, count }))
+          .sort((a, b) => a.date.localeCompare(b.date)),
+        loginsPerUser: loginUsersWithProfiles.slice(0, 10) // Top 10
       },
       sentiment: {
         current: currentMood,

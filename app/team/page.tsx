@@ -15,17 +15,18 @@ import {
   Briefcase,
   Cake,
   PartyPopper,
-  Crown,
   ArrowRight,
   Loader2,
   Mail,
   MapPin,
   Globe,
   Briefcase as BriefcaseIcon,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Crown
 } from 'lucide-react'
 import Link from 'next/link'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { BeastBabeCard } from '@/components/beast-babe-card'
 
 export default function TeamPage() {
   const { user, loading: authLoading } = useAuth()
@@ -43,7 +44,6 @@ export default function TeamPage() {
   const [birthdays, setBirthdays] = useState<Array<{ id: string; full_name: string | null; birthday: string; avatar_url: string | null }>>([])
   const [anniversaries, setAnniversaries] = useState<Array<{ id: string; full_name: string | null; start_date: string; avatar_url: string | null; years: number }>>([])
   const [snapLeaderboard, setSnapLeaderboard] = useState<Array<{ id: string; full_name: string | null; email: string | null; count: number }>>([])
-  const [beastBabeData, setBeastBabeData] = useState<any>(null)
   const [allProfiles, setAllProfiles] = useState<any[]>([])
   const [selectedProfile, setSelectedProfile] = useState<any>(null)
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false)
@@ -69,8 +69,8 @@ export default function TeamPage() {
         fetchBirthdays(),
         fetchAnniversaries(),
         fetchSnapLeaderboard(),
-        fetchBeastBabe(),
-        fetchAllProfiles()
+        fetchAllProfiles(),
+        fetchBeastBabeHistory()
       ])
     } catch (error) {
       console.error('Error fetching team data:', error)
@@ -287,18 +287,6 @@ export default function TeamPage() {
   }
 
 
-  const fetchBeastBabe = async () => {
-    try {
-      const response = await fetch('/api/beast-babe')
-      if (response.ok) {
-        const data = await response.json()
-        setBeastBabeData(data)
-      }
-    } catch (error) {
-      console.error('Error fetching beast babe:', error)
-    }
-  }
-
   const fetchAllProfiles = async () => {
     try {
       const { data: profiles, error } = await supabase
@@ -312,6 +300,18 @@ export default function TeamPage() {
       }
     } catch (error) {
       console.error('Error fetching profiles:', error)
+    }
+  }
+
+  const fetchBeastBabeHistory = async () => {
+    try {
+      const response = await fetch('/api/beast-babe')
+      if (response.ok) {
+        const data = await response.json()
+        setBeastBabeHistory(data.history || [])
+      }
+    } catch (error) {
+      console.error('Error fetching beast babe history:', error)
     }
   }
 
@@ -402,7 +402,8 @@ export default function TeamPage() {
     return mode === 'code' ? 'rounded-none' : defaultClass
   }
   
-  const [activeFilter, setActiveFilter] = useState<'all' | 'anniversaries' | 'birthdays' | 'leaderboard' | 'directory' | 'org-chart'>('all')
+  const [activeFilter, setActiveFilter] = useState<'all' | 'anniversaries' | 'birthdays' | 'leaderboard' | 'directory' | 'org-chart' | 'beast-history'>('all')
+  const [beastBabeHistory, setBeastBabeHistory] = useState<any[]>([])
 
   if (authLoading || loading) {
     return (
@@ -459,7 +460,7 @@ export default function TeamPage() {
                 ▼ SECTIONS
               </h3>
               <div className="space-y-2">
-                {(['all', 'anniversaries', 'birthdays', 'leaderboard', 'directory', 'org-chart'] as const).map((filter) => (
+                {(['all', 'anniversaries', 'birthdays', 'leaderboard', 'directory', 'org-chart', 'beast-history'] as const).map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setActiveFilter(filter)}
@@ -483,42 +484,15 @@ export default function TeamPage() {
                     {filter === 'leaderboard' && <Trophy className="w-4 h-4" />}
                     {filter === 'directory' && <Users className="w-4 h-4" />}
                     {filter === 'org-chart' && <Briefcase className="w-4 h-4" />}
+                    {filter === 'beast-history' && <Crown className="w-4 h-4" />}
                     <span className="font-black uppercase text-sm">
-                      {filter === 'all' ? 'All' : filter === 'org-chart' ? 'Org Chart' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                      {filter === 'all' ? 'All' : filter === 'org-chart' ? 'Org Chart' : filter === 'beast-history' ? 'History of the Beast' : filter.charAt(0).toUpperCase() + filter.slice(1)}
                     </span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Beast Babe Section */}
-            {beastBabeData?.currentBeastBabe && (
-              <>
-                <div className={`h-px mb-6 ${mode === 'chaos' ? 'bg-[#00C896]/40' : mode === 'chill' ? 'bg-[#4A1818]/20' : 'bg-white/20'}`}></div>
-                <div className={`${getRoundedClass('rounded-xl')} p-4`} style={{ 
-                  backgroundColor: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.primary : greenColors.primary
-                }}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Crown className="w-4 h-4 text-white" />
-                    <h3 className="text-xs uppercase tracking-wider font-black text-white">BEAST BABE</h3>
-                  </div>
-                  {beastBabeData.currentBeastBabe.avatar_url ? (
-                    <img
-                      src={beastBabeData.currentBeastBabe.avatar_url}
-                      alt={beastBabeData.currentBeastBabe.full_name || 'Beast Babe'}
-                      className="w-16 h-16 rounded-full object-cover mx-auto mb-2"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 bg-white/20">
-                      <Crown className="w-8 h-8 text-white" />
-                    </div>
-                  )}
-                  <p className="text-sm font-black text-white text-center line-clamp-1">
-                    {beastBabeData.currentBeastBabe.full_name || beastBabeData.currentBeastBabe.email || 'Unknown'}
-                  </p>
-                </div>
-              </>
-            )}
           </Card>
 
           {/* Main Content Area */}
@@ -599,94 +573,111 @@ export default function TeamPage() {
               </Card>
             </div>
 
+            {/* Beast Babe - Large Card */}
+            {(activeFilter === 'all' || activeFilter === 'anniversaries' || activeFilter === 'birthdays') && (
+              <div className="mb-6">
+                <BeastBabeCard />
+              </div>
+            )}
+
             {/* Content Sections */}
             <div className="space-y-4">
-              {/* Show content based on active filter */}
-              {(activeFilter === 'all' || activeFilter === 'anniversaries') && anniversaries.length > 0 && (
-                <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-4`} style={{
-                  borderColor: mode === 'chaos' ? '#333333' : mode === 'chill' ? '#E5E5E5' : '#333333',
-                  borderWidth: '1px'
-                }}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-10 h-10 ${getRoundedClass('rounded-lg')} flex items-center justify-center`} style={{ backgroundColor: greenColors.primaryPair }}>
-                      <PartyPopper className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className={`text-xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>Anniversaries</h2>
-                  </div>
-              {anniversaries.length > 0 ? (
-                <div className="space-y-3">
-                  {anniversaries.map((anniversary) => (
-                    <div key={anniversary.id} className="flex items-center gap-3">
-                      {anniversary.avatar_url ? (
-                        <img
-                          src={anniversary.avatar_url}
-                          alt={anniversary.full_name || 'User'}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: (mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF') + '33' }}>
-                          <Users className="w-5 h-5" style={{ color: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF' }} />
+              {/* Birthdays and Anniversaries Side by Side */}
+              {(activeFilter === 'all' || activeFilter === 'anniversaries' || activeFilter === 'birthdays') && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Anniversaries */}
+                  {(activeFilter === 'all' || activeFilter === 'anniversaries') && (
+                    <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-4`} style={{
+                      borderColor: mode === 'chaos' ? '#333333' : mode === 'chill' ? '#E5E5E5' : '#333333',
+                      borderWidth: '1px'
+                    }}>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`w-10 h-10 ${getRoundedClass('rounded-lg')} flex items-center justify-center`} style={{ backgroundColor: greenColors.primaryPair }}>
+                          <PartyPopper className="w-5 h-5 text-white" />
                         </div>
-                      )}
-                      <div className="flex-1">
-                        <p className={`font-semibold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
-                          {anniversary.full_name || 'Unknown'}
-                        </p>
-                        <p className={`text-sm ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`}>
-                          {anniversary.years} year{anniversary.years !== 1 ? 's' : ''} at Strategy
-                        </p>
+                        <h2 className={`text-xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>Anniversaries</h2>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>No upcoming anniversaries</p>
-              )}
-                </Card>
-              )}
+                      {anniversaries.length > 0 ? (
+                        <div className="space-y-3">
+                          {anniversaries.map((anniversary) => (
+                            <div key={anniversary.id} className="flex items-center gap-3">
+                              {anniversary.avatar_url ? (
+                                <img
+                                  src={anniversary.avatar_url}
+                                  alt={anniversary.full_name || 'User'}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: (mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF') + '33' }}>
+                                  <Users className="w-5 h-5" style={{ color: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF' }} />
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <p className={`font-semibold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
+                                  {anniversary.full_name || 'Unknown'}
+                                </p>
+                        <p className={`text-sm ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`}>
+                          {anniversary.years} year{anniversary.years !== 1 ? 's' : ''} on {(() => {
+                            if (!anniversary.start_date) return 'N/A'
+                            const [year, month, day] = anniversary.start_date.split('-').map(Number)
+                            const date = new Date(year, month - 1, day)
+                            return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })
+                          })()}
+                        </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>No upcoming anniversaries</p>
+                      )}
+                    </Card>
+                  )}
 
-              {/* Birthdays */}
-              {(activeFilter === 'all' || activeFilter === 'birthdays') && birthdays.length > 0 && (
-                <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-4`} style={{
-                  borderColor: mode === 'chaos' ? '#333333' : mode === 'chill' ? '#E5E5E5' : '#333333',
-                  borderWidth: '1px'
-                }}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-10 h-10 ${getRoundedClass('rounded-lg')} flex items-center justify-center`} style={{ backgroundColor: greenColors.complementary }}>
-                      <Cake className="w-5 h-5" style={{ color: mode === 'chill' ? '#4A1818' : '#000' }} />
-                    </div>
-                    <h2 className={`text-xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>Birthdays</h2>
-                  </div>
-              {birthdays.length > 0 ? (
-                <div className="space-y-3">
-                  {birthdays.map((birthday) => (
-                    <div key={birthday.id} className="flex items-center gap-3">
-                      {birthday.avatar_url ? (
-                        <img
-                          src={birthday.avatar_url}
-                          alt={birthday.full_name || 'User'}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: (mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF') + '33' }}>
-                          <Cake className="w-5 h-5" style={{ color: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF' }} />
+                  {/* Birthdays */}
+                  {(activeFilter === 'all' || activeFilter === 'birthdays') && (
+                    <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-4`} style={{
+                      borderColor: mode === 'chaos' ? '#333333' : mode === 'chill' ? '#E5E5E5' : '#333333',
+                      borderWidth: '1px'
+                    }}>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`w-10 h-10 ${getRoundedClass('rounded-lg')} flex items-center justify-center`} style={{ backgroundColor: greenColors.complementary }}>
+                          <Cake className="w-5 h-5" style={{ color: mode === 'chill' ? '#4A1818' : '#000' }} />
                         </div>
-                      )}
-                      <div className="flex-1">
-                        <p className={`font-semibold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
-                          {birthday.full_name || 'Unknown'}
-                        </p>
-                        <p className={`text-sm ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`}>
-                          Birthday: {birthday.birthday}
-                        </p>
+                        <h2 className={`text-xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>Birthdays</h2>
                       </div>
-                    </div>
-                  ))}
+                      {birthdays.length > 0 ? (
+                        <div className="space-y-3">
+                          {birthdays.map((birthday) => (
+                            <div key={birthday.id} className="flex items-center gap-3">
+                              {birthday.avatar_url ? (
+                                <img
+                                  src={birthday.avatar_url}
+                                  alt={birthday.full_name || 'User'}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: (mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF') + '33' }}>
+                                  <Cake className="w-5 h-5" style={{ color: mode === 'chaos' ? greenColors.primary : mode === 'chill' ? greenColors.complementary : '#FFFFFF' }} />
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <p className={`font-semibold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
+                                  {birthday.full_name || 'Unknown'}
+                                </p>
+                                <p className={`text-sm ${mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/70'}`}>
+                                  Birthday: {birthday.birthday}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>No upcoming birthdays</p>
+                      )}
+                    </Card>
+                  )}
                 </div>
-              ) : (
-                <p className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>No upcoming birthdays</p>
-              )}
-                </Card>
               )}
 
               {/* Snap Leaderboard */}
@@ -781,6 +772,181 @@ export default function TeamPage() {
                     </div>
                   ) : (
                     <p className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>No team members found</p>
+                  )}
+                </Card>
+              )}
+
+              {/* History of the Beast */}
+              {(activeFilter === 'all' || activeFilter === 'beast-history') && (
+                <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-6`} style={{
+                  borderColor: mode === 'chaos' ? '#333333' : mode === 'chill' ? '#E5E5E5' : '#333333',
+                  borderWidth: '1px'
+                }}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className={`w-12 h-12 ${getRoundedClass('rounded-lg')} flex items-center justify-center`} style={{ backgroundColor: greenColors.primary }}>
+                      <Crown className="w-6 h-6 text-white" />
+                    </div>
+                    <h2 className={`text-2xl font-black uppercase ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>History of the Beast</h2>
+                  </div>
+                  
+                  {beastBabeHistory.length > 0 ? (
+                    <div className="relative">
+                      {beastBabeHistory.map((entry, index) => {
+                        const isLast = index === beastBabeHistory.length - 1
+                        
+                        return (
+                          <div key={entry.id} className="relative pb-8">
+                            {/* Rounded Connecting Line */}
+                            {!isLast && (
+                              <div className="absolute left-8 top-20 z-0" style={{ width: '2px', height: 'calc(100% - 0.5rem)' }}>
+                                {/* Curved SVG line */}
+                                <svg 
+                                  className="absolute inset-0 w-full h-full" 
+                                  style={{ overflow: 'visible' }}
+                                >
+                                  <path
+                                    d={`M 0 0 Q 20 ${(beastBabeHistory.length - index) * 10} 0 ${(beastBabeHistory.length - index) * 20} L 0 100%`}
+                                    fill="none"
+                                    stroke={greenColors.primary}
+                                    strokeWidth="2"
+                                    strokeDasharray="4 4"
+                                    opacity="0.6"
+                                    className="animate-pulse"
+                                  />
+                                  {/* Animated dot */}
+                                  <circle
+                                    cx="0"
+                                    cy="0"
+                                    r="4"
+                                    fill={greenColors.primary}
+                                    opacity="0.8"
+                                    className="animate-ping"
+                                    style={{
+                                      animationDelay: `${index * 0.5}s`,
+                                      animationDuration: '2s'
+                                    }}
+                                  />
+                                </svg>
+                                {/* Straight line with gradient */}
+                                <div 
+                                  className="absolute top-0 left-0 w-0.5 h-full"
+                                  style={{
+                                    background: `linear-gradient(to bottom, ${greenColors.primary}60, ${greenColors.complementary}60, transparent)`,
+                                    borderRadius: '2px'
+                                  }}
+                                />
+                              </div>
+                            )}
+                            
+                            <div className="flex items-start gap-4 relative z-10">
+                              {/* Avatar with animated border */}
+                              <div className="relative">
+                                <div 
+                                  className="absolute inset-0 rounded-full animate-pulse"
+                                  style={{
+                                    backgroundColor: greenColors.primary + '30',
+                                    transform: 'scale(1.1)'
+                                  }}
+                                />
+                                {entry.user?.avatar_url ? (
+                                  <img
+                                    src={entry.user.avatar_url}
+                                    alt={entry.user.full_name || 'User'}
+                                    className="w-16 h-16 rounded-full object-cover border-2 relative z-10"
+                                    style={{ borderColor: greenColors.primary }}
+                                  />
+                                ) : (
+                                  <div 
+                                    className="w-16 h-16 rounded-full flex items-center justify-center border-2 relative z-10"
+                                    style={{ 
+                                      backgroundColor: greenColors.primaryPair + '40',
+                                      borderColor: greenColors.primary
+                                    }}
+                                  >
+                                    <Crown className="w-8 h-8" style={{ color: greenColors.primary }} />
+                                  </div>
+                                )}
+                                {/* Crown badge for current */}
+                                {index === 0 && (
+                                  <div 
+                                    className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center animate-bounce z-20"
+                                    style={{ backgroundColor: greenColors.primary }}
+                                  >
+                                    <Crown className="w-4 h-4 text-white" />
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Content */}
+                              <div className="flex-1 pt-1">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <p className={`text-lg font-black ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
+                                    {entry.user?.full_name || entry.user?.email || 'Unknown'}
+                                  </p>
+                                  {index === 0 && (
+                                    <span 
+                                      className="text-xs px-2 py-0.5 rounded-full font-black uppercase animate-pulse"
+                                      style={{ 
+                                        backgroundColor: greenColors.primary,
+                                        color: mode === 'chaos' ? '#000' : '#fff'
+                                      }}
+                                    >
+                                      Current
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                {entry.achievement && (
+                                  <p className={`text-sm italic mb-2 ${mode === 'chill' ? 'text-[#4A1818]/80' : 'text-white/80'}`}>
+                                    "{entry.achievement}"
+                                  </p>
+                                )}
+                                
+                                <div className="flex items-center gap-3 text-xs flex-wrap">
+                                  <span className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>
+                                    {new Date(entry.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                  </span>
+                                  
+                                  {entry.passed_by && (
+                                    <>
+                                      <span className={`${mode === 'chill' ? 'text-[#4A1818]/40' : 'text-white/40'}`}>•</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>Passed from</span>
+                                        <div className="flex items-center gap-1">
+                                          {entry.passed_by.avatar_url ? (
+                                            <img
+                                              src={entry.passed_by.avatar_url}
+                                              alt={entry.passed_by.full_name || 'User'}
+                                              className="w-5 h-5 rounded-full object-cover border"
+                                              style={{ borderColor: greenColors.complementary }}
+                                            />
+                                          ) : (
+                                            <div 
+                                              className="w-5 h-5 rounded-full flex items-center justify-center border"
+                                              style={{ 
+                                                backgroundColor: greenColors.complementary + '40',
+                                                borderColor: greenColors.complementary
+                                              }}
+                                            >
+                                              <Users className="w-3 h-3" style={{ color: greenColors.complementary }} />
+                                            </div>
+                                          )}
+                                          <span className={`font-semibold ${mode === 'chill' ? 'text-[#4A1818]' : 'text-white'}`}>
+                                            {entry.passed_by.full_name || entry.passed_by.email || 'Unknown'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className={`${mode === 'chill' ? 'text-[#4A1818]/60' : 'text-white/60'}`}>No beast babe history found</p>
                   )}
                 </Card>
               )}

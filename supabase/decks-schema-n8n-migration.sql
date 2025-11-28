@@ -30,3 +30,7 @@ CREATE INDEX IF NOT EXISTS slides_embedding_idx ON slides USING ivfflat (embeddi
 
 
 
+
+
+
+

@@ -73,6 +73,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       
+      // Track login events
+      if (event === 'SIGNED_IN' && session?.user) {
+        try {
+          await fetch('/api/analytics/track', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              eventType: 'login',
+              eventName: 'user_login',
+              pagePath: typeof window !== 'undefined' ? window.location.pathname : null,
+              metadata: {
+                timestamp: new Date().toISOString(),
+                userAgent: typeof window !== 'undefined' ? navigator.userAgent : null
+              }
+            })
+          })
+        } catch (error) {
+          // Silently fail - don't interrupt user experience
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error tracking login:', error)
+          }
+        }
+      }
+      
       if (mounted) {
         setUser(session?.user ?? null)
         setLoading(false)

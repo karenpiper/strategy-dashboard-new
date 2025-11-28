@@ -28,6 +28,9 @@ interface AnalyticsData {
     totalUsers: number
     newSignups: number
     activeUsers: number
+    totalLogins: number
+    loginsOverTime: Array<{ date: string; count: number }>
+    loginsPerUser: Array<{ userId: string; count: number; full_name: string | null; email: string | null; avatar_url: string | null }>
   }
   sentiment: {
     current: number
@@ -223,7 +226,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
           <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
             <div className="flex items-center justify-between">
               <div>
@@ -232,6 +235,17 @@ export default function AnalyticsPage() {
                 <p className={`text-xs ${cardStyle.text}/50 mt-1`}>{data.logins.newSignups} new in period</p>
               </div>
               <Users className="w-8 h-8" style={{ color: cardStyle.accent }} />
+            </div>
+          </Card>
+
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-sm ${cardStyle.text}/70 mb-1`}>Total Logins</p>
+                <p className={`text-3xl font-bold ${cardStyle.text}`}>{data.logins.totalLogins}</p>
+                <p className={`text-xs ${cardStyle.text}/50 mt-1`}>{data.logins.activeUsers} active users</p>
+              </div>
+              <Activity className="w-8 h-8" style={{ color: cardStyle.accent }} />
             </div>
           </Card>
 
@@ -268,6 +282,90 @@ export default function AnalyticsPage() {
             </div>
           </Card>
         </div>
+
+        {/* Login Statistics Section */}
+        {data.logins.totalLogins > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Logins Over Time Chart */}
+            <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
+              <h2 className={`text-lg font-black uppercase tracking-wider ${cardStyle.text} mb-4`}>Logins Over Time</h2>
+              {data.logins.loginsOverTime.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={data.logins.loginsOverTime.map(item => ({
+                    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                    count: item.count
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={mode === 'code' ? '#FFFFFF' : mode === 'chill' ? '#4A1818' : '#333333'} opacity={0.2} />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke={cardStyle.text}
+                      style={{ fontSize: '12px' }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis 
+                      stroke={cardStyle.text}
+                      style={{ fontSize: '12px' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: mode === 'chaos' ? '#000000' : mode === 'chill' ? '#FFFFFF' : '#1a1a1a',
+                        border: `1px solid ${cardStyle.accent}`,
+                        borderRadius: '8px',
+                        color: cardStyle.text
+                      }}
+                    />
+                    <Bar dataKey="count" fill={cardStyle.accent} name="Logins" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className={`h-[300px] flex items-center justify-center ${cardStyle.text}/50`}>
+                  <p>No login data available</p>
+                </div>
+              )}
+            </Card>
+
+            {/* Top Users by Login Count */}
+            <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
+              <h2 className={`text-lg font-black uppercase tracking-wider ${cardStyle.text} mb-4`}>Most Active Users</h2>
+              {data.logins.loginsPerUser.length > 0 ? (
+                <div className="space-y-3">
+                  {data.logins.loginsPerUser.map((user, index) => (
+                    <div key={user.userId} className="flex items-center gap-3">
+                      <div className={`w-10 h-10 ${getRoundedClass('rounded-full')} flex items-center justify-center text-sm font-bold ${cardStyle.text}`} style={{ backgroundColor: cardStyle.accent + '20' }}>
+                        {index + 1}
+                      </div>
+                      {user.avatar_url ? (
+                        <img
+                          src={user.avatar_url}
+                          alt={user.full_name || user.email || 'User'}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className={`w-10 h-10 ${getRoundedClass('rounded-full')} flex items-center justify-center`} style={{ backgroundColor: cardStyle.accent + '20' }}>
+                          <Users className="w-5 h-5" style={{ color: cardStyle.accent }} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-semibold ${cardStyle.text} truncate`}>
+                          {user.full_name || user.email || 'Unknown User'}
+                        </p>
+                        <p className={`text-xs ${cardStyle.text}/50`}>
+                          {user.count} {user.count === 1 ? 'login' : 'logins'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className={`h-[300px] flex items-center justify-center ${cardStyle.text}/50`}>
+                  <p>No user login data available</p>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

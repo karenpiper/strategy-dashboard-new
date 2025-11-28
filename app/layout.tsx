@@ -5,6 +5,7 @@ import { ModeProvider } from '@/contexts/mode-context'
 import { AuthProvider } from '@/contexts/auth-context'
 import { PermissionsProvider } from '@/contexts/permissions-context'
 import { ThemeProvider } from '@/components/theme-provider'
+import { AnalyticsProvider } from '@/components/analytics-provider'
 import './globals.css'
 
 const raleway = Raleway({ 
@@ -53,7 +54,9 @@ export default function RootLayout({
           <AuthProvider>
             <PermissionsProvider>
               <ModeProvider>
-                {children}
+                <AnalyticsProvider>
+                  {children}
+                </AnalyticsProvider>
               </ModeProvider>
             </PermissionsProvider>
           </AuthProvider>
