@@ -123,28 +123,28 @@ export async function POST(request: NextRequest) {
     // Look up curator profile if only name is provided
     let finalCuratorProfileId = curator_profile_id
     if (!finalCuratorProfileId && curator_name) {
-      const { data: profile } = await supabase
+      const { data: lookupProfile } = await supabase
         .from('profiles')
         .select('id, special_access')
         .or(`full_name.ilike.%${curator_name}%,email.ilike.%${curator_name}%`)
         .limit(1)
         .single()
       
-      if (profile) {
-        finalCuratorProfileId = profile.id
+      if (lookupProfile) {
+        finalCuratorProfileId = lookupProfile.id
       }
     }
 
     // Grant curator permissions to the assigned person
     if (finalCuratorProfileId) {
-      const { data: profile } = await supabase
+      const { data: curatorProfileData } = await supabase
         .from('profiles')
         .select('special_access')
         .eq('id', finalCuratorProfileId)
         .single()
 
-      if (profile) {
-        const specialAccess = profile.special_access || []
+      if (curatorProfileData) {
+        const specialAccess = curatorProfileData.special_access || []
         if (!specialAccess.includes('curator')) {
           await supabase
             .from('profiles')
@@ -156,6 +156,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Calculate start_date (assignment_date + 3 days) and end_date (start_date + 7 days)
+    const assignmentDateObj = new Date(assignment_date)
+    const startDateObj = new Date(assignmentDateObj)
+    startDateObj.setDate(startDateObj.getDate() + 3)
+    const endDateObj = new Date(startDateObj)
+    endDateObj.setDate(endDateObj.getDate() + 7)
+
+    const start_date = startDateObj.toISOString().split('T')[0]
+    const end_date = endDateObj.toISOString().split('T')[0]
+
     // If manual override, just assign directly
     if (is_manual_override) {
       const { data: assignment, error } = await supabase
@@ -165,6 +175,8 @@ export async function POST(request: NextRequest) {
           curator_name,
           curator_profile_id: finalCuratorProfileId || null,
           assignment_date,
+          start_date,
+          end_date,
           is_manual_override: true,
           assigned_by: user.id
         }, {
@@ -189,6 +201,37 @@ export async function POST(request: NextRequest) {
           .eq('id', playlist_id)
       }
 
+      // Send Slack notification if curator has slack_id
+      if (finalCuratorProfileId) {
+        const { data: curatorProfile } = await supabase
+          .from('profiles')
+          .select('slack_id, full_name')
+          .eq('id', finalCuratorProfileId)
+          .single()
+
+        if (curatorProfile?.slack_id) {
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+          const curationUrl = `${baseUrl}/curate?assignment=${assignment.id}`
+          
+          try {
+            await fetch(`${baseUrl}/api/slack/notify-curator`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                slack_id: curatorProfile.slack_id,
+                curator_name: curatorProfile.full_name || curator_name,
+                curation_url: curationUrl,
+                start_date,
+                end_date
+              })
+            })
+          } catch (slackError) {
+            console.error('Error sending Slack notification:', slackError)
+            // Don't fail the assignment if Slack fails
+          }
+        }
+      }
+
       return NextResponse.json({ assignment })
     }
 
@@ -203,14 +246,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Grant curator permissions
-    const { data: profile } = await supabase
+    const { data: selectedCuratorProfile } = await supabase
       .from('profiles')
       .select('special_access')
       .eq('id', selectedCurator.id)
       .single()
 
-    if (profile) {
-      const specialAccess = profile.special_access || []
+    if (selectedCuratorProfile) {
+      const specialAccess = selectedCuratorProfile.special_access || []
       if (!specialAccess.includes('curator')) {
         await supabase
           .from('profiles')
@@ -221,6 +264,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Calculate start_date (assignment_date + 3 days) and end_date (start_date + 7 days)
+    const assignmentDateObj = new Date(assignment_date)
+    const startDateObj = new Date(assignmentDateObj)
+    startDateObj.setDate(startDateObj.getDate() + 3)
+    const endDateObj = new Date(startDateObj)
+    endDateObj.setDate(endDateObj.getDate() + 7)
+
+    const start_date = startDateObj.toISOString().split('T')[0]
+    const end_date = endDateObj.toISOString().split('T')[0]
+
     // Create assignment
     const { data: assignment, error } = await supabase
       .from('curator_assignments')
@@ -229,6 +282,8 @@ export async function POST(request: NextRequest) {
         curator_name: selectedCurator.full_name,
         curator_profile_id: selectedCurator.id,
         assignment_date,
+        start_date,
+        end_date,
         is_manual_override: false,
         assigned_by: user.id
       })
@@ -252,6 +307,35 @@ export async function POST(request: NextRequest) {
           curator_photo_url: selectedCurator.avatar_url || null
         })
         .eq('id', playlist_id)
+    }
+
+    // Send Slack notification
+    const { data: curatorProfile } = await supabase
+      .from('profiles')
+      .select('slack_id, full_name')
+      .eq('id', selectedCurator.id)
+      .single()
+
+    if (curatorProfile?.slack_id) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      const curationUrl = `${baseUrl}/curate?assignment=${assignment.id}`
+      
+      try {
+        await fetch(`${baseUrl}/api/slack/notify-curator`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            slack_id: curatorProfile.slack_id,
+            curator_name: curatorProfile.full_name || selectedCurator.full_name,
+            curation_url: curationUrl,
+            start_date,
+            end_date
+          })
+        })
+      } catch (slackError) {
+        console.error('Error sending Slack notification:', slackError)
+        // Don't fail the assignment if Slack fails
+      }
     }
 
     return NextResponse.json({ 
