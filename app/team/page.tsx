@@ -876,6 +876,8 @@ export default function TeamPage() {
         </div>
       </main>
       
+      <Footer />
+      
       {/* Profile View Dialog */}
       <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
         <DialogContent className={`${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} max-w-2xl max-h-[90vh] overflow-y-auto`} style={{ 
@@ -1012,8 +1014,6 @@ export default function TeamPage() {
           ) : null}
         </DialogContent>
       </Dialog>
-      
-      <Footer />
     </div>
   )
 }

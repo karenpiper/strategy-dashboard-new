@@ -344,9 +344,9 @@ export default function BeastHistoryPage() {
         </Card>
           </div>
         </div>
-      </main>
 
-      <Footer />
+        <Footer />
+      </main>
     </div>
   )
 }

@@ -284,9 +284,9 @@ export default function TeamDirectoryPage() {
         </Card>
           </div>
         </div>
-      </main>
 
-      <Footer />
+        <Footer />
+      </main>
 
       {/* Profile Dialog */}
       {selectedProfile && (

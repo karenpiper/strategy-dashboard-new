@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { AccountMenu } from '@/components/account-menu'
+import { Footer } from '@/components/footer'
 
 interface ChatReference {
   deck_id: string
@@ -235,6 +236,8 @@ export default function DeckChatPage() {
           </Card>
         </div>
       </div>
+
+      <Footer />
     </div>
   )
 }
