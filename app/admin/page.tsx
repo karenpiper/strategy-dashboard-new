@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { useMode } from '@/contexts/mode-context'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getPermissions, type BaseRole, type UserPermissions } from '@/lib/permissions'
 import { 
   FileText, 
   Newspaper, 
@@ -24,17 +25,26 @@ import {
   Shield,
   AlertCircle,
   MessageSquare,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function AdminDashboard() {
-  const { permissions, user: permissionsUser } = usePermissions()
+  const { permissions: realPermissions, user: permissionsUser } = usePermissions()
   const { user } = useAuth()
   const { mode } = useMode()
   const router = useRouter()
   const supabase = createClient()
   const [testingSlack, setTestingSlack] = useState(false)
+  const [simulatedRole, setSimulatedRole] = useState<BaseRole | 'visitor' | null>(null)
+  
+  // Use simulated role if set, otherwise use real permissions
+  const effectivePermissions = simulatedRole && simulatedRole !== 'visitor'
+    ? getPermissions({ baseRole: simulatedRole, specialAccess: [] })
+    : simulatedRole === 'visitor'
+    ? null
+    : realPermissions
 
   // Theme-aware styling helpers
   const getBgClass = () => {
@@ -96,10 +106,14 @@ export default function AdminDashboard() {
   }
 
 
-  const roleDisplay = permissionsUser?.baseRole && typeof permissionsUser.baseRole === 'string' && permissionsUser.baseRole.length > 0
+  const roleDisplay = simulatedRole 
+    ? simulatedRole === 'visitor' 
+      ? 'Visitor' 
+      : `${simulatedRole.charAt(0).toUpperCase() + simulatedRole.slice(1)}`
+    : permissionsUser?.baseRole && typeof permissionsUser.baseRole === 'string' && permissionsUser.baseRole.length > 0
     ? `${permissionsUser.baseRole.charAt(0).toUpperCase() + permissionsUser.baseRole.slice(1)}`
     : 'User'
-  const accessLevel = permissions?.canManageUsers ? 'admin' : permissions?.canViewAdmin ? 'contributor' : 'user'
+  const accessLevel = effectivePermissions?.canManageUsers ? 'admin' : effectivePermissions?.canViewAdmin ? 'contributor' : simulatedRole === 'visitor' ? 'visitor' : 'user'
 
   const handleTestSlack = async () => {
     if (!user) {
@@ -166,11 +180,69 @@ export default function AdminDashboard() {
     <div className={`${getBgClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       {/* Header */}
       <div className="mb-8">
-        <h1 className={`text-4xl font-black uppercase ${getTextClass()} mb-2`}>Welcome to the Admin Panel</h1>
-        <p className={`${getTextClass()}/70 font-normal`}>You have {accessLevel} level access.</p>
-        <p className={`text-sm ${getTextClass()}/50 mt-2 font-medium`}>
-          Use the sidebar to navigate to different sections based on your permissions.
-        </p>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 className={`text-4xl font-black uppercase ${getTextClass()} mb-2`}>Welcome to the Admin Panel</h1>
+            <p className={`${getTextClass()}/70 font-normal`}>You have {accessLevel} level access.</p>
+            <p className={`text-sm ${getTextClass()}/50 mt-2 font-medium`}>
+              Use the sidebar to navigate to different sections based on your permissions.
+            </p>
+          </div>
+          
+          {/* Role Simulation Dropdown - Admin Only */}
+          {realPermissions?.canManageUsers && (
+            <div className="flex items-center gap-3">
+              <Eye className={`w-5 h-5 ${getTextClass()}/70`} />
+              <div className="flex flex-col gap-1">
+                <label className={`text-xs font-semibold uppercase tracking-wider ${getTextClass()}/70`}>
+                  View As:
+                </label>
+                <select
+                  value={simulatedRole || 'actual'}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setSimulatedRole(value === 'actual' ? null : (value as BaseRole | 'visitor'))
+                  }}
+                  className={`${getRoundedClass('rounded-lg')} px-3 py-2 text-sm font-medium ${
+                    mode === 'chaos' 
+                      ? 'bg-[#2A2A2A] text-white border border-[#00C896]/30' 
+                      : mode === 'chill'
+                      ? 'bg-white text-[#4A1818] border border-[#FFC043]/30'
+                      : 'bg-[#1a1a1a] text-white border border-white/30'
+                  } focus:outline-none focus:ring-2 ${
+                    mode === 'chaos' 
+                      ? 'focus:ring-[#00C896]' 
+                      : mode === 'chill'
+                      ? 'focus:ring-[#FFC043]'
+                      : 'focus:ring-white'
+                  }`}
+                >
+                  <option value="actual">Actual Role ({permissionsUser?.baseRole || 'user'})</option>
+                  <option value="visitor">Visitor</option>
+                  <option value="user">User</option>
+                  <option value="contributor">Contributor</option>
+                  <option value="leader">Leader</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {simulatedRole && (
+          <div className={`${getRoundedClass('rounded-lg')} px-4 py-2 mb-4 ${
+            mode === 'chaos' 
+              ? 'bg-[#00C896]/20 border border-[#00C896]/40' 
+              : mode === 'chill'
+              ? 'bg-[#FFC043]/20 border border-[#FFC043]/40'
+              : 'bg-white/20 border border-white/40'
+          }`}>
+            <p className={`text-sm font-medium ${getTextClass()}`}>
+              <Eye className="w-4 h-4 inline mr-2" />
+              Simulating view as: <strong>{roleDisplay}</strong>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Getting Started Guide */}
@@ -244,7 +316,7 @@ export default function AdminDashboard() {
           </Card>
 
           {/* ADMIN FUNCTIONS */}
-          {permissions?.canManageUsers && (
+          {effectivePermissions?.canManageUsers && (
             <Card className={`${getCardStyle().bg} ${getCardStyle().border} border p-6 ${getRoundedClass('rounded-xl')}`}>
               <h3 className={`text-xl font-black uppercase tracking-wider ${getCardStyle().text} mb-4`}>ADMIN FUNCTIONS</h3>
               <ul className={`space-y-3 ${getCardStyle().text}/90`}>
@@ -298,7 +370,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Testing Tools - Admin Only */}
-      {permissions?.canManageUsers && (
+      {effectivePermissions?.canManageUsers && (
         <div className="mb-8">
           <h2 className={`text-2xl font-black uppercase tracking-wider ${getTextClass()} mb-4`}>Testing Tools</h2>
           <Card className={`${getCardStyle().bg} ${getCardStyle().border} border p-6 ${getRoundedClass('rounded-xl')}`}>
