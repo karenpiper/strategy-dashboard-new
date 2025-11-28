@@ -62,6 +62,23 @@ interface VideoItem {
   } | null
 }
 
+interface NewsItem {
+  id: string
+  title: string
+  content: string | null
+  url: string | null
+  category: string | null
+  tags: string[] | null
+  pinned: boolean
+  published_date: string
+  created_at: string
+  submitted_by_profile?: {
+    id: string
+    email: string
+    full_name: string | null
+  } | null
+}
+
 type MediaType = 'all' | 'must-reads' | 'videos' | 'news'
 type SortField = 'title' | 'date' | 'category'
 
@@ -73,7 +90,7 @@ export default function MediaPage() {
   const [activeTab, setActiveTab] = useState<MediaType>('all')
   const [mustReads, setMustReads] = useState<MustRead[]>([])
   const [videos, setVideos] = useState<VideoItem[]>([])
-  const [news, setNews] = useState<any[]>([]) // Placeholder for news
+  const [news, setNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState<string>('all')
@@ -149,9 +166,10 @@ export default function MediaPage() {
       setLoading(true)
       try {
         // Fetch all data in parallel
-        const [mustReadsRes, videosRes] = await Promise.all([
+        const [mustReadsRes, videosRes, newsRes] = await Promise.all([
           fetch('/api/must-reads'),
-          fetch('/api/videos')
+          fetch('/api/videos'),
+          fetch('/api/news')
         ])
 
         if (mustReadsRes.ok) {
@@ -164,8 +182,10 @@ export default function MediaPage() {
           setVideos(videosData.data || [])
         }
 
-        // News placeholder - will be implemented later
-        setNews([])
+        if (newsRes.ok) {
+          const newsData = await newsRes.json()
+          setNews(newsData.data || [])
+        }
       } catch (error) {
         console.error('Error fetching media:', error)
       } finally {
@@ -207,6 +227,12 @@ export default function MediaPage() {
                  item.description?.toLowerCase().includes(query) ||
                  item.category?.toLowerCase().includes(query) ||
                  item.tags?.some((tag: string) => tag.toLowerCase().includes(query))
+        } else if (item.type === 'news') {
+          return item.title?.toLowerCase().includes(query) ||
+                 item.content?.toLowerCase().includes(query) ||
+                 item.url?.toLowerCase().includes(query) ||
+                 item.category?.toLowerCase().includes(query) ||
+                 item.tags?.some((tag: string) => tag.toLowerCase().includes(query))
         }
         return true
       })
@@ -218,6 +244,8 @@ export default function MediaPage() {
         if (item.type === 'must-read') {
           return item.category === filterCategory
         } else if (item.type === 'video') {
+          return item.category === filterCategory
+        } else if (item.type === 'news') {
           return item.category === filterCategory
         }
         return false
@@ -236,9 +264,11 @@ export default function MediaPage() {
         aValue = (a.category || '').toLowerCase()
         bValue = (b.category || '').toLowerCase()
       } else {
-        // date
-        aValue = new Date(a.created_at || 0).getTime()
-        bValue = new Date(b.created_at || 0).getTime()
+        // date - use published_date for news, created_at for others
+        const aDate = a.type === 'news' ? (a.published_date || a.created_at) : a.created_at
+        const bDate = b.type === 'news' ? (b.published_date || b.created_at) : b.created_at
+        aValue = new Date(aDate || 0).getTime()
+        bValue = new Date(bDate || 0).getTime()
       }
 
       if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1
@@ -254,7 +284,8 @@ export default function MediaPage() {
   // Get unique categories
   const categories = Array.from(new Set([
     ...mustReads.map(mr => mr.category).filter(Boolean),
-    ...videos.map(v => v.category).filter(Boolean)
+    ...videos.map(v => v.category).filter(Boolean),
+    ...news.map(n => n.category).filter(Boolean)
   ])) as string[]
 
   const handleSort = (field: SortField) => {
@@ -581,6 +612,57 @@ export default function MediaPage() {
                             Watch Video
                             <ExternalLink className="w-4 h-4" />
                           </a>
+                        </div>
+                      </>
+                    ) : item.type === 'news' ? (
+                      <>
+                        <div className="flex items-start justify-between mb-3 px-4 pt-2">
+                          <div className="flex items-center gap-2">
+                            <Newspaper className={`w-4 h-4 ${getTextClass()}/70`} />
+                            <div className={`inline-flex items-center px-3 py-1 rounded ${getRoundedClass('rounded-md')} ${mode === 'chaos' ? 'bg-gray-800' : mode === 'chill' ? 'bg-gray-200' : 'bg-gray-800'} w-fit`}>
+                              <span className={`text-xs font-medium ${getTextClass()}`}>News</span>
+                            </div>
+                          </div>
+                          {item.pinned && (
+                            <Badge className="bg-yellow-500 text-black text-xs">Pinned</Badge>
+                          )}
+                        </div>
+                        <h3 className={`text-xl font-black uppercase ${getTextClass()} mb-2 px-4 line-clamp-2`}>
+                          {item.title}
+                        </h3>
+                        {item.content && (
+                          <p className={`text-sm ${getTextClass()}/80 mb-3 px-4 line-clamp-3`}>
+                            {item.content}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-2 mb-3 px-4">
+                          {item.category && (
+                            <div className={`inline-flex items-center px-3 py-1 rounded ${getRoundedClass('rounded-md')} ${mode === 'chaos' ? 'bg-gray-800' : mode === 'chill' ? 'bg-gray-200' : 'bg-gray-800'} w-fit`}>
+                              <span className={`text-xs font-medium ${getTextClass()}`}>{item.category}</span>
+                            </div>
+                          )}
+                          {item.tags && item.tags.length > 0 && item.tags.slice(0, 3).map((tag: string, idx: number) => (
+                            <div key={idx} className={`inline-flex items-center px-3 py-1 rounded ${getRoundedClass('rounded-md')} ${mode === 'chaos' ? 'bg-gray-800' : mode === 'chill' ? 'bg-gray-200' : 'bg-gray-800'} w-fit`}>
+                              <span className={`text-xs font-medium ${getTextClass()}`}>{tag}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-auto px-4 pb-4">
+                          {item.url ? (
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`inline-flex items-center gap-2 text-sm font-semibold ${getTextClass()} hover:opacity-70 transition-opacity`}
+                            >
+                              Read More
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          ) : (
+                            <div className={`text-xs ${getTextClass()}/60`}>
+                              Published {new Date(item.published_date).toLocaleDateString()}
+                            </div>
+                          )}
                         </div>
                       </>
                     ) : null}

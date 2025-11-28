@@ -677,6 +677,83 @@ export default function VibesPage() {
                 <span>Dec 2024</span>
               </div>
             </Card>
+
+            {/* Butt Rock Edition Poll Card */}
+            <Card 
+              className={`${getRoundedClass('rounded-[2.5rem]')} p-6 cursor-pointer transition-all hover:scale-105 hover:shadow-2xl`}
+              style={{
+                backgroundColor: mode === 'chaos' 
+                  ? 'rgba(255, 255, 255, 0.05)' 
+                  : mode === 'chill'
+                  ? 'rgba(74, 24, 24, 0.05)'
+                  : 'rgba(255, 255, 255, 0.05)',
+                border: mode === 'chaos' 
+                  ? '1px solid rgba(255, 255, 255, 0.1)' 
+                  : mode === 'chill'
+                  ? '1px solid rgba(74, 24, 24, 0.1)'
+                  : '1px solid rgba(255, 255, 255, 0.1)'
+              }}
+              onClick={() => {
+                const topSongs = [
+                  { name: 'How You Remind Me', artist: 'Nickelback', count: 2 },
+                  { name: "It's Been Awhile", artist: 'Staind', count: 2 },
+                  { name: 'Headstrong', artist: 'Trapt', count: 2 },
+                  { name: 'Click Click Boom', artist: 'Saliva', count: 2 },
+                  { name: 'Last Resort', artist: 'Papa Roach', count: 2 },
+                  { name: 'She Hates Me', artist: 'Puddle of Mudd', count: 2 },
+                  { name: 'Crawling in the Dark', artist: 'Hoobastank', count: 2 },
+                ]
+                
+                const singleMentionTracks = [
+                  { name: 'I Hate Everything About You', artist: 'Three Days Grace' },
+                  { name: 'Blurry', artist: 'Puddle of Mudd' },
+                  { name: 'Hemorrhage', artist: 'Fuel' },
+                  { name: 'So Cold', artist: 'Breaking Benjamin' },
+                  { name: 'Higher', artist: 'Creed' },
+                  { name: 'Someday / How You Remind Me mashup', artist: 'Nickelback' },
+                  { name: "It's Not Over", artist: 'Daughtry' },
+                  { name: 'Kryptonite', artist: '3 Doors Down' },
+                  { name: 'Butterfly', artist: 'Crazy Town' },
+                  { name: 'I Stand Alone', artist: 'Godsmack' },
+                  { name: 'Send the Pain Below', artist: 'Chevelle' },
+                ]
+                
+                const artistFrequency = [
+                  'Nickelback',
+                  'Staind',
+                  'Hoobastank',
+                  'Puddle of Mudd',
+                  'Papa Roach',
+                  'Saliva',
+                  'Trapt'
+                ]
+                
+                setSelectedPoll({
+                  id: 'butt-rock-edition',
+                  title: 'Poll Results: Butt Rock Edition',
+                  question: 'I pulled every song mentioned. I counted duplicates. I grouped by artist so you can see where the group instinctively converged.',
+                  date: '2024',
+                  totalResponses: 0,
+                  topSongs: topSongs,
+                  singleMentionTracks: singleMentionTracks,
+                  artistFrequency: artistFrequency,
+                  isButtRock: true
+                })
+                setIsPollDialogOpen(true)
+              }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <BarChart3 className="w-6 h-6" style={{ color: redSystem.primary }} />
+                <h3 className={`text-xl font-black uppercase ${getTextClass()}`}>Butt Rock Edition</h3>
+              </div>
+              <p className={`text-sm mb-4 ${getTextClass()} opacity-70`}>
+                Poll Results: Butt Rock Edition
+              </p>
+              <div className={`flex items-center justify-between text-xs opacity-60 ${getTextClass()}`}>
+                <span>Poll Results</span>
+                <span>2024</span>
+              </div>
+            </Card>
           </div>
         </div>
 
@@ -1146,6 +1223,280 @@ export default function VibesPage() {
                           </div>
                         )
                       })()}
+                    </div>
+                  )}
+
+                  {/* Butt Rock Edition Display */}
+                  {selectedPoll.isButtRock && (
+                    <div className="my-8 space-y-8">
+                      {/* Top Songs by Number of Mentions */}
+                      <div>
+                        <h4 className={`text-2xl font-black mb-4 ${getTextClass()}`}>
+                          Top Songs by Number of Mentions
+                        </h4>
+                        <div className="space-y-3">
+                          {selectedPoll.topSongs && selectedPoll.topSongs.map((song: any, index: number) => {
+                            const maxCount = Math.max(...selectedPoll.topSongs.map((s: any) => s.count))
+                            const percentage = (song.count / maxCount) * 100
+                            const isTop = index === 0
+                            
+                            return (
+                              <div key={`${song.name}-${song.artist}`} className="space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <span className={`text-base font-semibold ${getTextClass()}`}>
+                                      {song.name}
+                                    </span>
+                                    <span className={`text-sm ${getTextClass()} opacity-70 ml-2`}>
+                                      — {song.artist}
+                                    </span>
+                                  </div>
+                                  <span 
+                                    className={`text-base font-black ${getTextClass()}`}
+                                    style={{ color: isTop ? redSystem.primary : undefined }}
+                                  >
+                                    ({song.count})
+                                  </span>
+                                </div>
+                                <div 
+                                  className={`${getRoundedClass('rounded-full')} h-4 overflow-hidden`}
+                                  style={{
+                                    backgroundColor: mode === 'chaos' 
+                                      ? 'rgba(255, 255, 255, 0.1)' 
+                                      : mode === 'chill'
+                                      ? 'rgba(74, 24, 24, 0.1)'
+                                      : 'rgba(255, 255, 255, 0.1)'
+                                  }}
+                                >
+                                  <div
+                                    className="h-full transition-all duration-1000"
+                                    style={{
+                                      width: `${percentage}%`,
+                                      backgroundColor: isTop 
+                                        ? redSystem.primary
+                                        : 'rgba(255, 76, 76, 0.4)'
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Single-Mention Tracks */}
+                      {selectedPoll.singleMentionTracks && selectedPoll.singleMentionTracks.length > 0 && (
+                        <div className="pt-6 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                          <h4 className={`text-2xl font-black mb-4 ${getTextClass()}`}>
+                            Single-Mention Tracks
+                          </h4>
+                          <div className="space-y-2">
+                            {selectedPoll.singleMentionTracks.map((track: any) => (
+                              <div key={`${track.name}-${track.artist}`} className={`text-base ${getTextClass()}`}>
+                                <span className="font-semibold">{track.name}</span>
+                                <span className={`opacity-70 ml-2`}>— {track.artist}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Artist Frequency */}
+                      {selectedPoll.artistFrequency && selectedPoll.artistFrequency.length > 0 && (
+                        <div className="pt-6 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                          <h4 className={`text-2xl font-black mb-4 ${getTextClass()}`}>
+                            Artist Frequency
+                          </h4>
+                          <p className={`text-base ${getTextClass()} opacity-70 mb-2`}>
+                            {selectedPoll.artistFrequency.join(', ')}
+                          </p>
+                          <p className={`text-sm ${getTextClass()} opacity-60 italic`}>
+                            Each earns at least two separate mentions.
+                          </p>
+                          <p className={`text-sm ${getTextClass()} opacity-60 italic mt-2`}>
+                            This gives a very tight "butt rock core seven."
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Butt Rock Perfect Storm Index */}
+                      <div className="pt-8 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                        <h4 className={`text-3xl font-black mb-6 ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                          Butt Rock Perfect Storm Index
+                        </h4>
+                        
+                        <p className={`text-lg ${getTextClass()} opacity-80 mb-8`}>
+                          When you score each song by three traits:
+                        </p>
+
+                        {/* Three Traits */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                          <div className={`${getRoundedClass('rounded-2xl')} p-6 text-center`}
+                            style={{
+                              backgroundColor: mode === 'chaos' 
+                                ? 'rgba(255, 76, 76, 0.1)' 
+                                : mode === 'chill'
+                                ? 'rgba(255, 76, 76, 0.15)'
+                                : 'rgba(255, 76, 76, 0.1)',
+                              border: `2px solid ${redSystem.primary}40`
+                            }}
+                          >
+                            <span className="text-4xl mb-3 block">🎤</span>
+                            <p className={`text-sm font-black uppercase tracking-wider ${getTextClass()} mb-2`}>
+                              Growly male vocal
+                            </p>
+                          </div>
+                          <div className={`${getRoundedClass('rounded-2xl')} p-6 text-center`}
+                            style={{
+                              backgroundColor: mode === 'chaos' 
+                                ? 'rgba(255, 76, 76, 0.1)' 
+                                : mode === 'chill'
+                                ? 'rgba(255, 76, 76, 0.15)'
+                                : 'rgba(255, 76, 76, 0.1)',
+                              border: `2px solid ${redSystem.primary}40`
+                            }}
+                          >
+                            <span className="text-4xl mb-3 block">💭</span>
+                            <p className={`text-sm font-black uppercase tracking-wider ${getTextClass()} mb-2`}>
+                              One-word emotional noun in the chorus
+                            </p>
+                          </div>
+                          <div className={`${getRoundedClass('rounded-2xl')} p-6 text-center`}
+                            style={{
+                              backgroundColor: mode === 'chaos' 
+                                ? 'rgba(255, 76, 76, 0.1)' 
+                                : mode === 'chill'
+                                ? 'rgba(255, 76, 76, 0.15)'
+                                : 'rgba(255, 76, 76, 0.1)',
+                              border: `2px solid ${redSystem.primary}40`
+                            }}
+                          >
+                            <span className="text-4xl mb-3 block">🏭</span>
+                            <p className={`text-sm font-black uppercase tracking-wider ${getTextClass()} mb-2`}>
+                              Music video set in warehouse, pit, or parking lot
+                            </p>
+                          </div>
+                        </div>
+
+                        <p className={`text-lg ${getTextClass()} opacity-80 mb-8`}>
+                          You get this:
+                        </p>
+
+                        {/* Stats Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                          <div className={`${getRoundedClass('rounded-2xl')} p-6`}
+                            style={{
+                              backgroundColor: mode === 'chaos' 
+                                ? 'rgba(255, 76, 76, 0.15)' 
+                                : mode === 'chill'
+                                ? 'rgba(255, 76, 76, 0.2)'
+                                : 'rgba(255, 76, 76, 0.15)',
+                              border: `2px solid ${redSystem.primary}`
+                            }}
+                          >
+                            <div className="flex items-center justify-center mb-4">
+                              <div 
+                                className="relative w-24 h-24"
+                                style={{
+                                  background: `conic-gradient(${redSystem.primary} 360deg, rgba(255, 76, 76, 0.2) 360deg)`,
+                                  borderRadius: '50%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <div 
+                                  className="absolute inset-2 rounded-full"
+                                  style={{
+                                    backgroundColor: mode === 'chaos' 
+                                      ? '#1A1A1A' 
+                                      : mode === 'chill'
+                                      ? '#F5E6D3'
+                                      : '#000000'
+                                  }}
+                                >
+                                  <div className="h-full flex items-center justify-center">
+                                    <span className={`text-3xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                      100%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <p className={`text-base ${getTextClass()} text-center font-semibold`}>
+                              of the group's top-vote songs check at least two boxes
+                            </p>
+                          </div>
+
+                          <div className={`${getRoundedClass('rounded-2xl')} p-6`}
+                            style={{
+                              backgroundColor: mode === 'chaos' 
+                                ? 'rgba(255, 76, 76, 0.15)' 
+                                : mode === 'chill'
+                                ? 'rgba(255, 76, 76, 0.2)'
+                                : 'rgba(255, 76, 76, 0.15)',
+                              border: `2px solid ${redSystem.primary}`
+                            }}
+                          >
+                            <div className="flex items-center justify-center mb-4">
+                              <div 
+                                className="relative w-24 h-24"
+                                style={{
+                                  background: `conic-gradient(${redSystem.primary} ${71 * 3.6}deg, rgba(255, 76, 76, 0.2) ${71 * 3.6}deg)`,
+                                  borderRadius: '50%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <div 
+                                  className="absolute inset-2 rounded-full"
+                                  style={{
+                                    backgroundColor: mode === 'chaos' 
+                                      ? '#1A1A1A' 
+                                      : mode === 'chill'
+                                      ? '#F5E6D3'
+                                      : '#000000'
+                                  }}
+                                >
+                                  <div className="h-full flex items-center justify-center">
+                                    <span className={`text-3xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                      71%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <p className={`text-base ${getTextClass()} text-center font-semibold`}>
+                              check all three
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Outlier Note */}
+                        <div className={`${getRoundedClass('rounded-2xl')} p-6`}
+                          style={{
+                            backgroundColor: mode === 'chaos' 
+                              ? 'rgba(255, 255, 255, 0.05)' 
+                              : mode === 'chill'
+                              ? 'rgba(74, 24, 24, 0.05)'
+                              : 'rgba(255, 255, 255, 0.05)',
+                            border: `2px solid ${redSystem.secondary}60`
+                          }}
+                        >
+                          <div className="flex items-start gap-4">
+                            <span className="text-4xl">✨</span>
+                            <div className="flex-1">
+                              <p className={`text-base font-black ${getTextClass()} mb-2`}>
+                                The only outlier is <span style={{ color: redSystem.secondary }}>Butterfly by Crazy Town</span>
+                              </p>
+                              <p className={`text-sm ${getTextClass()} opacity-70 italic`}>
+                                which swaps "warehouse angst" for "shirtless fairy energy."
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
