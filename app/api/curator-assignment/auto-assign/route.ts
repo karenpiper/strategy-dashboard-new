@@ -9,7 +9,18 @@ import { createClient } from '@/lib/supabase/server'
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
-    const body = await request.json()
+    
+    // Handle empty body gracefully
+    let body = {}
+    try {
+      const bodyText = await request.text()
+      if (bodyText) {
+        body = JSON.parse(bodyText)
+      }
+    } catch {
+      // Body is optional, continue with empty object
+    }
+    
     const { assignment_date } = body
 
     // If no date provided, calculate: 3 days before the next curator period should start
@@ -46,11 +57,12 @@ export async function POST(request: NextRequest) {
     const end_date = endDateObj.toISOString().split('T')[0]
 
     // Check for overlapping assignments (periods that overlap)
+    // Two periods overlap if: start_date <= other.end_date AND end_date >= other.start_date
     const { data: existing } = await supabase
       .from('curator_assignments')
       .select('id, curator_name, start_date, end_date')
-      .gte('end_date', start_date)
       .lte('start_date', end_date)
+      .gte('end_date', start_date)
 
     if (existing && existing.length > 0) {
       return NextResponse.json(

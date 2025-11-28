@@ -163,6 +163,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         { href: '/admin/analytics', label: 'Analytics', icon: BarChart3, permission: 'canManageUsers' as const, sectionAccess: 'admin' as const },
         { href: '/admin/users', label: 'User Management', icon: Users, permission: 'canManageUsers' as const, sectionAccess: 'admin' as const },
         { href: '/admin/notifications', label: 'Push Notifications', icon: Bell, permission: 'canManageUsers' as const, sectionAccess: 'admin' as const },
+        { href: '/admin/test-tools', label: 'Test Tools', icon: Settings, permission: null, sectionAccess: 'admin' as const },
       ]
     }
   ]
@@ -175,7 +176,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       <main className="w-full max-w-[1200px] mx-auto px-6 py-10 pt-24">
         <div className="flex gap-6 w-full">
           {/* Left Sidebar Card - 1/4 width - Fixed height, doesn't scroll */}
-          <Card className={`w-1/4 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-4 flex flex-col sticky top-24 self-start h-fit`} style={{ 
+          <Card className={`w-1/4 ${mode === 'chaos' ? 'bg-[#1A5D52]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-[2.5rem]')} p-4 flex flex-col sticky top-24 self-start h-fit overflow-hidden`} style={{ 
             borderColor: mode === 'chaos' ? '#00C896' : mode === 'chill' ? '#C8D961' : '#FFFFFF',
             borderWidth: mode === 'chaos' ? '2px' : '0px'
           }}>
@@ -218,7 +219,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             )}
             
             {/* Navigation Sections */}
-            <nav className="space-y-3 flex-1">
+            <nav className="space-y-3">
               {navSections.map((section) => {
                 // Check if user has access to this section
                 if (section.sectionAccess && !hasSectionAccess(section.sectionAccess)) {

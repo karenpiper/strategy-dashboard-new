@@ -259,7 +259,7 @@ export default function CuratorRotationPage() {
         <div className="mb-4">
           <h1 className={`text-2xl font-black uppercase tracking-wider ${getTextClass()} mb-1`}>Curator Rotation</h1>
           <p className={`${getTextClass()}/70 text-sm font-normal mb-2`}>Assign curators independently of playlists. They'll be notified via Slack and have 3 days to create their playlist. Their curation period lasts 7 days after the playlist goes live.</p>
-          <div className={`${cardStyle.bg} ${cardStyle.border} border ${getRoundedClass('rounded-lg')} p-3 ${cardStyle.text}/80 text-sm mb-2`}>
+          <div className={`${cardStyle.bg} ${cardStyle.border} border ${getRoundedClass('rounded-xl')} p-3 ${cardStyle.text}/80 text-sm mb-2`}>
             <strong>How it works:</strong> Curators are assigned first, then they create playlists. Click "Assign Curator" → Select assignment date → Click "Random Assign". They'll receive a Slack DM immediately. Their curation period starts 3 days later and lasts 1 week. Next curator is auto-assigned 3 days before current period ends.
           </div>
           <Button
@@ -438,14 +438,14 @@ export default function CuratorRotationPage() {
                 assignments.map(assignment => (
                   <div
                     key={assignment.id}
-                    className={`${cardStyle.border} border ${getRoundedClass('rounded-lg')} p-4`}
+                    className={`${cardStyle.border} border ${getRoundedClass('rounded-xl')} p-4`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`font-bold ${cardStyle.text}`}>{assignment.curator_name}</span>
                           {assignment.is_manual_override && (
-                            <span className={`text-xs ${cardStyle.text}/60 px-2 py-0.5 ${cardStyle.border} border ${getRoundedClass('rounded')}`}>
+                            <span className={`text-xs ${cardStyle.text}/60 px-2 py-0.5 ${cardStyle.border} border ${getRoundedClass('rounded-xl')}`}>
                               Manual
                             </span>
                           )}

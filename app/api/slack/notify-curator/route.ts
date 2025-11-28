@@ -54,8 +54,16 @@ export async function POST(request: NextRequest) {
     const dmData = await openDmResponse.json()
     if (!dmData.ok || !dmData.channel?.id) {
       console.error('Failed to open DM:', dmData.error)
+      let errorMessage = 'Failed to open Slack DM'
+      let details = dmData.error
+      
+      if (dmData.error === 'missing_scope') {
+        errorMessage = 'Slack bot is missing required permissions'
+        details = 'The Slack bot token needs the "im:write" and "chat:write" scopes. Please add these scopes to your Slack app in the Slack API settings.'
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to open Slack DM', details: dmData.error },
+        { error: errorMessage, details },
         { status: 500 }
       )
     }
