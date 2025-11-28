@@ -14,49 +14,89 @@ export interface OrgChartNode {
  * Parse job title to determine hierarchy level
  * Returns a number where higher = more senior
  * 
- * Level mapping:
- * 0-1: Entry level (Intern, Associate, Coordinator)
- * 2-3: Mid level (Specialist, Analyst, Manager)
- * 4-5: Senior level (Senior Manager, Senior Director)
- * 6-7: Executive level (VP, SVP, C-level)
+ * Level mapping (custom hierarchy):
+ * 10: Head of Department
+ * 9: Group Director
+ * 8: Senior Director
+ * 7: Director
+ * 6: Associate Director
+ * 5: Senior
+ * 4: Mid-Level
+ * 3: Junior
+ * 2-1: Entry level / Other
+ * 0: Unknown
  */
 export function getHierarchyLevelFromTitle(role: string | null | undefined): number {
   if (!role) return 0
   
   const roleLower = role.toLowerCase()
   
-  // C-level executives (highest)
+  // Check most specific titles first to avoid false matches
+  
+  // Head of Department (highest)
+  if (roleLower.includes('head of department') || roleLower.includes('head of dept')) return 10
+  if (roleLower.includes('department head') || roleLower.includes('dept head')) return 10
+  
+  // Group Director
+  if (roleLower.includes('group director')) return 9
+  
+  // Senior Director (check before Director)
+  if (roleLower.includes('senior director') || roleLower.includes('sr director')) return 8
+  
+  // Director (but not Associate Director or Senior Director)
+  if (roleLower.includes('director') && 
+      !roleLower.includes('associate') && 
+      !roleLower.includes('senior') && 
+      !roleLower.includes('group') &&
+      !roleLower.includes('head')) return 7
+  
+  // Associate Director
+  if (roleLower.includes('associate director')) return 6
+  
+  // Senior (individual contributor level, but not Senior Director/Manager)
+  if (roleLower.includes('senior') && 
+      !roleLower.includes('director') && 
+      !roleLower.includes('manager') &&
+      !roleLower.includes('vp') &&
+      !roleLower.includes('vice president')) return 5
+  
+  // Mid-Level
+  if (roleLower.includes('mid-level') || roleLower.includes('mid level') || roleLower.includes('midlevel')) return 4
+  if (roleLower.includes('mid-') && roleLower.includes('level')) return 4
+  
+  // Junior
+  if (roleLower.includes('junior')) return 3
+  
+  // Legacy support for other titles (for backwards compatibility)
+  
+  // C-level executives
   if (roleLower.includes('ceo') || roleLower.includes('chief executive')) return 10
   if (roleLower.includes('president')) return 9
-  if (roleLower.includes('chief') || roleLower.includes('cfo') || roleLower.includes('cto') || roleLower.includes('coo')) return 8
+  if (roleLower.includes('chief') || roleLower.includes('cfo') || roleLower.includes('cto') || roleLower.includes('coo')) return 9
   
-  // Senior VP / Executive VP
-  if (roleLower.includes('executive vice president') || roleLower.includes('evp')) return 7
-  if (roleLower.includes('senior vice president') || roleLower.includes('svp')) return 7
-  
-  // VP / Vice President
-  if (roleLower.includes('vice president') || roleLower.includes('vp ') || roleLower.match(/\bvp\b/)) return 6
-  
-  // Directors
-  if (roleLower.includes('executive director')) return 6
-  if (roleLower.includes('senior director') || roleLower.includes('sr director')) return 5
-  if (roleLower.includes('director') && !roleLower.includes('associate')) return 5
-  if (roleLower.includes('associate director')) return 4
+  // VP level
+  if (roleLower.includes('executive vice president') || roleLower.includes('evp')) return 8
+  if (roleLower.includes('senior vice president') || roleLower.includes('svp')) return 8
+  if (roleLower.includes('vice president') || roleLower.includes('vp ') || roleLower.match(/\bvp\b/)) return 7
   
   // Managers
-  if (roleLower.includes('senior manager') || roleLower.includes('sr manager')) return 4
-  if (roleLower.includes('manager') && !roleLower.includes('associate') && !roleLower.includes('assistant')) return 3
-  if (roleLower.includes('assistant manager') || roleLower.includes('associate manager')) return 2
+  if (roleLower.includes('senior manager') || roleLower.includes('sr manager')) return 5
+  if (roleLower.includes('manager') && !roleLower.includes('associate') && !roleLower.includes('assistant')) return 4
+  if (roleLower.includes('assistant manager') || roleLower.includes('associate manager')) return 3
   
-  // Senior individual contributors
-  if (roleLower.includes('senior') && (roleLower.includes('engineer') || roleLower.includes('designer') || roleLower.includes('developer') || roleLower.includes('analyst'))) return 3
-  if (roleLower.includes('lead') || roleLower.includes('principal')) return 3
+  // Lead / Principal
+  if (roleLower.includes('lead') || roleLower.includes('principal')) return 5
   
-  // Mid-level individual contributors
-  if (roleLower.includes('engineer') || roleLower.includes('designer') || roleLower.includes('developer') || roleLower.includes('analyst') || roleLower.includes('specialist')) return 2
+  // Individual contributors
+  if (roleLower.includes('engineer') || roleLower.includes('designer') || roleLower.includes('developer') || roleLower.includes('analyst') || roleLower.includes('specialist')) {
+    // Check if senior
+    if (roleLower.includes('senior')) return 5
+    // Otherwise mid-level
+    return 4
+  }
   
   // Entry level
-  if (roleLower.includes('associate') || roleLower.includes('coordinator') || roleLower.includes('assistant') || roleLower.includes('intern')) return 1
+  if (roleLower.includes('associate') || roleLower.includes('coordinator') || roleLower.includes('assistant') || roleLower.includes('intern')) return 2
   
   // Default
   return 0
