@@ -50,9 +50,12 @@ Add these to your Vercel environment variables or `.env.local`:
 # Elvex Configuration (required)
 ELVEX_API_KEY=your-elvex-api-key
 ELVEX_ASSISTANT_ID=your-assistant-id
+ELVEX_VERSION=your-assistant-version
 
 # Optional: Custom Elvex base URL
 ELVEX_BASE_URL=https://api.elvex.ai
+
+# Note: DeckTalk chatbot uses the same assistant ID and version as deck processing
 
 # Remove or comment out OpenAI keys (no longer needed)
 # OPENAI_API_KEY=...

@@ -22,6 +22,7 @@ import { PlaylistData } from '@/lib/spotify-player-types'
 import { ProfileSetupModal } from '@/components/profile-setup-modal'
 import { createClient } from '@/lib/supabase/client'
 import { AddSnapDialog } from '@/components/add-snap-dialog'
+import { Chatbot } from '@/components/chatbot'
 import { useGoogleCalendarToken } from '@/hooks/useGoogleCalendarToken'
 import { TeamPulseCard } from '@/components/team-pulse-card'
 import { Footer } from '@/components/footer'
@@ -136,6 +137,7 @@ export default function TeamDashboard() {
   }>>([])
   const [snapViewType, setSnapViewType] = useState<'received' | 'given'>('received')
   const [showAddSnapDialog, setShowAddSnapDialog] = useState(false)
+  const [showChatbot, setShowChatbot] = useState(false)
   const [calendarEvents, setCalendarEvents] = useState<Array<{
     id: string
     summary: string
@@ -2109,6 +2111,20 @@ export default function TeamDashboard() {
                       >
                         {mode === 'code' ? '[BRIEF]' : 'Brief'} {mode !== 'code' && <ArrowRight className="w-3 h-3 ml-2" />}
                       </Button>
+                      {/* Chatbot text link */}
+                      <button
+                        onClick={() => setShowChatbot(true)}
+                        className={`text-sm font-semibold hover:opacity-70 transition-opacity ${mode === 'code' ? 'font-mono' : ''}`}
+                        style={{
+                          color: mode === 'chaos' 
+                            ? (isLightBg ? '#000000' : '#FFFFFF')
+                            : mode === 'chill'
+                            ? '#4A1818'
+                            : '#FFFFFF'
+                        }}
+                      >
+                        {mode === 'code' ? '[DECKTALK]' : 'DeckTalk'}
+                      </button>
                     </div>
                   </div>
                 </>
@@ -4004,6 +4020,25 @@ export default function TeamDashboard() {
                   <div className="flex items-center justify-between mb-6">
                     <h2 className={`text-3xl font-black uppercase leading-tight ${textStyle}`}>RECENT WORK</h2>
                     <div className="flex items-center gap-3">
+                      <Button
+                        onClick={() => setShowChatbot(true)}
+                        className={`${mode === 'chaos' ? 'hover:bg-[#2a2a2a]' : mode === 'chill' ? 'hover:bg-[#3A1414]' : 'hover:bg-[#1a1a1a] border border-[#FFFFFF]'} font-semibold ${getRoundedClass('rounded-full')} py-1.5 px-4 text-xs tracking-normal transition-all hover:shadow-lg ${mode === 'code' ? 'font-mono' : ''}`}
+                        style={mode === 'chaos' ? {
+                          backgroundColor: '#1a1a1a',
+                          color: '#FFFFFF'
+                        } : mode === 'chill' ? {
+                          backgroundColor: '#4A1818',
+                          color: '#FFFFFF'
+                        } : mode === 'code' ? {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        } : {
+                          backgroundColor: '#000000',
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        {mode === 'code' ? '[DECKTALK]' : 'DeckTalk'} {mode !== 'code' && <Bot className="w-3 h-3 ml-1.5" />}
+                      </Button>
                       <Link 
                         href="/work-samples"
                         className={`text-xs uppercase tracking-wider font-black ${textStyle} hover:opacity-70 transition-opacity`}
@@ -4559,6 +4594,10 @@ export default function TeamDashboard() {
         open={showAddSnapDialog}
         onOpenChange={setShowAddSnapDialog}
         onSuccess={handleSnapAdded}
+      />
+      <Chatbot
+        open={showChatbot}
+        onOpenChange={setShowChatbot}
       />
 
       {/* Weekly Playlist Dialog */}
