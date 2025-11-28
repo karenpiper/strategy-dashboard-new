@@ -1,6 +1,6 @@
 'use client'
 
-import { buildOrgChartTree, type OrgChartNode } from '@/lib/org-chart'
+import { buildOrgChartTree, type OrgChartNode, getHierarchyLevelFromTitle } from '@/lib/org-chart'
 import { Users, ChevronDown, ChevronRight } from 'lucide-react'
 import { useState, useRef, useCallback } from 'react'
 
@@ -119,10 +119,11 @@ export function OrgChartVisual({
     }
     collectNodes(nodes)
     
-    // Group nodes by hierarchy level
+    // Group nodes by hierarchy level (use role-based hierarchy, not database hierarchy_level)
     const nodesByLevel = new Map<number, OrgChartNode[]>()
     nodeMap.forEach(node => {
-      const hierarchyLevel = node.hierarchyLevel ?? 0
+      // Use role-based hierarchy level for positioning, not database hierarchy_level
+      const hierarchyLevel = getHierarchyLevelFromTitle(node.profile.role) || 0
       if (!nodesByLevel.has(hierarchyLevel)) {
         nodesByLevel.set(hierarchyLevel, [])
       }
@@ -137,6 +138,10 @@ export function OrgChartVisual({
     sortedLevels.forEach((level, index) => {
       levelYPositions.set(level, startY + index * VERTICAL_SPACING)
     })
+    
+    // Calculate X positions using tree-based layout
+    // We'll use the tree structure for X positioning, but Y will be based on hierarchy level
+    const nodeXPositions = new Map<string, number>()
     
     // Helper to calculate horizontal space needed for a subtree
     const getSubtreeWidth = (node: OrgChartNode): number => {
@@ -154,9 +159,6 @@ export function OrgChartVisual({
     }
     
     // Calculate X positions using tree-based layout
-    // We'll do a depth-first traversal to position nodes, but use hierarchy_level for Y
-    const nodeXPositions = new Map<string, number>()
-    
     function positionSubtree(node: OrgChartNode, x: number): number {
       const isExpanded = expandedNodes.has(node.id) || expandedNodes.size === 0
       const hasChildren = node.children.length > 0 && isExpanded
@@ -195,9 +197,10 @@ export function OrgChartVisual({
       currentX += subtreeWidth + HORIZONTAL_SPACING
     })
     
-    // Create positions array with Y based on hierarchy_level
+    // Create positions array with Y based on role-based hierarchy level and X from tree structure
     nodeMap.forEach(node => {
-      const hierarchyLevel = node.hierarchyLevel ?? 0
+      // Use role-based hierarchy level for positioning, not database hierarchy_level
+      const hierarchyLevel = getHierarchyLevelFromTitle(node.profile.role) || 0
       const yPos = levelYPositions.get(hierarchyLevel) || startY
       const xPos = nodeXPositions.get(node.id) || startX
       
