@@ -279,8 +279,8 @@ export default function BeastHistoryPage() {
           </Card>
 
           {/* Main Content Area */}
-          <div className="flex-1 min-w-0">
-        <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-6`} style={{
+          <div className="flex-1 min-w-0 relative">
+        <Card className={`${mode === 'chaos' ? 'bg-[#2A2A2A]' : mode === 'chill' ? 'bg-white' : 'bg-[#1a1a1a]'} ${getRoundedClass('rounded-xl')} p-6 overflow-visible`} style={{
           borderColor: mode === 'chaos' ? '#333333' : mode === 'chill' ? '#E5E5E5' : '#333333',
           borderWidth: '1px'
         }}>
@@ -407,9 +407,12 @@ export default function BeastHistoryPage() {
                       <div 
                         className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30`}
                         style={{
-                          [isRight ? 'right' : 'left']: 'calc(100% + 1rem)',
-                          width: 'calc(50% - 2rem)',
-                          maxWidth: '400px'
+                          ...(isRight 
+                            ? { right: 'calc(100% + 1rem)', left: 'auto' }
+                            : { left: 'calc(100% + 1rem)', right: 'auto' }
+                          ),
+                          width: 'min(calc(50% - 2rem), 400px)',
+                          maxWidth: 'calc(100vw - 600px)'
                         }}
                       >
                         <div 
