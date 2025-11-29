@@ -60,17 +60,43 @@ export default function PollsArchivePage() {
     return mode === 'chaos' ? '#C4F500' : mode === 'chill' ? '#FFC043' : '#FFFFFF'
   }
 
-  // RED SYSTEM colors for vibes page
-  const getRedSystemColors = () => {
-    return {
-      primary: '#FF4C4C',    // Coral Red
-      secondary: '#C41E3A',  // Crimson
-      lightest: '#FFD4C4',  // Peach
-      button: '#00A3E0'     // Ocean Blue (buttons only)
+  // PURPLE SYSTEM colors for vibes page
+  // Primary: Bright Purple (#9D4EFF), Secondary: Deep Purple (#6B21A8), Complementary: Lavender (#C4B5FD), Contrast: Yellow (#FBBF24)
+  const getPurpleSystemColors = () => {
+    if (mode === 'chaos') {
+      return {
+        primary: '#9D4EFF',      // Bright Purple
+        secondary: '#6B21A8',   // Deep Purple
+        complementary: '#C4B5FD', // Lavender
+        contrast: '#FBBF24',    // Yellow
+        bg: '#1A1A1A',
+        text: '#FFFFFF',
+        cardBg: '#2A2A2A'
+      }
+    } else if (mode === 'chill') {
+      return {
+        primary: '#9D4EFF',      // Bright Purple
+        secondary: '#6B21A8',   // Deep Purple
+        complementary: '#C4B5FD', // Lavender
+        contrast: '#FBBF24',    // Yellow
+        bg: '#F5E6D3',
+        text: '#4A1818',
+        cardBg: '#FFFFFF'
+      }
+    } else {
+      return {
+        primary: '#FFFFFF',
+        secondary: '#808080',
+        complementary: '#666666',
+        contrast: '#FFFFFF',
+        bg: '#000000',
+        text: '#FFFFFF',
+        cardBg: '#1a1a1a'
+      }
     }
   }
 
-  const redSystem = getRedSystemColors()
+  const purpleColors = getPurpleSystemColors()
 
   // Get emoji for poll items
   const getPollItemEmoji = (itemName: string): string => {
@@ -174,7 +200,7 @@ export default function PollsArchivePage() {
           >
             <div className="flex items-center gap-2 mb-6">
               <Archive className="w-5 h-5" style={{ 
-                color: redSystem.primary
+                color: purpleColors.primary
               }} />
               <h3 className={`text-sm uppercase tracking-wider font-black ${getTextClass()}`}>
                 Archive
@@ -319,7 +345,7 @@ export default function PollsArchivePage() {
               }}
             >
               <div className="flex items-center gap-3 mb-4">
-                <BarChart3 className="w-6 h-6" style={{ color: redSystem.primary }} />
+                <BarChart3 className="w-6 h-6" style={{ color: purpleColors.primary }} />
                 <h3 className={`text-xl font-black uppercase ${getTextClass()}`}>Thanksgiving Grub</h3>
               </div>
               <p className={`text-sm mb-4 ${getTextClass()} opacity-70`}>
@@ -374,7 +400,7 @@ export default function PollsArchivePage() {
               }}
             >
               <div className="flex items-center gap-3 mb-4">
-                <BarChart3 className="w-6 h-6" style={{ color: redSystem.primary }} />
+                <BarChart3 className="w-6 h-6" style={{ color: purpleColors.primary }} />
                 <h3 className={`text-xl font-black uppercase ${getTextClass()}`}>Top 5 Movie Soundtracks</h3>
               </div>
               <p className={`text-sm mb-4 ${getTextClass()} opacity-70`}>
@@ -424,7 +450,7 @@ export default function PollsArchivePage() {
               }}
             >
               <div className="flex items-center gap-3 mb-4">
-                <BarChart3 className="w-6 h-6" style={{ color: redSystem.primary }} />
+                <BarChart3 className="w-6 h-6" style={{ color: purpleColors.primary }} />
                 <h3 className={`text-xl font-black uppercase ${getTextClass()}`}>Shows to Binge</h3>
               </div>
               <p className={`text-sm mb-4 ${getTextClass()} opacity-70`}>
@@ -501,7 +527,7 @@ export default function PollsArchivePage() {
               }}
             >
               <div className="flex items-center gap-3 mb-4">
-                <BarChart3 className="w-6 h-6" style={{ color: redSystem.primary }} />
+                <BarChart3 className="w-6 h-6" style={{ color: purpleColors.primary }} />
                 <h3 className={`text-xl font-black uppercase ${getTextClass()}`}>Butt Rock Edition</h3>
               </div>
               <p className={`text-sm mb-4 ${getTextClass()} opacity-70`}>
@@ -672,7 +698,7 @@ export default function PollsArchivePage() {
                 : mode === 'chill'
                 ? '#F5E6D3'
                 : '#000000',
-              border: `2px solid ${redSystem.primary}40`
+              border: `2px solid ${purpleColors.primary}40`
             }}
           >
             {selectedPoll && (
@@ -706,7 +732,7 @@ export default function PollsArchivePage() {
                                 <div className="flex items-center gap-3">
                                   <span 
                                     className={`text-lg font-black ${getTextClass()}`}
-                                    style={{ color: isTopVoted ? redSystem.primary : undefined, minWidth: '2rem' }}
+                                    style={{ color: isTopVoted ? purpleColors.primary : undefined, minWidth: '2rem' }}
                                   >
                                     {item.rank}.
                                   </span>
@@ -738,8 +764,8 @@ export default function PollsArchivePage() {
                                   style={{
                                     width: `${percentage}%`,
                                     backgroundColor: isTopVoted 
-                                      ? redSystem.primary
-                                      : 'rgba(255, 76, 76, 0.4)'
+                                      ? purpleColors.primary
+                                      : 'rgba(157, 78, 255, 0.4)'
                                   }}
                                 />
                               </div>
@@ -793,7 +819,7 @@ export default function PollsArchivePage() {
                                       <div className="flex items-center gap-3">
                                         <span 
                                           className={`text-base font-black ${getTextClass()}`}
-                                          style={{ color: isTop ? redSystem.primary : undefined }}
+                                          style={{ color: isTop ? purpleColors.primary : undefined }}
                                         >
                                           {item.count}
                                         </span>
@@ -821,8 +847,8 @@ export default function PollsArchivePage() {
                                         style={{
                                           width: `${percentage}%`,
                                           backgroundColor: isTop 
-                                            ? redSystem.primary
-                                            : 'rgba(255, 76, 76, 0.4)'
+                                            ? purpleColors.primary
+                                            : 'rgba(157, 78, 255, 0.4)'
                                         }}
                                       />
                                     </div>
@@ -876,16 +902,16 @@ export default function PollsArchivePage() {
                               <div className={`${getRoundedClass('rounded-2xl')} p-4 text-center`}
                                 style={{
                                   backgroundColor: mode === 'chaos' 
-                                    ? 'rgba(255, 76, 76, 0.1)' 
+                                    ? 'rgba(157, 78, 255, 0.1)' 
                                     : mode === 'chill'
-                                    ? 'rgba(255, 76, 76, 0.15)'
-                                    : 'rgba(255, 76, 76, 0.1)',
-                                  border: `1px solid ${redSystem.primary}40`
+                                    ? 'rgba(157, 78, 255, 0.15)'
+                                    : 'rgba(157, 78, 255, 0.1)',
+                                  border: `1px solid ${purpleColors.primary}40`
                                 }}
                               >
-                                <Lock className="w-6 h-6 mx-auto mb-2" style={{ color: redSystem.primary }} />
+                                <Lock className="w-6 h-6 mx-auto mb-2" style={{ color: purpleColors.primary }} />
                                 <p className={`text-xs uppercase tracking-wider ${getTextClass()} opacity-70 mb-1`}>Secrets</p>
-                                <p className={`text-2xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                <p className={`text-2xl font-black ${getTextClass()}`} style={{ color: purpleColors.primary }}>
                                   {maxSecrets}
                                 </p>
                                 <p className={`text-xs ${getTextClass()} opacity-60`}>per season (max)</p>
@@ -893,16 +919,16 @@ export default function PollsArchivePage() {
                               <div className={`${getRoundedClass('rounded-2xl')} p-4 text-center`}
                                 style={{
                                   backgroundColor: mode === 'chaos' 
-                                    ? 'rgba(255, 76, 76, 0.1)' 
+                                    ? 'rgba(157, 78, 255, 0.1)' 
                                     : mode === 'chill'
-                                    ? 'rgba(255, 76, 76, 0.15)'
-                                    : 'rgba(255, 76, 76, 0.1)',
-                                  border: `1px solid ${redSystem.primary}40`
+                                    ? 'rgba(157, 78, 255, 0.15)'
+                                    : 'rgba(157, 78, 255, 0.1)',
+                                  border: `1px solid ${purpleColors.primary}40`
                                 }}
                               >
                                 <span className="text-4xl mb-2 block">😱</span>
                                 <p className={`text-xs uppercase tracking-wider ${getTextClass()} opacity-70 mb-1`}>Gasps</p>
-                                <p className={`text-2xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                <p className={`text-2xl font-black ${getTextClass()}`} style={{ color: purpleColors.primary }}>
                                   {maxGasps.toFixed(2)}
                                 </p>
                                 <p className={`text-xs ${getTextClass()} opacity-60`}>per minute (max)</p>
@@ -910,16 +936,16 @@ export default function PollsArchivePage() {
                               <div className={`${getRoundedClass('rounded-2xl')} p-4 text-center`}
                                 style={{
                                   backgroundColor: mode === 'chaos' 
-                                    ? 'rgba(255, 76, 76, 0.1)' 
+                                    ? 'rgba(157, 78, 255, 0.1)' 
                                     : mode === 'chill'
-                                    ? 'rgba(255, 76, 76, 0.15)'
-                                    : 'rgba(255, 76, 76, 0.1)',
-                                  border: `1px solid ${redSystem.primary}40`
+                                    ? 'rgba(157, 78, 255, 0.15)'
+                                    : 'rgba(157, 78, 255, 0.1)',
+                                  border: `1px solid ${purpleColors.primary}40`
                                 }}
                               >
-                                <TrendingUp className="w-6 h-6 mx-auto mb-2" style={{ color: redSystem.primary }} />
+                                <TrendingUp className="w-6 h-6 mx-auto mb-2" style={{ color: purpleColors.primary }} />
                                 <p className={`text-xs uppercase tracking-wider ${getTextClass()} opacity-70 mb-1`}>Change</p>
-                                <p className={`text-2xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                <p className={`text-2xl font-black ${getTextClass()}`} style={{ color: purpleColors.primary }}>
                                   81%
                                 </p>
                                 <p className={`text-xs ${getTextClass()} opacity-60`}>that change nothing (max)</p>
@@ -943,11 +969,11 @@ export default function PollsArchivePage() {
                                         : mode === 'chill'
                                         ? 'rgba(74, 24, 24, 0.05)'
                                         : 'rgba(255, 255, 255, 0.05)',
-                                      border: `2px solid ${isTopSecrets || isTopGasps ? redSystem.primary : 'rgba(255, 76, 76, 0.2)'}`
+                                      border: `2px solid ${isTopSecrets || isTopGasps ? purpleColors.primary : 'rgba(157, 78, 255, 0.2)'}`
                                     }}
                                   >
                                     <h4 className={`text-xl font-black mb-4 ${getTextClass()}`} style={{ 
-                                      color: (isTopSecrets || isTopGasps) ? redSystem.primary : undefined 
+                                      color: (isTopSecrets || isTopGasps) ? purpleColors.primary : undefined 
                                     }}>
                                       {show.name}
                                     </h4>
@@ -955,11 +981,11 @@ export default function PollsArchivePage() {
                                     <div className="mb-4">
                                       <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2">
-                                          <Lock className="w-4 h-4" style={{ color: redSystem.primary }} />
+                                          <Lock className="w-4 h-4" style={{ color: purpleColors.primary }} />
                                           <span className={`text-sm font-semibold ${getTextClass()}`}>Secrets per season</span>
                                         </div>
                                         <span className={`text-lg font-black ${getTextClass()}`} style={{ 
-                                          color: isTopSecrets ? redSystem.primary : undefined 
+                                          color: isTopSecrets ? purpleColors.primary : undefined 
                                         }}>
                                           {show.secretsPerSeason}
                                         </span>
@@ -979,8 +1005,8 @@ export default function PollsArchivePage() {
                                           style={{
                                             width: `${secretsPercentage}%`,
                                             backgroundColor: isTopSecrets 
-                                              ? redSystem.primary
-                                              : 'rgba(255, 76, 76, 0.5)'
+                                              ? purpleColors.primary
+                                              : 'rgba(157, 78, 255, 0.5)'
                                           }}
                                         />
                                       </div>
@@ -993,7 +1019,7 @@ export default function PollsArchivePage() {
                                           <span className={`text-sm font-semibold ${getTextClass()}`}>Gasps per minute</span>
                                         </div>
                                         <span className={`text-lg font-black ${getTextClass()}`} style={{ 
-                                          color: isTopGasps ? redSystem.primary : undefined 
+                                          color: isTopGasps ? purpleColors.primary : undefined 
                                         }}>
                                           {show.gaspsPerMinute.toFixed(2)}
                                         </span>
@@ -1013,8 +1039,8 @@ export default function PollsArchivePage() {
                                           style={{
                                             width: `${gaspsPercentage}%`,
                                             backgroundColor: isTopGasps 
-                                              ? redSystem.primary
-                                              : 'rgba(255, 76, 76, 0.5)'
+                                              ? purpleColors.primary
+                                              : 'rgba(157, 78, 255, 0.5)'
                                           }}
                                         />
                                       </div>
@@ -1022,14 +1048,14 @@ export default function PollsArchivePage() {
 
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-2">
-                                        <Zap className="w-4 h-4" style={{ color: redSystem.secondary }} />
+                                        <Zap className="w-4 h-4" style={{ color: purpleColors.secondary }} />
                                         <span className={`text-sm font-semibold ${getTextClass()}`}>Change nothing</span>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <div 
                                           className="relative w-12 h-12"
                                           style={{
-                                            background: `conic-gradient(${redSystem.primary} ${show.percentChangeNothing * 3.6}deg, rgba(255, 76, 76, 0.2) ${show.percentChangeNothing * 3.6}deg)`,
+                                            background: `conic-gradient(${purpleColors.primary} ${show.percentChangeNothing * 3.6}deg, rgba(157, 78, 255, 0.2) ${show.percentChangeNothing * 3.6}deg)`,
                                             borderRadius: '50%',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1047,7 +1073,7 @@ export default function PollsArchivePage() {
                                             }}
                                           >
                                             <div className="h-full flex items-center justify-center">
-                                              <span className={`text-xs font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                              <span className={`text-xs font-black ${getTextClass()}`} style={{ color: purpleColors.primary }}>
                                                 {show.percentChangeNothing}%
                                               </span>
                                             </div>
@@ -1091,7 +1117,7 @@ export default function PollsArchivePage() {
                                   </div>
                                   <span 
                                     className={`text-base font-black ${getTextClass()}`}
-                                    style={{ color: isTop ? redSystem.primary : undefined }}
+                                    style={{ color: isTop ? purpleColors.primary : undefined }}
                                   >
                                     ({song.count})
                                   </span>
@@ -1111,8 +1137,8 @@ export default function PollsArchivePage() {
                                     style={{
                                       width: `${percentage}%`,
                                       backgroundColor: isTop 
-                                        ? redSystem.primary
-                                        : 'rgba(255, 76, 76, 0.4)'
+                                        ? purpleColors.primary
+                                        : 'rgba(157, 78, 255, 0.4)'
                                     }}
                                   />
                                 </div>
@@ -1156,7 +1182,7 @@ export default function PollsArchivePage() {
                       )}
 
                       <div className="pt-8 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
-                        <h4 className={`text-3xl font-black mb-6 ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                        <h4 className={`text-3xl font-black mb-6 ${getTextClass()}`} style={{ color: purpleColors.primary }}>
                           Butt Rock Perfect Storm Index
                         </h4>
                         
@@ -1168,11 +1194,11 @@ export default function PollsArchivePage() {
                           <div className={`${getRoundedClass('rounded-2xl')} p-6 text-center`}
                             style={{
                               backgroundColor: mode === 'chaos' 
-                                ? 'rgba(255, 76, 76, 0.1)' 
+                                ? 'rgba(157, 78, 255, 0.1)' 
                                 : mode === 'chill'
-                                ? 'rgba(255, 76, 76, 0.15)'
-                                : 'rgba(255, 76, 76, 0.1)',
-                              border: `2px solid ${redSystem.primary}40`
+                                ? 'rgba(157, 78, 255, 0.15)'
+                                : 'rgba(157, 78, 255, 0.1)',
+                              border: `2px solid ${purpleColors.primary}40`
                             }}
                           >
                             <span className="text-4xl mb-3 block">🎤</span>
@@ -1183,11 +1209,11 @@ export default function PollsArchivePage() {
                           <div className={`${getRoundedClass('rounded-2xl')} p-6 text-center`}
                             style={{
                               backgroundColor: mode === 'chaos' 
-                                ? 'rgba(255, 76, 76, 0.1)' 
+                                ? 'rgba(157, 78, 255, 0.1)' 
                                 : mode === 'chill'
-                                ? 'rgba(255, 76, 76, 0.15)'
-                                : 'rgba(255, 76, 76, 0.1)',
-                              border: `2px solid ${redSystem.primary}40`
+                                ? 'rgba(157, 78, 255, 0.15)'
+                                : 'rgba(157, 78, 255, 0.1)',
+                              border: `2px solid ${purpleColors.primary}40`
                             }}
                           >
                             <span className="text-4xl mb-3 block">💭</span>
@@ -1198,11 +1224,11 @@ export default function PollsArchivePage() {
                           <div className={`${getRoundedClass('rounded-2xl')} p-6 text-center`}
                             style={{
                               backgroundColor: mode === 'chaos' 
-                                ? 'rgba(255, 76, 76, 0.1)' 
+                                ? 'rgba(157, 78, 255, 0.1)' 
                                 : mode === 'chill'
-                                ? 'rgba(255, 76, 76, 0.15)'
-                                : 'rgba(255, 76, 76, 0.1)',
-                              border: `2px solid ${redSystem.primary}40`
+                                ? 'rgba(157, 78, 255, 0.15)'
+                                : 'rgba(157, 78, 255, 0.1)',
+                              border: `2px solid ${purpleColors.primary}40`
                             }}
                           >
                             <span className="text-4xl mb-3 block">🏭</span>
@@ -1220,18 +1246,18 @@ export default function PollsArchivePage() {
                           <div className={`${getRoundedClass('rounded-2xl')} p-6`}
                             style={{
                               backgroundColor: mode === 'chaos' 
-                                ? 'rgba(255, 76, 76, 0.15)' 
+                                ? 'rgba(157, 78, 255, 0.15)' 
                                 : mode === 'chill'
-                                ? 'rgba(255, 76, 76, 0.2)'
-                                : 'rgba(255, 76, 76, 0.15)',
-                              border: `2px solid ${redSystem.primary}`
+                                ? 'rgba(157, 78, 255, 0.2)'
+                                : 'rgba(157, 78, 255, 0.15)',
+                              border: `2px solid ${purpleColors.primary}`
                             }}
                           >
                             <div className="flex items-center justify-center mb-4">
                               <div 
                                 className="relative w-24 h-24"
                                 style={{
-                                  background: `conic-gradient(${redSystem.primary} 360deg, rgba(255, 76, 76, 0.2) 360deg)`,
+                                  background: `conic-gradient(${purpleColors.primary} 360deg, rgba(157, 78, 255, 0.2) 360deg)`,
                                   borderRadius: '50%',
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1249,7 +1275,7 @@ export default function PollsArchivePage() {
                                   }}
                                 >
                                   <div className="h-full flex items-center justify-center">
-                                    <span className={`text-3xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                    <span className={`text-3xl font-black ${getTextClass()}`} style={{ color: purpleColors.primary }}>
                                       100%
                                     </span>
                                   </div>
@@ -1264,18 +1290,18 @@ export default function PollsArchivePage() {
                           <div className={`${getRoundedClass('rounded-2xl')} p-6`}
                             style={{
                               backgroundColor: mode === 'chaos' 
-                                ? 'rgba(255, 76, 76, 0.15)' 
+                                ? 'rgba(157, 78, 255, 0.15)' 
                                 : mode === 'chill'
-                                ? 'rgba(255, 76, 76, 0.2)'
-                                : 'rgba(255, 76, 76, 0.15)',
-                              border: `2px solid ${redSystem.primary}`
+                                ? 'rgba(157, 78, 255, 0.2)'
+                                : 'rgba(157, 78, 255, 0.15)',
+                              border: `2px solid ${purpleColors.primary}`
                             }}
                           >
                             <div className="flex items-center justify-center mb-4">
                               <div 
                                 className="relative w-24 h-24"
                                 style={{
-                                  background: `conic-gradient(${redSystem.primary} ${71 * 3.6}deg, rgba(255, 76, 76, 0.2) ${71 * 3.6}deg)`,
+                                  background: `conic-gradient(${purpleColors.primary} ${71 * 3.6}deg, rgba(157, 78, 255, 0.2) ${71 * 3.6}deg)`,
                                   borderRadius: '50%',
                                   display: 'flex',
                                   alignItems: 'center',
@@ -1293,7 +1319,7 @@ export default function PollsArchivePage() {
                                   }}
                                 >
                                   <div className="h-full flex items-center justify-center">
-                                    <span className={`text-3xl font-black ${getTextClass()}`} style={{ color: redSystem.primary }}>
+                                    <span className={`text-3xl font-black ${getTextClass()}`} style={{ color: purpleColors.primary }}>
                                       71%
                                     </span>
                                   </div>
@@ -1313,14 +1339,14 @@ export default function PollsArchivePage() {
                               : mode === 'chill'
                               ? 'rgba(74, 24, 24, 0.05)'
                               : 'rgba(255, 255, 255, 0.05)',
-                            border: `2px solid ${redSystem.secondary}60`
+                            border: `2px solid ${purpleColors.secondary}60`
                           }}
                         >
                           <div className="flex items-start gap-4">
                             <span className="text-4xl">✨</span>
                             <div className="flex-1">
                               <p className={`text-base font-black ${getTextClass()} mb-2`}>
-                                The only outlier is <span style={{ color: redSystem.secondary }}>Butterfly by Crazy Town</span>
+                                The only outlier is <span style={{ color: purpleColors.secondary }}>Butterfly by Crazy Town</span>
                               </p>
                               <p className={`text-sm ${getTextClass()} opacity-70 italic`}>
                                 which swaps "warehouse angst" for "shirtless fairy energy."

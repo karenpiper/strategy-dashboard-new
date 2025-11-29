@@ -56,17 +56,43 @@ export default function PlaylistArchivePage() {
     return mode === 'code' ? 'rounded-none' : base
   }
 
-  // RED SYSTEM colors for vibes page
-  const getRedSystemColors = () => {
-    return {
-      primary: '#FF4C4C',    // Coral Red
-      secondary: '#C41E3A',  // Crimson
-      lightest: '#FFD4C4',  // Peach
-      button: '#00A3E0'     // Ocean Blue (buttons only)
+  // PURPLE SYSTEM colors for vibes page
+  // Primary: Bright Purple (#9D4EFF), Secondary: Deep Purple (#6B21A8), Complementary: Lavender (#C4B5FD), Contrast: Yellow (#FBBF24)
+  const getPurpleSystemColors = () => {
+    if (mode === 'chaos') {
+      return {
+        primary: '#9D4EFF',      // Bright Purple
+        secondary: '#6B21A8',   // Deep Purple
+        complementary: '#C4B5FD', // Lavender
+        contrast: '#FBBF24',    // Yellow
+        bg: '#1A1A1A',
+        text: '#FFFFFF',
+        cardBg: '#2A2A2A'
+      }
+    } else if (mode === 'chill') {
+      return {
+        primary: '#9D4EFF',      // Bright Purple
+        secondary: '#6B21A8',   // Deep Purple
+        complementary: '#C4B5FD', // Lavender
+        contrast: '#FBBF24',    // Yellow
+        bg: '#F5E6D3',
+        text: '#4A1818',
+        cardBg: '#FFFFFF'
+      }
+    } else {
+      return {
+        primary: '#FFFFFF',
+        secondary: '#808080',
+        complementary: '#666666',
+        contrast: '#FFFFFF',
+        bg: '#000000',
+        text: '#FFFFFF',
+        cardBg: '#1a1a1a'
+      }
     }
   }
 
-  const redSystem = getRedSystemColors()
+  const purpleColors = getPurpleSystemColors()
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -145,7 +171,7 @@ export default function PlaylistArchivePage() {
           >
             <div className="flex items-center gap-2 mb-6">
               <Archive className="w-5 h-5" style={{ 
-                color: redSystem.primary
+                color: purpleColors.primary
               }} />
               <h3 className={`text-sm uppercase tracking-wider font-black ${getTextClass()}`}>
                 Archive
