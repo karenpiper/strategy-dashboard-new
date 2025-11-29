@@ -117,18 +117,39 @@ export async function middleware(request: NextRequest) {
       }
     )
 
+    // Check if this is a post-auth redirect (just authenticated)
+    const justAuthenticated = request.nextUrl.searchParams.get('just_authenticated') === 'true'
+    
     // Refresh session to ensure we have the latest auth state
-    console.log('[Middleware] Checking session for path:', pathname)
+    console.log('[Middleware] Checking session for path:', pathname, justAuthenticated ? '(just authenticated)' : '')
     const {
       data: { session },
       error: sessionError,
     } = await supabase.auth.getSession()
 
-    const user = session?.user ?? null
+    let user = session?.user ?? null
+
+    // If we just authenticated but session isn't available yet, try refreshing
+    if (justAuthenticated && !user && !sessionError) {
+      console.log('[Middleware] Just authenticated but session not found, attempting to refresh...')
+      const { data: { session: refreshedSession } } = await supabase.auth.refreshSession()
+      user = refreshedSession?.user ?? null
+      if (user) {
+        console.log('[Middleware] Session refreshed successfully after authentication')
+      }
+    }
 
     // If there's an error getting the session, treat as unauthenticated
     if (sessionError) {
       console.error('[Middleware] Error getting session:', sessionError.message)
+      // If we just authenticated, give it a chance - don't redirect immediately
+      if (justAuthenticated) {
+        console.log('[Middleware] Session error after auth, but allowing through (cookies may still be propagating)')
+        // Remove the just_authenticated param and allow through
+        const url = request.nextUrl.clone()
+        url.searchParams.delete('just_authenticated')
+        return NextResponse.redirect(url)
+      }
       // If we can't verify auth, redirect to login (except for login/auth/profile routes)
       if (
         !pathname.startsWith('/login') &&
@@ -151,9 +172,26 @@ export async function middleware(request: NextRequest) {
       !pathname.startsWith('/profile/setup') &&
       !pathname.startsWith('/api')
     ) {
+      // If we just authenticated but still no user, allow through anyway
+      // The client-side auth context will handle the session once cookies propagate
+      if (justAuthenticated) {
+        console.log('[Middleware] Just authenticated but no user found yet - allowing through (cookies may still be propagating)')
+        // Remove the just_authenticated param and allow through
+        const url = request.nextUrl.clone()
+        url.searchParams.delete('just_authenticated')
+        return NextResponse.redirect(url)
+      }
       console.log('[Middleware] No user found, redirecting to login. Pathname:', pathname)
       const url = request.nextUrl.clone()
       url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+
+    // If we just authenticated and have a user, clean up the URL param
+    if (justAuthenticated && user) {
+      console.log('[Middleware] Successfully authenticated, removing just_authenticated param')
+      const url = request.nextUrl.clone()
+      url.searchParams.delete('just_authenticated')
       return NextResponse.redirect(url)
     }
 

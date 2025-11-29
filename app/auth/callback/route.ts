@@ -136,16 +136,33 @@ export async function GET(request: NextRequest) {
       }
 
       // Verify the session is accessible after setting cookies
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      // Try multiple times to ensure session is established
+      let sessionVerified = false
+      let attempts = 0
+      const maxAttempts = 3
       
-      if (sessionError) {
-        console.error('[Auth Callback] Error getting session after exchange:', sessionError)
-        // Still redirect - cookies might be set even if getSession fails
-      } else if (!session) {
-        console.error('[Auth Callback] Session not accessible after exchange')
-        // Still redirect - try anyway
-      } else {
-        console.log('[Auth Callback] Session verified after exchange:', session.user.email)
+      while (!sessionVerified && attempts < maxAttempts) {
+        attempts++
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error(`[Auth Callback] Error getting session after exchange (attempt ${attempts}):`, sessionError)
+          if (attempts < maxAttempts) {
+            // Wait a bit before retrying
+            await new Promise(resolve => setTimeout(resolve, 200))
+            continue
+          }
+        } else if (!session) {
+          console.error(`[Auth Callback] Session not accessible after exchange (attempt ${attempts})`)
+          if (attempts < maxAttempts) {
+            // Wait a bit before retrying
+            await new Promise(resolve => setTimeout(resolve, 200))
+            continue
+          }
+        } else {
+          console.log('[Auth Callback] Session verified after exchange:', session.user.email)
+          sessionVerified = true
+        }
       }
 
       // Log all cookies being set (for debugging)
@@ -158,6 +175,7 @@ export async function GET(request: NextRequest) {
       })))
 
       // Successfully authenticated, redirect to home with cookies set
+      // Include just_authenticated flag so middleware knows to be lenient
       console.log('[Auth Callback] Redirecting to home page')
       return response
     } catch (error: any) {
