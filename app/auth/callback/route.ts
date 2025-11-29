@@ -23,7 +23,14 @@ export async function GET(request: NextRequest) {
     }
   }
   
-  console.log('[Auth Callback] Using origin for redirects:', origin)
+  // If we're on a Vercel URL but have NEXT_PUBLIC_APP_URL set, use the custom domain
+  // This handles the case where Supabase redirects to Vercel URL but we want custom domain
+  if (requestUrl.origin.includes('vercel.app') && process.env.NEXT_PUBLIC_APP_URL) {
+    origin = process.env.NEXT_PUBLIC_APP_URL
+    console.log('[Auth Callback] Detected Vercel URL, redirecting to custom domain:', origin)
+  }
+  
+  console.log('[Auth Callback] Using origin for redirects:', origin, 'Request origin:', requestUrl.origin)
 
   // Handle OAuth errors
   if (error) {
@@ -193,7 +200,15 @@ export async function GET(request: NextRequest) {
 
       // Successfully authenticated, redirect to home with cookies set
       // Include just_authenticated flag so middleware knows to be lenient
-      console.log('[Auth Callback] Redirecting to home page')
+      // If we're on Vercel URL but have custom domain configured, redirect to custom domain
+      if (requestUrl.origin.includes('vercel.app') && process.env.NEXT_PUBLIC_APP_URL) {
+        const customDomainUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL}/`)
+        customDomainUrl.searchParams.set('just_authenticated', 'true')
+        console.log('[Auth Callback] Redirecting to custom domain:', customDomainUrl.toString())
+        return NextResponse.redirect(customDomainUrl.toString())
+      }
+      
+      console.log('[Auth Callback] Redirecting to home page:', redirectUrl.toString())
       return response
     } catch (error: any) {
       console.error('[Auth Callback] Error in auth callback:', error)

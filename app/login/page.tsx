@@ -45,11 +45,27 @@ export default function LoginPage() {
       setLoading(true)
       setError(null)
 
-      // Use NEXT_PUBLIC_APP_URL if set (for custom domain), otherwise use current origin
-      // This ensures OAuth redirects use the correct domain
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+      // Determine the correct app URL for redirects
+      // Priority: 1. NEXT_PUBLIC_APP_URL (custom domain), 2. Check if we're on custom domain, 3. Current origin
+      let appUrl = process.env.NEXT_PUBLIC_APP_URL
+      
+      // If NEXT_PUBLIC_APP_URL is not set, check if we're already on the custom domain
+      if (!appUrl) {
+        const currentOrigin = window.location.origin
+        // Check if we're on a Vercel URL and should use custom domain instead
+        if (currentOrigin.includes('vercel.app')) {
+          // Try to construct custom domain from hostname
+          // This is a fallback - NEXT_PUBLIC_APP_URL should be set in production
+          console.warn('[Login] Using Vercel URL - NEXT_PUBLIC_APP_URL should be set to custom domain')
+          appUrl = currentOrigin
+        } else {
+          // Already on custom domain
+          appUrl = currentOrigin
+        }
+      }
+      
       const redirectTo = `${appUrl}/auth/callback`
-      console.log('[Login] Using redirect URL:', redirectTo)
+      console.log('[Login] Using redirect URL:', redirectTo, 'Current origin:', window.location.origin)
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
