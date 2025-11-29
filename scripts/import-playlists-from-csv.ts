@@ -47,8 +47,10 @@ async function fetchPlaylistCover(spotifyUrl: string): Promise<string | null> {
 
     const playlistId = playlistIdMatch[1]
 
-    // Call the Spotify API endpoint
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/spotify/playlist`, {
+    // Call the Spotify API endpoint using relative URL or custom domain
+    // Use NEXT_PUBLIC_APP_URL if set (for custom domain), otherwise default to localhost for development
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const response = await fetch(`${baseUrl}/api/spotify/playlist`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

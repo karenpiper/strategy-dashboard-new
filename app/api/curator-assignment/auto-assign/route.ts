@@ -132,7 +132,9 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (curatorProfileWithSlack?.slack_id) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      // Use request origin to get the correct domain (itwentwell.com in production)
+      const requestUrl = new URL(request.url)
+      const baseUrl = requestUrl.origin
       const curationUrl = `${baseUrl}/curate?assignment=${assignment.id}`
       
       try {
