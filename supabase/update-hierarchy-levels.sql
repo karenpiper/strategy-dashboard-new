@@ -60,3 +60,4 @@ CREATE TRIGGER profiles_update_hierarchy_levels
   FOR EACH STATEMENT
   EXECUTE FUNCTION trigger_update_hierarchy_levels();
 
+

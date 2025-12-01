@@ -50,3 +50,4 @@ WHERE table_schema = 'public'
   AND column_name IN ('manager_id', 'hierarchy_level')
 ORDER BY column_name;
 
+

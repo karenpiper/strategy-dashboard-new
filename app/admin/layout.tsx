@@ -33,6 +33,7 @@ import { useEffect, useState } from 'react'
 import { getRoleDisplayName, getSpecialAccessDisplayName } from '@/lib/permissions'
 import { AccountMenu } from '@/components/account-menu'
 import { Footer } from '@/components/footer'
+import { createClient } from '@/lib/supabase/client'
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const { mode } = useMode()
@@ -41,6 +42,43 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const { user: authUser, signOut } = useAuth()
   const { user, permissions, isLoading } = usePermissions()
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
+  const [isSelectedCurator, setIsSelectedCurator] = useState(false)
+  const supabase = createClient()
+
+  // Check if user is the selected curator (active assignment)
+  useEffect(() => {
+    async function checkCuratorStatus() {
+      if (!authUser?.id) {
+        setIsSelectedCurator(false)
+        return
+      }
+
+      try {
+        const today = new Date().toISOString().split('T')[0]
+        const { data, error } = await supabase
+          .from('curator_assignments')
+          .select('curator_profile_id, start_date, end_date')
+          .eq('curator_profile_id', authUser.id)
+          .lte('start_date', today)
+          .gte('end_date', today)
+          .eq('skipped', false)
+          .limit(1)
+
+        if (error) {
+          console.error('Error checking curator status:', error)
+          setIsSelectedCurator(false)
+          return
+        }
+
+        setIsSelectedCurator(data && data.length > 0)
+      } catch (error) {
+        console.error('Error checking curator status:', error)
+        setIsSelectedCurator(false)
+      }
+    }
+
+    checkCuratorStatus()
+  }, [authUser?.id, supabase])
 
   // Allow all users to access admin - access control handled within pages
   if (isLoading) {
@@ -98,22 +136,28 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Check if user is current beast babe
+  const isCurrentBeastBabe = user?.specialAccess?.includes('beast_babe') || false
+
   // Helper function to check if user has access to a section
   const hasSectionAccess = (sectionKey: 'content' | 'leadership' | 'curation' | 'admin'): boolean => {
     if (!user) return false
     const role = user.baseRole
     
-    // Admin has access to everything
-    if (role === 'admin') return true
+    // All logged in users can see Content Management
+    if (sectionKey === 'content') return true
     
-    // Contributor has access to content, leadership, and curation
-    if (role === 'contributor') {
-      return sectionKey === 'content' || sectionKey === 'leadership' || sectionKey === 'curation'
+    // Contributors/Leader/Admin can see Leadership and Admin sections
+    if (sectionKey === 'leadership' || sectionKey === 'admin') {
+      return role === 'contributor' || role === 'leader' || role === 'admin'
     }
     
-    // Users only have access to content management
-    if (role === 'user') {
-      return sectionKey === 'content'
+    // Curation section: check for specific access
+    if (sectionKey === 'curation') {
+      // Playlist: if user is selected curator
+      // Beast Babe: if user is current beast babe
+      // We'll handle this at the item level
+      return isSelectedCurator || isCurrentBeastBabe || role === 'contributor' || role === 'leader' || role === 'admin'
     }
     
     return false
@@ -152,8 +196,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       title: 'CURATION',
       sectionAccess: 'curation' as const,
       items: [
-        { href: '/admin/playlists', label: 'Playlist', icon: Music, permission: 'canManagePlaylists' as const, sectionAccess: 'curation' as const },
-        { href: '/admin/beast-babe', label: 'Beast Babe', icon: Crown, permission: 'canPassBeastBabe' as const, sectionAccess: 'curation' as const },
+        { href: '/admin/playlists', label: 'Playlist', icon: Music, permission: null, sectionAccess: 'curation' as const, requiresCurator: true },
+        { href: '/admin/beast-babe', label: 'Beast Babe', icon: Crown, permission: null, sectionAccess: 'curation' as const, requiresBeastBabe: true },
       ]
     },
     {
@@ -203,7 +247,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                     </p>
                   </div>
                 </div>
-                {user?.specialAccess.length > 0 && (
+                {user && user.specialAccess && user.specialAccess.length > 0 && (
                   <div className="space-y-0.5 mt-1.5">
                     {user.specialAccess.map((access) => (
                       <div key={access} className="flex items-center gap-1.5">
@@ -224,6 +268,33 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                 // Check if user has access to this section
                 if (section.sectionAccess && !hasSectionAccess(section.sectionAccess)) {
                   return null
+                }
+                
+                // For Curation section, check if user has access to any items
+                if (section.sectionAccess === 'curation') {
+                  const hasAccessibleItems = section.items.some((item) => {
+                    // Check section access
+                    if (item.sectionAccess && !hasSectionAccess(item.sectionAccess)) {
+                      return false
+                    }
+                    // Check permissions
+                    if (item.permission && !permissions?.[item.permission]) {
+                      return false
+                    }
+                    // Check curator requirement
+                    if ((item as any).requiresCurator && !isSelectedCurator) {
+                      return false
+                    }
+                    // Check beast babe requirement
+                    if ((item as any).requiresBeastBabe && !isCurrentBeastBabe) {
+                      return false
+                    }
+                    return true
+                  })
+                  
+                  if (!hasAccessibleItems) {
+                    return null
+                  }
                 }
                 
                 const isCollapsed = collapsedSections[section.title] ?? false
@@ -257,6 +328,16 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                           
                           // Check permissions if required
                           if (item.permission && !permissions?.[item.permission]) {
+                            return null
+                          }
+                          
+                          // Check if item requires curator status
+                          if ((item as any).requiresCurator && !isSelectedCurator) {
+                            return null
+                          }
+                          
+                          // Check if item requires beast babe status
+                          if ((item as any).requiresBeastBabe && !isCurrentBeastBabe) {
                             return null
                           }
                           
