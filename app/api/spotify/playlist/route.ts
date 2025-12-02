@@ -76,22 +76,46 @@ async function getAccessToken(): Promise<string> {
 
 // Fetch playlist data from Spotify API
 async function fetchPlaylistData(playlistId: string, accessToken: string) {
-  // Try without market parameter first - some playlists may not be available in specific markets
-  // If that fails, we can try with market parameter
-  const url = `https://api.spotify.com/v1/playlists/${playlistId}`
-  console.log(`[Spotify API] Fetching playlist: ${playlistId} from ${url}`)
+  // Try multiple approaches: without market, then with different markets
+  // Some playlists (especially Spotify-owned ones) require a market parameter
+  const marketsToTry = [null, 'US', 'PL', 'GB', 'DE', 'FR'] // null = no market parameter
   
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-    },
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    let errorMessage = `Failed to fetch playlist: ${errorText}`
+  for (const market of marketsToTry) {
+    const url = market 
+      ? `https://api.spotify.com/v1/playlists/${playlistId}?market=${market}`
+      : `https://api.spotify.com/v1/playlists/${playlistId}`
     
-    // Try to parse as JSON for better error messages
+    console.log(`[Spotify API] Fetching playlist: ${playlistId} from ${url}`)
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      console.log(`[Spotify API] Successfully fetched playlist ${playlistId}${market ? ` with market=${market}` : ' without market'}`)
+      return data
+    }
+
+    // If 404, try next market. For other errors, log and continue trying
+    if (response.status === 404) {
+      console.log(`[Spotify API] Playlist ${playlistId} not found${market ? ` with market=${market}` : ' without market'}, trying next...`)
+      continue
+    }
+
+    // For non-404 errors, log and try next market
+    const errorText = await response.text()
+    console.warn(`[Spotify API] Error ${response.status} fetching playlist ${playlistId}${market ? ` with market=${market}` : ' without market'}: ${errorText}`)
+    
+    // If it's not a 404 and not the last market, continue trying
+    if (market !== marketsToTry[marketsToTry.length - 1]) {
+      continue
+    }
+    
+    // Last attempt failed, throw error
+    let errorMessage = `Failed to fetch playlist: ${errorText}`
     try {
       const errorJson = JSON.parse(errorText)
       if (errorJson.error?.message) {
@@ -101,21 +125,13 @@ async function fetchPlaylistData(playlistId: string, accessToken: string) {
       // Keep original error message if not JSON
     }
     
-    // Log the specific error for debugging
-    console.error(`[Spotify API] Error fetching playlist ${playlistId}:`, {
-      status: response.status,
-      statusText: response.statusText,
-      errorMessage,
-      errorText
-    })
-    
-    // Create a more specific error with status code
     const error = new Error(errorMessage)
     ;(error as any).status = response.status
     throw error
   }
 
-  return response.json()
+  // All attempts failed with 404
+  throw new Error('Playlist not found in any available market. The playlist may be private, region-restricted, or unavailable.')
 }
 
 // Fetch all tracks from a playlist (handles pagination)
