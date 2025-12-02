@@ -8,29 +8,32 @@ function extractPlaylistId(url: string): string | null {
     return null
   }
 
-  // Clean the URL
-  const cleanUrl = url.trim()
+  // Clean the URL - remove query parameters and fragments
+  // URLs like: https://open.spotify.com/playlist/37i9dQZF1DX1leCUq7he50?si=...
+  const cleanUrl = url.trim().split('?')[0].split('#')[0]
   
-  // Patterns to match Spotify playlist URLs
+  // Patterns to match Spotify playlist URLs (in order of specificity)
   const patterns = [
-    // https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M
-    /(?:open\.)?spotify\.com\/playlist\/([a-zA-Z0-9]+)/,
-    // spotify:playlist:37i9dQZF1DXcBWIGoYBM5M
-    /spotify:playlist:([a-zA-Z0-9]+)/,
-    // Just the ID if it's already extracted
-    /^([a-zA-Z0-9]{22})$/, // Spotify IDs are typically 22 characters
+    // https://open.spotify.com/playlist/37i9dQZF1DX1leCUq7he50
+    // https://spotify.com/playlist/37i9dQZF1DX1leCUq7he50
+    /(?:open\.)?spotify\.com\/playlist\/([a-zA-Z0-9]+)/i,
+    // spotify:playlist:37i9dQZF1DX1leCUq7he50
+    /spotify:playlist:([a-zA-Z0-9]+)/i,
+    // Just the ID if it's already extracted (Spotify IDs are 22 characters)
+    /^([a-zA-Z0-9]{22})$/,
   ]
   
   for (const pattern of patterns) {
     const match = cleanUrl.match(pattern)
     if (match && match[1]) {
       const playlistId = match[1]
-      console.log(`[Spotify API] Extracted playlist ID: ${playlistId} from URL: ${cleanUrl}`)
+      console.log(`[Spotify API] Extracted playlist ID: ${playlistId} from URL: ${url}`)
       return playlistId
     }
   }
   
-  console.error(`[Spotify API] Could not extract playlist ID from URL: ${cleanUrl}`)
+  console.error(`[Spotify API] Could not extract playlist ID from URL: ${url}`)
+  console.error(`[Spotify API] Cleaned URL: ${cleanUrl}`)
   return null
 }
 
@@ -73,9 +76,10 @@ async function getAccessToken(): Promise<string> {
 
 // Fetch playlist data from Spotify API
 async function fetchPlaylistData(playlistId: string, accessToken: string) {
-  // Add market parameter to ensure tracks are available (US market as default)
-  const url = `https://api.spotify.com/v1/playlists/${playlistId}?market=US`
-  console.log(`[Spotify API] Fetching playlist: ${playlistId}`)
+  // Try without market parameter first - some playlists may not be available in specific markets
+  // If that fails, we can try with market parameter
+  const url = `https://api.spotify.com/v1/playlists/${playlistId}`
+  console.log(`[Spotify API] Fetching playlist: ${playlistId} from ${url}`)
   
   const response = await fetch(url, {
     headers: {
