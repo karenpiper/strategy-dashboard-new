@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // Extract playlist ID from Spotify URL
-// Spotify playlist IDs are base62 encoded (alphanumeric + some special chars)
+// Spotify playlist IDs are base62 encoded (alphanumeric)
 // URLs can be: https://open.spotify.com/playlist/ID or spotify:playlist:ID
+// Must strip query params (?si=...), fragments (#...), and trailing slashes
 function extractPlaylistId(url: string): string | null {
   if (!url || typeof url !== 'string') {
     return null
   }
 
-  // Clean the URL - remove query parameters and fragments
-  // URLs like: https://open.spotify.com/playlist/37i9dQZF1DX1leCUq7he50?si=...
-  const cleanUrl = url.trim().split('?')[0].split('#')[0]
+  // Clean the URL - remove query parameters, fragments, and trailing slashes
+  // URLs like: https://open.spotify.com/playlist/37i9dQZF1DX1leCUq7he50?si=...&pi=...
+  let cleanUrl = url.trim()
+    .split('?')[0]  // Remove query params (?si=...)
+    .split('#')[0]   // Remove fragments (#...)
+    .replace(/\/+$/, '') // Remove trailing slashes
   
   // Patterns to match Spotify playlist URLs (in order of specificity)
   const patterns = [
@@ -19,8 +23,8 @@ function extractPlaylistId(url: string): string | null {
     /(?:open\.)?spotify\.com\/playlist\/([a-zA-Z0-9]+)/i,
     // spotify:playlist:37i9dQZF1DX1leCUq7he50
     /spotify:playlist:([a-zA-Z0-9]+)/i,
-    // Just the ID if it's already extracted (Spotify IDs are 22 characters)
-    /^([a-zA-Z0-9]{22})$/,
+    // Just the ID if it's already extracted (alphanumeric, typically 22 chars but can vary)
+    /^([a-zA-Z0-9]+)$/,
   ]
   
   for (const pattern of patterns) {
@@ -75,9 +79,12 @@ async function getAccessToken(): Promise<string> {
 }
 
 // Fetch playlist data from Spotify API
+// Uses GET /v1/playlists/{playlist_id} - the standard playlist endpoint
+// Do NOT use /v1/users/{user_id}/playlists/{playlist_id} as it breaks for Spotify editorial playlists
 async function fetchPlaylistData(playlistId: string, accessToken: string) {
   // Try multiple approaches: without market, then with different markets
   // Some playlists (especially Spotify-owned ones) require a market parameter
+  // Start with US market as recommended, then try others
   const marketsToTry = [null, 'US', 'PL', 'GB', 'DE', 'FR'] // null = no market parameter
   
   for (const market of marketsToTry) {
