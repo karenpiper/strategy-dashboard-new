@@ -61,7 +61,18 @@ export async function GET(request: NextRequest) {
 
     // Fetch profile data for users with logins
     const userIdsWithLogins = Object.keys(loginCountsPerUser)
-    const loginUsersWithProfiles: Array<{ userId: string; count: number; full_name: string | null; email: string | null; avatar_url: string | null }> = []
+    const loginUsersWithProfiles: Array<{ userId: string; count: number; full_name: string | null; email: string | null; avatar_url: string | null; lastLogin: string | null }> = []
+    
+    // Get last login date for each user
+    const lastLoginByUser: Record<string, string> = {}
+    loginEvents?.forEach(event => {
+      if (event.user_id && event.created_at) {
+        const existing = lastLoginByUser[event.user_id]
+        if (!existing || new Date(event.created_at) > new Date(existing)) {
+          lastLoginByUser[event.user_id] = event.created_at
+        }
+      }
+    })
     
     if (userIdsWithLogins.length > 0) {
       const { data: userProfiles } = await supabase
@@ -76,12 +87,42 @@ export async function GET(request: NextRequest) {
           count: loginCountsPerUser[userId],
           full_name: profile?.full_name || null,
           email: profile?.email || null,
-          avatar_url: profile?.avatar_url || null
+          avatar_url: profile?.avatar_url || null,
+          lastLogin: lastLoginByUser[userId] || null
         })
       })
       
       // Sort by count descending
       loginUsersWithProfiles.sort((a, b) => b.count - a.count)
+    }
+
+    // Get all users who have never logged in
+    const { data: allProfiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url, created_at')
+      .eq('is_active', true)
+    
+    const usersWhoNeverLoggedIn: Array<{ userId: string; full_name: string | null; email: string | null; avatar_url: string | null; created_at: string | null }> = []
+    
+    if (allProfiles) {
+      allProfiles.forEach(profile => {
+        if (!userIdsWithLogins.includes(profile.id)) {
+          usersWhoNeverLoggedIn.push({
+            userId: profile.id,
+            full_name: profile.full_name,
+            email: profile.email,
+            avatar_url: profile.avatar_url,
+            created_at: profile.created_at
+          })
+        }
+      })
+      
+      // Sort by created_at descending (newest first)
+      usersWhoNeverLoggedIn.sort((a, b) => {
+        if (!a.created_at) return 1
+        if (!b.created_at) return -1
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
     }
 
     // New signups (from profiles table)
@@ -230,6 +271,133 @@ export async function GET(request: NextRequest) {
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => a.date.localeCompare(b.date))
 
+    // Additional content stats
+    // News items
+    const { count: totalNews } = await supabase
+      .from('news')
+      .select('*', { count: 'exact', head: true })
+    
+    const { count: newsInPeriod } = await supabase
+      .from('news')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', startDateISO)
+
+    // Videos
+    const { count: totalVideos } = await supabase
+      .from('videos')
+      .select('*', { count: 'exact', head: true })
+    
+    const { count: videosInPeriod } = await supabase
+      .from('videos')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', startDateISO)
+
+    // Playlists
+    const { count: totalPlaylists } = await supabase
+      .from('playlists')
+      .select('*', { count: 'exact', head: true })
+    
+    const { count: playlistsInPeriod } = await supabase
+      .from('playlists')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', startDateISO)
+
+    // Pipeline projects
+    const { count: totalProjects } = await supabase
+      .from('pipeline_projects')
+      .select('*', { count: 'exact', head: true })
+    
+    const { count: projectsInPeriod } = await supabase
+      .from('pipeline_projects')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', startDateISO)
+
+    // Content creation by user - get all content and aggregate
+    const [workSamplesData, mustReadsData, resourcesData, newsData, videosData, allActiveProfiles] = await Promise.all([
+      supabase.from('work_samples').select('created_by'),
+      supabase.from('must_reads').select('created_by'),
+      supabase.from('resources').select('created_by'),
+      supabase.from('news').select('submitted_by'),
+      supabase.from('videos').select('submitted_by'),
+      supabase.from('profiles').select('id, full_name, email, avatar_url').eq('is_active', true)
+    ])
+    
+    const contentCreationStats: Record<string, {
+      userId: string
+      full_name: string | null
+      email: string | null
+      avatar_url: string | null
+      workSamples: number
+      mustReads: number
+      resources: number
+      news: number
+      videos: number
+      total: number
+    }> = {}
+    
+    // Initialize all active users
+    if (allActiveProfiles.data) {
+      allActiveProfiles.data.forEach(profile => {
+        contentCreationStats[profile.id] = {
+          userId: profile.id,
+          full_name: profile.full_name,
+          email: profile.email,
+          avatar_url: profile.avatar_url,
+          workSamples: 0,
+          mustReads: 0,
+          resources: 0,
+          news: 0,
+          videos: 0,
+          total: 0
+        }
+      })
+    }
+    
+    // Count work samples
+    workSamplesData.data?.forEach(item => {
+      if (item.created_by && contentCreationStats[item.created_by]) {
+        contentCreationStats[item.created_by].workSamples++
+        contentCreationStats[item.created_by].total++
+      }
+    })
+    
+    // Count must reads
+    mustReadsData.data?.forEach(item => {
+      if (item.created_by && contentCreationStats[item.created_by]) {
+        contentCreationStats[item.created_by].mustReads++
+        contentCreationStats[item.created_by].total++
+      }
+    })
+    
+    // Count resources
+    resourcesData.data?.forEach(item => {
+      if (item.created_by && contentCreationStats[item.created_by]) {
+        contentCreationStats[item.created_by].resources++
+        contentCreationStats[item.created_by].total++
+      }
+    })
+    
+    // Count news
+    newsData.data?.forEach(item => {
+      if (item.submitted_by && contentCreationStats[item.submitted_by]) {
+        contentCreationStats[item.submitted_by].news++
+        contentCreationStats[item.submitted_by].total++
+      }
+    })
+    
+    // Count videos
+    videosData.data?.forEach(item => {
+      if (item.submitted_by && contentCreationStats[item.submitted_by]) {
+        contentCreationStats[item.submitted_by].videos++
+        contentCreationStats[item.submitted_by].total++
+      }
+    })
+    
+    // Convert to array and filter/sort
+    const contentCreationStatsArray = Object.values(contentCreationStats)
+      .filter(user => user.total > 0)
+      .sort((a, b) => b.total - a.total)
+
     return NextResponse.json({
       period: {
         days,
@@ -245,7 +413,8 @@ export async function GET(request: NextRequest) {
           .filter(([date]) => date >= startDateStr)
           .map(([date, count]) => ({ date, count }))
           .sort((a, b) => a.date.localeCompare(b.date)),
-        loginsPerUser: loginUsersWithProfiles.slice(0, 10) // Top 10
+        loginsPerUser: loginUsersWithProfiles, // All users who logged in
+        usersWhoNeverLoggedIn: usersWhoNeverLoggedIn // Users who have never logged in
       },
       sentiment: {
         current: currentMood,
@@ -274,7 +443,24 @@ export async function GET(request: NextRequest) {
         resources: {
           total: totalResources || 0,
           inPeriod: resourcesInPeriod || 0
-        }
+        },
+        news: {
+          total: totalNews || 0,
+          inPeriod: newsInPeriod || 0
+        },
+        videos: {
+          total: totalVideos || 0,
+          inPeriod: videosInPeriod || 0
+        },
+        playlists: {
+          total: totalPlaylists || 0,
+          inPeriod: playlistsInPeriod || 0
+        },
+        projects: {
+          total: totalProjects || 0,
+          inPeriod: projectsInPeriod || 0
+        },
+        creationByUser: contentCreationStatsArray.slice(0, 20) // Top 20 content creators
       },
       engagement: {
         toolViews: {

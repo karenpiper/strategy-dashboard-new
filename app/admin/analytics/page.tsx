@@ -13,7 +13,9 @@ import {
   Briefcase,
   Activity,
   Loader2,
-  Calendar
+  Calendar,
+  Video,
+  Music
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -31,7 +33,8 @@ interface AnalyticsData {
     activeUsers: number
     totalLogins: number
     loginsOverTime: Array<{ date: string; count: number }>
-    loginsPerUser: Array<{ userId: string; count: number; full_name: string | null; email: string | null; avatar_url: string | null }>
+    loginsPerUser: Array<{ userId: string; count: number; full_name: string | null; email: string | null; avatar_url: string | null; lastLogin: string | null }>
+    usersWhoNeverLoggedIn: Array<{ userId: string; full_name: string | null; email: string | null; avatar_url: string | null; created_at: string | null }>
   }
   sentiment: {
     current: number
@@ -49,6 +52,22 @@ interface AnalyticsData {
     workSamples: { total: number; inPeriod: number }
     mustReads: { total: number; inPeriod: number }
     resources: { total: number; inPeriod: number }
+    news: { total: number; inPeriod: number }
+    videos: { total: number; inPeriod: number }
+    playlists: { total: number; inPeriod: number }
+    projects: { total: number; inPeriod: number }
+    creationByUser: Array<{
+      userId: string
+      full_name: string | null
+      email: string | null
+      avatar_url: string | null
+      workSamples: number
+      mustReads: number
+      resources: number
+      news: number
+      videos: number
+      total: number
+    }>
   }
   engagement: {
     toolViews: { total: number; inPeriod: number }
@@ -354,11 +373,13 @@ export default function AnalyticsPage() {
               )}
             </Card>
 
-            {/* Top Users by Login Count */}
+            {/* All Users Who Logged In */}
             <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
-              <h2 className={`text-lg font-black uppercase tracking-wider ${cardStyle.text} mb-4`}>Most Active Users</h2>
+              <h2 className={`text-lg font-black uppercase tracking-wider ${cardStyle.text} mb-4`}>
+                All Users Who Logged In ({data.logins.loginsPerUser.length})
+              </h2>
               {data.logins.loginsPerUser.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
                   {data.logins.loginsPerUser.map((user, index) => (
                     <div key={user.userId} className="flex items-center gap-3">
                       <div className={`w-10 h-10 ${getRoundedClass('rounded-full')} flex items-center justify-center text-sm font-bold ${cardStyle.text}`} style={{ backgroundColor: cardStyle.accent + '20' }}>
@@ -379,9 +400,15 @@ export default function AnalyticsPage() {
                         <p className={`text-sm font-semibold ${cardStyle.text} truncate`}>
                           {user.full_name || user.email || 'Unknown User'}
                         </p>
-                        <p className={`text-xs ${cardStyle.text}/50`}>
-                          {user.count} {user.count === 1 ? 'login' : 'logins'}
-                        </p>
+                        <div className={`flex items-center gap-2 text-xs ${cardStyle.text}/50`}>
+                          <span>{user.count} {user.count === 1 ? 'login' : 'logins'}</span>
+                          {user.lastLogin && (
+                            <>
+                              <span>•</span>
+                              <span>Last: {new Date(user.lastLogin).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -393,6 +420,42 @@ export default function AnalyticsPage() {
               )}
             </Card>
           </div>
+        )}
+
+        {/* Users Who Never Logged In */}
+        {data.logins.usersWhoNeverLoggedIn && data.logins.usersWhoNeverLoggedIn.length > 0 && (
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')} mb-6`}>
+            <h2 className={`text-lg font-black uppercase tracking-wider ${cardStyle.text} mb-4`}>
+              Users Who Have Never Logged In ({data.logins.usersWhoNeverLoggedIn.length})
+            </h2>
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {data.logins.usersWhoNeverLoggedIn.map((user) => (
+                <div key={user.userId} className="flex items-center gap-3">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.full_name || user.email || 'User'}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-10 h-10 ${getRoundedClass('rounded-full')} flex items-center justify-center`} style={{ backgroundColor: cardStyle.accent + '20' }}>
+                      <Users className="w-5 h-5" style={{ color: cardStyle.accent }} />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold ${cardStyle.text} truncate`}>
+                      {user.full_name || user.email || 'Unknown User'}
+                    </p>
+                    {user.created_at && (
+                      <p className={`text-xs ${cardStyle.text}/50`}>
+                        Account created: {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
         )}
 
         {/* Charts Row */}
@@ -486,8 +549,44 @@ export default function AnalyticsPage() {
           </Card>
         </div>
 
+        {/* Users Who Never Logged In */}
+        {data.logins.usersWhoNeverLoggedIn && data.logins.usersWhoNeverLoggedIn.length > 0 && (
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')} mb-6`}>
+            <h2 className={`text-lg font-black uppercase tracking-wider ${cardStyle.text} mb-4`}>
+              Users Who Have Never Logged In ({data.logins.usersWhoNeverLoggedIn.length})
+            </h2>
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {data.logins.usersWhoNeverLoggedIn.map((user) => (
+                <div key={user.userId} className="flex items-center gap-3">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.full_name || user.email || 'User'}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-10 h-10 ${getRoundedClass('rounded-full')} flex items-center justify-center`} style={{ backgroundColor: cardStyle.accent + '20' }}>
+                      <Users className="w-5 h-5" style={{ color: cardStyle.accent }} />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold ${cardStyle.text} truncate`}>
+                      {user.full_name || user.email || 'Unknown User'}
+                    </p>
+                    {user.created_at && (
+                      <p className={`text-xs ${cardStyle.text}/50`}>
+                        Account created: {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
         {/* Content Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-6">
           <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
             <div className="flex items-center justify-between mb-4">
               <Briefcase className="w-6 h-6" style={{ color: cardStyle.accent }} />
@@ -538,7 +637,115 @@ export default function AnalyticsPage() {
               </div>
             </div>
           </Card>
+
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
+            <div className="flex items-center justify-between mb-4">
+              <FileText className="w-6 h-6" style={{ color: cardStyle.accent }} />
+              <h3 className={`text-sm font-black uppercase ${cardStyle.text}`}>News</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className={`text-sm ${cardStyle.text}/70`}>Total</span>
+                <span className={`text-lg font-bold ${cardStyle.text}`}>{data.content.news?.total || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className={`text-sm ${cardStyle.text}/70`}>In Period</span>
+                <span className={`text-lg font-bold ${cardStyle.text}`}>{data.content.news?.inPeriod || 0}</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
+            <div className="flex items-center justify-between mb-4">
+              <Video className="w-6 h-6" style={{ color: cardStyle.accent }} />
+              <h3 className={`text-sm font-black uppercase ${cardStyle.text}`}>Videos</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className={`text-sm ${cardStyle.text}/70`}>Total</span>
+                <span className={`text-lg font-bold ${cardStyle.text}`}>{data.content.videos?.total || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className={`text-sm ${cardStyle.text}/70`}>In Period</span>
+                <span className={`text-lg font-bold ${cardStyle.text}`}>{data.content.videos?.inPeriod || 0}</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
+            <div className="flex items-center justify-between mb-4">
+              <Music className="w-6 h-6" style={{ color: cardStyle.accent }} />
+              <h3 className={`text-sm font-black uppercase ${cardStyle.text}`}>Playlists</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className={`text-sm ${cardStyle.text}/70`}>Total</span>
+                <span className={`text-lg font-bold ${cardStyle.text}`}>{data.content.playlists?.total || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className={`text-sm ${cardStyle.text}/70`}>In Period</span>
+                <span className={`text-lg font-bold ${cardStyle.text}`}>{data.content.playlists?.inPeriod || 0}</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')}`}>
+            <div className="flex items-center justify-between mb-4">
+              <TrendingUp className="w-6 h-6" style={{ color: cardStyle.accent }} />
+              <h3 className={`text-sm font-black uppercase ${cardStyle.text}`}>Projects</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className={`text-sm ${cardStyle.text}/70`}>Total</span>
+                <span className={`text-lg font-bold ${cardStyle.text}`}>{data.content.projects?.total || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className={`text-sm ${cardStyle.text}/70`}>In Period</span>
+                <span className={`text-lg font-bold ${cardStyle.text}`}>{data.content.projects?.inPeriod || 0}</span>
+              </div>
+            </div>
+          </Card>
         </div>
+
+        {/* Top Content Creators */}
+        {data.content.creationByUser && data.content.creationByUser.length > 0 && (
+          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')} mb-6`}>
+            <h2 className={`text-lg font-black uppercase tracking-wider ${cardStyle.text} mb-4`}>Top Content Creators</h2>
+            <div className="space-y-3 max-h-[500px] overflow-y-auto">
+              {data.content.creationByUser.map((creator, index) => (
+                <div key={creator.userId} className="flex items-center gap-3">
+                  <div className={`w-10 h-10 ${getRoundedClass('rounded-full')} flex items-center justify-center text-sm font-bold ${cardStyle.text}`} style={{ backgroundColor: cardStyle.accent + '20' }}>
+                    {index + 1}
+                  </div>
+                  {creator.avatar_url ? (
+                    <img
+                      src={creator.avatar_url}
+                      alt={creator.full_name || creator.email || 'User'}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-10 h-10 ${getRoundedClass('rounded-full')} flex items-center justify-center`} style={{ backgroundColor: cardStyle.accent + '20' }}>
+                      <Users className="w-5 h-5" style={{ color: cardStyle.accent }} />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold ${cardStyle.text} truncate`}>
+                      {creator.full_name || creator.email || 'Unknown User'}
+                    </p>
+                    <div className={`flex flex-wrap gap-2 text-xs ${cardStyle.text}/50 mt-1`}>
+                      {creator.workSamples > 0 && <span>Work: {creator.workSamples}</span>}
+                      {creator.mustReads > 0 && <span>Reads: {creator.mustReads}</span>}
+                      {creator.resources > 0 && <span>Resources: {creator.resources}</span>}
+                      {creator.news > 0 && <span>News: {creator.news}</span>}
+                      {creator.videos > 0 && <span>Videos: {creator.videos}</span>}
+                      <span className="font-semibold">Total: {creator.total}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   )
