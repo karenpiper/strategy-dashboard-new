@@ -275,13 +275,27 @@ export default function PlaylistsAdmin() {
           return
         }
 
-        // Always set curator if found (user can still override if admin)
-        // Only set if currently empty to avoid overwriting user input
+        // Always set curator if found - this ensures it's populated when date changes
+        // Admins can still override it manually
         if (data?.curator_name) {
           setFormData(prev => {
-            // Only update if curator is empty or if user is admin (they can override)
-            if (!prev.curator.trim() || permissions?.canManageUsers) {
+            // Always update curator when date changes, unless admin has manually entered something different
+            // Check if current value is just placeholder text or empty
+            const currentValue = prev.curator.trim()
+            const isPlaceholder = !currentValue || 
+                                  currentValue === 'Auto-populated from current curator assignment' ||
+                                  currentValue === data.curator_name
+            
+            if (isPlaceholder || permissions?.canManageUsers) {
               return { ...prev, curator: data.curator_name }
+            }
+            return prev
+          })
+        } else {
+          // If no curator found, clear the field
+          setFormData(prev => {
+            if (!prev.curator.trim() || prev.curator === 'Auto-populated from current curator assignment') {
+              return { ...prev, curator: '' }
             }
             return prev
           })
@@ -711,131 +725,6 @@ export default function PlaylistsAdmin() {
                         ? 'Cover image fetched successfully! Tracklist not available for this playlist type (you can still add it).'
                         : 'Playlist data fetched successfully!'}
                     </p>
-                  </div>
-                )}
-
-                {/* Show fetched data or manual entry form */}
-                {spotifyData && !spotifyData.manualEntry && (
-                  <div className={`p-4 ${cardStyle.bg} ${cardStyle.border} border rounded-lg space-y-3`}>
-                    <div className="grid grid-cols-2 gap-4">
-                      {spotifyData.coverUrl && (
-                        <div>
-                          <Label className={cardStyle.text}>Cover Image Preview</Label>
-                          <img 
-                            src={spotifyData.coverUrl} 
-                            alt={spotifyData.title}
-                            className="w-32 h-32 object-cover rounded-lg mt-2"
-                          />
-                        </div>
-                      )}
-                      <div className="space-y-2">
-                        <div>
-                          <Label className={cardStyle.text}>Title</Label>
-                          <p className={`text-sm font-semibold ${cardStyle.text}`}>{spotifyData.title}</p>
-                        </div>
-                        {spotifyData.totalDuration && (
-                          <div>
-                            <Label className={cardStyle.text}>Duration</Label>
-                            <p className={`text-sm ${cardStyle.text}`}>{spotifyData.totalDuration}</p>
-                          </div>
-                        )}
-                        {spotifyData.trackCount && (
-                          <div>
-                            <Label className={cardStyle.text}>Track Count</Label>
-                            <p className={`text-sm ${cardStyle.text}`}>{spotifyData.trackCount} tracks</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {spotifyData.artistsList && (
-                      <div>
-                        <Label className={cardStyle.text}>Artists</Label>
-                        <p className={`text-sm ${cardStyle.text} line-clamp-2`}>{spotifyData.artistsList}</p>
-                      </div>
-                    )}
-                    <div>
-                      <div className="flex items-end gap-2">
-                        <div className="flex-1">
-                          <Label className={cardStyle.text}>Cover Image URL (Optional)</Label>
-                          <Input
-                            value={formData.cover_url || spotifyData.coverUrl || ''}
-                            onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
-                            className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
-                            placeholder="https://i.scdn.co/image/..."
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          onClick={async () => {
-                            if (!formData.spotify_url.trim()) {
-                              setError('Please enter a Spotify playlist URL first')
-                              return
-                            }
-                            try {
-                              setExtractingCover(true)
-                              setError(null)
-                              const endpoint = '/api/spotify/extract-cover'
-                              console.log('[Extract Cover] Calling endpoint:', endpoint)
-                              console.log('[Extract Cover] Request body:', { url: formData.spotify_url })
-                              
-                              const response = await fetch(endpoint, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ url: formData.spotify_url }),
-                              })
-                              
-                              console.log('[Extract Cover] Response status:', response.status, response.statusText)
-                              
-                              const data = await response.json()
-                              console.log('[Extract Cover] Response data:', data)
-                              
-                              if (response.ok && data.coverUrl) {
-                                setFormData({ ...formData, cover_url: data.coverUrl })
-                                setSuccess(true)
-                                setTimeout(() => setSuccess(false), 3000)
-                              } else {
-                                // Log detailed error information
-                                console.error('[Extract Cover] Error details:', {
-                                  endpoint,
-                                  statusCode: response.status,
-                                  statusText: response.statusText,
-                                  errorBody: data
-                                })
-                                
-                                let errorMsg = data.error || 'Could not extract cover image. You can still add the playlist without it.'
-                                if (data.details) {
-                                  errorMsg += `\n\nDebug info:\n- Endpoint: ${data.details.endpoint || endpoint}\n- Status: ${data.details.statusCode || response.status}\n- Details: ${JSON.stringify(data.details, null, 2)}`
-                                }
-                                setError(errorMsg)
-                              }
-                            } catch (err: any) {
-                              console.error('[Extract Cover] Exception:', err)
-                              setError(`Failed to extract cover: ${err.message}. You can still add the playlist without it.`)
-                            } finally {
-                              setExtractingCover(false)
-                            }
-                          }}
-                          disabled={extractingCover || fetchingSpotify || !formData.spotify_url.trim()}
-                          className="mb-0"
-                          variant="outline"
-                        >
-                          {extractingCover ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Extracting...
-                            </>
-                          ) : (
-                            <>
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Extract Cover
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                        Optional: Click "Extract Cover" to automatically get the cover image URL from the Spotify page, or leave blank.
-                      </p>
-                    </div>
                   </div>
                 )}
 
