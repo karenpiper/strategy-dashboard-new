@@ -85,11 +85,19 @@ async function fetchPlaylistData(playlistId: string, accessToken: string) {
 
 // Fetch all tracks from a playlist (handles pagination)
 async function fetchAllTracks(playlistId: string, accessToken: string, initialTracks: any) {
-  const allTracks = [...(initialTracks.items || [])]
+  if (!initialTracks || !Array.isArray(initialTracks.items)) {
+    console.warn('Invalid initial tracks data, returning empty array')
+    return []
+  }
+
+  const allTracks = [...initialTracks.items]
   let nextUrl = initialTracks.next
 
   // Fetch remaining tracks if there are more pages
-  while (nextUrl) {
+  let pageCount = 0
+  const maxPages = 10 // Safety limit to prevent infinite loops
+  
+  while (nextUrl && pageCount < maxPages) {
     try {
       const response = await fetch(nextUrl, {
         headers: {
@@ -98,15 +106,18 @@ async function fetchAllTracks(playlistId: string, accessToken: string, initialTr
       })
 
       if (!response.ok) {
-        console.warn('Failed to fetch additional tracks, using available tracks')
+        console.warn(`Failed to fetch additional tracks (page ${pageCount + 1}), using available tracks`)
         break
       }
 
       const data = await response.json()
-      allTracks.push(...(data.items || []))
+      if (data.items && Array.isArray(data.items)) {
+        allTracks.push(...data.items)
+      }
       nextUrl = data.next
-    } catch (error) {
-      console.warn('Error fetching additional tracks, using available tracks:', error)
+      pageCount++
+    } catch (error: any) {
+      console.warn(`Error fetching additional tracks (page ${pageCount + 1}), using available tracks:`, error?.message || error)
       break
     }
   }
@@ -116,9 +127,20 @@ async function fetchAllTracks(playlistId: string, accessToken: string, initialTr
 
 export async function POST(request: NextRequest) {
   try {
-    const { url } = await request.json()
+    let body
+    try {
+      body = await request.json()
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError)
+      return NextResponse.json(
+        { error: 'Invalid request body. Expected JSON with "url" field.' },
+        { status: 400 }
+      )
+    }
 
-    if (!url) {
+    const { url } = body || {}
+
+    if (!url || typeof url !== 'string' || !url.trim()) {
       return NextResponse.json(
         { error: 'Spotify playlist URL is required' },
         { status: 400 }
@@ -140,6 +162,12 @@ export async function POST(request: NextRequest) {
     // Fetch playlist data
     const playlistData = await fetchPlaylistData(playlistId, accessToken)
 
+    // Do not depend on owner data - it may not exist for Spotify-owned playlists
+    // Extract owner info safely (owner may be null/undefined for Spotify-owned playlists)
+    const playlistOwner = playlistData.owner || {}
+    const ownerName = playlistOwner.display_name || playlistOwner.id || null
+    const ownerPhoto = playlistOwner.images?.[0]?.url || null
+
     // Get basic metadata first (always available)
     const basicMetadata = {
       title: playlistData.name || 'Untitled Playlist',
@@ -147,8 +175,9 @@ export async function POST(request: NextRequest) {
       description: playlistData.description || null,
       spotifyUrl: playlistData.external_urls?.spotify || url,
       trackCount: playlistData.tracks?.total || 0,
-      owner: playlistData.owner?.display_name || playlistData.owner?.id || null,
-      ownerPhotoUrl: playlistData.owner?.images?.[0]?.url || null,
+      // Owner info is optional and may not exist for Spotify-owned playlists
+      owner: ownerName,
+      ownerPhotoUrl: ownerPhoto,
     }
 
     // Check if tracks data exists
@@ -165,16 +194,17 @@ export async function POST(request: NextRequest) {
     // Fetch all tracks (handles pagination for playlists with >100 tracks)
     let allTrackItems: any[] = []
     try {
-      allTrackItems = await fetchAllTracks(playlistId, accessToken, playlistData.tracks)
-    } catch (error) {
-      console.warn('Error fetching tracks, returning basic metadata:', error)
-      // If track fetching fails, still return basic metadata
-      return NextResponse.json({
-        ...basicMetadata,
-        totalDuration: '0:00',
-        artistsList: '',
-        tracks: [],
-      })
+      // Start with initial tracks
+      allTrackItems = [...(playlistData.tracks.items || [])]
+      
+      // Fetch additional pages if needed
+      if (playlistData.tracks.next) {
+        allTrackItems = await fetchAllTracks(playlistId, accessToken, playlistData.tracks)
+      }
+    } catch (error: any) {
+      console.warn('Error fetching tracks, using initial tracks only:', error?.message || error)
+      // If track fetching fails, use the initial tracks we already have
+      allTrackItems = [...(playlistData.tracks.items || [])]
     }
 
     // Filter out null tracks and calculate total duration
@@ -233,6 +263,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Return playlist metadata - curator is set by the user, not from playlist owner
+    // Owner info is already extracted above and may not exist for Spotify-owned playlists
     return NextResponse.json({
       title: playlistData.name,
       coverUrl: coverImage,
@@ -243,30 +274,44 @@ export async function POST(request: NextRequest) {
       artistsList,
       tracks,
       // Don't set curator - it's set by the user sharing the playlist
-      // Only include owner info for reference if needed
-      owner: playlistData.owner?.display_name || playlistData.owner?.id || null,
-      ownerPhotoUrl: playlistData.owner?.images?.[0]?.url || null,
+      // Owner info is optional and may not exist for Spotify-owned playlists
+      owner: ownerName,
+      ownerPhotoUrl: ownerPhoto,
     })
   } catch (error: any) {
     console.error('Error fetching Spotify playlist:', error)
+    console.error('Error stack:', error?.stack)
+    console.error('Error details:', {
+      message: error?.message,
+      name: error?.name,
+      cause: error?.cause
+    })
     
     // Provide more helpful error messages
-    let errorMessage = error.message || 'Failed to fetch playlist data'
+    let errorMessage = error?.message || 'Failed to fetch playlist data'
+    let statusCode = 500
     
     // Check for specific error types
     if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
       errorMessage = 'Spotify authentication failed. Please check your API credentials.'
+      statusCode = 401
     } else if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
       errorMessage = 'This playlist may be private or unavailable. Try a public playlist.'
+      statusCode = 403
     } else if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
       errorMessage = 'Playlist not found. Please check the URL is correct.'
+      statusCode = 404
     } else if (errorMessage.includes('429') || errorMessage.includes('rate limit')) {
       errorMessage = 'Spotify API rate limit exceeded. Please try again in a moment.'
+      statusCode = 429
+    } else if (errorMessage.includes('credentials not configured')) {
+      errorMessage = 'Spotify API credentials are not configured. Please contact an administrator.'
+      statusCode = 500
     }
     
     return NextResponse.json(
       { error: errorMessage },
-      { status: 500 }
+      { status: statusCode }
     )
   }
 }
