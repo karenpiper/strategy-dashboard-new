@@ -393,26 +393,41 @@ export default function PlaylistsAdmin() {
       // Curator should be auto-populated, but if empty, try to get from current assignment
       let finalCurator = formData.curator.trim()
       if (!finalCurator) {
-        // Try to fetch current curator one more time
+        // Try to fetch current curator one more time (matching the useEffect logic)
         try {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('curator_assignments')
             .select('curator_name')
             .lte('start_date', formData.date)
             .gte('end_date', formData.date)
-            .eq('skipped', false)
             .order('assignment_date', { ascending: false })
             .limit(1)
-            .single()
+            .maybeSingle()
           
           if (data?.curator_name) {
             finalCurator = data.curator_name
+            console.log('[handleAdd] Found curator for date:', finalCurator)
           } else {
-            setError('Please enter a curator name or ensure there is a curator assigned for this date')
-            setSaving(false)
-            return
+            // Try fallback to most recent curator
+            console.log('[handleAdd] No curator for date, trying most recent')
+            const { data: recentData } = await supabase
+              .from('curator_assignments')
+              .select('curator_name')
+              .order('assignment_date', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+            
+            if (recentData?.curator_name) {
+              finalCurator = recentData.curator_name
+              console.log('[handleAdd] Using most recent curator as fallback:', finalCurator)
+            } else {
+              setError('Please enter a curator name or ensure there is a curator assigned for this date')
+              setSaving(false)
+              return
+            }
           }
         } catch (err) {
+          console.error('[handleAdd] Error fetching curator:', err)
           setError('Please enter a curator name')
           setSaving(false)
           return
