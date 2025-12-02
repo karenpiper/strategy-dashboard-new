@@ -25,6 +25,11 @@ import {
 } from 'lucide-react'
 import { PlaylistData } from '@/lib/spotify-player-types'
 
+// Extended PlaylistData for admin form (includes manual entry flag)
+interface ExtendedPlaylistData extends PlaylistData {
+  manualEntry?: boolean;
+}
+
 interface Playlist {
   id: string
   date: string
@@ -66,9 +71,11 @@ export default function PlaylistsAdmin() {
     curator: '',
     description: '',
     date: getTodayDate(),
+    title: '', // For manual entry
+    cover_url: '', // For manual entry
   })
 
-  const [spotifyData, setSpotifyData] = useState<PlaylistData | null>(null)
+  const [spotifyData, setSpotifyData] = useState<ExtendedPlaylistData | null>(null)
   const [fetchingSpotify, setFetchingSpotify] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -192,8 +199,48 @@ export default function PlaylistsAdmin() {
       
       // Don't auto-populate curator - user should enter it themselves
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch playlist data')
-      setSpotifyData(null)
+      // If API fetch fails, allow manual entry
+      // Check if it's an algorithm-generated playlist error
+      const isAlgorithmPlaylistError = err.message?.includes('algorithm-generated') || 
+                                       err.message?.includes('user authentication')
+      
+      const curatorValue = formData.curator.trim()
+      
+      if (isAlgorithmPlaylistError || err.message?.includes('not found')) {
+        // For algorithm-generated playlists or 404s, allow manual entry
+        setError(null) // Clear error so user can proceed
+        setSpotifyData({
+          title: '',
+          curator: curatorValue,
+          curatorPhotoUrl: undefined,
+          description: formData.description.trim() || '',
+          spotifyUrl: formData.spotify_url,
+          coverUrl: undefined,
+          tracks: [],
+          trackCount: 0,
+          totalDuration: undefined,
+          artistsList: undefined,
+          // Flag to indicate manual entry mode
+          manualEntry: true,
+        })
+        setSuccess(false)
+      } else {
+        // For other errors, show the error but still allow manual entry
+        setError(`API fetch failed: ${err.message}. You can still add the playlist manually by filling in the details below.`)
+        setSpotifyData({
+          title: '',
+          curator: curatorValue,
+          curatorPhotoUrl: undefined,
+          description: formData.description.trim() || '',
+          spotifyUrl: formData.spotify_url,
+          coverUrl: undefined,
+          tracks: [],
+          trackCount: 0,
+          totalDuration: undefined,
+          artistsList: undefined,
+          manualEntry: true,
+        })
+      }
     } finally {
       setFetchingSpotify(false)
     }
@@ -250,8 +297,8 @@ export default function PlaylistsAdmin() {
 
   // Handle add
   const handleAdd = async () => {
-    if (!spotifyData) {
-      setError('Please fetch playlist data from Spotify first')
+    if (!formData.spotify_url.trim()) {
+      setError('Please enter a Spotify playlist URL')
       return
     }
 
@@ -260,13 +307,28 @@ export default function PlaylistsAdmin() {
       return
     }
 
+    // For manual entry (when API fetch failed), require at least title
+    // Also allow adding without fetching if user enters title manually
+    if ((spotifyData?.manualEntry || !spotifyData) && !spotifyData?.title?.trim() && !formData.title?.trim()) {
+      setError('Please enter a playlist title (or try fetching from Spotify first)')
+      return
+    }
+
     try {
       setSaving(true)
       setError(null)
       setSuccess(false)
 
-      const finalCurator = formData.curator.trim() || spotifyData.curator
-      const finalDescription = formData.description.trim() || spotifyData.description || ''
+      const finalCurator = formData.curator.trim()
+      if (!finalCurator) {
+        setError('Please enter a curator name')
+        setSaving(false)
+        return
+      }
+
+      const finalDescription = formData.description.trim() || spotifyData?.description || ''
+      const finalTitle = formData.title?.trim() || spotifyData?.title || 'Untitled Playlist'
+      const finalCoverUrl = formData.cover_url?.trim() || spotifyData?.coverUrl || null
 
       const response = await fetch('/api/playlists', {
         method: 'POST',
@@ -275,15 +337,15 @@ export default function PlaylistsAdmin() {
         },
         body: JSON.stringify({
           date: formData.date,
-          title: spotifyData.title || null,
+          title: finalTitle,
           curator: finalCurator,
           description: finalDescription || null,
-          spotify_url: spotifyData.spotifyUrl || formData.spotify_url,
-          cover_url: spotifyData.coverUrl || null,
-          curator_photo_url: spotifyData.curatorPhotoUrl || null,
-          total_duration: spotifyData.totalDuration || null,
-          track_count: spotifyData.trackCount || null,
-          artists_list: spotifyData.artistsList || null,
+          spotify_url: formData.spotify_url,
+          cover_url: finalCoverUrl,
+          curator_photo_url: spotifyData?.curatorPhotoUrl || null,
+          total_duration: spotifyData?.totalDuration || null,
+          track_count: spotifyData?.trackCount || null,
+          artists_list: spotifyData?.artistsList || null,
         }),
       })
 
@@ -324,6 +386,8 @@ export default function PlaylistsAdmin() {
       curator: item.curator,
       description: item.description || '',
       date: item.date,
+      title: item.title || '',
+      cover_url: item.cover_url || '',
     })
     // Set existing Spotify data if available
     if (item.title || item.cover_url) {
@@ -460,6 +524,8 @@ export default function PlaylistsAdmin() {
       curator: '',
       description: '',
       date: getTodayDate(),
+      title: '',
+      cover_url: '',
     })
     setSpotifyData(null)
     setError(null)
@@ -582,7 +648,8 @@ export default function PlaylistsAdmin() {
                     </Button>
                   </div>
                   <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                    Paste a Spotify playlist link and click Fetch to automatically populate fields
+                    Paste a Spotify playlist link and click Fetch to automatically populate fields. 
+                    If the playlist can't be fetched (e.g., algorithm-generated playlists), you can enter the details manually below.
                   </p>
                 </div>
 
@@ -598,7 +665,8 @@ export default function PlaylistsAdmin() {
                   </div>
                 )}
 
-                {spotifyData && (
+                {/* Show fetched data or manual entry form */}
+                {spotifyData && !spotifyData.manualEntry && (
                   <div className={`p-4 ${cardStyle.bg} ${cardStyle.border} border rounded-lg space-y-3`}>
                     <div className="grid grid-cols-2 gap-4">
                       {spotifyData.coverUrl && (
@@ -636,6 +704,48 @@ export default function PlaylistsAdmin() {
                         <p className={`text-sm ${cardStyle.text} line-clamp-2`}>{spotifyData.artistsList}</p>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Manual entry fields when API fetch fails */}
+                {spotifyData?.manualEntry && (
+                  <div className={`p-4 ${cardStyle.bg} ${cardStyle.border} border rounded-lg space-y-4`}>
+                    <div className={`p-3 ${cardStyle.bg} rounded-lg`} style={{ backgroundColor: cardStyle.accent + '20', borderColor: cardStyle.accent + '40' }}>
+                      <p className={`text-sm ${cardStyle.text} font-medium`}>
+                        API fetch unavailable. Please enter playlist details manually:
+                      </p>
+                    </div>
+                    <div>
+                      <Label className={cardStyle.text}>Playlist Title *</Label>
+                      <Input
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
+                        placeholder="Enter playlist title"
+                      />
+                    </div>
+                    <div>
+                      <Label className={cardStyle.text}>Cover Image URL (Optional)</Label>
+                      <Input
+                        value={formData.cover_url}
+                        onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
+                        className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text} mt-1`}
+                        placeholder="https://..."
+                      />
+                      <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
+                        Right-click the playlist cover image on Spotify and copy image URL
+                      </p>
+                      {formData.cover_url && (
+                        <img 
+                          src={formData.cover_url} 
+                          alt="Cover preview"
+                          className="w-32 h-32 object-cover rounded-lg mt-2"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none'
+                          }}
+                        />
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -692,7 +802,7 @@ export default function PlaylistsAdmin() {
                 </Button>
                 <Button
                   onClick={handleAdd}
-                  disabled={!spotifyData || !formData.date || saving}
+                  disabled={!formData.spotify_url.trim() || !formData.date || (!spotifyData && !formData.title.trim()) || saving}
                   className={`${getRoundedClass('rounded-lg')} ${
                     mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
                     mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :

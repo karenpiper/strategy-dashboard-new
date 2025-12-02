@@ -131,7 +131,14 @@ async function fetchPlaylistData(playlistId: string, accessToken: string) {
   }
 
   // All attempts failed with 404
-  throw new Error('Playlist not found in any available market. The playlist may be private, region-restricted, or unavailable.')
+  // Check if this is a Spotify algorithm-generated playlist (starts with 37i9dQZF1DX)
+  // These often require user authentication even if they appear public
+  const isAlgorithmPlaylist = playlistId.startsWith('37i9dQZF1DX')
+  const errorMessage = isAlgorithmPlaylist
+    ? 'This appears to be a Spotify algorithm-generated playlist (like "Today\'s Top Hits" or "Discover Weekly"). These playlists may require user authentication to access via the API, even though they appear public in the web interface. Please try a user-created playlist instead.'
+    : 'Playlist not found in any available market. The playlist may be private, region-restricted, or unavailable via the API.'
+  
+  throw new Error(errorMessage)
 }
 
 // Fetch all tracks from a playlist (handles pagination)
