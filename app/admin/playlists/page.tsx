@@ -271,25 +271,41 @@ export default function PlaylistsAdmin() {
       console.log('[Curator] Fetching curator for date:', formData.date)
 
       try {
-        // Query for curator assignment - handle skipped field (may be null or not exist)
-        let query = supabase
+        // First, let's see all assignments to debug
+        const { data: allAssignments } = await supabase
           .from('curator_assignments')
-          .select('curator_name')
+          .select('curator_name, start_date, end_date, assignment_date')
+          .order('assignment_date', { ascending: false })
+          .limit(10)
+        
+        console.log('[Curator] All recent assignments:', allAssignments)
+        console.log('[Curator] Looking for assignment where', formData.date, 'is between start_date and end_date')
+
+        // Query for curator assignment - find where date falls within start_date and end_date range
+        // Date should be >= start_date AND <= end_date
+        // This means: start_date <= date AND end_date >= date
+        const { data, error } = await supabase
+          .from('curator_assignments')
+          .select('curator_name, start_date, end_date')
           .lte('start_date', formData.date)
           .gte('end_date', formData.date)
           .order('assignment_date', { ascending: false })
           .limit(1)
-
-        // Only filter by skipped if the column exists (use or() to handle null values)
-        // This matches the API route behavior which doesn't filter by skipped
-        const { data, error } = await query.maybeSingle()
+          .maybeSingle()
 
         if (error) {
           console.warn('[Curator] Error fetching current curator:', error)
+          console.warn('[Curator] Error details:', JSON.stringify(error, null, 2))
           return
         }
 
-        console.log('[Curator] Query result:', { data, error: error ? (error as any).code : null, date: formData.date })
+        console.log('[Curator] Query result:', { 
+          data, 
+          error: error ? (error as any).code : null, 
+          date: formData.date,
+          foundCurator: data?.curator_name,
+          assignmentRange: data ? `${data.start_date} to ${data.end_date}` : 'none'
+        })
 
         // Always set curator if found - this ensures it's populated when date changes or dialog opens
         // Admins can still override it manually after it's set
@@ -719,6 +735,18 @@ export default function PlaylistsAdmin() {
             setIsAddDialogOpen(open)
             if (open) {
               resetForm()
+              // Force a curator fetch after form is reset
+              // Use setTimeout to ensure formData state has updated
+              setTimeout(() => {
+                const today = getTodayDate()
+                setFormData(prev => {
+                  // Only update date if it's not already set, to trigger useEffect
+                  if (prev.date !== today) {
+                    return { ...prev, date: today }
+                  }
+                  return prev
+                })
+              }, 50)
             }
           }}>
             <DialogTrigger asChild>
