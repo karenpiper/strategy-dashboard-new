@@ -1089,8 +1089,6 @@ export default function TeamDashboard() {
           if (result.failedCalendars > 0) {
             const failedDetails = result.failedCalendarDetails || []
             
-            // Check if we're using service account (which might not have access)
-            const usingServiceAccount = !result.usingOAuth2
             const hasCodeAndTheoryCalendars = failedDetails.some((f: any) => 
               f.id.includes('codeandtheory.com_')
             )
@@ -1107,25 +1105,18 @@ export default function TeamDashboard() {
                 errorSummary = `${failedCount} calendar${failedCount > 1 ? 's' : ''}`
               }
               
-              let errorMessage = `Some calendars are not accessible. ${errorSummary}: Calendar not found or not accessible`
-              
-              // Add helpful hint if using service account
-              if (usingServiceAccount && hasCodeAndTheoryCalendars) {
-                errorMessage += '. Please authenticate with Google Calendar to access Code and Theory calendars.'
-                console.warn('💡 Service account does not have access to Code and Theory calendars.')
-                console.warn('💡 User should authenticate with Google Calendar OAuth to use their own account.')
-              }
+              let errorMessage = `Some calendars are not accessible. ${errorSummary}: Calendar not found or not accessible. Please ensure the OAuth2 account has access to these calendars.`
               
               setCalendarError(errorMessage)
               console.warn(`${result.failedCalendars} calendar(s) failed to load. Check server logs for details.`)
             } else {
               // Some calendars worked, but some failed
-              if (usingServiceAccount && hasCodeAndTheoryCalendars) {
+              if (hasCodeAndTheoryCalendars) {
                 const failedCodeAndTheory = failedDetails.filter((f: any) => f.id.includes('codeandtheory.com_')).length
                 if (failedCodeAndTheory > 0) {
-                  console.warn(`⚠️ ${failedCodeAndTheory} Code and Theory calendar(s) failed - service account may not have access`)
-                  console.warn('💡 Authenticate with Google Calendar OAuth to access these calendars')
-                  setCalendarError(`${failedCodeAndTheory} Code and Theory calendar(s) not accessible. Please authenticate with Google Calendar.`)
+                  console.warn(`⚠️ ${failedCodeAndTheory} Code and Theory calendar(s) failed - OAuth2 account may not have access`)
+                  console.warn('💡 Ensure the OAuth2 account has access to these calendars')
+                  setCalendarError(`${failedCodeAndTheory} Code and Theory calendar(s) not accessible. Please ensure the OAuth2 account has access.`)
                 } else {
                   setCalendarError(null)
                 }
