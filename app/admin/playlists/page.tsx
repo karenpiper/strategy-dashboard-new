@@ -190,58 +190,50 @@ export default function PlaylistsAdmin() {
       // Use curator from form if provided, otherwise leave empty for user to fill
       const finalCurator = formData.curator.trim()
       
+      // Check if tracklist is available (algorithm playlists won't have it)
+      const hasTracklist = data.tracklistAvailable !== false && data.tracks && data.tracks.length > 0
+      
       setSpotifyData({
         ...data,
         curator: finalCurator, // Only use curator from form, not from API
         curatorPhotoUrl: null, // Curator photo comes from user profile, not playlist owner
         description: formData.description.trim() || data.description || '',
       })
-      setSuccess(true)
+      
+      // Show appropriate success message
+      if (data.coverUrl && !hasTracklist) {
+        setSuccess(true)
+        setError(null)
+        // Clear any previous errors - we got the cover image, just no tracklist
+      } else if (data.coverUrl && hasTracklist) {
+        setSuccess(true)
+        setError(null)
+      } else {
+        setSuccess(true)
+        setError(null)
+      }
       
       // Don't auto-populate curator - user should enter it themselves
     } catch (err: any) {
-      // If API fetch fails, allow manual entry
-      // Check if it's an algorithm-generated playlist error
-      const isAlgorithmPlaylistError = err.message?.includes('algorithm-generated') || 
-                                       err.message?.includes('user authentication')
-      
+      // If API fetch fails completely, allow manual entry
       const curatorValue = formData.curator.trim()
       
-      if (isAlgorithmPlaylistError || err.message?.includes('not found')) {
-        // For algorithm-generated playlists or 404s, allow manual entry
-        setError(null) // Clear error so user can proceed
-        setSpotifyData({
-          title: '',
-          curator: curatorValue,
-          curatorPhotoUrl: undefined,
-          description: formData.description.trim() || '',
-          spotifyUrl: formData.spotify_url,
-          coverUrl: undefined,
-          tracks: [],
-          trackCount: 0,
-          totalDuration: undefined,
-          artistsList: undefined,
-          // Flag to indicate manual entry mode
-          manualEntry: true,
-        })
-        setSuccess(false)
-      } else {
-        // For other errors, show the error but still allow manual entry
-        setError(`API fetch failed: ${err.message}. You can still add the playlist manually by filling in the details below.`)
-        setSpotifyData({
-          title: '',
-          curator: curatorValue,
-          curatorPhotoUrl: undefined,
-          description: formData.description.trim() || '',
-          spotifyUrl: formData.spotify_url,
-          coverUrl: undefined,
-          tracks: [],
-          trackCount: 0,
-          totalDuration: undefined,
-          artistsList: undefined,
-          manualEntry: true,
-        })
-      }
+      // Even if API fails, we might have gotten cover from oEmbed
+      // But if we're here, the whole request failed
+      setError(`API fetch failed: ${err.message}. You can still add the playlist manually by filling in the details below, or use the "Extract Cover" button to get the cover image.`)
+      setSpotifyData({
+        title: '',
+        curator: curatorValue,
+        curatorPhotoUrl: undefined,
+        description: formData.description.trim() || '',
+        spotifyUrl: formData.spotify_url,
+        coverUrl: undefined,
+        tracks: [],
+        trackCount: 0,
+        totalDuration: undefined,
+        artistsList: undefined,
+        manualEntry: true,
+      })
     } finally {
       setFetchingSpotify(false)
     }
@@ -700,8 +692,7 @@ export default function PlaylistsAdmin() {
                     </Button>
                   </div>
                   <p className={`text-xs ${cardStyle.text}/70 mt-1`}>
-                    Paste a Spotify playlist link and click Fetch to automatically populate fields. If Fetch fails, you can enter details manually below - just fill in the title and click Add. 
-                    If the playlist can't be fetched (e.g., algorithm-generated playlists), you can enter the details manually below.
+                    Paste a Spotify playlist link and click Fetch to automatically get the cover image and tracklist. Cover images work for all playlists. Tracklists are available for user-created playlists. If tracklist isn't available, you can still add the playlist with just the cover image.
                   </p>
                 </div>
 
@@ -713,7 +704,13 @@ export default function PlaylistsAdmin() {
 
                 {success && spotifyData && (
                   <div className={`p-4 ${cardStyle.bg} ${cardStyle.border} border rounded-lg`} style={{ borderColor: '#22c55e40' }}>
-                    <p className="text-sm" style={{ color: '#22c55e' }}>Playlist data fetched successfully!</p>
+                    <p className="text-sm" style={{ color: '#22c55e' }}>
+                      {spotifyData.coverUrl && spotifyData.tracks && spotifyData.tracks.length > 0
+                        ? 'Playlist data fetched successfully! Cover image and tracklist available.'
+                        : spotifyData.coverUrl
+                        ? 'Cover image fetched successfully! Tracklist not available for this playlist type (you can still add it).'
+                        : 'Playlist data fetched successfully!'}
+                    </p>
                   </div>
                 )}
 

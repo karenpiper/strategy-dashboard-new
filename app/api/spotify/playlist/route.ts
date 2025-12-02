@@ -1,5 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
+
+// Fetch playlist metadata from Spotify oEmbed endpoint (no authentication required)
+// Works for all playlists including algorithm-generated ones
+async function fetchPlaylistFromOEmbed(playlistUrl: string) {
+  try {
+    const encodedUrl = encodeURIComponent(playlistUrl)
+    const oEmbedUrl = `https://open.spotify.com/oembed?url=${encodedUrl}`
+    
+    console.log('[Spotify oEmbed] Fetching from:', oEmbedUrl)
+    
+    const response = await fetch(oEmbedUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    })
+    
+    if (!response.ok) {
+      console.error('[Spotify oEmbed] Failed:', response.status, response.statusText)
+      throw new Error(`oEmbed failed: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    console.log('[Spotify oEmbed] Success - got thumbnail_url and title')
+    
+    return {
+      coverUrl: data.thumbnail_url || null,
+      title: data.title || null,
+      html: data.html || null, // For future embed use
+    }
+  } catch (error: any) {
+    console.error('[Spotify oEmbed] Error:', error.message)
+    throw error
+  }
+}
+
 // Extract playlist ID from Spotify URL
 // Robust parser: split on open.spotify.com/playlist/ and take the next path segment
 // Must strip query params (?si=...) and trailing slashes
@@ -273,60 +309,68 @@ export async function POST(request: NextRequest) {
     console.log('[Spotify API] Parsed playlistId:', playlistId)
     console.log('[Spotify API] Original URL:', url)
 
-    // Get access token
-    const accessToken = await getAccessToken()
-    if (!accessToken) {
-      console.error('[Spotify API] Failed to get access token')
-      return NextResponse.json(
-        { error: 'Failed to authenticate with Spotify API' },
-        { status: 500 }
-      )
-    }
-
-    // Fetch playlist data
-    let playlistData
+    // Step 1: Fetch cover image and title from oEmbed (works for all playlists, no auth needed)
+    let oEmbedData
     try {
-      playlistData = await fetchPlaylistData(playlistId, accessToken)
+      oEmbedData = await fetchPlaylistFromOEmbed(url)
+      console.log('[Spotify API] oEmbed success - cover and title available')
     } catch (error: any) {
-      console.error('[Spotify API] Error fetching playlist data:', error)
-      console.error('[Spotify API] Error status:', error.status)
-      console.error('[Spotify API] Error body:', error.errorBody)
-      
-      return NextResponse.json(
-        { 
-          error: error.message || 'Failed to fetch playlist from Spotify',
-          details: error.errorBody || null
-        },
-        { status: error.status || 500 }
-      )
+      console.error('[Spotify API] oEmbed failed:', error.message)
+      // Continue anyway - we'll try Web API, but cover might not be available
+      oEmbedData = { coverUrl: null, title: null, html: null }
     }
 
-    // Do not depend on owner data - it may not exist for Spotify-owned playlists
-    // Extract owner info safely (owner may be null/undefined for Spotify-owned playlists)
-    const playlistOwner = playlistData.owner || {}
+    // Step 2: Try to fetch tracklist from Web API (works for user-created playlists)
+    let playlistData = null
+    let accessToken = null
+    let webApiError = null
+    
+    try {
+      accessToken = await getAccessToken()
+      if (accessToken) {
+        playlistData = await fetchPlaylistData(playlistId, accessToken)
+        console.log('[Spotify API] Web API success - tracklist available')
+      }
+    } catch (error: any) {
+      console.warn('[Spotify API] Web API failed (this is OK for algorithm playlists):', error.message)
+      webApiError = error
+      // Continue - we still have cover image from oEmbed
+    }
+
+    // Combine data: prefer oEmbed for cover/title, use Web API for tracks
+    const playlistOwner = playlistData?.owner || {}
     const ownerName = playlistOwner.display_name || playlistOwner.id || null
     const ownerPhoto = playlistOwner.images?.[0]?.url || null
 
-    // Get basic metadata first (always available)
+    // Use oEmbed title if available, fallback to Web API title
+    const finalTitle = oEmbedData.title || playlistData?.name || 'Untitled Playlist'
+    // Use oEmbed cover (always works), fallback to Web API cover
+    const finalCoverUrl = oEmbedData.coverUrl || playlistData?.images?.[0]?.url || null
+
+    // Get basic metadata
     const basicMetadata = {
-      title: playlistData.name || 'Untitled Playlist',
-      coverUrl: playlistData.images?.[0]?.url || null,
-      description: playlistData.description || null,
-      spotifyUrl: playlistData.external_urls?.spotify || url,
-      trackCount: playlistData.tracks?.total || 0,
+      title: finalTitle,
+      coverUrl: finalCoverUrl,
+      description: playlistData?.description || null,
+      spotifyUrl: playlistData?.external_urls?.spotify || url,
+      trackCount: playlistData?.tracks?.total || 0,
       // Owner info is optional and may not exist for Spotify-owned playlists
       owner: ownerName,
       ownerPhotoUrl: ownerPhoto,
     }
 
-    // Check if tracks data exists
-    if (!playlistData.tracks || !playlistData.tracks.items) {
+    // Check if tracks data exists from Web API
+    if (!playlistData || !playlistData.tracks || !playlistData.tracks.items) {
       // Return basic metadata even if tracks aren't available
+      // This is normal for algorithm-generated playlists
+      console.log('[Spotify API] No tracklist available - returning cover and title only')
       return NextResponse.json({
         ...basicMetadata,
         totalDuration: '0:00',
         artistsList: '',
         tracks: [],
+        // Indicate that tracklist is not available (likely algorithm playlist)
+        tracklistAvailable: false,
       })
     }
 
@@ -336,8 +380,8 @@ export async function POST(request: NextRequest) {
       // Start with initial tracks
       allTrackItems = [...(playlistData.tracks.items || [])]
       
-      // Fetch additional pages if needed
-      if (playlistData.tracks.next) {
+      // Fetch additional pages if needed (only if we have access token)
+      if (playlistData.tracks.next && accessToken) {
         allTrackItems = await fetchAllTracks(playlistId, accessToken, playlistData.tracks)
       }
     } catch (error: any) {
@@ -403,15 +447,19 @@ export async function POST(request: NextRequest) {
 
     // Return playlist metadata - curator is set by the user, not from playlist owner
     // Owner info is already extracted above and may not exist for Spotify-owned playlists
+    // Use oEmbed cover if available (more reliable), otherwise use Web API cover
+    const finalCoverImage = oEmbedData.coverUrl || coverImage
+    
     return NextResponse.json({
-      title: playlistData.name,
-      coverUrl: coverImage,
+      title: finalTitle, // Use oEmbed title if available
+      coverUrl: finalCoverImage, // Use oEmbed cover (works for all playlists)
       description: playlistData.description || null,
       spotifyUrl: playlistData.external_urls?.spotify || url,
       trackCount: playlistData.tracks?.total || validTracks.length,
       totalDuration,
       artistsList,
       tracks,
+      tracklistAvailable: true, // Tracklist is available from Web API
       // Don't set curator - it's set by the user sharing the playlist
       // Owner info is optional and may not exist for Spotify-owned playlists
       owner: ownerName,
