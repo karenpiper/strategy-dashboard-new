@@ -153,9 +153,19 @@ async function fetchPlaylistData(playlistId: string, accessToken: string) {
       console.log(`[Spotify API] Playlist ${playlistId} not found${market ? ` with market=${market}` : ' without market'}, trying next...`)
       if (market === marketsToTry[marketsToTry.length - 1]) {
         // Last attempt failed with 404
-        const error = new Error('Playlist not found. The playlist may be private, region-restricted, or unavailable via the API.')
+        // Check if this is an algorithm-generated playlist (starts with 37i9dQZF1DX)
+        // These playlists often require user authentication (OAuth) instead of client credentials
+        const isAlgorithmPlaylist = playlistId.startsWith('37i9dQZF1DX')
+        let errorMessage = 'Playlist not found. The playlist may be private, region-restricted, or unavailable via the API.'
+        
+        if (isAlgorithmPlaylist) {
+          errorMessage = 'This appears to be a Spotify algorithm-generated playlist (like "Today\'s Top Hits" or "Discover Weekly"). These playlists require user authentication (OAuth) to access via the API, even though they appear public in the web interface. Please use the "Extract Cover" button to get the cover image, or enter the playlist details manually.'
+        }
+        
+        const error = new Error(errorMessage)
         ;(error as any).status = 404
         ;(error as any).errorBody = errorBody
+        ;(error as any).isAlgorithmPlaylist = isAlgorithmPlaylist
         throw error
       }
       continue
