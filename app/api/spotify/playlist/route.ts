@@ -1,19 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // Extract playlist ID from Spotify URL
+// Spotify playlist IDs are base62 encoded (alphanumeric + some special chars)
+// URLs can be: https://open.spotify.com/playlist/ID or spotify:playlist:ID
 function extractPlaylistId(url: string): string | null {
+  if (!url || typeof url !== 'string') {
+    return null
+  }
+
+  // Clean the URL
+  const cleanUrl = url.trim()
+  
+  // Patterns to match Spotify playlist URLs
   const patterns = [
-    /spotify\.com\/playlist\/([a-zA-Z0-9]+)/,
-    /playlist\/([a-zA-Z0-9]+)/,
+    // https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M
+    /(?:open\.)?spotify\.com\/playlist\/([a-zA-Z0-9]+)/,
+    // spotify:playlist:37i9dQZF1DXcBWIGoYBM5M
+    /spotify:playlist:([a-zA-Z0-9]+)/,
+    // Just the ID if it's already extracted
+    /^([a-zA-Z0-9]{22})$/, // Spotify IDs are typically 22 characters
   ]
   
   for (const pattern of patterns) {
-    const match = url.match(pattern)
+    const match = cleanUrl.match(pattern)
     if (match && match[1]) {
-      return match[1]
+      const playlistId = match[1]
+      console.log(`[Spotify API] Extracted playlist ID: ${playlistId} from URL: ${cleanUrl}`)
+      return playlistId
     }
   }
   
+  console.error(`[Spotify API] Could not extract playlist ID from URL: ${cleanUrl}`)
   return null
 }
 
@@ -57,7 +74,10 @@ async function getAccessToken(): Promise<string> {
 // Fetch playlist data from Spotify API
 async function fetchPlaylistData(playlistId: string, accessToken: string) {
   // Add market parameter to ensure tracks are available (US market as default)
-  const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}?market=US`, {
+  const url = `https://api.spotify.com/v1/playlists/${playlistId}?market=US`
+  console.log(`[Spotify API] Fetching playlist: ${playlistId}`)
+  
+  const response = await fetch(url, {
     headers: {
       'Authorization': `Bearer ${accessToken}`,
     },
@@ -77,7 +97,18 @@ async function fetchPlaylistData(playlistId: string, accessToken: string) {
       // Keep original error message if not JSON
     }
     
-    throw new Error(errorMessage)
+    // Log the specific error for debugging
+    console.error(`[Spotify API] Error fetching playlist ${playlistId}:`, {
+      status: response.status,
+      statusText: response.statusText,
+      errorMessage,
+      errorText
+    })
+    
+    // Create a more specific error with status code
+    const error = new Error(errorMessage)
+    ;(error as any).status = response.status
+    throw error
   }
 
   return response.json()
@@ -150,11 +181,14 @@ export async function POST(request: NextRequest) {
     // Extract playlist ID from URL
     const playlistId = extractPlaylistId(url)
     if (!playlistId) {
+      console.error('[Spotify API] Invalid playlist URL:', url)
       return NextResponse.json(
-        { error: 'Invalid Spotify playlist URL' },
+        { error: 'Invalid Spotify playlist URL. Please provide a valid Spotify playlist link.' },
         { status: 400 }
       )
     }
+    
+    console.log('[Spotify API] Extracted playlist ID:', playlistId, 'from URL:', url)
 
     // Get access token
     const accessToken = await getAccessToken()
@@ -279,29 +313,30 @@ export async function POST(request: NextRequest) {
       ownerPhotoUrl: ownerPhoto,
     })
   } catch (error: any) {
-    console.error('Error fetching Spotify playlist:', error)
-    console.error('Error stack:', error?.stack)
-    console.error('Error details:', {
+    console.error('[Spotify API] Error fetching Spotify playlist:', error)
+    console.error('[Spotify API] Error stack:', error?.stack)
+    console.error('[Spotify API] Error details:', {
       message: error?.message,
       name: error?.name,
-      cause: error?.cause
+      cause: error?.cause,
+      status: error?.status
     })
     
     // Provide more helpful error messages
     let errorMessage = error?.message || 'Failed to fetch playlist data'
-    let statusCode = 500
+    let statusCode = error?.status || 500
     
-    // Check for specific error types
-    if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+    // Check for specific error types based on status code or message
+    if (statusCode === 401 || errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
       errorMessage = 'Spotify authentication failed. Please check your API credentials.'
       statusCode = 401
-    } else if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
+    } else if (statusCode === 403 || errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
       errorMessage = 'This playlist may be private or unavailable. Try a public playlist.'
       statusCode = 403
-    } else if (errorMessage.includes('404') || errorMessage.includes('Not Found')) {
-      errorMessage = 'Playlist not found. Please check the URL is correct.'
+    } else if (statusCode === 404 || errorMessage.includes('404') || errorMessage.includes('Not Found') || errorMessage.includes('Resource not found')) {
+      errorMessage = 'Playlist not found. Please check that the URL is correct and the playlist is public.'
       statusCode = 404
-    } else if (errorMessage.includes('429') || errorMessage.includes('rate limit')) {
+    } else if (statusCode === 429 || errorMessage.includes('429') || errorMessage.includes('rate limit')) {
       errorMessage = 'Spotify API rate limit exceeded. Please try again in a moment.'
       statusCode = 429
     } else if (errorMessage.includes('credentials not configured')) {
