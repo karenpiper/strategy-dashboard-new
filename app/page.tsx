@@ -75,6 +75,19 @@ export default function TeamDashboard() {
   }>>([])
   const [workSamplesSearchQuery, setWorkSamplesSearchQuery] = useState('')
   const [resourcesSearchQuery, setResourcesSearchQuery] = useState('')
+  const [universalSearchQuery, setUniversalSearchQuery] = useState('')
+  const [universalSearchResults, setUniversalSearchResults] = useState<Array<{
+    type: string
+    id: string
+    title: string
+    description?: string
+    url?: string
+    metadata?: Record<string, any>
+    score: number
+  }>>([])
+  const [universalSearchLoading, setUniversalSearchLoading] = useState(false)
+  const [universalSearchHasSearched, setUniversalSearchHasSearched] = useState(false)
+  const universalSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [horoscopeImage, setHoroscopeImage] = useState<string | null>(null)
   const [horoscopeImagePrompt, setHoroscopeImagePrompt] = useState<string | null>(null)
   const [horoscopeImageSlots, setHoroscopeImageSlots] = useState<any>(null)
@@ -798,6 +811,52 @@ export default function TeamDashboard() {
     }
     
     fetchLatestMustReads()
+  }, [])
+
+  // Universal search handler
+  const handleUniversalSearch = async (query: string) => {
+    if (!query.trim()) {
+      setUniversalSearchResults([])
+      setUniversalSearchHasSearched(false)
+      return
+    }
+
+    // Clear existing timeout
+    if (universalSearchTimeoutRef.current) {
+      clearTimeout(universalSearchTimeoutRef.current)
+    }
+
+    // Debounce search
+    universalSearchTimeoutRef.current = setTimeout(async () => {
+      setUniversalSearchLoading(true)
+      setUniversalSearchHasSearched(true)
+
+      try {
+        const response = await fetch(`/api/search/universal?q=${encodeURIComponent(query.trim())}&limit=20`)
+        if (response.ok) {
+          const data = await response.json()
+          setUniversalSearchResults(data.results || [])
+        } else {
+          const errorData = await response.json()
+          console.error('Search error:', errorData)
+          setUniversalSearchResults([])
+        }
+      } catch (error) {
+        console.error('Error performing search:', error)
+        setUniversalSearchResults([])
+      } finally {
+        setUniversalSearchLoading(false)
+      }
+    }, 300) // 300ms debounce
+  }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (universalSearchTimeoutRef.current) {
+        clearTimeout(universalSearchTimeoutRef.current)
+      }
+    }
   }, [])
 
   // Fetch recent snaps for the logged-in user
@@ -4656,15 +4715,168 @@ export default function TeamDashboard() {
                   <span className="uppercase tracking-wider font-black text-xs">Find Anything</span>
                 </div>
                 <h2 className={`text-4xl font-black mb-6 uppercase ${searchStyle.text}`}>SEARCH</h2>
-                <div className="relative">
+                <form onSubmit={(e) => {
+                  e.preventDefault()
+                  handleUniversalSearch(universalSearchQuery)
+                }} className="relative mb-4">
                   <Input 
+                    value={universalSearchQuery}
+                    onChange={(e) => {
+                      setUniversalSearchQuery(e.target.value)
+                      if (e.target.value.trim()) {
+                        handleUniversalSearch(e.target.value)
+                      } else {
+                        setUniversalSearchResults([])
+                        setUniversalSearchHasSearched(false)
+                      }
+                    }}
                     placeholder="Resources, people, projects..."
                     className={`${mode === 'chaos' ? 'bg-black/40 border-zinc-700' : mode === 'chill' ? 'bg-[#F5E6D3]/50 border-[#8B4444]/30' : 'bg-black/40 border-zinc-700'} ${searchStyle.text} placeholder:${searchStyle.text}/50 rounded-xl h-14 pr-14 font-medium`}
                   />
-                  <Button className="absolute right-2 top-2 rounded-lg h-10 w-10 p-0" style={{ backgroundColor: searchStyle.accent, color: mode === 'chill' ? '#4A1818' : '#FFFFFF' }}>
-                    <Search className="w-5 h-5" />
+                  <Button 
+                    type="submit"
+                    className="absolute right-2 top-2 rounded-lg h-10 w-10 p-0" 
+                    style={{ backgroundColor: searchStyle.accent, color: mode === 'chill' ? '#4A1818' : '#FFFFFF' }}
+                    disabled={universalSearchLoading}
+                  >
+                    {universalSearchLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Search className="w-5 h-5" />
+                    )}
                   </Button>
-                </div>
+                </form>
+                
+                {/* Search Results */}
+                {universalSearchHasSearched && (
+                  <div className="mt-4 space-y-3 max-h-[600px] overflow-y-auto">
+                    {universalSearchLoading ? (
+                      <div className="text-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" style={{ color: searchStyle.accent }} />
+                        <p className={`text-sm ${searchStyle.text}/60`}>Searching...</p>
+                      </div>
+                    ) : universalSearchResults.length > 0 ? (
+                      <>
+                        <p className={`text-sm font-semibold ${searchStyle.text}/70 mb-2`}>
+                          Found {universalSearchResults.length} result{universalSearchResults.length !== 1 ? 's' : ''}
+                        </p>
+                        {universalSearchResults.map((result, idx) => {
+                          const getTypeIcon = () => {
+                            switch (result.type) {
+                              case 'resource': return <FileText className="w-4 h-4" />
+                              case 'work_sample': return <Briefcase className="w-4 h-4" />
+                              case 'must_read': return <FileText className="w-4 h-4" />
+                              case 'news': return <MessageSquare className="w-4 h-4" />
+                              case 'person': return <User className="w-4 h-4" />
+                              case 'project': return <TrendingUp className="w-4 h-4" />
+                              case 'playlist': return <Music className="w-4 h-4" />
+                              default: return <Search className="w-4 h-4" />
+                            }
+                          }
+
+                          const getTypeLabel = () => {
+                            switch (result.type) {
+                              case 'resource': return 'Resource'
+                              case 'work_sample': return 'Work Sample'
+                              case 'must_read': return 'Must Read'
+                              case 'news': return 'News'
+                              case 'person': return 'Person'
+                              case 'project': return 'Project'
+                              case 'playlist': return 'Playlist'
+                              default: return 'Item'
+                            }
+                          }
+
+                          const handleClick = () => {
+                            if (result.url) {
+                              window.open(result.url, '_blank')
+                            } else {
+                              // Navigate based on type
+                              switch (result.type) {
+                                case 'resource':
+                                  router.push(`/resources`)
+                                  break
+                                case 'work_sample':
+                                  router.push(`/work-samples`)
+                                  break
+                                case 'must_read':
+                                  router.push(`/`)
+                                  break
+                                case 'news':
+                                  router.push(`/`)
+                                  break
+                                case 'person':
+                                  router.push(`/team/directory`)
+                                  break
+                                case 'project':
+                                  router.push(`/`)
+                                  break
+                                case 'playlist':
+                                  router.push(`/vibes`)
+                                  break
+                              }
+                            }
+                          }
+
+                          return (
+                            <Card
+                              key={`${result.type}-${result.id}-${idx}`}
+                              className={`${mode === 'chaos' ? 'bg-black/30 border-zinc-700/50' : mode === 'chill' ? 'bg-white/50 border-[#8B4444]/20' : 'bg-black/30 border-zinc-700/50'} p-4 cursor-pointer hover:opacity-80 transition-opacity`}
+                              onClick={handleClick}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="mt-0.5" style={{ color: searchStyle.accent }}>
+                                  {getTypeIcon()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h3 className={`font-semibold ${searchStyle.text} truncate`}>{result.title}</h3>
+                                    <Badge 
+                                      variant="outline" 
+                                      className="text-xs"
+                                      style={{ 
+                                        borderColor: searchStyle.accent,
+                                        color: searchStyle.accent
+                                      }}
+                                    >
+                                      {getTypeLabel()}
+                                    </Badge>
+                                  </div>
+                                  {result.description && (
+                                    <p className={`text-sm ${searchStyle.text}/70 line-clamp-2 mb-2`}>
+                                      {result.description}
+                                    </p>
+                                  )}
+                                  {result.metadata && (
+                                    <div className="flex flex-wrap gap-2 text-xs">
+                                      {result.metadata.category && (
+                                        <span className={`${searchStyle.text}/50`}>Category: {result.metadata.category}</span>
+                                      )}
+                                      {result.metadata.role && (
+                                        <span className={`${searchStyle.text}/50`}>Role: {result.metadata.role}</span>
+                                      )}
+                                      {result.metadata.status && (
+                                        <span className={`${searchStyle.text}/50`}>Status: {result.metadata.status}</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                                {result.url && (
+                                  <ExternalLink className="w-4 h-4 flex-shrink-0" style={{ color: searchStyle.accent }} />
+                                )}
+                              </div>
+                            </Card>
+                          )
+                        })}
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Search className="w-8 h-8 mx-auto mb-2" style={{ color: searchStyle.accent, opacity: 0.5 }} />
+                        <p className={`text-sm ${searchStyle.text}/60`}>No results found</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </Card>
             )
           })()}
