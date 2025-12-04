@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, Calendar, Music, FileText, MessageSquare, Trophy, TrendingUp, Users, Zap, Star, Heart, Coffee, Lightbulb, ChevronRight, ChevronLeft, Play, Pause, CheckCircle, Clock, ArrowRight, Video, Sparkles, Loader2, Download, Bot, Info, ExternalLink, User, ChevronDown, ChevronUp, Plus, Check, RefreshCw, PartyPopper, Briefcase, Hand } from 'lucide-react'
+import { Search, Calendar, Music, FileText, MessageSquare, Trophy, TrendingUp, Users, Zap, Star, Heart, Coffee, Lightbulb, ChevronRight, ChevronLeft, Play, Pause, CheckCircle, Clock, ArrowRight, Video, Sparkles, Loader2, Download, Bot, Info, ExternalLink, User, ChevronDown, ChevronUp, Plus, Check, RefreshCw, PartyPopper, Briefcase, Hand, Cpu, Palette } from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -212,9 +212,11 @@ export default function TeamDashboard() {
     article_url: string
     created_at: string
     pinned: boolean
+    category: string | null
   }>>([])
   const [mustReadsLoading, setMustReadsLoading] = useState(true)
   const [lastVisitTime, setLastVisitTime] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string>('this-week')
   const [profiles, setProfiles] = useState<Array<{
     id: string
     full_name: string | null
@@ -4550,43 +4552,93 @@ export default function TeamDashboard() {
                     <Loader2 className="w-6 h-6 animate-spin" style={{ color: mustReadsStyle.accent }} />
                   </div>
                 ) : (() => {
-                  // Separate pinned and weekly articles
-                  const pinnedArticles = latestMustReads.filter(read => read.pinned)
-                  const weeklyArticles = latestMustReads.filter(read => !read.pinned).slice(0, 5) // Show up to 5 weekly articles
-                  
                   // Helper function to check if article is new
                   const isNew = (createdAt: string) => {
                     if (!lastVisitTime) return false
                     return new Date(createdAt) > new Date(lastVisitTime)
                   }
                   
+                  // Helper function to check if article is from this week
+                  const isThisWeek = (createdAt: string) => {
+                    const articleDate = new Date(createdAt)
+                    const now = new Date()
+                    const weekStart = new Date(now)
+                    weekStart.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1)) // Monday
+                    weekStart.setHours(0, 0, 0, 0)
+                    return articleDate >= weekStart
+                  }
+                  
+                  // Separate pinned articles
+                  const pinnedArticles = latestMustReads.filter(read => read.pinned)
+                  
+                  // Filter articles based on selected tab
+                  let filteredArticles: typeof latestMustReads = []
+                  if (selectedCategory === 'this-week') {
+                    // Show non-pinned articles from this week
+                    filteredArticles = latestMustReads
+                      .filter(read => !read.pinned && isThisWeek(read.created_at))
+                      .slice(0, 5)
+                  } else {
+                    // Show articles by category (non-pinned, latest 5)
+                    filteredArticles = latestMustReads
+                      .filter(read => !read.pinned && read.category === selectedCategory)
+                      .slice(0, 5)
+                  }
+                  
+                  const categories = ['technology', 'culture', 'fun', 'industry', 'craft']
+                  const categoryLabels: Record<string, string> = {
+                    'technology': 'Technology',
+                    'culture': 'Culture',
+                    'fun': 'Fun',
+                    'industry': 'Industry',
+                    'craft': 'Craft'
+                  }
+                  
+                  // Category icons mapping
+                  const categoryIcons: Record<string, any> = {
+                    'technology': Zap,
+                    'culture': Heart,
+                    'fun': PartyPopper,
+                    'industry': Briefcase,
+                    'craft': Palette
+                  }
+                  
+                  const getCategoryIcon = (category: string | null) => {
+                    if (!category || !categoryIcons[category]) return null
+                    const IconComponent = categoryIcons[category]
+                    return <IconComponent className="w-3 h-3" />
+                  }
+                  
                   return latestMustReads.length > 0 ? (
                     <div className="space-y-3 flex-1">
                       {/* Pinned Articles Section */}
                       {pinnedArticles.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <Star className="w-3 h-3" style={{ color: mustReadsStyle.accent }} fill={mustReadsStyle.accent} />
-                            <span className={`text-xs font-black uppercase ${mustReadsStyle.text}/80`}>Pinned</span>
+                        <div className="mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Star className="w-3.5 h-3.5" style={{ color: mustReadsStyle.accent }} fill={mustReadsStyle.accent} />
+                            <span className={`text-xs font-black uppercase ${mustReadsStyle.text}`}>Pinned</span>
                           </div>
-                          <div className="space-y-0.5">
+                          <div className="space-y-1">
                             {pinnedArticles.map((read, index) => (
                               <a
                                 key={read.id}
                                 href={read.article_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`flex items-center gap-2 py-1.5 px-1 hover:opacity-80 transition-all group ${index < pinnedArticles.length - 1 ? 'border-b' : ''}`}
-                                style={{ borderColor: `${mustReadsStyle.accent}20` }}
+                                className={`flex items-center gap-2.5 py-2 px-2 rounded-lg transition-all group ${
+                                  mode === 'chaos' ? 'bg-black/20 hover:bg-black/30' : 
+                                  mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/40' : 
+                                  'bg-white/5 hover:bg-white/10'
+                                }`}
                               >
                                 <p className={`text-xs font-black flex-1 ${mustReadsStyle.text} line-clamp-1 group-hover:underline`}>{read.article_title}</p>
                                 <div className="flex items-center gap-1.5 shrink-0">
                                   {isNew(read.created_at) && (
-                                    <Badge className="text-[7px] px-1 py-0 font-black uppercase" style={{ backgroundColor: mustReadsStyle.accent, color: mode === 'chill' ? '#4A1818' : 'white' }}>
+                                    <Badge className="text-[7px] px-1.5 py-0.5 font-black uppercase" style={{ backgroundColor: mustReadsStyle.accent, color: mode === 'chill' ? '#4A1818' : 'white' }}>
                                       New
                                     </Badge>
                                   )}
-                                  <span className={`text-[10px] ${mustReadsStyle.text}/50`}>
+                                  <span className={`text-[10px] ${mustReadsStyle.text}/60`}>
                                     {new Date(read.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                   </span>
                                 </div>
@@ -4596,44 +4648,89 @@ export default function TeamDashboard() {
                         </div>
                       )}
                       
-                      {/* Weekly Articles Section */}
-                      {weeklyArticles.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <Calendar className="w-3 h-3" style={{ color: mustReadsStyle.accent }} />
-                            <span className={`text-xs font-black uppercase ${mustReadsStyle.text}/80`}>This Week</span>
-                          </div>
-                          <div className="space-y-0.5">
-                            {weeklyArticles.map((read, index) => (
+                      {/* Category Tabs */}
+                      <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                        <button
+                          onClick={() => setSelectedCategory('this-week')}
+                          className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-2.5 py-1.5 rounded-md transition-all ${
+                            selectedCategory === 'this-week'
+                              ? `${mode === 'chaos' ? 'bg-black text-[#00A3E0]' : mode === 'chill' ? 'bg-[#4A1818] text-[#00A3E0]' : 'bg-white text-black'}`
+                              : `opacity-50 hover:opacity-70 ${mustReadsStyle.text} ${mode === 'chaos' ? 'bg-black/20' : mode === 'chill' ? 'bg-[#F5E6D3]/20' : 'bg-white/5'}`
+                          }`}
+                        >
+                          <Calendar className="w-3 h-3" />
+                          This Week
+                        </button>
+                        {categories.map((cat) => {
+                          const IconComponent = categoryIcons[cat]
+                          return (
+                            <button
+                              key={cat}
+                              onClick={() => setSelectedCategory(cat)}
+                              className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-2.5 py-1.5 rounded-md transition-all ${
+                                selectedCategory === cat
+                                  ? `${mode === 'chaos' ? 'bg-black text-[#00A3E0]' : mode === 'chill' ? 'bg-[#4A1818] text-[#00A3E0]' : 'bg-white text-black'}`
+                                  : `opacity-50 hover:opacity-70 ${mustReadsStyle.text} ${mode === 'chaos' ? 'bg-black/20' : mode === 'chill' ? 'bg-[#F5E6D3]/20' : 'bg-white/5'}`
+                              }`}
+                            >
+                              {IconComponent && <IconComponent className="w-3 h-3" />}
+                              {categoryLabels[cat]}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      
+                      {/* Filtered Articles Section */}
+                      {filteredArticles.length > 0 ? (
+                        <div className="space-y-1">
+                          {filteredArticles.map((read) => {
+                            const CategoryIcon = read.category ? categoryIcons[read.category] : null
+                            return (
                               <a
                                 key={read.id}
                                 href={read.article_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`flex items-center gap-2 py-1.5 px-1 hover:opacity-80 transition-all group ${index < weeklyArticles.length - 1 ? 'border-b' : ''}`}
-                                style={{ borderColor: `${mustReadsStyle.accent}20` }}
+                                className={`flex items-center gap-2.5 py-2 px-2 rounded-lg transition-all group ${
+                                  mode === 'chaos' ? 'bg-black/20 hover:bg-black/30' : 
+                                  mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/40' : 
+                                  'bg-white/5 hover:bg-white/10'
+                                }`}
                               >
+                                {selectedCategory === 'this-week' && CategoryIcon && (
+                                  <div style={{ color: mustReadsStyle.accent }}>
+                                    <CategoryIcon className="w-3.5 h-3.5" />
+                                  </div>
+                                )}
                                 <p className={`text-xs font-black flex-1 ${mustReadsStyle.text} line-clamp-1 group-hover:underline`}>{read.article_title}</p>
                                 <div className="flex items-center gap-1.5 shrink-0">
                                   {isNew(read.created_at) && (
-                                    <Badge className="text-[7px] px-1 py-0 font-black uppercase" style={{ backgroundColor: mustReadsStyle.accent, color: mode === 'chill' ? '#4A1818' : 'white' }}>
+                                    <Badge className="text-[7px] px-1.5 py-0.5 font-black uppercase" style={{ backgroundColor: mustReadsStyle.accent, color: mode === 'chill' ? '#4A1818' : 'white' }}>
                                       New
                                     </Badge>
                                   )}
-                                  <span className={`text-[10px] ${mustReadsStyle.text}/50`}>
+                                  <span className={`text-[10px] ${mustReadsStyle.text}/60`}>
                                     {new Date(read.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                   </span>
                                 </div>
                               </a>
-                            ))}
-                          </div>
+                            )
+                          })}
+                          {/* View Archive Link */}
+                          <Link
+                            href={`/admin/must-read${selectedCategory !== 'this-week' ? `?category=${selectedCategory}` : '?pinned=false'}`}
+                            className={`block text-[10px] font-black uppercase opacity-60 hover:opacity-100 transition-all mt-3 text-center ${mustReadsStyle.text}`}
+                          >
+                            View Archive →
+                          </Link>
                         </div>
-                      )}
-                      
-                      {/* Empty State */}
-                      {pinnedArticles.length === 0 && weeklyArticles.length === 0 && (
-                        <div className="flex-1 flex items-center justify-center">
-                          <p className={`text-sm ${mustReadsStyle.text}/60`}>No must reads yet</p>
+                      ) : (
+                        <div className="py-4">
+                          <p className={`text-xs ${mustReadsStyle.text}/60 text-center`}>
+                            {selectedCategory === 'this-week' 
+                              ? 'No articles this week' 
+                              : `No ${categoryLabels[selectedCategory]} articles`}
+                          </p>
                         </div>
                       )}
                     </div>
