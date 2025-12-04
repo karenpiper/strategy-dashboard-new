@@ -4603,6 +4603,11 @@ export default function TeamDashboard() {
                     'craft': Palette
                   }
                   
+                  // Filter categories to only show if there are articles in that category (any articles, not just this week)
+                  const availableCategories = categories.filter(cat => {
+                    return latestMustReads.some(read => !read.pinned && read.category === cat)
+                  })
+                  
                   const getCategoryIcon = (category: string | null) => {
                     if (!category || !categoryIcons[category]) return null
                     const IconComponent = categoryIcons[category]
@@ -4613,32 +4618,32 @@ export default function TeamDashboard() {
                     <div className="space-y-3 flex-1">
                       {/* Pinned Articles Section */}
                       {pinnedArticles.length > 0 && (
-                        <div className="mb-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Star className="w-3.5 h-3.5" style={{ color: mustReadsStyle.accent }} fill={mustReadsStyle.accent} />
-                            <span className={`text-xs font-black uppercase ${mustReadsStyle.text}`}>Pinned</span>
+                        <div className="mb-4">
+                          <div className="flex items-center gap-2 mb-2.5">
+                            <Star className="w-4 h-4" style={{ color: mustReadsStyle.accent }} fill={mustReadsStyle.accent} />
+                            <span className={`text-sm font-black uppercase ${mustReadsStyle.text}`}>Pinned</span>
                           </div>
-                          <div className="space-y-1">
+                          <div className="space-y-1.5">
                             {pinnedArticles.map((read, index) => (
                               <a
                                 key={read.id}
                                 href={read.article_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`flex items-center gap-2.5 py-2 px-2 rounded-lg transition-all group ${
+                                className={`flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all group ${
                                   mode === 'chaos' ? 'bg-black/20 hover:bg-black/30' : 
                                   mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/40' : 
                                   'bg-white/5 hover:bg-white/10'
                                 }`}
                               >
-                                <p className={`text-xs font-black flex-1 ${mustReadsStyle.text} line-clamp-1 group-hover:underline`}>{read.article_title}</p>
-                                <div className="flex items-center gap-1.5 shrink-0">
+                                <p className={`text-sm font-black flex-1 ${mustReadsStyle.text} line-clamp-1 group-hover:underline`}>{read.article_title}</p>
+                                <div className="flex items-center gap-2 shrink-0">
                                   {isNew(read.created_at) && (
-                                    <Badge className="text-[7px] px-1.5 py-0.5 font-black uppercase" style={{ backgroundColor: mustReadsStyle.accent, color: mode === 'chill' ? '#4A1818' : 'white' }}>
+                                    <Badge className="text-[8px] px-2 py-0.5 font-black uppercase" style={{ backgroundColor: mustReadsStyle.accent, color: mode === 'chill' ? '#4A1818' : 'white' }}>
                                       New
                                     </Badge>
                                   )}
-                                  <span className={`text-[10px] ${mustReadsStyle.text}/60`}>
+                                  <span className={`text-xs ${mustReadsStyle.text}/60`}>
                                     {new Date(read.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                   </span>
                                 </div>
@@ -4649,31 +4654,31 @@ export default function TeamDashboard() {
                       )}
                       
                       {/* Category Tabs */}
-                      <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                      <div className="flex items-center gap-2 flex-wrap mb-3">
                         <button
                           onClick={() => setSelectedCategory('this-week')}
-                          className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-2.5 py-1.5 rounded-md transition-all ${
+                          className={`flex items-center gap-1.5 text-xs font-black uppercase px-3 py-2 rounded-md transition-all ${
                             selectedCategory === 'this-week'
                               ? `${mode === 'chaos' ? 'bg-black text-[#00A3E0]' : mode === 'chill' ? 'bg-[#4A1818] text-[#00A3E0]' : 'bg-white text-black'}`
                               : `opacity-50 hover:opacity-70 ${mustReadsStyle.text} ${mode === 'chaos' ? 'bg-black/20' : mode === 'chill' ? 'bg-[#F5E6D3]/20' : 'bg-white/5'}`
                           }`}
                         >
-                          <Calendar className="w-3 h-3" />
+                          <Calendar className="w-3.5 h-3.5" />
                           This Week
                         </button>
-                        {categories.map((cat) => {
+                        {availableCategories.map((cat) => {
                           const IconComponent = categoryIcons[cat]
                           return (
                             <button
                               key={cat}
                               onClick={() => setSelectedCategory(cat)}
-                              className={`flex items-center gap-1.5 text-[10px] font-black uppercase px-2.5 py-1.5 rounded-md transition-all ${
+                              className={`flex items-center gap-1.5 text-xs font-black uppercase px-3 py-2 rounded-md transition-all ${
                                 selectedCategory === cat
                                   ? `${mode === 'chaos' ? 'bg-black text-[#00A3E0]' : mode === 'chill' ? 'bg-[#4A1818] text-[#00A3E0]' : 'bg-white text-black'}`
                                   : `opacity-50 hover:opacity-70 ${mustReadsStyle.text} ${mode === 'chaos' ? 'bg-black/20' : mode === 'chill' ? 'bg-[#F5E6D3]/20' : 'bg-white/5'}`
                               }`}
                             >
-                              {IconComponent && <IconComponent className="w-3 h-3" />}
+                              {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
                               {categoryLabels[cat]}
                             </button>
                           )
@@ -4682,7 +4687,7 @@ export default function TeamDashboard() {
                       
                       {/* Filtered Articles Section */}
                       {filteredArticles.length > 0 ? (
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           {filteredArticles.map((read) => {
                             const CategoryIcon = read.category ? categoryIcons[read.category] : null
                             return (
@@ -4691,7 +4696,7 @@ export default function TeamDashboard() {
                                 href={read.article_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={`flex items-center gap-2.5 py-2 px-2 rounded-lg transition-all group ${
+                                className={`flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all group ${
                                   mode === 'chaos' ? 'bg-black/20 hover:bg-black/30' : 
                                   mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/40' : 
                                   'bg-white/5 hover:bg-white/10'
@@ -4699,17 +4704,17 @@ export default function TeamDashboard() {
                               >
                                 {selectedCategory === 'this-week' && CategoryIcon && (
                                   <div style={{ color: mustReadsStyle.accent }}>
-                                    <CategoryIcon className="w-3.5 h-3.5" />
+                                    <CategoryIcon className="w-4 h-4" />
                                   </div>
                                 )}
-                                <p className={`text-xs font-black flex-1 ${mustReadsStyle.text} line-clamp-1 group-hover:underline`}>{read.article_title}</p>
-                                <div className="flex items-center gap-1.5 shrink-0">
+                                <p className={`text-sm font-black flex-1 ${mustReadsStyle.text} line-clamp-1 group-hover:underline`}>{read.article_title}</p>
+                                <div className="flex items-center gap-2 shrink-0">
                                   {isNew(read.created_at) && (
-                                    <Badge className="text-[7px] px-1.5 py-0.5 font-black uppercase" style={{ backgroundColor: mustReadsStyle.accent, color: mode === 'chill' ? '#4A1818' : 'white' }}>
+                                    <Badge className="text-[8px] px-2 py-0.5 font-black uppercase" style={{ backgroundColor: mustReadsStyle.accent, color: mode === 'chill' ? '#4A1818' : 'white' }}>
                                       New
                                     </Badge>
                                   )}
-                                  <span className={`text-[10px] ${mustReadsStyle.text}/60`}>
+                                  <span className={`text-xs ${mustReadsStyle.text}/60`}>
                                     {new Date(read.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                   </span>
                                 </div>
@@ -4719,14 +4724,14 @@ export default function TeamDashboard() {
                           {/* View Archive Link */}
                           <Link
                             href={`/admin/must-read${selectedCategory !== 'this-week' ? `?category=${selectedCategory}` : '?pinned=false'}`}
-                            className={`block text-[10px] font-black uppercase opacity-60 hover:opacity-100 transition-all mt-3 text-center ${mustReadsStyle.text}`}
+                            className={`block text-xs font-black uppercase opacity-60 hover:opacity-100 transition-all mt-4 text-center ${mustReadsStyle.text}`}
                           >
                             View Archive →
                           </Link>
                         </div>
                       ) : (
                         <div className="py-4">
-                          <p className={`text-xs ${mustReadsStyle.text}/60 text-center`}>
+                          <p className={`text-sm ${mustReadsStyle.text}/60 text-center`}>
                             {selectedCategory === 'this-week' 
                               ? 'No articles this week' 
                               : `No ${categoryLabels[selectedCategory]} articles`}
