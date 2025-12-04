@@ -1,6 +1,7 @@
 'use client'
 
 import { Search, Calendar, Music, FileText, MessageSquare, Trophy, TrendingUp, Users, Zap, Star, Heart, Coffee, Lightbulb, ChevronRight, ChevronLeft, Play, Pause, CheckCircle, Clock, ArrowRight, Video, Sparkles, Loader2, Download, Bot, Info, ExternalLink, User, ChevronDown, ChevronUp, Plus, Check, RefreshCw, PartyPopper, Briefcase, Hand, Cpu, Palette } from 'lucide-react'
+import * as LucideIcons from 'lucide-react'
 import { SiteHeader } from '@/components/site-header'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -217,6 +218,24 @@ export default function TeamDashboard() {
   const [mustReadsLoading, setMustReadsLoading] = useState(true)
   const [lastVisitTime, setLastVisitTime] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>('this-week')
+  const [allMustReads, setAllMustReads] = useState<Array<{
+    id: string
+    article_title: string
+    article_url: string
+    created_at: string
+    pinned: boolean
+    category: string | null
+  }>>([])
+  const [quickLinks, setQuickLinks] = useState<Array<{
+    id: string
+    label: string
+    url: string
+    icon_name: string | null
+    password: string | null
+    display_order: number
+    is_active: boolean
+  }>>([])
+  const [quickLinksLoading, setQuickLinksLoading] = useState(true)
   const [profiles, setProfiles] = useState<Array<{
     id: string
     full_name: string | null
@@ -806,7 +825,7 @@ export default function TeamDashboard() {
     }
   }, [])
 
-  // Fetch latest must reads
+  // Fetch latest must reads for display (10 most recent)
   useEffect(() => {
     async function fetchLatestMustReads() {
       try {
@@ -825,6 +844,43 @@ export default function TeamDashboard() {
     }
     
     fetchLatestMustReads()
+  }, [])
+
+  // Fetch all must reads to determine available categories
+  useEffect(() => {
+    async function fetchAllMustReads() {
+      try {
+        const response = await fetch('/api/must-reads?sortBy=created_at&sortOrder=desc&limit=1000')
+        if (response.ok) {
+          const result = await response.json()
+          setAllMustReads(result.data || [])
+        }
+      } catch (error) {
+        console.error('Error fetching all must reads:', error)
+      }
+    }
+    
+    fetchAllMustReads()
+  }, [])
+
+  // Fetch quick links
+  useEffect(() => {
+    async function fetchQuickLinks() {
+      try {
+        setQuickLinksLoading(true)
+        const response = await fetch('/api/quick-links')
+        if (response.ok) {
+          const result = await response.json()
+          setQuickLinks(result.data || [])
+        }
+      } catch (error) {
+        console.error('Error fetching quick links:', error)
+      } finally {
+        setQuickLinksLoading(false)
+      }
+    }
+    
+    fetchQuickLinks()
   }, [])
 
   // Universal search handler
@@ -2213,6 +2269,7 @@ export default function TeamDashboard() {
                     className={`transition-all duration-300 flex items-end justify-end py-3 px-6 flex-[1] min-h-[300px]`}
                   >
                     <div className="flex flex-col items-end gap-3 h-full w-full">
+                      {/* Give Snap - Special action button, keep hardcoded */}
                       <Button 
                         onClick={() => setShowAddSnapDialog(true)}
                         className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
@@ -2232,51 +2289,40 @@ export default function TeamDashboard() {
                       >
                         {mode === 'code' ? '[GIVE SNAP]' : 'Give Snap'} {mode !== 'code' && <Sparkles className="w-3 h-3 ml-2" />}
                       </Button>
-                      <Button 
-                        onClick={() => router.push('/work-samples')}
-                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
-                        style={mode === 'chaos' ? {
-                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
-                          color: '#FFFFFF'
-                        } : mode === 'chill' ? {
-                          backgroundColor: '#4A1818',
-                          color: '#FFFFFF'
-                        } : mode === 'code' ? {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        } : {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        }}
-                      >
-                        {mode === 'code' ? '[BROWSE WORK]' : 'Browse Work'} {mode !== 'code' && <Briefcase className="w-3 h-3 ml-2" />}
-                      </Button>
-                      <Button 
-                        onClick={() => {
+                      
+                      {/* Dynamic Quick Links from Database */}
+                      {quickLinksLoading ? (
+                        <div className="text-center py-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        </div>
+                      ) : (
+                        quickLinks.map((link) => {
+                          // Get icon component dynamically
+                          const IconComponent = link.icon_name && (LucideIcons as any)[link.icon_name] 
+                            ? (LucideIcons as any)[link.icon_name] 
+                            : ExternalLink
+                          
+                          // Handle URL - check if it's internal or external, or special actions
+                          let handleClick: () => void
+                          if (link.url === 'chatbot') {
+                            handleClick = () => setShowChatbot(true)
+                          } else if (link.url === 'playlist-section') {
+                            handleClick = () => {
                           const playlistSection = document.getElementById('playlist-section')
                           if (playlistSection) {
                             playlistSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
                           }
-                        }}
-                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
-                        style={mode === 'chaos' ? {
-                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
-                          color: '#FFFFFF'
-                        } : mode === 'chill' ? {
-                          backgroundColor: '#4A1818',
-                          color: '#FFFFFF'
-                        } : mode === 'code' ? {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        } : {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        }}
-                      >
-                        {mode === 'code' ? '[JUST VIBES]' : 'Just Vibes'} {mode !== 'code' && <Music className="w-3 h-3 ml-2" />}
-                      </Button>
+                            }
+                          } else if (link.url.startsWith('/')) {
+                            handleClick = () => router.push(link.url)
+                          } else {
+                            handleClick = () => window.open(link.url, '_blank')
+                          }
+                          
+                          return (
+                            <div key={link.id} className="flex flex-col items-end gap-1">
                       <Button 
-                        onClick={() => window.open('https://grail.codeandtheory.net/', '_blank')}
+                                onClick={handleClick}
                         className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
                         style={mode === 'chaos' ? {
                           backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
@@ -2292,70 +2338,18 @@ export default function TeamDashboard() {
                           color: '#FFFFFF'
                         }}
                       >
-                        {mode === 'code' ? '[GRAIL]' : 'Grail'} {mode !== 'code' && <Clock className="w-3 h-3 ml-2" />}
+                                {mode === 'code' ? `[${link.label.toUpperCase()}]` : link.label} 
+                                {mode !== 'code' && <IconComponent className="w-3 h-3 ml-2" />}
                       </Button>
-                      <Button 
-                        onClick={() => window.open('https://docs.google.com/document/d/1veJeGAgkhFgVqgdOs1qnH08YxFIDti_bEA0HXsSBq4s/edit?tab=t.0', '_blank')}
-                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
-                        style={mode === 'chaos' ? {
-                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
-                          color: '#FFFFFF'
-                        } : mode === 'chill' ? {
-                          backgroundColor: '#4A1818',
-                          color: '#FFFFFF'
-                        } : mode === 'code' ? {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        } : {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        }}
-                      >
-                        {mode === 'code' ? '[BRIEF]' : 'Brief'} {mode !== 'code' && <FileText className="w-3 h-3 ml-2" />}
-                      </Button>
-                      <div className="flex flex-col items-end gap-1">
-                        <Button 
-                          onClick={() => window.open('https://v0-oy-tqp-vjks-hi.vercel.app/', '_blank')}
-                          className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
-                          style={mode === 'chaos' ? {
-                            backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
-                            color: '#FFFFFF'
-                          } : mode === 'chill' ? {
-                            backgroundColor: '#4A1818',
-                            color: '#FFFFFF'
-                          } : mode === 'code' ? {
-                            backgroundColor: '#000000',
-                            color: '#FFFFFF'
-                          } : {
-                            backgroundColor: '#000000',
-                            color: '#FFFFFF'
-                          }}
-                        >
-                          {mode === 'code' ? '[AI RESOURCE LIBRARY]' : 'AI Resource Library'} {mode !== 'code' && <Bot className="w-3 h-3 ml-2" />}
-                        </Button>
-                        <span className={`text-[10px] ${mode === 'chaos' ? (isLightBg ? 'text-black/60' : 'text-white/60') : mode === 'chill' ? 'text-white/60' : 'text-white/60'}`}>
-                          password: codeandtheory
-                        </span>
-                      </div>
-                      <Button 
-                        onClick={() => setShowChatbot(true)}
-                        className={`${mode === 'chaos' ? (isLightBg ? 'hover:bg-[#0F0F0F]' : 'hover:bg-[#2a2a2a]') + ' hover:scale-105' : mode === 'chill' ? 'hover:bg-[#3A1414]' : mode === 'code' ? 'hover:bg-[#1a1a1a] border border-[#FFFFFF]' : 'hover:bg-[#1a1a1a]'} font-semibold ${getRoundedClass('rounded-full')} py-2 px-5 text-sm tracking-normal transition-all hover:shadow-2xl ${mode === 'code' ? 'font-mono' : ''}`}
-                        style={mode === 'chaos' ? {
-                          backgroundColor: isLightBg ? '#000000' : '#1a1a1a',
-                          color: '#FFFFFF'
-                        } : mode === 'chill' ? {
-                          backgroundColor: '#4A1818',
-                          color: '#FFFFFF'
-                        } : mode === 'code' ? {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        } : {
-                          backgroundColor: '#000000',
-                          color: '#FFFFFF'
-                        }}
-                      >
-                        {mode === 'code' ? '[DECKTALK]' : 'DeckTalk'} {mode !== 'code' && <MessageSquare className="w-3 h-3 ml-2" />}
-                      </Button>
+                              {link.password && (
+                                <span className={`text-[10px] ${mode === 'chaos' ? (isLightBg ? 'text-black/60' : 'text-white/60') : mode === 'chill' ? 'text-white/60' : 'text-white/60'}`}>
+                                  {link.password}
+                                </span>
+                              )}
+                            </div>
+                          )
+                        })
+                      )}
                     </div>
                   </div>
                 </>
@@ -4628,9 +4622,29 @@ export default function TeamDashboard() {
                   }
                   
                   // Filter categories to only show if there are articles in that category (any articles, not just this week)
+                  // Check both allMustReads (if loaded) and latestMustReads as fallback
+                  const mustReadsToCheck = allMustReads.length > 0 ? allMustReads : latestMustReads
                   const availableCategories = categories.filter(cat => {
-                    return latestMustReads.some(read => !read.pinned && read.category === cat)
+                    const hasCategory = mustReadsToCheck.some(read => 
+                      !read.pinned && 
+                      read.category && 
+                      read.category.toLowerCase().trim() === cat.toLowerCase().trim()
+                    )
+                    return hasCategory
                   })
+                  
+                  // Debug: log all categories found in must-reads
+                  if (process.env.NODE_ENV === 'development' && mustReadsToCheck.length > 0) {
+                    const foundCategories = new Set(
+                      mustReadsToCheck
+                        .filter(read => !read.pinned && read.category)
+                        .map(read => read.category?.toLowerCase().trim())
+                        .filter(Boolean)
+                    )
+                    console.log('[Must Reads] Categories found in database:', Array.from(foundCategories))
+                    console.log('[Must Reads] Available categories after filter:', availableCategories)
+                    console.log('[Must Reads] Total must-reads checked:', mustReadsToCheck.length)
+                  }
                   
                   const getCategoryIcon = (category: string | null) => {
                     if (!category || !categoryIcons[category]) return null
@@ -4639,7 +4653,7 @@ export default function TeamDashboard() {
                   }
                   
                   return latestMustReads.length > 0 ? (
-                    <div className="space-y-3 flex-1">
+                  <div className="space-y-3 flex-1">
                       {/* Pinned Articles Section */}
                       {pinnedArticles.length > 0 && (
                         <div className="mb-4">
@@ -4649,11 +4663,11 @@ export default function TeamDashboard() {
                           </div>
                           <div className="space-y-1.5">
                             {pinnedArticles.map((read, index) => (
-                              <a
-                                key={read.id}
-                                href={read.article_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                      <a
+                        key={read.id}
+                        href={read.article_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
                                 className={`flex items-center gap-3 py-2.5 px-3 rounded-lg transition-all group ${
                                   mode === 'chaos' ? 'bg-black/20 hover:bg-black/30' : 
                                   mode === 'chill' ? 'bg-[#F5E6D3]/30 hover:bg-[#F5E6D3]/40' : 
@@ -4671,8 +4685,8 @@ export default function TeamDashboard() {
                                     {new Date(read.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                   </span>
                                 </div>
-                              </a>
-                            ))}
+                      </a>
+                    ))}
                           </div>
                         </div>
                       )}
@@ -4762,11 +4776,11 @@ export default function TeamDashboard() {
                           </p>
                         </div>
                       )}
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center">
-                      <p className={`text-sm ${mustReadsStyle.text}/60`}>No must reads yet</p>
-                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className={`text-sm ${mustReadsStyle.text}/60`}>No must reads yet</p>
+                  </div>
                   )
                 })()}
                 <Link href="/admin/must-read">
