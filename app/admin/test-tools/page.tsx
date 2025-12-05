@@ -9,7 +9,9 @@ import { createClient } from '@/lib/supabase/client'
 import { 
   MessageSquare,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  UserX,
+  RefreshCw
 } from 'lucide-react'
 
 export default function TestToolsPage() {
@@ -17,6 +19,7 @@ export default function TestToolsPage() {
   const { mode } = useMode()
   const supabase = createClient()
   const [testingSlack, setTestingSlack] = useState(false)
+  const [resettingProfile, setResettingProfile] = useState(false)
 
   // Theme-aware styling helpers
   const getBgClass = () => {
@@ -129,6 +132,52 @@ export default function TestToolsPage() {
     }
   }
 
+  const handleResetProfile = async () => {
+    if (!user) {
+      alert('You must be logged in to reset your profile')
+      return
+    }
+
+    // Confirm action
+    const confirmed = confirm(
+      '⚠️ WARNING: This will delete your profile temporarily.\n\n' +
+      'After clicking OK, refresh the page to test the profile creation flow.\n\n' +
+      'Your profile will be automatically recreated with basic OAuth details, ' +
+      'and you\'ll be redirected to the profile setup page.\n\n' +
+      'Continue?'
+    )
+
+    if (!confirmed) return
+
+    setResettingProfile(true)
+    try {
+      const response = await fetch('/api/profiles/test-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const data = await response.json()
+      if (response.ok) {
+        alert(
+          '✅ Profile deleted successfully!\n\n' +
+          'Please refresh the page to test the profile creation flow.\n\n' +
+          'You will be redirected to the profile setup page.'
+        )
+        // Refresh the page after a short delay
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
+      } else {
+        alert(`❌ Error: ${data.error || 'Failed to reset profile'}\n\n${data.details || ''}`)
+      }
+    } catch (error: any) {
+      console.error('Error resetting profile:', error)
+      alert(`❌ Error: ${error.message || 'Failed to reset profile'}`)
+    } finally {
+      setResettingProfile(false)
+    }
+  }
+
   return (
     <div className={`${getBgClass()} ${mode === 'code' ? 'font-mono' : 'font-[family-name:var(--font-raleway)]'}`}>
       {/* Header */}
@@ -175,6 +224,46 @@ export default function TestToolsPage() {
         </Card>
       </div>
 
+      {/* Profile Testing */}
+      <div className="mb-8">
+        <h2 className={`text-2xl font-black uppercase tracking-wider ${getTextClass()} mb-4`}>Profile Testing</h2>
+        <Card className={`${getCardStyle().bg} ${getCardStyle().border} border p-6 ${getRoundedClass('rounded-xl')}`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className={`text-lg font-black uppercase ${getCardStyle().text} mb-2`}>Reset Profile (Test)</h3>
+              <p className={`${getCardStyle().text}/70 text-sm mb-4`}>
+                Temporarily delete your profile to test the profile creation and setup flow. 
+                Your profile will be automatically recreated with basic OAuth details, and you'll be redirected to the setup page.
+              </p>
+              <p className={`${getCardStyle().text}/50 text-xs italic`}>
+                ⚠️ Only works in development mode. Your profile will be recreated automatically.
+              </p>
+            </div>
+            <Button
+              onClick={handleResetProfile}
+              disabled={resettingProfile}
+              className={`${getRoundedClass('rounded-lg')} ${
+                mode === 'chaos' ? 'bg-[#C4F500] text-black hover:bg-[#C4F500]/80' :
+                mode === 'chill' ? 'bg-[#FFC043] text-[#4A1818] hover:bg-[#FFC043]/80' :
+                'bg-[#FFFFFF] text-black hover:bg-[#FFFFFF]/80'
+              } font-black uppercase tracking-wider ${mode === 'code' ? 'font-mono' : ''}`}
+            >
+              {resettingProfile ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                <>
+                  <UserX className="w-4 h-4 mr-2" />
+                  Reset Profile
+                </>
+              )}
+            </Button>
+          </div>
+        </Card>
+      </div>
+
       {/* Info Section */}
       <Card className={`${getCardStyle().bg} ${getCardStyle().border} border p-6 ${getRoundedClass('rounded-xl')}`}>
         <div className="flex items-start gap-3">
@@ -188,6 +277,8 @@ export default function TestToolsPage() {
               <li>• Test Slack DM: Sends a test message to your Slack account</li>
               <li>• Make sure your profile has a Slack ID configured</li>
               <li>• Check your Slack DMs after testing</li>
+              <li>• Reset Profile: Deletes your profile to test the creation flow (dev only)</li>
+              <li>• Profile will be automatically recreated with OAuth details</li>
             </ul>
           </div>
         </div>
