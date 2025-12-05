@@ -3782,6 +3782,7 @@ export default function TeamDashboard() {
                           {/* Today's Events */}
                           {todayEvents.length > 0 && (
                             <div className="space-y-2">
+                              <p className="text-xs uppercase tracking-wider font-black text-black/70 mb-2">Today</p>
                               {todayEvents.map((event) => {
                                 const eventColor = getEventColor(event)
                                 return (
@@ -3809,6 +3810,8 @@ export default function TeamDashboard() {
                           {/* Rest of Week Events */}
                           {restOfWeekEvents.length > 0 && (
                             <div className="space-y-2">
+                              {/* Header for Rest of Week */}
+                              <p className="text-xs uppercase tracking-wider font-black text-black/70 mb-2">This Week's Events</p>
                               {restOfWeekEvents.map((event) => {
                                 const eventColor = getEventColor(event)
                                 const eventStart = event.start.dateTime 
