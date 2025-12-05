@@ -422,42 +422,6 @@ export default function AnalyticsPage() {
           </div>
         )}
 
-        {/* Users Who Never Logged In */}
-        {data.logins.usersWhoNeverLoggedIn && data.logins.usersWhoNeverLoggedIn.length > 0 && (
-          <Card className={`${cardStyle.bg} ${cardStyle.border} border p-6 ${getRoundedClass('rounded-xl')} mb-6`}>
-            <h2 className={`text-lg font-black uppercase tracking-wider ${cardStyle.text} mb-4`}>
-              Users Who Have Never Logged In ({data.logins.usersWhoNeverLoggedIn.length})
-            </h2>
-            <div className="space-y-3 max-h-[400px] overflow-y-auto">
-              {data.logins.usersWhoNeverLoggedIn.map((user) => (
-                <div key={user.userId} className="flex items-center gap-3">
-                  {user.avatar_url ? (
-                    <img
-                      src={user.avatar_url}
-                      alt={user.full_name || user.email || 'User'}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className={`w-10 h-10 ${getRoundedClass('rounded-full')} flex items-center justify-center`} style={{ backgroundColor: cardStyle.accent + '20' }}>
-                      <Users className="w-5 h-5" style={{ color: cardStyle.accent }} />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold ${cardStyle.text} truncate`}>
-                      {user.full_name || user.email || 'Unknown User'}
-                    </p>
-                    {user.created_at && (
-                      <p className={`text-xs ${cardStyle.text}/50`}>
-                        Account created: {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Rolling Sentiment Chart */}
