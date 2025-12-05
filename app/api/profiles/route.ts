@@ -131,6 +131,13 @@ export async function PUT(request: NextRequest) {
       }
     })
     
+    // Ensure boolean fields are properly set
+    if (updateData.is_guest === undefined || updateData.is_guest === null) {
+      updateData.is_guest = false
+    } else {
+      updateData.is_guest = Boolean(updateData.is_guest)
+    }
+    
     // Prevent circular references (person can't be their own manager)
     if (updateData.manager_id === id) {
       return NextResponse.json({ error: 'A person cannot be their own manager' }, { status: 400 })
@@ -141,6 +148,13 @@ export async function PUT(request: NextRequest) {
       updateData.is_active = true
     } else {
       updateData.is_active = Boolean(updateData.is_active)
+    }
+
+    // Ensure is_guest is a boolean (default to false if not provided)
+    if (updateData.is_guest === undefined || updateData.is_guest === null) {
+      updateData.is_guest = false
+    } else {
+      updateData.is_guest = Boolean(updateData.is_guest)
     }
 
     // Use admin client to update profile (bypasses RLS)
@@ -327,7 +341,7 @@ export async function POST(request: NextRequest) {
     const validProfileFields = [
       'full_name', 'avatar_url', 'birthday', 'discipline', 'role', 
       'bio', 'location', 'website', 'pronouns', 'slack_id', 'manager_id',
-      'base_role', 'is_active', 'special_access'
+      'base_role', 'is_active', 'is_guest', 'special_access'
     ]
     
     const profileInsertData: any = {
@@ -341,6 +355,13 @@ export async function POST(request: NextRequest) {
     // Only include is_active if the field exists in the database
     if (profileData.is_active !== undefined) {
       profileInsertData.is_active = Boolean(profileData.is_active)
+    }
+    
+    // Only include is_guest if the field exists in the database
+    if (profileData.is_guest !== undefined) {
+      profileInsertData.is_guest = Boolean(profileData.is_guest)
+    } else {
+      profileInsertData.is_guest = false // Default to false
     }
     
     // Add only valid profile fields from profileData

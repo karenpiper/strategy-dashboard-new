@@ -32,6 +32,7 @@ interface UserProfile {
   slack_id: string | null
   manager_id: string | null
   is_active: boolean | null
+  is_guest: boolean | null
   created_at: string
   updated_at: string
 }
@@ -49,13 +50,14 @@ export default function UsersAdminPage() {
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null)
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
-  const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active')
+  const [activeTab, setActiveTab] = useState<'active' | 'inactive' | 'guests'>('active')
   const [isCreatingUser, setIsCreatingUser] = useState(false)
   const [newUser, setNewUser] = useState<Partial<UserProfile>>({
     email: '',
     full_name: '',
     base_role: 'user',
     is_active: true,
+    is_guest: false,
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -116,7 +118,11 @@ export default function UsersAdminPage() {
 
   const handleUserSelect = (user: UserProfile) => {
     setSelectedUser(user)
-    setEditingUser({ ...user, is_active: user.is_active !== false }) // Default to true if null
+    setEditingUser({ 
+      ...user, 
+      is_active: user.is_active !== false, // Default to true if null
+      is_guest: user.is_guest === true // Default to false if null
+    })
   }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -262,6 +268,7 @@ export default function UsersAdminPage() {
         full_name: '',
         base_role: 'user',
         is_active: true,
+        is_guest: false,
       })
     } catch (err: any) {
       console.error('Error creating user:', err)
@@ -272,10 +279,17 @@ export default function UsersAdminPage() {
   }
 
   const filteredUsers = users.filter(user => {
-    // Filter by active/inactive status
+    // Filter by tab (active/inactive/guests)
     const isActive = user.is_active !== false // Default to true if null
-    if (activeTab === 'active' && !isActive) return false
-    if (activeTab === 'inactive' && isActive) return false
+    const isGuest = user.is_guest === true
+    
+    if (activeTab === 'active') {
+      if (!isActive || isGuest) return false // Active tab: must be active AND not a guest
+    } else if (activeTab === 'inactive') {
+      if (isActive || isGuest) return false // Inactive tab: must be inactive AND not a guest
+    } else if (activeTab === 'guests') {
+      if (!isGuest) return false // Guests tab: must be a guest
+    }
     
     // Filter by search query
     if (!searchQuery.trim()) return true
@@ -445,6 +459,24 @@ export default function UsersAdminPage() {
                   Active
                 </Label>
               </div>
+
+              {/* Guest Status */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="new_user_is_guest"
+                  checked={newUser.is_guest === true}
+                  onChange={(e) => setNewUser({ ...newUser, is_guest: e.target.checked })}
+                  className={`w-4 h-4 rounded border-gray-300 ${
+                    mode === 'chill' 
+                      ? 'text-black focus:ring-2 focus:ring-black' 
+                      : 'text-white focus:ring-2 focus:ring-white'
+                  }`}
+                />
+                <Label htmlFor="new_user_is_guest" className={`${getTextClass()} cursor-pointer`}>
+                  Guest (not in team)
+                </Label>
+              </div>
             </div>
 
             <div className="flex items-center justify-end gap-4 mt-6 pt-4 border-t" style={{ borderColor: `${getBorderColor()}40` }}>
@@ -517,7 +549,7 @@ export default function UsersAdminPage() {
                 className="pl-10 bg-white text-black border-gray-300"
               />
             </div>
-            {/* Tabs for Active/Inactive */}
+            {/* Tabs for Active/Inactive/Guests */}
             <div className="flex gap-2 mb-4">
               <button
                 onClick={() => setActiveTab('active')}
@@ -527,7 +559,7 @@ export default function UsersAdminPage() {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-150'
                 }`}
               >
-                Active ({users.filter(u => u.is_active !== false).length})
+                Active ({users.filter(u => u.is_active !== false && u.is_guest !== true).length})
               </button>
               <button
                 onClick={() => setActiveTab('inactive')}
@@ -537,11 +569,21 @@ export default function UsersAdminPage() {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-150'
                 }`}
               >
-                Inactive ({users.filter(u => u.is_active === false).length})
+                Inactive ({users.filter(u => u.is_active === false && u.is_guest !== true).length})
+              </button>
+              <button
+                onClick={() => setActiveTab('guests')}
+                className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'guests'
+                    ? 'bg-gray-200 text-black'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-150'
+                }`}
+              >
+                Guests ({users.filter(u => u.is_guest === true).length})
               </button>
             </div>
             <h2 className="text-lg font-semibold text-black">
-              {activeTab === 'active' ? 'Active' : 'Inactive'} Users ({filteredUsers.length})
+              {activeTab === 'active' ? 'Active' : activeTab === 'inactive' ? 'Inactive' : 'Guests'} Users ({filteredUsers.length})
             </h2>
           </div>
 
@@ -839,6 +881,20 @@ export default function UsersAdminPage() {
                   />
                   <Label htmlFor="is_active" className="text-black cursor-pointer">
                     Active
+                  </Label>
+                </div>
+
+                {/* Guest Status */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="is_guest"
+                    checked={editingUser.is_guest === true}
+                    onChange={(e) => setEditingUser({ ...editingUser, is_guest: e.target.checked })}
+                    className="w-4 h-4 rounded border-gray-300 text-black focus:ring-2 focus:ring-black"
+                  />
+                  <Label htmlFor="is_guest" className="text-black cursor-pointer">
+                    Guest (not in team)
                   </Label>
                 </div>
 

@@ -45,6 +45,7 @@ export default function TeamDirectoryPage() {
         .from('profiles')
         .select('id, full_name, email, avatar_url, role, discipline, birthday, start_date, location, manager_id, hierarchy_level')
         .eq('is_active', true)
+        .neq('is_guest', true) // Exclude guests
         .order('full_name', { ascending: true })
       
       if (!error && profiles) {
@@ -64,6 +65,7 @@ export default function TeamDirectoryPage() {
         .from('profiles')
         .select('id')
         .eq('is_active', true)
+        .neq('is_guest', true) // Exclude guests
       
       // Total snaps
       const { data: snaps } = await supabase

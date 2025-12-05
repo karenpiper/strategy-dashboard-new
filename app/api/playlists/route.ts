@@ -303,11 +303,12 @@ async function selectRandomCurator(
   supabase: any,
   assignmentDate: string
 ): Promise<{ id: string; full_name: string; avatar_url: string | null; discipline: string | null; role: string | null } | null> {
-  // Get all active team members
+  // Get all active team members (excluding guests)
   const { data: teamMembers, error } = await supabase
     .from('profiles')
     .select('id, full_name, email, discipline, role, hierarchy_level, avatar_url, is_active')
     .eq('is_active', true)
+    .neq('is_guest', true) // Exclude guests
     .not('full_name', 'is', null)
 
   if (error || !teamMembers || teamMembers.length === 0) {

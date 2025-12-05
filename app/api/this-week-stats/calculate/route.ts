@@ -77,10 +77,12 @@ export async function POST(request: NextRequest) {
         break
 
       case 'total_birthdays': {
-        // Get all profiles with birthdays and check if they fall in next 7 days
+        // Get all profiles with birthdays and check if they fall in next 7 days (excluding guests)
         const { data: profiles } = await supabase
           .from('profiles')
           .select('birthday')
+          .eq('is_active', true)
+          .neq('is_guest', true) // Exclude guests
           .not('birthday', 'is', null)
           .neq('birthday', '')
         
@@ -110,10 +112,12 @@ export async function POST(request: NextRequest) {
       }
 
       case 'total_anniversaries': {
-        // Get all profiles with start_date and check if anniversary falls in next 7 days
+        // Get all profiles with start_date and check if anniversary falls in next 7 days (excluding guests)
         const { data: profiles } = await supabase
           .from('profiles')
           .select('start_date')
+          .eq('is_active', true)
+          .neq('is_guest', true) // Exclude guests
           .not('start_date', 'is', null)
         
         if (!profiles) {

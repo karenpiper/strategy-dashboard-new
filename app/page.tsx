@@ -969,6 +969,8 @@ export default function TeamDashboard() {
         const { data, error } = await supabase
           .from('profiles')
           .select('id, full_name, birthday, start_date')
+          .eq('is_active', true)
+          .neq('is_guest', true) // Exclude guests
           .or('birthday.not.is.null,start_date.not.is.null')
         
         if (error) {
@@ -2738,22 +2740,141 @@ export default function TeamDashboard() {
                         ? recipientNames.join(', ')
                         : 'Team'
                       
-                      // Determine which avatar to show
+                      // Get recipient profiles for avatar display
+                      const recipientProfiles = snap.recipients && snap.recipients.length > 0
+                        ? snap.recipients
+                            .map(r => r.recipient_profile)
+                            .filter((p): p is NonNullable<typeof p> => p !== null)
+                        : snap.mentioned_user_profile
+                          ? [snap.mentioned_user_profile]
+                          : []
+                      
+                      // For both views: show multiple avatars when there are multiple recipients
+                      // For "received" view: show sender + other recipients if multiple
+                      // For "given" view: show all recipients if multiple
+                      type ProfileForAvatar = { id?: string; avatar_url: string | null; full_name: string | null; email: string | null }
+                      let profilesToShow: ProfileForAvatar[] = []
+                      
+                      if (snapViewType === 'received') {
+                        // In received view, show sender + other recipients if there are multiple recipients
+                        const senderProfile = snap.submitted_by_profile
+                        if (recipientProfiles.length > 1) {
+                          // Multiple recipients: show sender + other recipients (excluding current user)
+                          if (senderProfile) {
+                            const senderWithId: ProfileForAvatar = { ...senderProfile, id: (senderProfile as any).id || 'sender' }
+                            const otherRecipients: ProfileForAvatar[] = recipientProfiles
+                              .filter(p => (p as any).id !== user?.id)
+                              .map(p => ({ ...p, id: (p as any).id }))
+                            profilesToShow = [senderWithId, ...otherRecipients].slice(0, 4)
+                          } else {
+                            // No sender, just show recipients
+                            profilesToShow = recipientProfiles.map(p => ({ ...p, id: (p as any).id })).slice(0, 4)
+                          }
+                        } else if (senderProfile) {
+                          // Single recipient, just show sender
+                          profilesToShow = [{ ...senderProfile, id: (senderProfile as any).id || 'sender' }]
+                        } else {
+                          // Fallback
+                          profilesToShow = recipientProfiles.map(p => ({ ...p, id: (p as any).id }))
+                        }
+                      } else {
+                        // In given view, show all recipients (multiple if applicable)
+                        profilesToShow = recipientProfiles.map(p => ({ ...p, id: (p as any).id })).slice(0, 4)
+                      }
+                      
+                      const showMultipleAvatars = profilesToShow.length > 1
+                      const maxAvatars = 3 // Smaller limit for dashboard (50px avatars)
+                      const avatarsToDisplay = showMultipleAvatars ? profilesToShow.slice(0, maxAvatars) : []
+                      const remainingCount = showMultipleAvatars ? profilesToShow.length - maxAvatars : 0
+                      
+                      // Single avatar fallback
                       let profilePicture: string | null = null
                       let avatarName: string | null = null
-                      if (snapViewType === 'received') {
-                        profilePicture = snap.submitted_by_profile?.avatar_url || null
-                        avatarName = senderName
-                      } else {
-                        profilePicture = snap.mentioned_user_profile?.avatar_url || null
-                        avatarName = recipientName
+                      if (!showMultipleAvatars) {
+                        if (snapViewType === 'received') {
+                          profilePicture = snap.submitted_by_profile?.avatar_url || null
+                          avatarName = senderName
+                        } else {
+                          profilePicture = snap.mentioned_user_profile?.avatar_url || null
+                          avatarName = recipientName
+                        }
                       }
                       
                       return (
                         <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-1.5 border-2 transition-all hover:opacity-80 relative`} style={{ borderColor: `${style.accent}66` }}>
                           <div className="flex items-start gap-2">
-                            <div className="flex-shrink-0" style={{ padding: '2px', width: '50px', height: '50px' }}>
-                              {profilePicture ? (
+                            <div className="flex-shrink-0" style={{ padding: '2px', width: '50px', height: '50px', position: 'relative' }}>
+                              {showMultipleAvatars ? (
+                                <div className="relative w-full h-full" style={{ minWidth: '50px' }}>
+                                  {avatarsToDisplay.map((profile, index) => {
+                                    const overlap = index > 0 ? -10 : 0 // Overlap by 10px for smaller avatars
+                                    const zIndex = profilesToShow.length - index
+                                    const scale = profilesToShow.length > 1 ? 0.75 : 1
+                                    
+                                    return (
+                                      <div
+                                        key={(profile as any).id || `profile-${index}`}
+                                        className="absolute"
+                                        style={{
+                                          left: `${overlap * index}px`,
+                                          zIndex: zIndex,
+                                          width: `${100 * scale}%`,
+                                          height: `${100 * scale}%`,
+                                        }}
+                                      >
+                                        {profile.avatar_url ? (
+                                          <img
+                                            src={profile.avatar_url}
+                                            alt={profile.full_name || profile.email || 'User'}
+                                            className="rounded-lg w-full h-full object-cover border"
+                                            style={{
+                                              borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
+                                              borderWidth: '1.5px',
+                                            }}
+                                            onError={(e) => {
+                                              const target = e.target as HTMLImageElement
+                                              target.style.display = 'none'
+                                              const parent = target.parentElement
+                                              if (parent) {
+                                                const fallback = parent.querySelector(`.snap-avatar-fallback-${idx}-${index}`) as HTMLElement
+                                                if (fallback) fallback.style.display = 'flex'
+                                              }
+                                            }}
+                                          />
+                                        ) : null}
+                                        <div
+                                          className={`snap-avatar-fallback-${idx}-${index} w-full h-full rounded-lg flex items-center justify-center hidden border`}
+                                          style={{
+                                            backgroundColor: style.accent,
+                                            borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
+                                            borderWidth: '1.5px',
+                                          }}
+                                        >
+                                          <User className={`w-3 h-3 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                  {remainingCount > 0 && (
+                                    <div
+                                      className="absolute flex items-center justify-center border rounded-lg"
+                                      style={{
+                                        left: `${(maxAvatars - 1) * -10}px`,
+                                        width: '75%',
+                                        height: '75%',
+                                        backgroundColor: style.accent,
+                                        borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
+                                        borderWidth: '1.5px',
+                                        zIndex: 100,
+                                      }}
+                                    >
+                                      <span className={`text-[10px] font-bold ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
+                                        +{remainingCount}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : profilePicture ? (
                                 <>
                                   <img 
                                     src={profilePicture} 
@@ -2764,12 +2885,12 @@ export default function TeamDashboard() {
                                       target.style.display = 'none'
                                       const parent = target.parentElement
                                       if (parent) {
-                                        const fallback = parent.querySelector('.snap-avatar-fallback') as HTMLElement
+                                        const fallback = parent.querySelector(`.snap-avatar-fallback-${idx}`) as HTMLElement
                                         if (fallback) fallback.style.display = 'flex'
                                       }
                                     }}
                                   />
-                                  <div className="snap-avatar-fallback w-full h-full rounded-full flex items-center justify-center hidden" style={{ 
+                                  <div className={`snap-avatar-fallback-${idx} w-full h-full rounded-full flex items-center justify-center hidden`} style={{ 
                                     backgroundColor: style.accent
                                   }}>
                                     <User className={`w-5 h-5 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />

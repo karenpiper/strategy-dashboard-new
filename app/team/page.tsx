@@ -112,6 +112,7 @@ export default function TeamPage() {
         .from('profiles')
         .select('id')
         .eq('is_active', true)
+        .neq('is_guest', true) // Exclude guests
       
       // Total snaps
       const { data: snaps, error: snapsError } = await supabase
@@ -193,6 +194,7 @@ export default function TeamPage() {
         .from('profiles')
         .select('id, full_name, birthday, avatar_url')
         .eq('is_active', true)
+        .neq('is_guest', true) // Exclude guests
         .not('birthday', 'is', null)
       
       if (!error && profiles) {
@@ -250,6 +252,7 @@ export default function TeamPage() {
         .from('profiles')
         .select('id, full_name, start_date, avatar_url')
         .eq('is_active', true)
+        .neq('is_guest', true) // Exclude guests
         .not('start_date', 'is', null)
       
       if (!error && profiles) {
@@ -337,6 +340,7 @@ export default function TeamPage() {
         .from('profiles')
         .select('id, full_name, email, avatar_url, role, discipline, birthday, start_date, location, manager_id, hierarchy_level')
         .eq('is_active', true)
+        .neq('is_guest', true) // Exclude guests
         .order('full_name', { ascending: true })
       
       if (!error && profiles) {
