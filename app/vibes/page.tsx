@@ -367,7 +367,7 @@ export default function VibesPage() {
 
           {/* Most Recent Poll */}
           <Card 
-            className={`${getRoundedClass('rounded-[2.5rem]')} p-6 h-full flex flex-col`}
+            className={`${getRoundedClass('rounded-[2.5rem]')} p-6 h-full flex flex-col cursor-pointer transition-all hover:scale-105 hover:shadow-2xl`}
             style={{
               backgroundColor: mode === 'chaos' 
                 ? 'rgba(255, 255, 255, 0.05)' 
@@ -380,132 +380,100 @@ export default function VibesPage() {
                 ? '1px solid rgba(74, 24, 24, 0.1)'
                 : '1px solid rgba(255, 255, 255, 0.1)'
             }}
+            onClick={() => {
+              const sandwichData = [
+                { name: 'Team Chopped Cheese', count: 4, participants: ['Julian', 'Peter', 'Pat', 'Karen'] },
+                { name: 'Team Cheesesteak', count: 3, participants: ['Rebecca', 'Anne', 'The Philly commenter', 'Adam (partial overlap)'] },
+                { name: 'Team "They Are Different Foods, Stop Fighting"', count: 2, participants: ['Adam (later)', 'Jordan'] },
+                { name: 'Team Never Had One', count: 1, participants: ['Laura'] },
+                { name: 'Team Wawa Hoagie Truthers', count: 0, participants: ['Arjun', 'Rebecca', 'Kenan'], note: 'Not a stance' },
+              ]
+              
+              setSelectedPoll({
+                id: 'great-sandwich-schism',
+                title: 'The Great Sandwich Schism',
+                question: 'This chat behaves like a poll even though nobody called it that.',
+                date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+                totalResponses: 10,
+                data: sandwichData,
+                isSandwichPoll: true,
+                imageUrl: '/emotional-geography-sandwiches.png',
+                bigTakeaway: 'A big takeaway'
+              })
+              setIsPollDialogOpen(true)
+            }}
           >
             <div className="flex items-center gap-3 mb-4">
               <BarChart3 className="w-6 h-6" style={{ color: purpleColors.primary }} />
               <h2 className={`text-2xl font-black uppercase ${getTextClass()}`}>Latest Poll</h2>
-                  </div>
-            <h3 className={`text-xl font-black mb-3 ${getTextClass()}`}>Thanksgiving Grub</h3>
+            </div>
+            <h3 className={`text-xl font-black mb-3 ${getTextClass()}`}>The Great Sandwich Schism</h3>
             <p className={`text-base mb-4 ${getTextClass()} opacity-70`}>
-              What are your top Thanksgiving dishes?
+              This chat behaves like a poll even though nobody called it that.
             </p>
             
-            {/* Chart and Fun Fact Side by Side */}
-            <div className="flex-1 grid grid-cols-2 gap-6">
-              {/* Horizontal Bar Chart - 1/2 width (left) */}
-              <div className="space-y-3">
-                {(() => {
-                  const allData = [
-                    { name: 'Stuffing', count: 7 },
-                    { name: 'Mashed potatoes', count: 3 },
-                    { name: 'Peking duck', count: 2 },
-                    { name: 'Pumpkin pie', count: 2 },
-                    { name: 'Gravy', count: 2 },
-                    { name: 'Fried turkey', count: 1 },
-                    { name: 'Turkey breast', count: 1 },
-                    { name: 'Peppercorn encrusted filet mignon', count: 1 },
-                    { name: 'Outdoor KBBQ', count: 1 },
-                    { name: 'Chicken biriyani', count: 1 },
-                    { name: 'Jollof rice', count: 1 },
-                    { name: 'Arepas', count: 1 },
-                    { name: 'Empanadas', count: 1 },
-                    { name: 'Ham', count: 1 },
-                    { name: 'Funeral potatoes', count: 1 },
-                    { name: 'Cornbread', count: 1 },
-                    { name: 'Corn soufflé', count: 1 },
-                    { name: 'Fire-roasted sweet potatoes', count: 1 },
-                    { name: 'Butternut squash', count: 1 },
-                    { name: 'Sweet potato pie', count: 1 },
-                    { name: 'Caramel custard', count: 1 },
-                    { name: 'Custard pie', count: 1 },
-                    { name: 'Dessert spread', count: 1 },
-                    { name: 'Dots candy', count: 1 },
-                    { name: 'Trolli exploding worms', count: 1 },
-                    { name: 'White Monster', count: 1 },
-                    { name: 'Eggnog', count: 1 },
-                    { name: 'Appetizer red wine', count: 1 },
-                    { name: 'Dinner red wine', count: 1 },
-                    { name: 'Dessert amaro', count: 1 },
-                    { name: 'Peanut butter whiskey "during gravy"', count: 1 },
-                    { name: 'Skinny French cigarette', count: 1 },
-                    { name: 'Capri cigarettes with my mother in law and great aunt', count: 1 },
-                    { name: 'Caviar before dinner', count: 1 },
-                    { name: 'Cheese plate before', count: 1 },
-                    { name: 'All of the above mixed together in one perfect bite', count: 1 },
-                    { name: 'Green bean casserole', count: 1 },
-                    { name: 'Horseradish mashed potatoes', count: 1 },
-                    { name: 'Hongshaorou', count: 1 },
-                  ]
-                  
-                  const chartData = allData.filter(item => item.count > 0).sort((a, b) => b.count - a.count).slice(0, 5)
-                  const maxCount = Math.max(...chartData.map(d => d.count))
-                  
-                  return (
-                    <>
-                      {chartData.map((item, index) => {
-                        const percentage = (item.count / maxCount) * 100
-                        const isTop = index === 0
-                        
-                        return (
-                          <div key={item.name} className="space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <span className={`text-sm font-semibold ${getTextClass()}`}>{item.name}</span>
-                              <span 
-                                className={`text-sm font-black ${getTextClass()}`}
-                                style={{ color: isTop ? purpleColors.primary : undefined }}
-                              >
-                                {item.count}
-                              </span>
-                            </div>
-                            <div 
-                              className={`${getRoundedClass('rounded-full')} h-4 overflow-hidden`}
-                              style={{
-                                backgroundColor: mode === 'chaos' 
-                                  ? 'rgba(255, 255, 255, 0.1)' 
-                                  : mode === 'chill'
-                                  ? 'rgba(74, 24, 24, 0.1)'
-                                  : 'rgba(255, 255, 255, 0.1)'
-                              }}
+            {/* Teams Summary */}
+            <div className="flex-1 space-y-3">
+              {(() => {
+                const teams = [
+                  { name: 'Team Chopped Cheese', count: 4 },
+                  { name: 'Team Cheesesteak', count: 3 },
+                  { name: 'Team "They Are Different Foods, Stop Fighting"', count: 2 },
+                  { name: 'Team Never Had One', count: 1 },
+                ]
+                
+                const maxCount = Math.max(...teams.map(t => t.count))
+                
+                return (
+                  <>
+                    {teams.slice(0, 4).map((team, index) => {
+                      const percentage = (team.count / maxCount) * 100
+                      const isTop = index === 0
+                      
+                      return (
+                        <div key={team.name} className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className={`text-sm font-semibold ${getTextClass()}`}>{team.name}</span>
+                            <span 
+                              className={`text-sm font-black ${getTextClass()}`}
+                              style={{ color: isTop ? purpleColors.primary : undefined }}
                             >
-                              <div
-                                className="h-full transition-all duration-1000"
-                                style={{
-                                  width: `${percentage}%`,
-                                  backgroundColor: isTop 
-                                    ? purpleColors.primary
-                                    : (mode === 'chaos' ? 'rgba(157, 78, 255, 0.4)' : mode === 'chill' ? 'rgba(157, 78, 255, 0.4)' : 'rgba(157, 78, 255, 0.4)')
-                                }}
-                              />
-                            </div>
+                              {team.count}
+                            </span>
                           </div>
-                        )
-                      })}
-                    </>
-                  )
-                })()}
-              </div>
-
-              {/* Fun Fact - 1/2 width (right) */}
-              <div className="flex flex-col justify-start">
-                <h4 className={`text-xl font-black mb-3 ${getTextClass()}`}>
-                  Fun Fact: Statistically speaking, cigarettes appear as often as:
-                </h4>
-                <ul className={`space-y-1 text-base ${getTextClass()} opacity-70`}>
-                  <li>• turkey</li>
-                  <li>• custard</li>
-                  <li>• caramel</li>
-                  <li>• mashed potatoes with gravy</li>
-                  <li>• empanadas</li>
-                  <li>• jollof rice</li>
-                </ul>
-              </div>
+                          <div 
+                            className={`${getRoundedClass('rounded-full')} h-4 overflow-hidden`}
+                            style={{
+                              backgroundColor: mode === 'chaos' 
+                                ? 'rgba(255, 255, 255, 0.1)' 
+                                : mode === 'chill'
+                                ? 'rgba(74, 24, 24, 0.1)'
+                                : 'rgba(255, 255, 255, 0.1)'
+                            }}
+                          >
+                            <div
+                              className="h-full transition-all duration-1000"
+                              style={{
+                                width: `${percentage}%`,
+                                backgroundColor: isTop 
+                                  ? purpleColors.primary
+                                  : (mode === 'chaos' ? 'rgba(157, 78, 255, 0.4)' : mode === 'chill' ? 'rgba(157, 78, 255, 0.4)' : 'rgba(157, 78, 255, 0.4)')
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </>
+                )
+              })()}
             </div>
 
-            <div className={`flex items-center justify-between text-xs opacity-60 ${getTextClass()}`}>
-              <span>14 responses</span>
-              <span>Nov 2024</span>
-                </div>
-              </Card>
+            <div className={`flex items-center justify-between text-xs opacity-60 ${getTextClass()} mt-4`}>
+              <span>10 responses</span>
+              <span>{new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+            </div>
+          </Card>
         </div>
           </div>
         </div>
@@ -618,8 +586,136 @@ export default function VibesPage() {
                     </div>
                   )}
                   
+                  {/* Sandwich Poll Display */}
+                  {selectedPoll.isSandwichPoll && selectedPoll.data && (
+                    <div className="my-8">
+                      {(() => {
+                        const allData = selectedPoll.data.sort((a: any, b: any) => b.count - a.count)
+                        const nonZeroData = allData.filter((item: any) => item.count > 0)
+                        const zeroData = allData.filter((item: any) => item.count === 0)
+                        const maxCount = Math.max(...nonZeroData.map((d: any) => d.count))
+                        
+                        return (
+                          <>
+                            {/* Positions by count */}
+                            <div className="mb-8">
+                              <h4 className={`text-2xl font-black mb-4 ${getTextClass()}`}>Positions by count</h4>
+                              <div className="space-y-4">
+                                {nonZeroData.map((item: any, index: number) => {
+                                  const percentage = (item.count / maxCount) * 100
+                                  const isTop = index === 0
+                                  
+                                  return (
+                                    <div key={item.name} className="space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                          <span className={`text-lg font-black ${getTextClass()}`}>
+                                            {item.name}
+                                          </span>
+                                          {item.participants && (
+                                            <div className="mt-1">
+                                              {item.participants.map((participant: string, pIdx: number) => (
+                                                <span key={pIdx} className={`text-sm ${getTextClass()} opacity-70`}>
+                                                  {participant}{pIdx < item.participants.length - 1 ? ', ' : ''}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                          <span 
+                                            className={`text-xl font-black ${getTextClass()}`}
+                                            style={{ color: isTop ? purpleColors.primary : undefined }}
+                                          >
+                                            ({item.count} {item.count === 1 ? 'vote' : 'votes'})
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div 
+                                        className={`${getRoundedClass('rounded-full')} h-4 overflow-hidden`}
+                                        style={{
+                                          backgroundColor: mode === 'chaos' 
+                                            ? 'rgba(255, 255, 255, 0.1)' 
+                                            : mode === 'chill'
+                                            ? 'rgba(74, 24, 24, 0.1)'
+                                            : 'rgba(255, 255, 255, 0.1)'
+                                        }}
+                                      >
+                                        <div
+                                          className="h-full transition-all duration-1000"
+                                          style={{
+                                            width: `${percentage}%`,
+                                            backgroundColor: isTop 
+                                              ? purpleColors.primary
+                                              : 'rgba(157, 78, 255, 0.4)'
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                              
+                              {/* Zero count items */}
+                              {zeroData.length > 0 && (
+                                <div className="mt-6 pt-6 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                                  {zeroData.map((item: any) => (
+                                    <div key={item.name} className="mb-4">
+                                      <span className={`text-lg font-black ${getTextClass()}`}>
+                                        {item.name}
+                                      </span>
+                                      {item.note && (
+                                        <span className={`text-sm ${getTextClass()} opacity-70 ml-2`}>
+                                          ({item.note})
+                                        </span>
+                                      )}
+                                      {item.participants && (
+                                        <div className="mt-1">
+                                          {item.participants.map((participant: string, pIdx: number) => (
+                                            <span key={pIdx} className={`text-sm ${getTextClass()} opacity-70`}>
+                                              {participant}{pIdx < item.participants.length - 1 ? ', ' : ''}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Big Takeaway */}
+                            {selectedPoll.bigTakeaway && (
+                              <div className="mt-8 pt-8 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                                <h4 className={`text-2xl font-black mb-4 ${getTextClass()}`}>
+                                  {selectedPoll.bigTakeaway}
+                                </h4>
+                              </div>
+                            )}
+                            
+                            {/* Emotional Geography Image */}
+                            {selectedPoll.imageUrl && (
+                              <div className="mt-8 pt-8 border-t" style={{ borderColor: mode === 'chaos' ? 'rgba(255, 255, 255, 0.1)' : mode === 'chill' ? 'rgba(74, 24, 24, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}>
+                                <div className="flex justify-center relative" style={{ maxHeight: '600px' }}>
+                                  <Image 
+                                    src={selectedPoll.imageUrl} 
+                                    alt="The Emotional Geography of Sandwiches"
+                                    width={1000}
+                                    height={600}
+                                    className="max-w-full h-auto"
+                                    style={{ maxHeight: '600px', objectFit: 'contain' }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )
+                      })()}
+                    </div>
+                  )}
+                  
                   {/* Count-based Poll Display - Thanksgiving */}
-                  {!selectedPoll.isRanking && selectedPoll.data && (
+                  {!selectedPoll.isRanking && !selectedPoll.isSandwichPoll && selectedPoll.data && (
                     <div className="my-8">
                       {(() => {
                         const allData = selectedPoll.data.sort((a: any, b: any) => b.count - a.count)

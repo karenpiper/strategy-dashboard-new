@@ -87,3 +87,4 @@ CREATE TRIGGER news_updated_at_trigger
   EXECUTE FUNCTION update_news_updated_at();
 
 
+

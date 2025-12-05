@@ -60,3 +60,4 @@ CREATE POLICY "Users can delete inspiration"
     )
   );
 
+

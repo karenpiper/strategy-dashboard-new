@@ -45,3 +45,4 @@ ALTER TABLE public.curator_assignments
 ALTER COLUMN end_date SET NOT NULL;
 
 
+
