@@ -2936,8 +2936,9 @@ export default function TeamDashboard() {
                   const isOOO = event.calendarId.includes('6elnqlt8ok3kmcpim2vge0qqqk') || event.calendarId.includes('ojeuiov0bhit2k17g8d6gj4i68')
                   if (isOOO) return false
                   
-                  // Only show events that start today
-                  return eventStart >= todayStart && eventStart < todayEnd
+                  // Show events that start today or in the rest of the week
+                  // We'll separate them in the rendering
+                  return eventStart >= todayStart && eventStart < weekEnd
                 }
               })
               
@@ -3733,22 +3734,111 @@ export default function TeamDashboard() {
                     
                     {/* Other Events */}
                   <div className="space-y-2">
-                    {filteredEvents.length > 0 ? (
-                      filteredEvents.map((event) => {
-                        const eventColor = getEventColor(event)
-                        return (
-                          <div key={event.id} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`} style={{ backgroundColor: `${eventColor}33` }}>
-                            <Clock className="w-4 h-4" style={{ color: eventColor }} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-black text-black truncate">{event.summary}</p>
-                              <p className="text-xs text-black/60">{formatEventTime(event)}</p>
-                            </div>
-                          </div>
-                        )
+                    {(() => {
+                      // Separate events into today and rest of week
+                      const todayEvents: typeof filteredEvents = []
+                      const restOfWeekEvents: typeof filteredEvents = []
+                      
+                      filteredEvents.forEach((event) => {
+                        const eventStart = event.start.dateTime 
+                          ? new Date(event.start.dateTime)
+                          : event.start.date 
+                            ? new Date(event.start.date)
+                            : null
+                        
+                        if (!eventStart) return
+                        
+                        // Check if event starts today
+                        const eventStartDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate())
+                        const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+                        
+                        if (eventStartDate.getTime() === todayDate.getTime()) {
+                          todayEvents.push(event)
+                        } else {
+                          restOfWeekEvents.push(event)
+                        }
                       })
-                    ) : (
-                      <p className="text-sm text-black/80 text-center py-4">No events today</p>
-                    )}
+                      
+                      // Sort today's events by time
+                      todayEvents.sort((a, b) => {
+                        const aTime = a.start.dateTime ? new Date(a.start.dateTime).getTime() : 0
+                        const bTime = b.start.dateTime ? new Date(b.start.dateTime).getTime() : 0
+                        return aTime - bTime
+                      })
+                      
+                      // Sort rest of week events by date
+                      restOfWeekEvents.sort((a, b) => {
+                        const aStart = a.start.dateTime ? new Date(a.start.dateTime) : (a.start.date ? new Date(a.start.date) : new Date(0))
+                        const bStart = b.start.dateTime ? new Date(b.start.dateTime) : (b.start.date ? new Date(b.start.date) : new Date(0))
+                        return aStart.getTime() - bStart.getTime()
+                      })
+                      
+                      if (todayEvents.length === 0 && restOfWeekEvents.length === 0) {
+                        return <p className="text-sm text-black/80 text-center py-4">No events this week</p>
+                      }
+                      
+                      return (
+                        <>
+                          {/* Today's Events */}
+                          {todayEvents.length > 0 && (
+                            <div className="space-y-2">
+                              {todayEvents.map((event) => {
+                                const eventColor = getEventColor(event)
+                                return (
+                                  <div key={event.id} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`} style={{ backgroundColor: `${eventColor}33` }}>
+                                    <Clock className="w-4 h-4" style={{ color: eventColor }} />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-black text-black truncate">{event.summary}</p>
+                                      <p className="text-xs text-black/60">{formatEventTime(event)}</p>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                          
+                          {/* Breaker Line */}
+                          {todayEvents.length > 0 && restOfWeekEvents.length > 0 && (
+                            <div className="flex items-center gap-2 my-4">
+                              <div className="flex-1 border-t" style={{ borderColor: 'rgba(0, 0, 0, 0.1)' }}></div>
+                              <span className="text-xs font-semibold text-black/50 uppercase tracking-wider">Rest of Week</span>
+                              <div className="flex-1 border-t" style={{ borderColor: 'rgba(0, 0, 0, 0.1)' }}></div>
+                            </div>
+                          )}
+                          
+                          {/* Rest of Week Events */}
+                          {restOfWeekEvents.length > 0 && (
+                            <div className="space-y-2">
+                              {restOfWeekEvents.map((event) => {
+                                const eventColor = getEventColor(event)
+                                const eventStart = event.start.dateTime 
+                                  ? new Date(event.start.dateTime)
+                                  : event.start.date 
+                                    ? new Date(event.start.date)
+                                    : null
+                                
+                                // Format date for display
+                                const eventDateStr = eventStart 
+                                  ? eventStart.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                                  : ''
+                                
+                                return (
+                                  <div key={event.id} className={`${getRoundedClass('rounded-lg')} p-3 flex items-center gap-2`} style={{ backgroundColor: `${eventColor}33` }}>
+                                    <Clock className="w-4 h-4" style={{ color: eventColor }} />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-black text-black truncate">{event.summary}</p>
+                                      <p className="text-xs text-black/60">
+                                        {eventDateStr} {formatEventTime(event) !== 'All Day' ? `at ${formatEventTime(event)}` : ''}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </>
+                      )
+                    })()}
                     </div>
                   </div>
                 )}
