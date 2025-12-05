@@ -27,8 +27,8 @@ export interface HoroscopeConfig {
  */
 export async function fetchHoroscopeConfig(
   supabase: any,
-  birthdayMonth: number,
-  birthdayDay: number,
+  birthdayMonth: number | null,
+  birthdayDay: number | null,
   discipline?: string | null,
   role?: string | null
 ): Promise<HoroscopeConfig> {
@@ -39,7 +39,7 @@ export async function fetchHoroscopeConfig(
     discipline,
     role
   )
-  const starSign = userProfile.sign
+  const starSign = userProfile.sign || 'Unknown'
   
   // Step 1: Fetch segments for profile
   const segments = await fetchSegmentsForProfile(supabase, userProfile)

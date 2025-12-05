@@ -26,6 +26,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // First, get the current profile to preserve custom avatar if it exists
+    const { data: currentProfile } = await supabase
+      .from('profiles')
+      .select('avatar_url, full_name')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    // Store custom avatar URL in user metadata temporarily (if it's different from OAuth avatar)
+    const customAvatarUrl = currentProfile?.avatar_url && 
+                            currentProfile.avatar_url !== user.user_metadata?.avatar_url
+      ? currentProfile.avatar_url
+      : null
+
+    if (customAvatarUrl) {
+      // Store in user metadata temporarily so we can restore it
+      await supabase.auth.updateUser({
+        data: {
+          ...user.user_metadata,
+          custom_avatar_url_backup: customAvatarUrl
+        }
+      })
+    }
+
     // Delete the user's profile
     const { error: deleteError } = await supabase
       .from('profiles')

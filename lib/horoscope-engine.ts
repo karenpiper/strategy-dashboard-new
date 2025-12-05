@@ -20,10 +20,10 @@ import { calculateStarSign, getStarSignElement, getStarSignModality } from './ho
 
 // Types
 export interface UserProfile {
-  dob: { month: number; day: number }
-  sign: string
-  element: string
-  modality: string
+  dob: { month: number; day: number } | null
+  sign: string | null
+  element: string | null
+  modality: string | null
   location?: string
   discipline?: string | null
   roleLevel?: string | null
@@ -91,15 +91,23 @@ export interface ResolvedChoices {
  * Build user profile from raw data
  */
 export function buildUserProfile(
-  birthdayMonth: number,
-  birthdayDay: number,
+  birthdayMonth: number | null,
+  birthdayDay: number | null,
   discipline?: string | null,
   role?: string | null,
   location?: string
 ): UserProfile {
-  const sign = calculateStarSign(birthdayMonth, birthdayDay)
-  const element = getStarSignElement(sign)
-  const modality = getStarSignModality(sign)
+  // Calculate star sign if birthday is provided
+  let sign: string | null = null
+  let element: string | null = null
+  let modality: string | null = null
+  
+  if (birthdayMonth && birthdayDay && !isNaN(birthdayMonth) && !isNaN(birthdayDay)) {
+    sign = calculateStarSign(birthdayMonth, birthdayDay)
+    element = getStarSignElement(sign)
+    modality = getStarSignModality(sign)
+  }
+  
   const today = new Date()
   
   // Derive weekday
@@ -128,10 +136,10 @@ export function buildUserProfile(
   }
   
   return {
-    dob: { month: birthdayMonth, day: birthdayDay },
-    sign,
-    element,
-    modality,
+    dob: birthdayMonth && birthdayDay ? { month: birthdayMonth, day: birthdayDay } : null,
+    sign: sign || null,
+    element: element || null,
+    modality: modality || null,
     location,
     discipline: discipline || null,
     roleLevel: roleLevel || null,
@@ -148,13 +156,21 @@ export async function fetchSegmentsForProfile(
   supabase: any,
   profile: UserProfile
 ): Promise<Segment[]> {
-  const segmentPairs = [
-    ['sign', profile.sign],
-    ['element', profile.element],
-    ['modality', profile.modality],
+  const segmentPairs: Array<[string, string | null]> = [
     ['weekday', profile.weekday],
     ['season', profile.season],
   ]
+  
+  // Only add star sign segments if birthday is available
+  if (profile.sign) {
+    segmentPairs.push(['sign', profile.sign])
+  }
+  if (profile.element) {
+    segmentPairs.push(['element', profile.element])
+  }
+  if (profile.modality) {
+    segmentPairs.push(['modality', profile.modality])
+  }
   
   if (profile.discipline) {
     segmentPairs.push(['discipline', profile.discipline])
@@ -164,11 +180,18 @@ export async function fetchSegmentsForProfile(
     segmentPairs.push(['role_level', profile.roleLevel])
   }
   
+  // Filter out null values before querying
+  const validSegmentPairs = segmentPairs.filter(([_, value]) => value !== null) as Array<[string, string]>
+  
+  if (validSegmentPairs.length === 0) {
+    return []
+  }
+  
   const { data, error } = await supabase
     .from('segments')
     .select('*')
-    .in('type', segmentPairs.map(p => p[0]))
-    .in('value', segmentPairs.map(p => p[1]))
+    .in('type', validSegmentPairs.map(p => p[0]))
+    .in('value', validSegmentPairs.map(p => p[1]))
   
   if (error) {
     console.error('Error fetching segments:', error)

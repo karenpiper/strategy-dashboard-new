@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Parse birthday
+    // Parse birthday (optional for image generation)
     let birthdayMonth: number | null = null
     let birthdayDay: number | null = null
     
@@ -70,11 +70,15 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    if (!birthdayMonth || !birthdayDay || isNaN(birthdayMonth) || isNaN(birthdayDay)) {
-      return NextResponse.json(
-        { error: 'Birthday not set in profile' },
-        { status: 400 }
-      )
+    // Birthday is optional for image generation - we can use weekday/season/discipline/role segments
+    // If birthday is invalid, set to null and continue without star sign segments
+    if (birthdayMonth && birthdayDay && !isNaN(birthdayMonth) && !isNaN(birthdayDay)) {
+      // Valid birthday - will use star sign segments
+    } else {
+      // No valid birthday - will use weekday/season/discipline/role segments only
+      birthdayMonth = null
+      birthdayDay = null
+      console.log('⚠️ No birthday set - generating image using weekday/season/discipline/role segments only')
     }
     
     // Use admin client for database operations (bypasses RLS)

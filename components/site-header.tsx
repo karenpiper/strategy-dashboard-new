@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useMode } from '@/contexts/mode-context'
 import { useAuth } from '@/contexts/auth-context'
 import { AccountMenu } from '@/components/account-menu'
+import { OnlineUsers } from '@/components/online-users'
 import { usePathname } from 'next/navigation'
 import { ReactNode } from 'react'
 
@@ -101,6 +102,7 @@ export function SiteHeader({ rightContent }: SiteHeaderProps = {}) {
           </nav>
         </div>
         <div className="flex items-center gap-4">
+          {user && <OnlineUsers maxDisplay={5} showCount={true} size="sm" />}
           {rightContent}
           {user && <AccountMenu />}
         </div>

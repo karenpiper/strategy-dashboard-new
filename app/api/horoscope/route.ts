@@ -14,6 +14,7 @@ import {
 import { fetchHoroscopeConfig } from '@/lib/horoscope-config'
 import { buildHoroscopePrompt, type UserProfile as PromptUserProfile } from '@/lib/horoscope-prompt-builder'
 import { updateUserAvatarState } from '@/lib/horoscope-catalogs'
+import { generateHoroscopeImage } from '@/lib/openai'
 import { createClient } from '@/lib/supabase/server'
 import { getTodayDateUTC, getTodayDateInTimezone } from '@/lib/utils'
 
@@ -552,12 +553,14 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Validate birthday fields exist
-    if (!birthdayMonth || !birthdayDay || isNaN(birthdayMonth) || isNaN(birthdayDay)) {
-      return NextResponse.json(
-        { error: 'Birthday not set in profile. Please update your profile with your birthday.' },
-        { status: 400 }
-      )
+    // Birthday is required for text generation (Cafe Astrology), but optional for image generation
+    const hasValidBirthday = birthdayMonth && birthdayDay && !isNaN(birthdayMonth) && !isNaN(birthdayDay)
+    
+    if (!hasValidBirthday) {
+      // Allow image generation without birthday - use null values
+      birthdayMonth = null
+      birthdayDay = null
+      console.log('⚠️ No birthday set - will generate image only using weekday/season/discipline/role segments')
     }
     
     // Fetch horoscope configuration (shared logic)
@@ -604,123 +607,236 @@ export async function GET(request: NextRequest) {
         hates_clowns: profile.hates_clowns || false,
       }
       
-      console.log('⚡ Running Cafe Astrology fetch and prompt building in parallel...')
-      const [cafeAstrologyText, promptResult] = await Promise.all([
-        // Fetch from Cafe Astrology (only needs starSign)
-        fetchCafeAstrologyHoroscope(starSign).then(text => {
-          console.log('✅ Fetched horoscope from Cafe Astrology')
-          return text
-        }),
-        // Build image prompt (needs user profile, already fetched)
-        buildHoroscopePrompt(
+      // If no birthday, generate image only (skip text generation)
+      if (!hasValidBirthday) {
+        console.log('⚠️ No birthday - generating image only (text requires birthday for Cafe Astrology)')
+        
+        // Build image prompt
+        const promptResult = await buildHoroscopePrompt(
           supabaseAdmin,
           userId,
           todayDate,
           promptUserProfile,
           userProfile.weekday,
           userProfile.season
-        ).then(result => {
-          console.log('✅ Built image prompt:', result.prompt.substring(0, 200) + (result.prompt.length > 200 ? '...' : ''))
-          console.log('   Prompt length:', result.prompt.length)
-          console.log('   Prompt slots:', Object.keys(result.slots || {}))
-          return result
+        )
+        
+        imagePrompt = promptResult.prompt
+        promptSlots = promptResult.slots
+        promptReasoning = promptResult.reasoning
+        
+        // Generate image directly (without n8n, since we don't have text)
+        console.log('🚀 Generating image directly (no birthday, skipping text generation)...')
+        const imageResult = await generateHoroscopeImage(
+          supabaseAdmin,
+          userId,
+          todayDate,
+          {
+            name: profile.full_name || 'User',
+            role: profile.role || null,
+            hobbies: profile.hobbies || null,
+            starSign: starSign || undefined,
+            element: userProfile.element || undefined,
+            likes_fantasy: profile.likes_fantasy || false,
+            likes_scifi: profile.likes_scifi || false,
+            likes_cute: profile.likes_cute || false,
+            likes_minimal: profile.likes_minimal || false,
+            hates_clowns: profile.hates_clowns || false,
+          },
+          userProfile.weekday,
+          userProfile.season
+        )
+        
+        imageUrl = imageResult.imageUrl
+        imagePrompt = imageResult.prompt
+        promptSlots = imageResult.slots
+        promptReasoning = imageResult.reasoning
+        
+        // No text when no birthday
+        horoscopeText = null as any
+        horoscopeDos = []
+        horoscopeDonts = []
+        characterName = null
+        
+        console.log('✅ Image generated successfully (without text)')
+        console.log('   Image URL:', imageUrl.substring(0, 100) + '...')
+        console.log('   Image is already in Supabase storage, no download/upload needed')
+        
+        // Update user avatar state (image is already in Supabase, no upload needed)
+        const { data: styleReference } = await supabaseAdmin
+          .from('prompt_slot_catalogs')
+          .select('style_group_id')
+          .eq('id', promptSlots.style_reference_id)
+          .single()
+        
+        const selectedStyleGroupId = styleReference?.style_group_id
+        
+        const { data: avatarState } = await supabaseAdmin
+          .from('user_avatar_state')
+          .select('*')
+          .eq('user_id', userId)
+          .single()
+        
+        const recentStyleGroupIds = avatarState?.recent_style_group_ids || []
+        const recentStyleReferenceIds = avatarState?.recent_style_reference_ids || []
+        const recentSubjectRoleIds = avatarState?.recent_subject_role_ids || []
+        const recentSettingPlaceIds = avatarState?.recent_setting_place_ids || []
+        
+        const updatedStyleGroupIds = selectedStyleGroupId
+          ? [...recentStyleGroupIds.filter((id) => id !== selectedStyleGroupId), selectedStyleGroupId].slice(-7)
+          : recentStyleGroupIds
+        
+        const updatedStyleReferenceIds = [
+          ...recentStyleReferenceIds.filter((id) => id !== promptSlots.style_reference_id),
+          promptSlots.style_reference_id,
+        ].slice(-7)
+        
+        const updatedSubjectRoleIds = [
+          ...recentSubjectRoleIds.filter((id) => id !== promptSlots.subject_role_id),
+          promptSlots.subject_role_id,
+        ].slice(-7)
+        
+        const updatedSettingPlaceIds = [
+          ...recentSettingPlaceIds.filter((id) => id !== promptSlots.setting_place_id),
+          promptSlots.setting_place_id,
+        ].slice(-7)
+        
+        await updateUserAvatarState(supabaseAdmin, userId, {
+          last_generated_date: todayDate,
+          recent_style_group_ids: updatedStyleGroupIds,
+          recent_style_reference_ids: updatedStyleReferenceIds,
+          recent_subject_role_ids: updatedSubjectRoleIds,
+          recent_setting_place_ids: updatedSettingPlaceIds,
         })
-      ])
-      
-      imagePrompt = promptResult.prompt
-      promptSlots = promptResult.slots
-      promptReasoning = promptResult.reasoning
-      
-      // Validate prompt was built correctly
-      if (!imagePrompt || imagePrompt.trim() === '') {
-        throw new Error('Failed to build image prompt - prompt is empty')
-      }
-      
-      console.log('🚀 Calling n8n workflow for text and image generation...')
-      console.log('   This will generate both the horoscope text AND the image via n8n')
-      console.log('🔍 DEBUG: n8n call parameters:', {
-        starSign,
-        imagePromptLength: imagePrompt?.length || 0,
-        userId,
-        date: todayDate,
-        dateType: typeof todayDate,
-        cafeAstrologyTextLength: cafeAstrologyText?.length || 0
-      })
-      const n8nStartTime = Date.now()
-      
-      // Call n8n workflow for both text transformation and image generation
-      const n8nResult = await generateHoroscopeViaN8n({
-        cafeAstrologyText,
-        starSign,
-        imagePrompt,
-        slots: promptSlots,
-        reasoning: promptReasoning,
-        userId,
-        date: todayDate,
-      })
-      
-      const n8nElapsed = Date.now() - n8nStartTime
-      console.log(`✅ n8n workflow completed in ${n8nElapsed}ms`)
-      
-      // Validate n8n result before using it
-      console.log('📥 Received n8n result:', {
-        hasHoroscope: !!n8nResult.horoscope,
-        horoscopeLength: n8nResult.horoscope?.length || 0,
-        horoscopePreview: n8nResult.horoscope?.substring(0, 100) || 'MISSING',
-        hasDos: !!n8nResult.dos,
-        dosCount: n8nResult.dos?.length || 0,
-        hasDonts: !!n8nResult.donts,
-        dontsCount: n8nResult.donts?.length || 0,
-        hasImageUrl: !!n8nResult.imageUrl,
-        imageUrl: n8nResult.imageUrl || 'MISSING',
-        imageUrlLength: n8nResult.imageUrl?.length || 0,
-        imageUrlPreview: n8nResult.imageUrl?.substring(0, 100) || 'MISSING',
-        hasCharacterName: !!n8nResult.character_name,
-        characterName: n8nResult.character_name || 'MISSING'
-      })
-      console.log('🔍 DEBUG: n8n result validation:', {
-        allFieldsPresent: !!(n8nResult.horoscope && n8nResult.dos && n8nResult.donts && n8nResult.imageUrl),
-        missingFields: [
-          !n8nResult.horoscope && 'horoscope',
-          !n8nResult.dos && 'dos',
-          !n8nResult.donts && 'donts',
-          !n8nResult.imageUrl && 'imageUrl'
-        ].filter(Boolean)
-      })
+        
+        console.log('✅ Updated user avatar state')
+      } else {
+        // Normal flow: has birthday, generate both text and image via n8n
+        console.log('⚡ Running Cafe Astrology fetch and prompt building in parallel...')
+        const [cafeAstrologyText, promptResult] = await Promise.all([
+          // Fetch from Cafe Astrology (only needs starSign)
+          fetchCafeAstrologyHoroscope(starSign).then(text => {
+            console.log('✅ Fetched horoscope from Cafe Astrology')
+            return text
+          }),
+          // Build image prompt (needs user profile, already fetched)
+          buildHoroscopePrompt(
+            supabaseAdmin,
+            userId,
+            todayDate,
+            promptUserProfile,
+            userProfile.weekday,
+            userProfile.season
+          ).then(result => {
+            console.log('✅ Built image prompt:', result.prompt.substring(0, 200) + (result.prompt.length > 200 ? '...' : ''))
+            console.log('   Prompt length:', result.prompt.length)
+            console.log('   Prompt slots:', Object.keys(result.slots || {}))
+            return result
+          })
+        ])
+        
+        imagePrompt = promptResult.prompt
+        promptSlots = promptResult.slots
+        promptReasoning = promptResult.reasoning
+        
+        // Validate prompt was built correctly
+        if (!imagePrompt || imagePrompt.trim() === '') {
+          throw new Error('Failed to build image prompt - prompt is empty')
+        }
+        
+        console.log('🚀 Calling n8n workflow for text and image generation...')
+        console.log('   This will generate both the horoscope text AND the image via n8n')
+        console.log('🔍 DEBUG: n8n call parameters:', {
+          starSign,
+          imagePromptLength: imagePrompt?.length || 0,
+          userId,
+          date: todayDate,
+          dateType: typeof todayDate,
+          cafeAstrologyTextLength: cafeAstrologyText?.length || 0
+        })
+        const n8nStartTime = Date.now()
+        
+        // Call n8n workflow for both text transformation and image generation
+        const n8nResult = await generateHoroscopeViaN8n({
+          cafeAstrologyText,
+          starSign,
+          imagePrompt,
+          slots: promptSlots,
+          reasoning: promptReasoning,
+          userId,
+          date: todayDate,
+        })
+        
+        const n8nElapsed = Date.now() - n8nStartTime
+        console.log(`✅ n8n workflow completed in ${n8nElapsed}ms`)
+        
+        // Validate n8n result before using it
+        console.log('📥 Received n8n result:', {
+          hasHoroscope: !!n8nResult.horoscope,
+          horoscopeLength: n8nResult.horoscope?.length || 0,
+          horoscopePreview: n8nResult.horoscope?.substring(0, 100) || 'MISSING',
+          hasDos: !!n8nResult.dos,
+          dosCount: n8nResult.dos?.length || 0,
+          hasDonts: !!n8nResult.donts,
+          dontsCount: n8nResult.donts?.length || 0,
+          hasImageUrl: !!n8nResult.imageUrl,
+          imageUrl: n8nResult.imageUrl || 'MISSING',
+          imageUrlLength: n8nResult.imageUrl?.length || 0,
+          imageUrlPreview: n8nResult.imageUrl?.substring(0, 100) || 'MISSING',
+          hasCharacterName: !!n8nResult.character_name,
+          characterName: n8nResult.character_name || 'MISSING'
+        })
+        console.log('🔍 DEBUG: n8n result validation:', {
+          allFieldsPresent: !!(n8nResult.horoscope && n8nResult.dos && n8nResult.donts && n8nResult.imageUrl),
+          missingFields: [
+            !n8nResult.horoscope && 'horoscope',
+            !n8nResult.dos && 'dos',
+            !n8nResult.donts && 'donts',
+            !n8nResult.imageUrl && 'imageUrl'
+          ].filter(Boolean)
+        })
 
-      if (!n8nResult.horoscope || !n8nResult.dos || !n8nResult.donts) {
-        throw new Error('Invalid n8n result: missing horoscope text, dos, or donts')
+        if (!n8nResult.horoscope || !n8nResult.dos || !n8nResult.donts) {
+          throw new Error('Invalid n8n result: missing horoscope text, dos, or donts')
+        }
+
+        if (!n8nResult.imageUrl) {
+          throw new Error('Invalid n8n result: missing imageUrl')
+        }
+
+        horoscopeText = n8nResult.horoscope
+        horoscopeDos = n8nResult.dos
+        horoscopeDonts = n8nResult.donts
+        imageUrl = n8nResult.imageUrl
+        
+        // Get character_name from n8n (generated from image analysis)
+        if (!n8nResult.character_name) {
+          throw new Error('Invalid n8n result: missing character_name. The image analysis should generate a character name.')
+        }
+        
+        characterName = n8nResult.character_name
+        console.log('✅ Using character name from n8n (image analysis):', characterName)
       }
 
-      if (!n8nResult.imageUrl) {
-        throw new Error('Invalid n8n result: missing imageUrl')
+      if (hasValidBirthday) {
+        console.log('✅ Using n8n result:', {
+          horoscopeText: horoscopeText?.substring(0, 100) + '...',
+          dosCount: horoscopeDos?.length || 0,
+          dontsCount: horoscopeDonts?.length || 0,
+          imageUrl: imageUrl.substring(0, 100) + '...'
+        })
       }
-
-      horoscopeText = n8nResult.horoscope
-      horoscopeDos = n8nResult.dos
-      horoscopeDonts = n8nResult.donts
-      imageUrl = n8nResult.imageUrl
-      
-      // Get character_name from n8n (generated from image analysis)
-      if (!n8nResult.character_name) {
-        throw new Error('Invalid n8n result: missing character_name. The image analysis should generate a character name.')
-      }
-      
-      characterName = n8nResult.character_name
-      console.log('✅ Using character name from n8n (image analysis):', characterName)
-
-      console.log('✅ Using n8n result:', {
-        horoscopeText: horoscopeText.substring(0, 100) + '...',
-        dosCount: horoscopeDos.length,
-        dontsCount: horoscopeDonts.length,
-        imageUrl: imageUrl.substring(0, 100) + '...'
-      })
       
       // OPTIMIZATION: Start image download/upload in parallel with avatar state update
       // These operations are independent and can run concurrently
-      console.log('⚡ Starting parallel operations: image upload + avatar state update...')
-      
-      const [permanentImageUrl] = await Promise.all([
+      // Note: If image was generated directly (no birthday), it's already in Supabase, skip upload
+      if (!hasValidBirthday) {
+        // Image already in Supabase from direct generation, skip upload
+        console.log('✅ Image already in Supabase storage (generated directly), skipping upload')
+      } else {
+        console.log('⚡ Starting parallel operations: image upload + avatar state update...')
+        
+        const [permanentImageUrl] = await Promise.all([
         // Download and upload image to Supabase storage
         (async () => {
           console.log('📥 Downloading image from OpenAI and uploading to Supabase storage...')
@@ -859,17 +975,18 @@ export async function GET(request: NextRequest) {
           
           console.log('✅ Updated user avatar state')
         })()
-      ])
-      
-      imageUrl = permanentImageUrl
+        ])
+        
+        imageUrl = permanentImageUrl
+      }
       
       const elapsedTime = Date.now() - startTime
-      console.log(`✅ Horoscope generation completed via n8n in ${elapsedTime}ms`)
+      console.log(`✅ Horoscope generation completed in ${elapsedTime}ms`)
       
       console.log('Horoscope generated successfully:', { 
-        horoscopeText: horoscopeText.substring(0, 50) + '...', 
-        dosCount: horoscopeDos.length,
-        dontsCount: horoscopeDonts.length,
+        horoscopeText: horoscopeText ? horoscopeText.substring(0, 50) + '...' : 'N/A (no birthday)',
+        dosCount: horoscopeDos?.length || 0,
+        dontsCount: horoscopeDonts?.length || 0,
         hasImageUrl: !!imageUrl,
         imageUrl: imageUrl?.substring(0, 100) + '...' || 'MISSING',
         imageUrlLength: imageUrl?.length || 0
@@ -890,8 +1007,7 @@ export async function GET(request: NextRequest) {
       // CRITICAL: Verify imageUrl is set before saving
       if (!imageUrl || imageUrl.trim() === '') {
         console.error('❌ CRITICAL ERROR: imageUrl is empty before saving to database!')
-        console.error('   n8nResult.imageUrl:', n8nResult.imageUrl)
-        throw new Error('Cannot save horoscope: imageUrl is empty. n8n generation may have failed.')
+        throw new Error('Cannot save horoscope: imageUrl is empty. Image generation may have failed.')
       }
     } catch (error: any) {
       console.error('❌ Error generating horoscope:', error)

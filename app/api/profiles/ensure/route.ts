@@ -39,7 +39,10 @@ export async function POST(request: NextRequest) {
                      user.user_metadata?.name || 
                      user.email?.split('@')[0] || 
                      null
-    const avatarUrl = user.user_metadata?.avatar_url || null
+    // Prefer custom avatar backup if it exists, otherwise use OAuth avatar
+    const avatarUrl = user.user_metadata?.custom_avatar_url_backup || 
+                     user.user_metadata?.avatar_url || 
+                     null
 
     const { data: newProfile, error: createError } = await supabase
       .from('profiles')
