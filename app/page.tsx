@@ -1150,6 +1150,28 @@ export default function TeamDashboard() {
         console.log(`📅 Fetching from ${calendarIds.length} calendar(s):`, calendarIds)
         const response = await fetch(apiUrl)
 
+        if (!response.ok) {
+          // Handle authentication errors
+          if (response.status === 401) {
+            const errorData = await response.json().catch(() => ({ error: 'Authentication required' }))
+            console.error('❌ Calendar API authentication error:', errorData)
+            setCalendarError(errorData.details || errorData.error || 'Please log in to view calendar events')
+            setCalendarEvents([])
+            setCalendarLoading(false)
+            calendarFetchInProgressRef.current = false
+            return
+          }
+          
+          // Handle other errors
+          const errorData = await response.json().catch(() => ({ error: 'Failed to fetch calendar events' }))
+          console.error('❌ Calendar API error:', response.status, errorData)
+          setCalendarError(errorData.details || errorData.error || `Failed to load calendar events (${response.status})`)
+          setCalendarEvents([])
+          setCalendarLoading(false)
+          calendarFetchInProgressRef.current = false
+          return
+        }
+
         if (response.ok) {
           const result = await response.json()
           console.log(`✅ Calendar API response: ${result.count} events, ${result.successfulCalendars} successful, ${result.failedCalendars} failed`)

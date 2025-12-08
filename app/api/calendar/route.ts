@@ -50,6 +50,22 @@ interface CalendarEvent {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Check authentication first
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      console.error('❌ Calendar API: User not authenticated', authError)
+      return NextResponse.json(
+        {
+          error: 'Authentication required',
+          details: 'You must be logged in to access calendar events',
+          hint: 'Please log in and try again'
+        },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     
     // Get calendar IDs from query params or use primary calendar
@@ -66,6 +82,13 @@ export async function GET(request: NextRequest) {
     // Check if an access token was provided (from client-side OAuth)
     const accessToken = searchParams.get('accessToken')
     let calendar
+    
+    console.log('📅 Calendar API request:', {
+      userId: user.id,
+      hasAccessToken: !!accessToken,
+      calendarCount: calendarIds.length,
+      timeRange: { timeMin, timeMax }
+    })
     
     if (accessToken) {
       // Use the provided access token (from user's Google OAuth session)
@@ -189,12 +212,23 @@ export async function GET(request: NextRequest) {
         // Check for token expiration (401 with Invalid Credentials)
         // Note: We'll determine if token is truly expired after checking ALL calendars
         // Individual 401s might be due to permissions, not token expiration
-        if ((error.code === 401 || error.status === 401) && accessToken) {
-          if (error.message?.includes('Invalid Credentials') || error.message?.includes('invalid_token')) {
-            // Mark as potentially expired - we'll verify after checking all calendars
-            isTokenExpired = true
-            errorMessage = 'Access denied - may be token expiration or permissions issue'
-            console.error(`⚠️  401 error for calendar ${decodedCalendarId}. Will check if all calendars fail to determine if token expired.`)
+        if ((error.code === 401 || error.status === 401)) {
+          if (accessToken) {
+            if (error.message?.includes('Invalid Credentials') || 
+                error.message?.includes('invalid_token') ||
+                error.message?.includes('Token has been expired') ||
+                error.message?.includes('expired')) {
+              // Mark as potentially expired - we'll verify after checking all calendars
+              isTokenExpired = true
+              errorMessage = 'Access token expired or invalid - please re-authenticate'
+              console.error(`⚠️  401 error for calendar ${decodedCalendarId}. Token may be expired.`)
+            } else {
+              errorMessage = 'Access denied - insufficient permissions for this calendar'
+              console.error(`⚠️  401 error for calendar ${decodedCalendarId}. May be a permissions issue.`)
+            }
+          } else {
+            errorMessage = 'Authentication required - no access token provided'
+            console.error(`⚠️  401 error for calendar ${decodedCalendarId}. No access token was provided.`)
           }
         }
         
@@ -227,9 +261,7 @@ export async function GET(request: NextRequest) {
     // Fetch manual calendar events
     let manualEvents: CalendarEvent[] = []
     try {
-      const supabase = await createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
+      // User is already authenticated (checked at the start)
       if (user) {
         // Fetch manual events within the same time range
         const minDate = new Date(timeMin).toISOString().split('T')[0]

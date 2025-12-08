@@ -153,7 +153,7 @@ export default function WorkSampleAdmin() {
   const cardStyle = getCardStyle()
 
   // Fetch work samples
-  const fetchWorkSamples = async () => {
+  const fetchWorkSamples = async (skipCache = false) => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -162,8 +162,16 @@ export default function WorkSampleAdmin() {
       if (filterAuthorId) params.append('author_id', filterAuthorId)
       if (sortBy) params.append('sortBy', sortBy)
       if (sortOrder) params.append('sortOrder', sortOrder)
+      
+      // Add cache-busting parameter if needed
+      if (skipCache) {
+        params.append('_t', Date.now().toString())
+      }
 
-      const response = await fetch(`/api/work-samples?${params.toString()}`)
+      const response = await fetch(`/api/work-samples?${params.toString()}`, {
+        cache: skipCache ? 'no-store' : 'default',
+        headers: skipCache ? { 'Cache-Control': 'no-cache' } : undefined,
+      })
       const result = await response.json()
       
       if (response.ok) {
@@ -664,19 +672,31 @@ export default function WorkSampleAdmin() {
     try {
       const response = await fetch(`/api/work-samples?id=${id}`, {
         method: 'DELETE',
+        cache: 'no-store',
       })
 
       const result = await response.json()
       
       if (response.ok) {
-        fetchWorkSamples()
-        setSelectedIds(new Set())
+        // Optimistically remove from UI immediately
+        setWorkSamples(prev => prev.filter(item => item.id !== id))
+        setSelectedIds(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(id)
+          return newSet
+        })
+        // Then refresh from server (skip cache to ensure we get fresh data)
+        setTimeout(() => fetchWorkSamples(true), 100)
       } else {
-        alert(`Error: ${result.error}`)
+        alert(`Error: ${result.error || result.details || 'Failed to delete work sample'}`)
+        // Refresh to ensure UI is in sync
+        fetchWorkSamples(true)
       }
     } catch (error) {
       console.error('Error deleting work sample:', error)
       alert('Failed to delete work sample')
+      // Refresh to ensure UI is in sync
+      fetchWorkSamples(true)
     }
   }
 
@@ -686,22 +706,31 @@ export default function WorkSampleAdmin() {
     if (!confirm(`Are you sure you want to delete ${selectedIds.size} work sample(s)?`)) return
 
     try {
-      const ids = Array.from(selectedIds).join(',')
-      const response = await fetch(`/api/work-samples?ids=${ids}`, {
+      const ids = Array.from(selectedIds)
+      const idsParam = ids.join(',')
+      const response = await fetch(`/api/work-samples?ids=${idsParam}`, {
         method: 'DELETE',
+        cache: 'no-store',
       })
 
       const result = await response.json()
       
       if (response.ok) {
-        fetchWorkSamples()
+        // Optimistically remove from UI immediately
+        setWorkSamples(prev => prev.filter(item => !ids.includes(item.id)))
         setSelectedIds(new Set())
+        // Then refresh from server (skip cache to ensure we get fresh data)
+        setTimeout(() => fetchWorkSamples(true), 100)
       } else {
-        alert(`Error: ${result.error}`)
+        alert(`Error: ${result.error || result.details || 'Failed to delete work samples'}`)
+        // Refresh to ensure UI is in sync
+        fetchWorkSamples(true)
       }
     } catch (error) {
       console.error('Error deleting work samples:', error)
       alert('Failed to delete work samples')
+      // Refresh to ensure UI is in sync
+      fetchWorkSamples(true)
     }
   }
 

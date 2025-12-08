@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-// Cache configuration: 10 minutes for work samples
+// Cache configuration: 10 minutes for work samples (GET only)
+// DELETE requests should not be cached
 export const revalidate = 600
+
+// Disable caching for DELETE requests
+export const dynamic = 'force-dynamic'
 
 // GET - Fetch all work samples with optional search and filter
 export async function GET(request: NextRequest) {
@@ -24,6 +28,10 @@ export async function GET(request: NextRequest) {
     const client = searchParams.get('client')
     const sortBy = searchParams.get('sortBy') || 'date'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
+    const skipCache = searchParams.get('_t') // Cache-busting parameter
+    
+    // If cache-busting parameter is present, we'll use a fresh query
+    // This helps ensure we get the latest data after deletions
     
     // Pagination parameters (optional)
     const page = parseInt(searchParams.get('page') || '1', 10)
@@ -89,6 +97,8 @@ export async function GET(request: NextRequest) {
       query = query.range(offset, offset + limit - 1)
     }
 
+    // Execute query - Supabase queries are always fresh, but Next.js might cache the response
+    // The skipCache parameter helps ensure we get fresh data after deletions
     const { data: workSamplesData, error, count } = await query
 
     if (error) {
@@ -180,8 +190,15 @@ export async function GET(request: NextRequest) {
         hasMore: count ? offset + limit < count : false
       }
     })
-    // Add cache headers for client-side caching
-    response.headers.set('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=1200')
+    // Add cache headers - disable caching if cache-busting was requested
+    if (skipCache) {
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+      response.headers.set('Pragma', 'no-cache')
+      response.headers.set('Expires', '0')
+    } else {
+      // Normal caching for regular requests
+      response.headers.set('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=1200')
+    }
     return response
   } catch (error: any) {
     console.error('Error in work-samples API:', error)
@@ -580,14 +597,16 @@ export async function DELETE(request: NextRequest) {
       // Bulk delete
       const idArray = ids.split(',').map(id => id.trim())
       query = query.in('id', idArray)
+      console.log(`🗑️ Deleting ${idArray.length} work sample(s):`, idArray)
     } else if (id) {
       query = query.eq('id', id)
+      console.log(`🗑️ Deleting work sample:`, id)
     }
 
-    const { error } = await query
+    const { data: deletedData, error } = await query.select()
 
     if (error) {
-      console.error('Error deleting work sample:', error)
+      console.error('❌ Error deleting work sample:', error)
       return NextResponse.json(
         { 
           error: 'Failed to delete work sample', 
@@ -598,7 +617,18 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true })
+    const deletedCount = deletedData?.length || 0
+    console.log(`✅ Successfully deleted ${deletedCount} work sample(s)`)
+    
+    if (deletedCount === 0) {
+      console.warn('⚠️ Delete query succeeded but no rows were deleted. This might indicate the work sample(s) were already deleted or the ID(s) are invalid.')
+    }
+
+    return NextResponse.json({ 
+      success: true,
+      deletedCount,
+      deletedIds: deletedData?.map((item: any) => item.id) || []
+    })
   } catch (error: any) {
     console.error('Error in work-samples API:', error)
     return NextResponse.json(
