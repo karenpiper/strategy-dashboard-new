@@ -34,15 +34,42 @@ async function callOpenAIWithFallback<T>(
   try {
     return await apiCall(openai)
   } catch (error: any) {
-    // If we get a quota/rate limit error and have a fallback key, try it
-    const isQuotaError = error?.status === 429 || 
-                        error?.status === 402 ||
-                        error?.message?.toLowerCase().includes('quota') ||
-                        error?.message?.toLowerCase().includes('rate limit')
+    // Extract error message from various possible locations
+    const errorMessage = error?.response?.data?.error?.message || 
+                        error?.message || 
+                        error?.error?.message || 
+                        ''
+    const lowerMessage = errorMessage.toLowerCase()
+    const status = error?.response?.status || error?.status
+
+    // Check for quota/billing errors (can be 400, 402, or 429)
+    const isQuotaError = status === 402 ||
+                        (status === 429 && (
+                          lowerMessage.includes('exceeded your current quota') ||
+                          lowerMessage.includes('quota') ||
+                          lowerMessage.includes('billing') ||
+                          lowerMessage.includes('check your plan and billing')
+                        )) ||
+                        lowerMessage.includes('exceeded your current quota') ||
+                        lowerMessage.includes('quota exceeded') ||
+                        lowerMessage.includes('hard billing limit') ||
+                        lowerMessage.includes('usage limit')
     
-    if (isQuotaError && fallbackOpenai) {
+    // If we have a fallback key and hit quota/rate limits, try it
+    if ((isQuotaError || status === 429) && fallbackOpenai) {
       console.log('⚠️ Primary OpenAI API key hit limits, trying fallback key...')
-      return await apiCall(fallbackOpenai)
+      console.log('   Error:', errorMessage.substring(0, 200))
+      try {
+        return await apiCall(fallbackOpenai)
+      } catch (fallbackError: any) {
+        console.error('❌ Fallback API key also failed:', fallbackError?.message || fallbackError)
+        // If fallback also fails with quota error, throw a clear message
+        const fallbackMessage = fallbackError?.response?.data?.error?.message || fallbackError?.message || ''
+        if (fallbackMessage.toLowerCase().includes('quota') || fallbackMessage.toLowerCase().includes('billing')) {
+          throw new Error('Both primary and fallback OpenAI API keys have exceeded their quotas. Please check your OpenAI account billing settings.')
+        }
+        throw fallbackError
+      }
     }
     throw error
   }
@@ -111,29 +138,46 @@ async function generateImageFromPrompt(
       lastError = error
       console.error(`❌ Error generating image (attempt ${attempt + 1}/${maxRetries + 1}):`, error)
 
-      // Don't retry on billing/quota errors
-      if (error.response?.status === 400) {
-        const errorMessage = error.response?.data?.error?.message || error.message || ''
-        const lowerMessage = errorMessage.toLowerCase()
-        if (lowerMessage.includes('billing') || 
-            lowerMessage.includes('quota') ||
-            lowerMessage.includes('hard billing limit') ||
-            lowerMessage.includes('usage limit')) {
-          throw new Error('OpenAI billing/usage limit reached. Please check your OpenAI account billing settings.')
-        }
-        throw error
+      // Extract error message
+      const errorMessage = error.response?.data?.error?.message || error.message || ''
+      const lowerMessage = errorMessage.toLowerCase()
+      const status = error.response?.status || error.status
+
+      // Check for quota/billing errors (can be 400 or 429)
+      const isQuotaError = lowerMessage.includes('exceeded your current quota') ||
+                          lowerMessage.includes('quota') ||
+                          lowerMessage.includes('billing') ||
+                          lowerMessage.includes('hard billing limit') ||
+                          lowerMessage.includes('usage limit') ||
+                          lowerMessage.includes('check your plan and billing')
+
+      // Don't retry on billing/quota errors - fail immediately
+      if (isQuotaError || (status === 400 && isQuotaError)) {
+        const hasFallback = !!process.env.OPENAI_API_KEY_FALLBACK
+        throw new Error(
+          `OpenAI quota/billing limit reached. ${hasFallback ? 'Fallback key will be tried automatically.' : 'Please check your OpenAI account billing settings and add payment method if needed. You can also set OPENAI_API_KEY_FALLBACK environment variable to use a secondary API key.'}`
+        )
       }
 
-      // Rate limit - retry with backoff
-      if (error.response?.status === 429) {
+      // Rate limit (429) that's not quota-related - retry with backoff
+      if (status === 429 && !isQuotaError) {
         if (attempt < maxRetries) {
-          const retryAfter = error.response.headers?.['retry-after']
+          const retryAfter = error.response?.headers?.['retry-after']
           const delay = retryAfter ? parseInt(retryAfter) : Math.pow(2, attempt)
           const jitter = Math.random()
+          console.log(`⏳ Rate limit hit (429). Waiting ${(delay + jitter).toFixed(2)}s before retry...`)
           await new Promise(resolve => setTimeout(resolve, (delay + jitter) * 1000))
           continue
         }
         throw new Error('OpenAI API rate limit exceeded after retries. Please try again later.')
+      }
+
+      // Quota error with 429 status - don't retry
+      if (status === 429 && isQuotaError) {
+        const hasFallback = !!process.env.OPENAI_API_KEY_FALLBACK
+        throw new Error(
+          `OpenAI quota exceeded (429). ${hasFallback ? 'Fallback key will be tried automatically.' : 'Please check your OpenAI account billing settings. You can also set OPENAI_API_KEY_FALLBACK environment variable to use a secondary API key.'}`
+        )
       }
 
       // If this was the last attempt, throw the error

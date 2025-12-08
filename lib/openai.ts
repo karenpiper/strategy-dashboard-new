@@ -56,33 +56,60 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
         temperature: 0.9,
       })
     } catch (error: any) {
-      // Try fallback key if available and primary key hit limits
-      const isQuotaError = error?.status === 429 || 
-                          error?.status === 402 ||
-                          error?.message?.toLowerCase().includes('quota') ||
-                          error?.message?.toLowerCase().includes('rate limit')
+      // Extract error message from various possible locations
+      const errorMessage = error?.response?.data?.error?.message || 
+                          error?.message || 
+                          error?.error?.message || 
+                          ''
+      const lowerMessage = errorMessage.toLowerCase()
+      const status = error?.response?.status || error?.status
+
+      // Check for quota/billing errors (can be 400, 402, or 429)
+      const isQuotaError = status === 402 ||
+                          (status === 429 && (
+                            lowerMessage.includes('exceeded your current quota') ||
+                            lowerMessage.includes('quota') ||
+                            lowerMessage.includes('billing') ||
+                            lowerMessage.includes('check your plan and billing')
+                          )) ||
+                          lowerMessage.includes('exceeded your current quota') ||
+                          lowerMessage.includes('quota exceeded') ||
+                          lowerMessage.includes('hard billing limit') ||
+                          lowerMessage.includes('usage limit')
       
-      if (isQuotaError && process.env.OPENAI_API_KEY_FALLBACK) {
+      // Try fallback key if available and primary key hit limits
+      if ((isQuotaError || status === 429) && process.env.OPENAI_API_KEY_FALLBACK) {
         console.log('⚠️ Primary OpenAI API key hit limits, trying fallback key for text transformation...')
-        const fallbackOpenai = new OpenAI({
-          apiKey: process.env.OPENAI_API_KEY_FALLBACK,
-        })
-        completion = await fallbackOpenai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a witty horoscope transformer. You take traditional horoscopes and make them irreverent and fun in the style of Co-Star. You always return valid JSON.',
-            },
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-          response_format: { type: 'json_object' },
-          max_tokens: 600,
-          temperature: 0.9,
-        })
+        console.log('   Error:', errorMessage.substring(0, 200))
+        try {
+          const fallbackOpenai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY_FALLBACK,
+          })
+          completion = await fallbackOpenai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a witty horoscope transformer. You take traditional horoscopes and make them irreverent and fun in the style of Co-Star. You always return valid JSON.',
+              },
+              {
+                role: 'user',
+                content: prompt,
+              },
+            ],
+            response_format: { type: 'json_object' },
+            max_tokens: 600,
+            temperature: 0.9,
+          })
+        } catch (fallbackError: any) {
+          console.error('❌ Fallback API key also failed:', fallbackError?.message || fallbackError)
+          // If fallback also fails with quota error, throw a clear message
+          const fallbackMessage = fallbackError?.response?.data?.error?.message || fallbackError?.message || ''
+          if (fallbackMessage.toLowerCase().includes('quota') || fallbackMessage.toLowerCase().includes('billing')) {
+            throw new Error('Both primary and fallback OpenAI API keys have exceeded their quotas. Please check your OpenAI account billing settings.')
+          }
+          throw fallbackError
+        }
       } else {
         throw error
       }
