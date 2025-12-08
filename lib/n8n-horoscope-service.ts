@@ -119,7 +119,19 @@ export async function generateHoroscopeViaN8n(
       const responseText = await response.text()
       
       if (!responseText || responseText.trim() === '') {
-        throw new Error('n8n webhook returned empty response body')
+        console.error('❌ n8n webhook returned empty response body', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          url: webhookUrl,
+          attempt: attempt + 1,
+          requestPayload: {
+            starSign: request.starSign,
+            hasCafeAstrologyText: !!request.cafeAstrologyText,
+            hasImagePrompt: !!request.imagePrompt,
+          }
+        })
+        throw new Error('n8n webhook returned empty response body. The workflow may have failed, timed out, or the Response node is not configured correctly. Check n8n workflow execution logs and ensure the "Combine Results" node is connected to a Response node that returns JSON data.')
       }
 
       // Try to parse JSON with better error handling
@@ -172,9 +184,13 @@ export async function generateHoroscopeViaN8n(
         throw new Error('n8n webhook request timed out after 60 seconds')
       }
 
+      // Don't retry on invalid response format (data structure issues)
       if (error.message?.includes('Invalid response format')) {
         throw error
       }
+
+      // Retry on empty responses (might be transient workflow issues)
+      // Empty response errors will be retried automatically in the loop
 
       // If this was the last attempt, throw the error
       if (attempt >= maxRetries) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateHoroscopeViaN8n } from '@/lib/n8n-horoscope-service'
+import { generateHoroscopeDirect } from '@/lib/horoscope-direct-service'
 import { fetchCafeAstrologyHoroscope } from '@/lib/cafe-astrology'
 import {
   buildUserProfile,
@@ -744,9 +744,9 @@ export async function GET(request: NextRequest) {
           throw new Error('Failed to build image prompt - prompt is empty')
         }
         
-        console.log('🚀 Calling n8n workflow for text and image generation...')
-        console.log('   This will generate both the horoscope text AND the image via n8n')
-        console.log('🔍 DEBUG: n8n call parameters:', {
+        console.log('🚀 Generating horoscope text and image via direct OpenAI API calls...')
+        console.log('   This replaces n8n workflow with direct API calls for better performance')
+        console.log('🔍 DEBUG: Direct API call parameters:', {
           starSign,
           imagePromptLength: imagePrompt?.length || 0,
           userId,
@@ -754,10 +754,10 @@ export async function GET(request: NextRequest) {
           dateType: typeof todayDate,
           cafeAstrologyTextLength: cafeAstrologyText?.length || 0
         })
-        const n8nStartTime = Date.now()
+        const directStartTime = Date.now()
         
-        // Call n8n workflow for both text transformation and image generation
-        const n8nResult = await generateHoroscopeViaN8n({
+        // Call direct service for both text transformation and image generation
+        const directResult = await generateHoroscopeDirect({
           cafeAstrologyText,
           starSign,
           imagePrompt,
@@ -767,59 +767,58 @@ export async function GET(request: NextRequest) {
           date: todayDate,
         })
         
-        const n8nElapsed = Date.now() - n8nStartTime
-        console.log(`✅ n8n workflow completed in ${n8nElapsed}ms`)
+        const directElapsed = Date.now() - directStartTime
+        console.log(`✅ Direct API calls completed in ${directElapsed}ms`)
         
-        // Validate n8n result before using it
-        console.log('📥 Received n8n result:', {
-          hasHoroscope: !!n8nResult.horoscope,
-          horoscopeLength: n8nResult.horoscope?.length || 0,
-          horoscopePreview: n8nResult.horoscope?.substring(0, 100) || 'MISSING',
-          hasDos: !!n8nResult.dos,
-          dosCount: n8nResult.dos?.length || 0,
-          hasDonts: !!n8nResult.donts,
-          dontsCount: n8nResult.donts?.length || 0,
-          hasImageUrl: !!n8nResult.imageUrl,
-          imageUrl: n8nResult.imageUrl || 'MISSING',
-          imageUrlLength: n8nResult.imageUrl?.length || 0,
-          imageUrlPreview: n8nResult.imageUrl?.substring(0, 100) || 'MISSING',
-          hasCharacterName: !!n8nResult.character_name,
-          characterName: n8nResult.character_name || 'MISSING'
+        // Validate result before using it
+        console.log('📥 Received direct API result:', {
+          hasHoroscope: !!directResult.horoscope,
+          horoscopeLength: directResult.horoscope?.length || 0,
+          horoscopePreview: directResult.horoscope?.substring(0, 100) || 'MISSING',
+          hasDos: !!directResult.dos,
+          dosCount: directResult.dos?.length || 0,
+          hasDonts: !!directResult.donts,
+          dontsCount: directResult.donts?.length || 0,
+          hasImageUrl: !!directResult.imageUrl,
+          imageUrl: directResult.imageUrl || 'MISSING',
+          imageUrlLength: directResult.imageUrl?.length || 0,
+          imageUrlPreview: directResult.imageUrl?.substring(0, 100) || 'MISSING',
         })
-        console.log('🔍 DEBUG: n8n result validation:', {
-          allFieldsPresent: !!(n8nResult.horoscope && n8nResult.dos && n8nResult.donts && n8nResult.imageUrl),
+        console.log('🔍 DEBUG: Direct API result validation:', {
+          allFieldsPresent: !!(directResult.horoscope && directResult.dos && directResult.donts && directResult.imageUrl),
           missingFields: [
-            !n8nResult.horoscope && 'horoscope',
-            !n8nResult.dos && 'dos',
-            !n8nResult.donts && 'donts',
-            !n8nResult.imageUrl && 'imageUrl'
+            !directResult.horoscope && 'horoscope',
+            !directResult.dos && 'dos',
+            !directResult.donts && 'donts',
+            !directResult.imageUrl && 'imageUrl'
           ].filter(Boolean)
         })
 
-        if (!n8nResult.horoscope || !n8nResult.dos || !n8nResult.donts) {
-          throw new Error('Invalid n8n result: missing horoscope text, dos, or donts')
+        if (!directResult.horoscope || !directResult.dos || !directResult.donts) {
+          throw new Error('Invalid direct API result: missing horoscope text, dos, or donts')
         }
 
-        if (!n8nResult.imageUrl) {
-          throw new Error('Invalid n8n result: missing imageUrl')
+        if (!directResult.imageUrl) {
+          throw new Error('Invalid direct API result: missing imageUrl')
         }
 
-        horoscopeText = n8nResult.horoscope
-        horoscopeDos = n8nResult.dos
-        horoscopeDonts = n8nResult.donts
-        imageUrl = n8nResult.imageUrl
+        horoscopeText = directResult.horoscope
+        horoscopeDos = directResult.dos
+        horoscopeDonts = directResult.donts
+        imageUrl = directResult.imageUrl
         
-        // Get character_name from n8n (generated from image analysis)
-        if (!n8nResult.character_name) {
-          throw new Error('Invalid n8n result: missing character_name. The image analysis should generate a character name.')
+        // Character name is not generated in direct mode (was previously from n8n image analysis)
+        // Set to null for now - can be added later if needed
+        characterName = directResult.character_name || null
+        if (characterName) {
+          console.log('✅ Using character name from direct API:', characterName)
+        } else {
+          console.log('ℹ️ Character name not generated (not available in direct mode)')
         }
-        
-        characterName = n8nResult.character_name
-        console.log('✅ Using character name from n8n (image analysis):', characterName)
       }
 
       if (hasValidBirthday) {
-        console.log('✅ Using n8n result:', {
+        console.log('✅ Using direct API result:', {
           horoscopeText: horoscopeText?.substring(0, 100) + '...',
           dosCount: horoscopeDos?.length || 0,
           dontsCount: horoscopeDonts?.length || 0,
@@ -1015,16 +1014,18 @@ export async function GET(request: NextRequest) {
       console.error('   Error type:', error.type)
       console.error('   Error status:', error.status)
       
-      // Handle n8n-specific errors
-      if (error.message?.includes('n8n webhook')) {
-        console.error('🚫 N8N WEBHOOK ERROR:', error.message)
+      // Handle OpenAI API errors
+      if (error.message?.includes('OpenAI') || error.message?.includes('billing') || error.message?.includes('rate limit')) {
+        console.error('🚫 OPENAI API ERROR:', error.message)
         return NextResponse.json(
           { 
-            error: `Failed to generate horoscope via n8n: ${error.message}`,
-            code: 'n8n_error',
-            details: 'The horoscope generation service is temporarily unavailable. Please try again later.'
+            error: `Failed to generate horoscope: ${error.message}`,
+            code: 'openai_error',
+            details: error.message.includes('billing') 
+              ? 'OpenAI billing limit reached. Please check your OpenAI account billing settings.'
+              : 'The horoscope generation service encountered an error. Please try again later.'
           },
-          { status: 503 }
+          { status: error.message?.includes('billing') ? 402 : 503 }
         )
       }
       

@@ -117,11 +117,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid base_role' }, { status: 400 })
     }
 
-    // Prepare update data
+    // Prepare update data - exclude id and undefined values
     const updateData: any = {
-      ...updates,
       updated_at: new Date().toISOString(),
     }
+    
+    // Only include defined fields from updates (exclude id)
+    Object.keys(updates).forEach(key => {
+      if (key !== 'id' && updates[key] !== undefined) {
+        updateData[key] = updates[key]
+      }
+    })
 
     // Convert empty strings to null for optional fields
     const optionalFields = ['full_name', 'avatar_url', 'birthday', 'discipline', 'role', 'bio', 'location', 'website', 'pronouns', 'slack_id', 'manager_id']
@@ -130,13 +136,6 @@ export async function PUT(request: NextRequest) {
         updateData[field] = null
       }
     })
-    
-    // Ensure boolean fields are properly set
-    if (updateData.is_guest === undefined || updateData.is_guest === null) {
-      updateData.is_guest = false
-    } else {
-      updateData.is_guest = Boolean(updateData.is_guest)
-    }
     
     // Prevent circular references (person can't be their own manager)
     if (updateData.manager_id === id) {
@@ -151,10 +150,13 @@ export async function PUT(request: NextRequest) {
     }
 
     // Ensure is_guest is a boolean (default to false if not provided)
-    if (updateData.is_guest === undefined || updateData.is_guest === null) {
-      updateData.is_guest = false
-    } else {
-      updateData.is_guest = Boolean(updateData.is_guest)
+    // Only set if the field exists in the request (don't force it if column doesn't exist yet)
+    if ('is_guest' in updateData) {
+      if (updateData.is_guest === undefined || updateData.is_guest === null) {
+        updateData.is_guest = false
+      } else {
+        updateData.is_guest = Boolean(updateData.is_guest)
+      }
     }
 
     // Use admin client to update profile (bypasses RLS)
@@ -168,7 +170,58 @@ export async function PUT(request: NextRequest) {
 
     if (error) {
       console.error('Error updating profile:', error)
-      return NextResponse.json({ error: 'Failed to update profile', details: error.message }, { status: 500 })
+      console.error('Update data:', JSON.stringify(updateData, null, 2))
+      console.error('Error details:', JSON.stringify(error, null, 2))
+      console.error('Error code:', error.code)
+      console.error('Error hint:', error.hint)
+      
+      // Check if error is about missing column (various error patterns)
+      const columnErrorPatterns = [
+        'column',
+        'does not exist',
+        'unknown column',
+        'no such column',
+        'column "is_guest" does not exist'
+      ]
+      const isColumnError = error.message && columnErrorPatterns.some(pattern => 
+        error.message.toLowerCase().includes(pattern.toLowerCase())
+      )
+      
+      if (isColumnError) {
+        return NextResponse.json({ 
+          error: 'Failed to update profile', 
+          details: error.message,
+          code: error.code,
+          hint: error.hint || 'The is_guest column may not exist yet. Please run the migration: supabase/add-is-guest-to-profiles.sql'
+        }, { status: 500 })
+      }
+      
+      // Check for constraint violations
+      if (error.code === '23505') { // Unique constraint violation
+        return NextResponse.json({ 
+          error: 'Failed to update profile', 
+          details: error.message,
+          code: error.code,
+          hint: error.hint || 'A record with this value already exists'
+        }, { status: 400 })
+      }
+      
+      // Check for foreign key violations
+      if (error.code === '23503') { // Foreign key constraint violation
+        return NextResponse.json({ 
+          error: 'Failed to update profile', 
+          details: error.message,
+          code: error.code,
+          hint: error.hint || 'Referenced record does not exist'
+        }, { status: 400 })
+      }
+      
+      return NextResponse.json({ 
+        error: 'Failed to update profile', 
+        details: error.message,
+        code: error.code,
+        hint: error.hint
+      }, { status: 500 })
     }
 
     return NextResponse.json({ data })

@@ -2749,48 +2749,14 @@ export default function TeamDashboard() {
                           ? [snap.mentioned_user_profile]
                           : []
                       
-                      // For both views: show multiple avatars when there are multiple recipients
-                      // For "received" view: show sender + other recipients if multiple
-                      // For "given" view: show all recipients if multiple
-                      type ProfileForAvatar = { id?: string; avatar_url: string | null; full_name: string | null; email: string | null }
-                      let profilesToShow: ProfileForAvatar[] = []
+                      // Determine if there are multiple recipients
+                      const hasMultipleRecipients = recipientProfiles.length > 1
                       
-                      if (snapViewType === 'received') {
-                        // In received view, show sender + other recipients if there are multiple recipients
-                        const senderProfile = snap.submitted_by_profile
-                        if (recipientProfiles.length > 1) {
-                          // Multiple recipients: show sender + other recipients (excluding current user)
-                          if (senderProfile) {
-                            const senderWithId: ProfileForAvatar = { ...senderProfile, id: (senderProfile as any).id || 'sender' }
-                            const otherRecipients: ProfileForAvatar[] = recipientProfiles
-                              .filter(p => (p as any).id !== user?.id)
-                              .map(p => ({ ...p, id: (p as any).id }))
-                            profilesToShow = [senderWithId, ...otherRecipients].slice(0, 4)
-                          } else {
-                            // No sender, just show recipients
-                            profilesToShow = recipientProfiles.map(p => ({ ...p, id: (p as any).id })).slice(0, 4)
-                          }
-                        } else if (senderProfile) {
-                          // Single recipient, just show sender
-                          profilesToShow = [{ ...senderProfile, id: (senderProfile as any).id || 'sender' }]
-                        } else {
-                          // Fallback
-                          profilesToShow = recipientProfiles.map(p => ({ ...p, id: (p as any).id }))
-                        }
-                      } else {
-                        // In given view, show all recipients (multiple if applicable)
-                        profilesToShow = recipientProfiles.map(p => ({ ...p, id: (p as any).id })).slice(0, 4)
-                      }
-                      
-                      const showMultipleAvatars = profilesToShow.length > 1
-                      const maxAvatars = 3 // Smaller limit for dashboard (50px avatars)
-                      const avatarsToDisplay = showMultipleAvatars ? profilesToShow.slice(0, maxAvatars) : []
-                      const remainingCount = showMultipleAvatars ? profilesToShow.length - maxAvatars : 0
-                      
-                      // Single avatar fallback
+                      // For single recipient: show normal avatar
+                      // For multiple recipients: show small avatars in rows
                       let profilePicture: string | null = null
                       let avatarName: string | null = null
-                      if (!showMultipleAvatars) {
+                      if (!hasMultipleRecipients) {
                         if (snapViewType === 'received') {
                           profilePicture = snap.submitted_by_profile?.avatar_url || null
                           avatarName = senderName
@@ -2803,107 +2769,131 @@ export default function TeamDashboard() {
                       return (
                         <div key={snap.id} className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/30' : 'bg-black/40'} rounded-xl p-1.5 border-2 transition-all hover:opacity-80 relative`} style={{ borderColor: `${style.accent}66` }}>
                           <div className="flex items-start gap-2">
-                            <div className="flex-shrink-0" style={{ padding: '2px', width: '50px', height: '50px', position: 'relative' }}>
-                              {showMultipleAvatars ? (
-                                <div className="relative w-full h-full" style={{ minWidth: '50px' }}>
-                                  {avatarsToDisplay.map((profile, index) => {
-                                    const overlap = index > 0 ? -10 : 0 // Overlap by 10px for smaller avatars
-                                    const zIndex = profilesToShow.length - index
-                                    const scale = profilesToShow.length > 1 ? 0.75 : 1
+                            {/* Avatar section - only show for single recipient, or show small avatars in rows for multiple */}
+                            {!hasMultipleRecipients && profilePicture ? (
+                              <div className="flex-shrink-0" style={{ width: '50px', height: '50px' }}>
+                                <img
+                                  src={profilePicture}
+                                  alt={avatarName || 'User'}
+                                  className="rounded-lg w-full h-full object-cover border"
+                                  style={{
+                                    borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
+                                    borderWidth: '1.5px',
+                                  }}
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement
+                                    target.style.display = 'none'
+                                    const parent = target.parentElement
+                                    if (parent) {
+                                      const fallback = parent.querySelector(`.snap-avatar-fallback-${idx}`) as HTMLElement
+                                      if (fallback) fallback.style.display = 'flex'
+                                    }
+                                  }}
+                                />
+                                <div
+                                  className={`snap-avatar-fallback-${idx} w-full h-full rounded-lg flex items-center justify-center hidden border`}
+                                  style={{
+                                    backgroundColor: style.accent,
+                                    borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
+                                    borderWidth: '1.5px',
+                                  }}
+                                >
+                                  <User className={`w-3 h-3 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
+                                </div>
+                              </div>
+                            ) : hasMultipleRecipients ? (
+                              <div className="flex-shrink-0" style={{ width: '50px', height: '50px' }}>
+                                {/* Stacked overlapping avatars for multiple recipients */}
+                                <div className="relative" style={{ width: '50px', height: '50px' }}>
+                                  {recipientProfiles.slice(0, 3).map((profile, index) => {
+                                    const avatarSize = 32
+                                    const overlap = 12
+                                    const leftOffset = index * (avatarSize - overlap)
+                                    const zIndex = 10 - index
                                     
                                     return (
                                       <div
-                                        key={(profile as any).id || `profile-${index}`}
+                                        key={(profile as any).id || `profile-${idx}-${index}`}
                                         className="absolute"
                                         style={{
-                                          left: `${overlap * index}px`,
+                                          left: `${leftOffset}px`,
+                                          top: '50%',
+                                          transform: 'translateY(-50%)',
+                                          width: `${avatarSize}px`,
+                                          height: `${avatarSize}px`,
                                           zIndex: zIndex,
-                                          width: `${100 * scale}%`,
-                                          height: `${100 * scale}%`,
                                         }}
                                       >
                                         {profile.avatar_url ? (
                                           <img
                                             src={profile.avatar_url}
                                             alt={profile.full_name || profile.email || 'User'}
-                                            className="rounded-lg w-full h-full object-cover border"
+                                            className="rounded-full w-full h-full object-cover border-2"
                                             style={{
                                               borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
-                                              borderWidth: '1.5px',
+                                              backgroundColor: '#fff',
                                             }}
                                             onError={(e) => {
                                               const target = e.target as HTMLImageElement
                                               target.style.display = 'none'
                                               const parent = target.parentElement
                                               if (parent) {
-                                                const fallback = parent.querySelector(`.snap-avatar-fallback-${idx}-${index}`) as HTMLElement
+                                                const fallback = parent.querySelector(`.snap-stacked-avatar-fallback-${idx}-${index}`) as HTMLElement
                                                 if (fallback) fallback.style.display = 'flex'
                                               }
                                             }}
                                           />
-                                        ) : null}
-                                        <div
-                                          className={`snap-avatar-fallback-${idx}-${index} w-full h-full rounded-lg flex items-center justify-center hidden border`}
-                                          style={{
+                                        ) : (
+                                          <div className="w-full h-full rounded-full flex items-center justify-center border-2" style={{
                                             backgroundColor: style.accent,
                                             borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
-                                            borderWidth: '1.5px',
-                                          }}
-                                        >
+                                          }}>
+                                            <User className={`w-3 h-3 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
+                                          </div>
+                                        )}
+                                        <div className={`snap-stacked-avatar-fallback-${idx}-${index} w-full h-full rounded-full flex items-center justify-center hidden border-2`} style={{
+                                          backgroundColor: style.accent,
+                                          borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
+                                        }}>
                                           <User className={`w-3 h-3 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
                                         </div>
                                       </div>
                                     )
                                   })}
-                                  {remainingCount > 0 && (
+                                  {/* Show count badge if more than 3 recipients */}
+                                  {recipientProfiles.length > 3 && (
                                     <div
-                                      className="absolute flex items-center justify-center border rounded-lg"
+                                      className="absolute"
                                       style={{
-                                        left: `${(maxAvatars - 1) * -10}px`,
-                                        width: '75%',
-                                        height: '75%',
-                                        backgroundColor: style.accent,
-                                        borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
-                                        borderWidth: '1.5px',
-                                        zIndex: 100,
+                                        left: `${3 * (32 - 12)}px`,
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        width: '32px',
+                                        height: '32px',
+                                        zIndex: 1,
                                       }}
                                     >
-                                      <span className={`text-[10px] font-bold ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`}>
-                                        +{remainingCount}
-                                      </span>
+                                      <div className="w-full h-full rounded-full flex items-center justify-center border-2 text-[8px] font-bold" style={{
+                                        backgroundColor: style.accent,
+                                        borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
+                                        color: mode === 'chaos' || mode === 'code' ? '#000000' : mode === 'chill' ? '#4A1818' : '#FFFFFF',
+                                      }}>
+                                        +{recipientProfiles.length - 3}
+                                      </div>
                                     </div>
                                   )}
                                 </div>
-                              ) : profilePicture ? (
-                                <>
-                                  <img 
-                                    src={profilePicture} 
-                                    alt={avatarName || 'User'}
-                                    className={`rounded-lg w-full h-full object-cover`}
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement
-                                      target.style.display = 'none'
-                                      const parent = target.parentElement
-                                      if (parent) {
-                                        const fallback = parent.querySelector(`.snap-avatar-fallback-${idx}`) as HTMLElement
-                                        if (fallback) fallback.style.display = 'flex'
-                                      }
-                                    }}
-                                  />
-                                  <div className={`snap-avatar-fallback-${idx} w-full h-full rounded-full flex items-center justify-center hidden`} style={{ 
-                                    backgroundColor: style.accent
-                                  }}>
-                                    <User className={`w-5 h-5 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
-                                  </div>
-                                </>
-                              ) : (
-                                <div className="w-full h-full rounded-full flex items-center justify-center" style={{ 
-                                  backgroundColor: style.accent
-                                }}>
-                                  <User className={`w-5 h-5 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
-                                </div>
-                              )}
-                            </div>
+                              </div>
+                            ) : (
+                              <div className="flex-shrink-0 w-[50px] h-[50px] rounded-lg flex items-center justify-center border" style={{
+                                backgroundColor: style.accent,
+                                borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
+                                borderWidth: '1.5px',
+                              }}>
+                                <User className={`w-3 h-3 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
+                              </div>
+                            )}
+                            
                             <div className="flex-1 min-w-0">
                               <p className={`text-lg mb-2 leading-relaxed ${style.text}`}>{snap.snap_content}</p>
                               {snapViewType === 'received' && senderName && (

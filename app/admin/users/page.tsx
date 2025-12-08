@@ -202,8 +202,17 @@ export default function UsersAdminPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to update user')
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch {
+          // If response is not JSON, use status text
+          throw new Error(`Failed to update user: ${response.status} ${response.statusText}`)
+        }
+        const errorMessage = errorData.details 
+          ? `${errorData.error || 'Failed to update user'}\n\nDetails: ${errorData.details}${errorData.code ? `\nCode: ${errorData.code}` : ''}${errorData.hint ? `\nHint: ${errorData.hint}` : ''}`
+          : errorData.error || 'Failed to update user'
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()

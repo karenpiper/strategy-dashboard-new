@@ -36,22 +36,57 @@ Return a JSON object with this exact structure:
 
 Make the do's and don'ts silly, specific, and related to the horoscope content. They should be funny and slightly absurd but still relevant.`
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a witty horoscope transformer. You take traditional horoscopes and make them irreverent and fun in the style of Co-Star. You always return valid JSON.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      response_format: { type: 'json_object' },
-      max_tokens: 600,
-      temperature: 0.9,
-    })
+    // Support fallback API key for rate limit/quota errors
+    let completion
+    try {
+      completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a witty horoscope transformer. You take traditional horoscopes and make them irreverent and fun in the style of Co-Star. You always return valid JSON.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        response_format: { type: 'json_object' },
+        max_tokens: 600,
+        temperature: 0.9,
+      })
+    } catch (error: any) {
+      // Try fallback key if available and primary key hit limits
+      const isQuotaError = error?.status === 429 || 
+                          error?.status === 402 ||
+                          error?.message?.toLowerCase().includes('quota') ||
+                          error?.message?.toLowerCase().includes('rate limit')
+      
+      if (isQuotaError && process.env.OPENAI_API_KEY_FALLBACK) {
+        console.log('⚠️ Primary OpenAI API key hit limits, trying fallback key for text transformation...')
+        const fallbackOpenai = new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY_FALLBACK,
+        })
+        completion = await fallbackOpenai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a witty horoscope transformer. You take traditional horoscopes and make them irreverent and fun in the style of Co-Star. You always return valid JSON.',
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          response_format: { type: 'json_object' },
+          max_tokens: 600,
+          temperature: 0.9,
+        })
+      } else {
+        throw error
+      }
+    }
 
     const responseText = completion.choices[0]?.message?.content?.trim()
     if (!responseText) {
