@@ -581,7 +581,20 @@ export default function WorkSampleAdmin() {
       if (response.ok) {
         setIsAddDialogOpen(false)
         resetForm()
-        fetchWorkSamples()
+        
+        // Check if active filters would hide the new work sample
+        const wouldBeHidden = (filterTypeId && formData.type_id !== filterTypeId) || 
+                              (filterAuthorId && formData.author_id !== filterAuthorId)
+        
+        // If filters would hide it, clear them so the new item is visible
+        if (wouldBeHidden) {
+          setFilterTypeId(null)
+          setFilterAuthorId(null)
+          console.log('ℹ️ Cleared filters to show newly added work sample')
+        }
+        
+        // Refresh with cache-busting to ensure new item appears
+        fetchWorkSamples(true)
       } else {
         const errorMsg = result.details 
           ? `${result.error}\n\nDetails: ${result.details}`
@@ -651,7 +664,8 @@ export default function WorkSampleAdmin() {
         setIsEditDialogOpen(false)
         setEditingItem(null)
         resetForm()
-        fetchWorkSamples()
+        // Refresh with cache-busting to ensure updated item appears
+        fetchWorkSamples(true)
       } else {
         const errorMsg = result.details 
           ? `${result.error}\n\nDetails: ${result.details}${result.code ? `\nCode: ${result.code}` : ''}`
