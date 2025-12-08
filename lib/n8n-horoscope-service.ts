@@ -115,7 +115,26 @@ export async function generateHoroscopeViaN8n(
         throw new Error(`n8n webhook error: ${errorMessage}`)
       }
 
-      const result = await response.json()
+      // Get response text first to check if it's empty or invalid
+      const responseText = await response.text()
+      
+      if (!responseText || responseText.trim() === '') {
+        throw new Error('n8n webhook returned empty response body')
+      }
+
+      // Try to parse JSON with better error handling
+      let result: any
+      try {
+        result = JSON.parse(responseText)
+      } catch (parseError: any) {
+        console.error('Failed to parse n8n response as JSON:', {
+          responseText: responseText.substring(0, 500), // Log first 500 chars for debugging
+          error: parseError.message
+        })
+        throw new Error(
+          `n8n webhook returned invalid JSON response. Response body: ${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}`
+        )
+      }
 
       // Validate response structure
       if (!result.horoscope || !Array.isArray(result.dos) || !Array.isArray(result.donts)) {
