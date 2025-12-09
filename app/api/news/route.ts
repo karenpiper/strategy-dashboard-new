@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-// Cache configuration: 5 minutes for user-specific data
-export const revalidate = 300
+// Disable caching for news API to ensure fresh data after adds/updates
+export const dynamic = 'force-dynamic'
 
 // GET - Fetch all news items with optional search and filter
 export async function GET(request: NextRequest) {
@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category')
     const sortBy = searchParams.get('sortBy') || 'published_date'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
+    const offset = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = parseInt(searchParams.get('limit') || '1000', 10)
 
     // Build query
     let query = supabase
@@ -106,8 +108,8 @@ export async function GET(request: NextRequest) {
         hasMore: count ? offset + limit < count : false
       }
     })
-    // Add cache headers for client-side caching
-    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+    // Disable caching to ensure fresh data
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
     return response
   } catch (error: any) {
     console.error('Error in news API:', error)

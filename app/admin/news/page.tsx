@@ -138,8 +138,12 @@ export default function NewsPage() {
       if (filterCategory !== 'all') params.append('category', filterCategory)
       if (sortBy) params.append('sortBy', sortBy)
       if (sortOrder) params.append('sortOrder', sortOrder)
+      // Add cache-busting timestamp
+      params.append('_t', Date.now().toString())
 
-      const response = await fetch(`/api/news?${params.toString()}`)
+      const response = await fetch(`/api/news?${params.toString()}`, {
+        cache: 'no-store'
+      })
       const result = await response.json()
       
       if (response.ok) {
