@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
         title,
         content,
         url,
+        image_url,
         category,
         tags,
         pinned,
@@ -138,6 +139,7 @@ export async function POST(request: NextRequest) {
       title, 
       content, 
       url, 
+      image_url,
       category, 
       tags, 
       pinned,
@@ -187,6 +189,7 @@ export async function POST(request: NextRequest) {
         title,
         content: content || null,
         url: url || null,
+        image_url: image_url || null,
         category: category || null,
         tags: tagsArray.length > 0 ? tagsArray : null,
         pinned: pinned || false,
@@ -198,6 +201,7 @@ export async function POST(request: NextRequest) {
         title,
         content,
         url,
+        image_url,
         category,
         tags,
         pinned,
@@ -246,6 +250,7 @@ export async function PUT(request: NextRequest) {
       title, 
       content, 
       url, 
+      image_url,
       category, 
       tags, 
       pinned,
@@ -283,6 +288,9 @@ export async function PUT(request: NextRequest) {
     if (url !== undefined) {
       updateData.url = url || null
     }
+    if (image_url !== undefined) {
+      updateData.image_url = image_url || null
+    }
     if (category !== undefined) {
       updateData.category = category || null
     }
@@ -312,6 +320,7 @@ export async function PUT(request: NextRequest) {
         title,
         content,
         url,
+        image_url,
         category,
         tags,
         pinned,

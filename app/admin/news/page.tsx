@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,14 +16,18 @@ import {
   Trash2, 
   Filter,
   Pin,
-  ExternalLink
+  ExternalLink,
+  Upload,
+  X
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface NewsItem {
   id: string
   title: string
   content: string | null
   url: string | null
+  image_url: string | null
   category: string | null
   tags: string[] | null
   pinned: boolean
@@ -72,11 +76,15 @@ export default function NewsPage() {
     title: '',
     content: '',
     url: '',
+    image_url: '',
     category: '',
     tags: '',
     pinned: false,
     published_date: getTodayDate(),
   })
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const imageUploadRef = useRef<HTMLInputElement>(null)
 
   // Theme-aware styling helpers
   const getBgClass = () => {
@@ -181,6 +189,7 @@ export default function NewsPage() {
           title: formData.title,
           content: formData.content || null,
           url: formData.url || null,
+          image_url: formData.image_url || null,
           category: formData.category || null,
           tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : null,
           pinned: formData.pinned,
@@ -214,11 +223,13 @@ export default function NewsPage() {
       title: item.title,
       content: item.content || '',
       url: item.url || '',
+      image_url: item.image_url || '',
       category: item.category || '',
       tags: item.tags ? item.tags.join(', ') : '',
       pinned: item.pinned,
       published_date: item.published_date || getTodayDate(),
     })
+    setImagePreview(item.image_url || null)
     setIsEditDialogOpen(true)
   }
 
@@ -444,6 +455,52 @@ export default function NewsPage() {
                     placeholder="https://example.com"
                     type="url"
                   />
+                </div>
+                <div>
+                  <Label className={cardStyle.text}>Image (optional)</Label>
+                  <div className="space-y-2">
+                    {imagePreview && (
+                      <div className="relative">
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          className="max-w-full h-48 object-cover rounded-md"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setImagePreview(null)
+                            setFormData({ ...formData, image_url: '' })
+                            if (imageUploadRef.current) {
+                              imageUploadRef.current.value = ''
+                            }
+                          }}
+                          className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={imageUploadRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        id="image-upload-add"
+                      />
+                      <Label
+                        htmlFor="image-upload-add"
+                        className={`flex items-center gap-2 px-4 py-2 ${cardStyle.border} border ${cardStyle.text} cursor-pointer ${getRoundedClass('rounded-md')} hover:opacity-80`}
+                      >
+                        <Upload className="w-4 h-4" />
+                        {uploadingImage ? 'Uploading...' : imagePreview ? 'Change Image' : 'Upload Image'}
+                      </Label>
+                    </div>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -732,6 +789,52 @@ export default function NewsPage() {
                   placeholder="https://example.com"
                   type="url"
                 />
+              </div>
+              <div>
+                <Label className={cardStyle.text}>Image (optional)</Label>
+                <div className="space-y-2">
+                  {imagePreview && (
+                    <div className="relative">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="max-w-full h-48 object-cover rounded-md"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setImagePreview(null)
+                          setFormData({ ...formData, image_url: '' })
+                          if (imageUploadRef.current) {
+                            imageUploadRef.current.value = ''
+                          }
+                        }}
+                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={imageUploadRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="image-upload-edit"
+                    />
+                    <Label
+                      htmlFor="image-upload-edit"
+                      className={`flex items-center gap-2 px-4 py-2 ${cardStyle.border} border ${cardStyle.text} cursor-pointer ${getRoundedClass('rounded-md')} hover:opacity-80`}
+                    >
+                      <Upload className="w-4 h-4" />
+                      {uploadingImage ? 'Uploading...' : imagePreview ? 'Change Image' : 'Upload Image'}
+                    </Label>
+                  </div>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

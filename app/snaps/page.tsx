@@ -561,15 +561,15 @@ export default function SnapsPage() {
                       key={snap.id}
                       className={`bg-white ${getRoundedClass('rounded-xl')} p-2 shadow-sm`}
                     >
-                      <div className="flex items-start gap-2">
-                        {/* Avatar section - only show for single recipient, or show small avatars in rows for multiple */}
+                      <div className="flex items-start gap-3">
+                        {/* Avatar section - use small avatars like top bar */}
                         {profilesToShow.length > 0 && !hasMultipleRecipients ? (
-                          <div className="flex-shrink-0" style={{ width: '100px', height: '100px' }}>
+                          <div className="flex-shrink-0 w-8 h-8">
                             {profilesToShow[0]?.avatar_url ? (
                               <img
                                 src={profilesToShow[0].avatar_url}
                                 alt={profilesToShow[0].full_name || profilesToShow[0].email || 'User'}
-                                className={`${getRoundedClass('rounded-lg')} w-full h-full object-cover border-2`}
+                                className={`${getRoundedClass('rounded-full')} w-8 h-8 object-cover border-2`}
                                 style={{
                                   borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
                                 }}
@@ -583,109 +583,68 @@ export default function SnapsPage() {
                                   }
                                 }}
                               />
-                            ) : (
-                              <div className={`w-full h-full ${getRoundedClass('rounded-lg')} flex items-center justify-center border-2`} style={{
-                                backgroundColor: style.accent,
-                                borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
-                              }}>
-                                <Users className={`w-10 h-10 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
-                              </div>
-                            )}
-                            <div className="snaps-page-avatar-fallback w-full h-full rounded-lg flex items-center justify-center hidden border-2" style={{
+                            ) : null}
+                            <div className={`snaps-page-avatar-fallback w-8 h-8 ${getRoundedClass('rounded-full')} flex items-center justify-center border-2 ${profilesToShow[0]?.avatar_url ? 'hidden' : ''}`} style={{
                               backgroundColor: style.accent,
                               borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
                             }}>
-                              <Users className={`w-10 h-10 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
+                              <Users className={`w-4 h-4 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
                             </div>
                           </div>
                         ) : hasMultipleRecipients ? (
-                          <div className="flex-shrink-0" style={{ width: '100px', height: '100px' }}>
-                            {/* Stacked overlapping avatars for multiple recipients */}
-                            <div className="relative" style={{ width: '100px', height: '100px' }}>
-                              {recipientProfiles.slice(0, 3).map((profile, index) => {
-                                const avatarSize = 60
-                                const overlap = 20
-                                const leftOffset = index * (avatarSize - overlap)
-                                const zIndex = 10 - index
-                                
-                                return (
-                                  <div
-                                    key={profile.id || index}
-                                    className="absolute"
-                                    style={{
-                                      left: `${leftOffset}px`,
-                                      top: '50%',
-                                      transform: 'translateY(-50%)',
-                                      width: `${avatarSize}px`,
-                                      height: `${avatarSize}px`,
-                                      zIndex: zIndex,
+                          <div className="flex-shrink-0 flex items-center -space-x-2">
+                            {recipientProfiles.slice(0, 3).map((profile, index) => (
+                              <div
+                                key={profile.id || index}
+                                className={`w-8 h-8 ${getRoundedClass('rounded-full')} border-2`}
+                                style={{
+                                  borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
+                                  backgroundColor: mode === 'chaos' ? '#2A2A2A' : mode === 'chill' ? '#FFFFFF' : '#1a1a1a',
+                                }}
+                              >
+                                {profile.avatar_url ? (
+                                  <img
+                                    src={profile.avatar_url}
+                                    alt={profile.full_name || profile.email || 'User'}
+                                    className={`w-8 h-8 ${getRoundedClass('rounded-full')} object-cover`}
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement
+                                      target.style.display = 'none'
+                                      const parent = target.parentElement
+                                      if (parent) {
+                                        const fallback = parent.querySelector(`.snaps-page-stacked-avatar-fallback-${index}`) as HTMLElement
+                                        if (fallback) fallback.style.display = 'flex'
+                                      }
                                     }}
-                                  >
-                                    {profile.avatar_url ? (
-                                      <img
-                                        src={profile.avatar_url}
-                                        alt={profile.full_name || profile.email || 'User'}
-                                        className={`${getRoundedClass('rounded-full')} w-full h-full object-cover border-2`}
-                                        style={{
-                                          borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
-                                          backgroundColor: '#fff',
-                                        }}
-                                        onError={(e) => {
-                                          const target = e.target as HTMLImageElement
-                                          target.style.display = 'none'
-                                          const parent = target.parentElement
-                                          if (parent) {
-                                            const fallback = parent.querySelector(`.snaps-page-stacked-avatar-fallback-${index}`) as HTMLElement
-                                            if (fallback) fallback.style.display = 'flex'
-                                          }
-                                        }}
-                                      />
-                                    ) : (
-                                      <div className={`w-full h-full ${getRoundedClass('rounded-full')} flex items-center justify-center border-2`} style={{
-                                        backgroundColor: style.accent,
-                                        borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
-                                      }}>
-                                        <Users className={`w-6 h-6 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
-                                      </div>
-                                    )}
-                                    <div className={`snaps-page-stacked-avatar-fallback-${index} w-full h-full rounded-full flex items-center justify-center hidden border-2`} style={{
-                                      backgroundColor: style.accent,
-                                      borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
-                                    }}>
-                                      <Users className={`w-6 h-6 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                              {/* Show count badge if more than 3 recipients */}
-                              {recipientProfiles.length > 3 && (
-                                <div
-                                  className="absolute"
-                                  style={{
-                                    left: `${3 * (60 - 20)}px`,
-                                    top: '50%',
-                                    transform: 'translateY(-50%)',
-                                    width: '60px',
-                                    height: '60px',
-                                    zIndex: 1,
-                                  }}
-                                >
-                                  <div className={`w-full h-full ${getRoundedClass('rounded-full')} flex items-center justify-center border-2 text-xs font-bold`} style={{
-                                    backgroundColor: style.accent,
-                                    borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
-                                    color: mode === 'chaos' || mode === 'code' ? '#000000' : mode === 'chill' ? '#4A1818' : '#FFFFFF',
-                                  }}>
-                                    +{recipientProfiles.length - 3}
-                                  </div>
+                                  />
+                                ) : null}
+                                <div className={`snaps-page-stacked-avatar-fallback-${index} w-8 h-8 ${getRoundedClass('rounded-full')} flex items-center justify-center ${profile.avatar_url ? 'hidden' : ''}`} style={{
+                                  backgroundColor: style.accent,
+                                }}>
+                                  <Users className={`w-4 h-4 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            ))}
+                            {/* Show count badge if more than 3 recipients */}
+                            {recipientProfiles.length > 3 && (
+                              <div
+                                className={`w-8 h-8 ${getRoundedClass('rounded-full')} border-2 flex items-center justify-center text-xs font-bold`}
+                                style={{
+                                  backgroundColor: style.accent,
+                                  borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
+                                  color: mode === 'chaos' || mode === 'code' ? '#000000' : mode === 'chill' ? '#4A1818' : '#FFFFFF',
+                                }}
+                              >
+                                +{recipientProfiles.length - 3}
+                              </div>
+                            )}
                           </div>
                         ) : (
-                          <div className="flex-shrink-0 w-[100px] h-[100px] rounded-full flex items-center justify-center" style={{ 
-                            backgroundColor: style.accent
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2" style={{ 
+                            backgroundColor: style.accent,
+                            borderColor: mode === 'chaos' ? '#1A1A1A' : mode === 'chill' ? '#FFFFFF' : '#FFFFFF',
                           }}>
-                            <Users className={`w-10 h-10 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
+                            <Users className={`w-4 h-4 ${mode === 'chaos' || mode === 'code' ? 'text-black' : mode === 'chill' ? 'text-[#4A1818]' : 'text-black'}`} />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
