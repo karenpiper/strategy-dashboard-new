@@ -325,11 +325,74 @@ export default function NewsPage() {
       title: '',
       content: '',
       url: '',
+      image_url: '',
       category: '',
       tags: '',
       pinned: false,
       published_date: getTodayDate(),
     })
+    setImagePreview(null)
+  }
+
+  // Handle image upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB')
+      return
+    }
+
+    setUploadingImage(true)
+
+    try {
+      const supabase = createClient()
+      const fileExt = file.name.split('.').pop()
+      const fileName = `news-image-${Date.now()}.${fileExt}`
+      const filePath = `${user.id}/${fileName}`
+
+      // Preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+
+      // Upload to Supabase storage (using work-sample-thumbnails bucket)
+      const { error: uploadError } = await supabase.storage
+        .from('work-sample-thumbnails')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('work-sample-thumbnails')
+        .getPublicUrl(filePath)
+
+      setFormData({ ...formData, image_url: publicUrl })
+      
+      // Reset file input
+      if (imageUploadRef.current) {
+        imageUploadRef.current.value = ''
+      }
+    } catch (err: any) {
+      console.error('Error uploading image:', err)
+      alert(err.message || 'Failed to upload image')
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   // Handle pin toggle
