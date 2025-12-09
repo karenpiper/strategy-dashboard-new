@@ -98,6 +98,30 @@ export default function TeamDashboard() {
   const [horoscopeImageLoading, setHoroscopeImageLoading] = useState(true)
   const [horoscopeError, setHoroscopeError] = useState<string | null>(null)
   const [horoscopeImageError, setHoroscopeImageError] = useState<string | null>(null)
+  const [appSettings, setAppSettings] = useState<Record<string, string>>({})
+  const [settingsLoading, setSettingsLoading] = useState(true)
+
+  // Fetch app settings
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const response = await fetch('/api/app-settings')
+        if (response.ok) {
+          const data = await response.json()
+          setAppSettings(data.settings || {})
+        }
+      } catch (error) {
+        console.error('Error fetching app settings:', error)
+      } finally {
+        setSettingsLoading(false)
+      }
+    }
+    fetchSettings()
+  }, [])
+
+  // Check if horoscope is enabled (default to true if not set)
+  const horoscopeEnabled = appSettings.horoscope_enabled !== 'false'
+  const horoscopeAvatarEnabled = appSettings.horoscope_avatar_enabled !== 'false'
   
   // Rotating loading messages
   const horoscopeLoadingMessages = [
@@ -1392,12 +1416,12 @@ export default function TeamDashboard() {
         let imageResponse = null
         let imageData = null
         
-        if (!textData.image_url && textResponse.ok) {
-          // No image URL in main response, try avatar endpoint
+        if (!textData.image_url && textResponse.ok && horoscopeAvatarEnabled) {
+          // No image URL in main response, try avatar endpoint (only if avatar is enabled)
           console.log('No image_url in main response, fetching from avatar endpoint...')
           imageResponse = await fetch('/api/horoscope/avatar')
           imageData = await imageResponse.json()
-        } else if (textData.image_url) {
+        } else if (textData.image_url && horoscopeAvatarEnabled) {
           // We have image URL from main endpoint, use it directly
           console.log('✅ Using image_url from main horoscope endpoint:', textData.image_url.substring(0, 50) + '...')
           // Create a mock response object for consistency
@@ -1408,18 +1432,20 @@ export default function TeamDashboard() {
             prompt_slots_labels: null,
             prompt_slots_reasoning: null,
           }
-          // Still fetch avatar endpoint for metadata (slots, reasoning) but don't wait for it
-          fetch('/api/horoscope/avatar').then(async (response) => {
-            if (response.ok) {
-              const metadata = await response.json()
-              setHoroscopeImagePrompt(metadata.image_prompt || null)
-              setHoroscopeImageSlots(metadata.prompt_slots || null)
-              setHoroscopeImageSlotsLabels(metadata.prompt_slots_labels || null)
-              setHoroscopeImageSlotsReasoning(metadata.prompt_slots_reasoning || null)
-            }
-          }).catch(err => {
-            console.warn('Failed to fetch avatar metadata:', err)
-          })
+          // Still fetch avatar endpoint for metadata (slots, reasoning) but don't wait for it (only if avatar is enabled)
+          if (horoscopeAvatarEnabled) {
+            fetch('/api/horoscope/avatar').then(async (response) => {
+              if (response.ok) {
+                const metadata = await response.json()
+                setHoroscopeImagePrompt(metadata.image_prompt || null)
+                setHoroscopeImageSlots(metadata.prompt_slots || null)
+                setHoroscopeImageSlotsLabels(metadata.prompt_slots_labels || null)
+                setHoroscopeImageSlotsReasoning(metadata.prompt_slots_reasoning || null)
+              }
+            }).catch(err => {
+              console.warn('Failed to fetch avatar metadata:', err)
+            })
+          }
         }
         
         if (!isMounted) {
@@ -1465,12 +1491,17 @@ export default function TeamDashboard() {
             setHoroscopeError(null)
             hasFetchedRef.current = true // Mark as fetched
             
-            // If image_url is in the text response, use it immediately (from n8n)
-            if (textData.image_url) {
+            // If image_url is in the text response, use it immediately (from n8n) - only if avatar is enabled
+            if (textData.image_url && horoscopeAvatarEnabled) {
               console.log('✅ Using image URL from horoscope text response:', textData.image_url)
               console.log('   Image URL length:', textData.image_url.length)
               console.log('   Image URL type:', typeof textData.image_url)
               setHoroscopeImage(textData.image_url)
+              setHoroscopeImageLoading(false)
+              setHoroscopeImageError(null)
+            } else if (!horoscopeAvatarEnabled) {
+              // Avatar is disabled, clear image state
+              setHoroscopeImage(null)
               setHoroscopeImageLoading(false)
               setHoroscopeImageError(null)
             } else {
@@ -1508,7 +1539,8 @@ export default function TeamDashboard() {
           console.log('Reasoning received:', imageData.prompt_slots_reasoning)
           // Only set today's image - historical images remain in database
           // Only overwrite if we don't already have an image from text response
-          if (isMounted) {
+          // Only set image if avatar is enabled
+          if (isMounted && horoscopeAvatarEnabled) {
             if (!horoscopeImage || !textData.image_url) {
               console.log('   Setting image from avatar endpoint')
               setHoroscopeImage(imageData.image_url)
@@ -1521,6 +1553,11 @@ export default function TeamDashboard() {
             setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
             console.log('Reasoning state set to:', imageData.prompt_slots_reasoning)
             hasFetchedRef.current = true // Mark as fetched
+          } else if (!horoscopeAvatarEnabled) {
+            // Avatar is disabled, clear image state
+            setHoroscopeImage(null)
+            setHoroscopeImageLoading(false)
+            setHoroscopeImageError(null)
           }
         } else if (textData.image_url) {
           // Image URL was already set from text response above
@@ -1861,7 +1898,7 @@ export default function TeamDashboard() {
   }
 
   // Horoscope Image Actions - Tooltip, Reload (admin only), and Download
-  const horoscopeImageActions = horoscopeImage && (
+  const horoscopeImageActions = horoscopeImage && horoscopeAvatarEnabled && (
     <TooltipProvider>
       <div className="flex items-center gap-2">
         {/* Info button - admin only */}
@@ -2538,7 +2575,7 @@ export default function TeamDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 items-stretch">
           {/* Horoscope - 2 columns */}
-          {(() => {
+          {horoscopeEnabled && (() => {
             const style = mode === 'chaos' ? getSpecificCardStyle('horoscope') : getCardStyle('vibes')
             return (
               <Card className={`${style.bg} ${style.border} p-6 ${getRoundedClass('rounded-[2.5rem]')} md:col-span-2 h-full flex flex-col`}
