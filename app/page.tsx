@@ -1455,7 +1455,14 @@ export default function TeamDashboard() {
         
         // Process text response (already parsed above)
         if (!textResponse.ok) {
-          console.error('Horoscope API error:', textResponse.status, textData)
+          console.error('❌ Horoscope API error:', {
+            status: textResponse.status,
+            statusText: textResponse.statusText,
+            error: textData.error,
+            code: textData.code,
+            details: textData.details,
+            fullResponse: textData
+          })
           if (textResponse.status === 401) {
             setHoroscopeError('Please log in to view your horoscope')
           } else if (textResponse.status === 404 && textData.error?.includes('profile')) {
@@ -1464,7 +1471,10 @@ export default function TeamDashboard() {
               setShowProfileModal(true)
             }
           } else {
-            setHoroscopeError(textData.error || 'Failed to load horoscope')
+            // Show detailed error message to user
+            const errorMsg = textData.error || textData.details || 'Failed to load horoscope'
+            console.error('   Setting error message:', errorMsg)
+            setHoroscopeError(errorMsg)
           }
         } else {
           console.log('Horoscope data received:', textData)
