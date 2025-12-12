@@ -12,16 +12,27 @@ const openai = new OpenAI({
 })
 
 // Vercel AI SDK OpenAI provider for text generation
-const primaryOpenAI = vercelOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Initialize lazily to avoid issues with module loading
+let primaryOpenAI: any = null
+let fallbackOpenAI: any = null
 
-// Fallback OpenAI provider (optional)
-const fallbackOpenAI = process.env.OPENAI_API_KEY_FALLBACK
-  ? vercelOpenAI({
+function getPrimaryOpenAI() {
+  if (!primaryOpenAI) {
+    primaryOpenAI = vercelOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  }
+  return primaryOpenAI
+}
+
+function getFallbackOpenAI() {
+  if (!fallbackOpenAI && process.env.OPENAI_API_KEY_FALLBACK) {
+    fallbackOpenAI = vercelOpenAI({
       apiKey: process.env.OPENAI_API_KEY_FALLBACK,
     })
-  : null
+  }
+  return fallbackOpenAI
+}
 
 /**
  * Transform a Cafe Astrology horoscope into Co-Star style with do's and don'ts
@@ -54,10 +65,11 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
     // Use Vercel AI SDK for text generation with fallback support
     let result
     try {
+      const model = getPrimaryOpenAI()('gpt-4o-mini', {
+        responseFormat: { type: 'json_object' },
+      })
       result = await generateText({
-        model: primaryOpenAI('gpt-4o-mini', {
-          responseFormat: { type: 'json_object' },
-        }),
+        model: model,
         system: 'You are a witty horoscope transformer. You take traditional horoscopes and make them irreverent and fun in the style of Co-Star. You always return valid JSON.',
         prompt: prompt,
         maxTokens: 600,
@@ -116,15 +128,17 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
       
       // Try fallback key if available and primary key hit limits
       // Be more aggressive - try fallback on ANY error if we have one configured
-      if (fallbackOpenAI && (isQuotaError || status === 429 || status === 401 || status === 400)) {
+      const fallback = getFallbackOpenAI()
+      if (fallback && (isQuotaError || status === 429 || status === 401 || status === 400)) {
         console.log('⚠️ Primary OpenAI API key hit limits, trying fallback key for text transformation...')
         console.log('   Original error:', errorMessage.substring(0, 200))
         console.log('   Error status:', status)
         try {
+          const fallbackModel = fallback('gpt-4o-mini', {
+            responseFormat: { type: 'json_object' },
+          })
           result = await generateText({
-            model: fallbackOpenAI('gpt-4o-mini', {
-              responseFormat: { type: 'json_object' },
-            }),
+            model: fallbackModel,
             system: 'You are a witty horoscope transformer. You take traditional horoscopes and make them irreverent and fun in the style of Co-Star. You always return valid JSON.',
             prompt: prompt,
             maxTokens: 600,
@@ -148,7 +162,7 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
       } else {
         // No fallback available or not a quota error - throw original error
         console.log('⚠️ Not trying fallback:', {
-          hasFallback: !!fallbackOpenAI,
+          hasFallback: !!getFallbackOpenAI(),
           isQuotaError,
           status
         })
