@@ -54,7 +54,7 @@
     "next": "^15.5.7",
     "next-themes": "latest",
     "openai": "^4.20.0",
-    "ai": "^4.0.0",
+    "ai": "^5.0.113",
     "@ai-sdk/openai": "^1.0.0",
     "react": "^19.2.1",
     "react-day-picker": "9.8.0",
