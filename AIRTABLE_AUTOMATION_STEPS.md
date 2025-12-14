@@ -213,11 +213,21 @@ return {
 ```
 *(Replace `action_1` with the actual name/number of your "Build Image Prompt" action)*
 
+**Record ID:** 
+- **Leave this blank** or set to "Don't save to record"
+- You don't need to save to a table - you'll use the image URL in the next step
+
+**Output Attachment Field:**
+- **Leave this blank** or set to "Don't save to record"
+- You don't need an attachment field - the image URL will be available in the action output
+
 **Settings:**
 - **Model:** DALL-E 3 (or best available)
 - **Size:** 1024x1024 (or your preference)
 - **Quality:** Standard or HD
 - **Style:** Natural (or your preference)
+
+**Note:** The image URL will be available in the action output (like `{{action_2.output.url}}` or `{{action_2.output.imageUrl}}`). You'll use this in the "Combine Results" step to send it back to your app. You don't need to store it in an Airtable table.
 
 4. Click **"Save"**
 
@@ -234,18 +244,21 @@ return {
 const config = input.config();
 
 // Get text result (adjust action names/numbers to match your setup)
-// If you used structured data:
-const textData = config.action_2_output || config.action_3_output || {};
-// If you parsed it:
-// const textData = config.action_3_output || config.action_4_output || {};
+// Use Airtable's variable inspector to see the exact field names
+// Common names: output, result, text, horoscope, etc.
+const textData = config.output || config.result || config.text || {};
 
 // Get image result (adjust to match your image generation action)
-const imageData = config.action_2_output || config.action_3_output || {};
+// The image URL is usually in: output.url, output.imageUrl, url, imageUrl, etc.
+const imageData = config.output || config.result || {};
 
-// Extract image URL
-let imageUrl = imageData.url || imageData.imageUrl || imageData.output || '';
+// Extract image URL - try common field names
+let imageUrl = imageData.url || imageData.imageUrl || imageData.output || imageData.attachmentUrl || '';
 if (!imageUrl && imageData.content) {
   imageUrl = imageData.content;
+}
+if (!imageUrl && typeof imageData === 'string') {
+  imageUrl = imageData;
 }
 
 // Get original webhook data
