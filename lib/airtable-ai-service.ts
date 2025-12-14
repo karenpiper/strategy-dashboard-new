@@ -290,19 +290,23 @@ export async function generateHoroscopeViaAirtable(
       const pollInterval = 2000 // 2 seconds
       const startTime = Date.now()
       
+      // Get Supabase admin client
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE
+      
+      if (!supabaseUrl || !supabaseServiceKey) {
+        throw new Error('Supabase configuration missing for webhook polling')
+      }
+      
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+      })
+      
       while (Date.now() - startTime < maxWaitTime) {
         await new Promise(resolve => setTimeout(resolve, pollInterval))
         
         // Check Supabase for the horoscope
-        const supabaseAdmin = await import('@supabase/supabase-js').then(m => {
-          const { createClient } = m
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-          const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE!
-          return createClient(supabaseUrl, supabaseServiceKey, {
-            auth: { autoRefreshToken: false, persistSession: false }
-          })
-        })
-        
         const { data: horoscope } = await supabaseAdmin
           .from('horoscopes')
           .select('*')
