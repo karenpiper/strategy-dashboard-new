@@ -126,32 +126,27 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
 ```
 
 **Output Schema:**
-```json
-{
-  "type": "object",
-  "properties": {
-    "horoscope": {
-      "type": "string",
-      "description": "The transformed horoscope text in Co-Star style"
-    },
-    "dos": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Array of 3 'do' suggestions"
-    },
-    "donts": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Array of 3 'don't' suggestions"
-    }
-  },
-  "required": ["horoscope", "dos", "donts"]
-}
-```
+
+In Airtable, you'll define the schema using their interface. Create an object with these properties:
+
+**Root Type:** `object`
+
+**Properties:**
+1. **horoscope**
+   - Type: `string`
+   - Description: "The transformed horoscope text in Co-Star style"
+
+2. **dos**
+   - Type: `array`
+   - Items Type: `string`
+   - Description: "Array of 3 'do' suggestions"
+
+3. **donts**
+   - Type: `array`
+   - Items Type: `string`
+   - Description: "Array of 3 'don't' suggestions"
+
+**Required Fields:** Check all three fields (horoscope, dos, donts) as required
 
 **Settings:**
 - **Model:** Use the best available (GPT-4 or similar)
