@@ -23,11 +23,23 @@
  */
 
 interface HoroscopeGenerationRequest {
-  cafeAstrologyText: string
+  cafeAstrologyText?: string // Optional - Airtable can fetch if not provided
   starSign: string
-  imagePrompt: string
+  imagePrompt?: string // Optional - Airtable can build if not provided
   userId: string
   date: string
+  userProfile?: {
+    name?: string
+    role?: string | null
+    hobbies?: string[] | null
+    likes_fantasy?: boolean
+    likes_scifi?: boolean
+    likes_cute?: boolean
+    likes_minimal?: boolean
+    hates_clowns?: boolean
+  }
+  weekday?: string
+  season?: string
   slots?: any
   reasoning?: any
 }
@@ -75,7 +87,8 @@ async function triggerAirtableWebhook(request: HoroscopeGenerationRequest): Prom
                   'http://localhost:3000'
   const callbackUrl = `${baseUrl}/api/airtable/horoscope-webhook`
 
-  // Send webhook to Airtable
+  // Send webhook to Airtable with user profile data
+  // Airtable will fetch Cafe Astrology text and build image prompt
   const response = await fetch(webhookUrl, {
     method: 'POST',
     headers: {
@@ -85,11 +98,25 @@ async function triggerAirtableWebhook(request: HoroscopeGenerationRequest): Prom
       userId: request.userId,
       date: request.date,
       starSign: request.starSign,
-      cafeAstrologyText: request.cafeAstrologyText,
-      imagePrompt: request.imagePrompt,
+      // User profile data for building image prompt
+      userProfile: {
+        name: request.userProfile?.name,
+        role: request.userProfile?.role,
+        hobbies: request.userProfile?.hobbies,
+        likes_fantasy: request.userProfile?.likes_fantasy,
+        likes_scifi: request.userProfile?.likes_scifi,
+        likes_cute: request.userProfile?.likes_cute,
+        likes_minimal: request.userProfile?.likes_minimal,
+        hates_clowns: request.userProfile?.hates_clowns,
+      },
+      weekday: request.weekday,
+      season: request.season,
       callbackUrl: callbackUrl, // Where Airtable should send results
-      slots: request.slots,
-      reasoning: request.reasoning,
+      // Optional: pass these if already computed, otherwise Airtable will build them
+      cafeAstrologyText: request.cafeAstrologyText, // Optional - Airtable can fetch if not provided
+      imagePrompt: request.imagePrompt, // Optional - Airtable can build if not provided
+      slots: request.slots, // Optional
+      reasoning: request.reasoning, // Optional
     })
   })
 
@@ -258,13 +285,10 @@ export async function generateHoroscopeViaAirtable(
     useWebhook: options?.useWebhook ?? true,
   })
 
-  // Validate inputs
-  if (!request.imagePrompt || request.imagePrompt.trim() === '') {
-    throw new Error('Image prompt is empty - cannot generate image without prompt')
-  }
-
-  if (!request.cafeAstrologyText || request.cafeAstrologyText.trim() === '') {
-    throw new Error('Cafe Astrology text is empty - cannot generate horoscope without source text')
+  // Validate inputs - Airtable will fetch/build these if not provided
+  // Just need starSign at minimum
+  if (!request.starSign || request.starSign.trim() === '') {
+    throw new Error('Star sign is required')
   }
 
   const useWebhook = options?.useWebhook ?? true

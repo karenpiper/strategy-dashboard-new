@@ -746,30 +746,45 @@ export async function GET(request: NextRequest) {
         }
         
         // Check if we should use Airtable AI (if configured)
-        const useAirtableAI = process.env.AIRTABLE_API_KEY && process.env.AIRTABLE_AI_BASE_ID
+        const useAirtableAI = !!process.env.AIRTABLE_WEBHOOK_URL || (process.env.AIRTABLE_API_KEY && process.env.AIRTABLE_AI_BASE_ID)
         
         let directResult
         if (useAirtableAI) {
           console.log('🚀 Generating horoscope text and image via Airtable AI...')
           console.log('   Using Airtable AI tokens for generation')
+          console.log('   Airtable will fetch Cafe Astrology text and build image prompt')
           console.log('🔍 DEBUG: Airtable AI call parameters:', {
             starSign,
-            imagePromptLength: imagePrompt?.length || 0,
             userId,
             date: todayDate,
-            cafeAstrologyTextLength: cafeAstrologyText?.length || 0
+            hasUserProfile: !!userProfile,
+            weekday: userProfile.weekday,
+            season: userProfile.season
           })
           const airtableStartTime = Date.now()
           
-          // Call Airtable AI service
+          // Call Airtable AI service - Airtable will fetch Cafe Astrology and build prompt
           directResult = await generateHoroscopeViaAirtable({
-            cafeAstrologyText,
             starSign,
-            imagePrompt,
-            slots: promptSlots,
-            reasoning: promptReasoning,
             userId,
             date: todayDate,
+            userProfile: {
+              name: profile.full_name || null,
+              role: profile.role || null,
+              hobbies: profile.hobbies || null,
+              likes_fantasy: profile.likes_fantasy || false,
+              likes_scifi: profile.likes_scifi || false,
+              likes_cute: profile.likes_cute || false,
+              likes_minimal: profile.likes_minimal || false,
+              hates_clowns: profile.hates_clowns || false,
+            },
+            weekday: userProfile.weekday,
+            season: userProfile.season,
+            // Optional: pass pre-fetched data if available (Airtable can use or ignore)
+            cafeAstrologyText: cafeAstrologyText,
+            imagePrompt: imagePrompt,
+            slots: promptSlots,
+            reasoning: promptReasoning,
           })
           
           const airtableElapsed = Date.now() - airtableStartTime

@@ -1,14 +1,20 @@
 # Airtable AI Horoscope Generation - Step-by-Step Guide (Option B1)
 
-This guide walks you through setting up an Airtable Automation that generates both horoscope text and images using Airtable AI.
+This guide walks you through setting up an Airtable Automation that:
+1. **Fetches** the Cafe Astrology horoscope text from the website
+2. **Builds** the image prompt from user profile data
+3. **Generates** both the horoscope text and image using Airtable AI
+4. **Sends** results back to your app
 
 ## Overview
 
 Your automation will:
-1. **Receive webhook** from your app with horoscope request
-2. **Generate horoscope text** (structured data) using Airtable AI
-3. **Generate image** using Airtable AI
-4. **Combine results** and send webhook back to your app
+1. **Receive webhook** from your app with user profile data
+2. **Fetch Cafe Astrology text** from the website (for the star sign)
+3. **Build image prompt** using AI based on user profile
+4. **Generate horoscope text** (structured data) using Airtable AI
+5. **Generate image** using Airtable AI
+6. **Combine results** and send webhook back to your app
 
 ---
 
@@ -35,33 +41,229 @@ Your automation will:
   "userId": "user-uuid-here",
   "date": "2024-12-12",
   "starSign": "Aries",
-  "cafeAstrologyText": "Original horoscope text from Cafe Astrology...",
-  "imagePrompt": "A detailed image prompt for DALL-E...",
-  "callbackUrl": "https://your-app.vercel.app/api/airtable/horoscope-webhook",
-  "slots": { ... },
-  "reasoning": { ... }
+  "userProfile": {
+    "name": "John Doe",
+    "role": "Designer",
+    "hobbies": ["photography", "reading"],
+    "likes_fantasy": true,
+    "likes_scifi": false,
+    "likes_cute": true,
+    "likes_minimal": false,
+    "hates_clowns": true
+  },
+  "weekday": "Thursday",
+  "season": "Winter",
+  "callbackUrl": "https://your-app.vercel.app/api/airtable/horoscope-webhook"
 }
 ```
 
 ---
 
-## Step 3: Generate Horoscope Text (Structured Data)
+## Step 3: Fetch Cafe Astrology Text
 
 1. Click **"Add action"** after the webhook trigger
+2. Select **"Make HTTP request"** or **"Run a script"**
+
+### Option A: Using "Make HTTP request"
+
+**URL:**
+```
+https://cafeastrology.com/{{trigger.body.starSign.toLowerCase()}}dailyhoroscope.html
+```
+
+**Method:** GET
+
+**Headers:**
+```
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+```
+
+**Response Handling:**
+- Store the HTML response
+- You'll need to parse it in the next step
+
+### Option B: Using "Run a script" (Recommended - Handles Parsing)
+
+**Script:**
+```javascript
+// Get star sign from webhook
+const starSign = {{trigger.body.starSign}};
+
+// Map star signs to Cafe Astrology URL format
+const signMap = {
+  'Aries': 'aries',
+  'Taurus': 'taurus',
+  'Gemini': 'gemini',
+  'Cancer': 'cancer',
+  'Leo': 'leo',
+  'Virgo': 'virgo',
+  'Libra': 'libra',
+  'Scorpio': 'scorpio',
+  'Sagittarius': 'sagittarius',
+  'Capricorn': 'capricorn',
+  'Aquarius': 'aquarius',
+  'Pisces': 'pisces',
+};
+
+const signSlug = signMap[starSign] || starSign.toLowerCase();
+const url = `https://cafeastrology.com/${signSlug}dailyhoroscope.html`;
+
+// Fetch the page
+const response = await fetch(url, {
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+  },
+});
+
+if (!response.ok) {
+  throw new Error(`Failed to fetch horoscope: ${response.status} ${response.statusText}`);
+}
+
+const html = await response.text();
+
+// Parse the HTML to extract the daily horoscope text
+let horoscopeText = '';
+
+// Method 1: Look for the date pattern and extract text after it
+const datePattern = /(November|December|January|February|March|April|May|June|July|August|September|October)\s+\d{1,2},\s+\d{4}/;
+const dateMatch = html.match(datePattern);
+
+if (dateMatch) {
+  const dateIndex = html.indexOf(dateMatch[0]);
+  const afterDate = html.substring(dateIndex + dateMatch[0].length);
+  
+  // Extract text until we hit another section
+  const nextSection = afterDate.match(/<(h[1-6]|div class|section|nav|footer|Creativity:)/i);
+  const endIndex = nextSection ? afterDate.indexOf(nextSection[0]) : Math.min(afterDate.length, 2000);
+  
+  let extracted = afterDate.substring(0, endIndex);
+  // Remove HTML tags
+  extracted = extracted.replace(/<[^>]*>/g, ' ');
+  // Remove script and style content
+  extracted = extracted.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ');
+  extracted = extracted.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ');
+  // Clean up whitespace
+  extracted = extracted.replace(/\s+/g, ' ').trim();
+  
+  // Find the actual horoscope text (usually the longest paragraph)
+  const sentences = extracted.split(/[.!?]\s+/).filter(s => s.length > 50);
+  if (sentences.length > 0) {
+    horoscopeText = sentences.slice(0, 5).join('. ').trim();
+    if (horoscopeText && !horoscopeText.endsWith('.')) {
+      horoscopeText += '.';
+    }
+  }
+}
+
+// Method 2: Look for paragraph tags with substantial content
+if (!horoscopeText || horoscopeText.length < 200) {
+  const allText = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+                      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+                      .replace(/<[^>]+>/g, ' ')
+                      .replace(/\s+/g, ' ')
+                      .trim();
+  
+  if (dateMatch) {
+    const dateText = dateMatch[0];
+    const dateIndex = allText.indexOf(dateText);
+    if (dateIndex !== -1) {
+      const afterDate = allText.substring(dateIndex + dateText.length);
+      const endMarkers = ['Creativity:', 'Love:', 'Business:', 'Yesterday', 'Tomorrow', 'Choose Another Sign'];
+      let endIndex = afterDate.length;
+      for (const marker of endMarkers) {
+        const markerIndex = afterDate.indexOf(marker);
+        if (markerIndex !== -1 && markerIndex < endIndex) {
+          endIndex = markerIndex;
+        }
+      }
+      
+      const extracted = afterDate.substring(0, endIndex).trim();
+      if (extracted.length > 200) {
+        horoscopeText = extracted;
+      }
+    }
+  }
+}
+
+if (!horoscopeText || horoscopeText.length < 100) {
+  throw new Error(`Could not extract horoscope text from Cafe Astrology page. Found text length: ${horoscopeText?.length || 0}`);
+}
+
+return {
+  cafeAstrologyText: horoscopeText,
+  starSign: starSign
+};
+```
+
+3. **Name this action:** "Fetch Cafe Astrology Text"
+4. **Save the action**
+
+---
+
+## Step 4: Build Image Prompt Using AI
+
+1. Click **"Add action"** after "Fetch Cafe Astrology Text"
+2. Select **"Generate text with AI"** or **"Generate structured data with AI"**
+3. Configure the AI generation:
+
+**Prompt:**
+```
+You are an expert at creating detailed, vivid image prompts for AI image generation (like DALL-E 3).
+
+Create a detailed image prompt based on this user profile:
+- Name: {{trigger.body.userProfile.name}}
+- Role: {{trigger.body.userProfile.role}}
+- Hobbies: {{trigger.body.userProfile.hobbies}}
+- Likes fantasy: {{trigger.body.userProfile.likes_fantasy}}
+- Likes sci-fi: {{trigger.body.userProfile.likes_scifi}}
+- Likes cute things: {{trigger.body.userProfile.likes_cute}}
+- Likes minimal design: {{trigger.body.userProfile.likes_minimal}}
+- Hates clowns: {{trigger.body.userProfile.hates_clowns}}
+- Star Sign: {{trigger.body.starSign}}
+- Day of week: {{trigger.body.weekday}}
+- Season: {{trigger.body.season}}
+
+The image should be a hero image for a horoscope dashboard. It should be:
+- Visually striking and engaging
+- Related to the user's interests and preferences
+- Appropriate for the star sign, day, and season
+- Professional but fun
+- Suitable for a dashboard background
+
+Return ONLY the image prompt text, nothing else. Make it detailed and specific (approximately 100-150 words). Include style, mood, colors, composition, and any relevant details.
+```
+
+**Settings:**
+- Model: Use the best available (GPT-4 or similar)
+- Temperature: 0.8 (for creativity)
+- Max tokens: 300
+
+4. **Name this action:** "Build Image Prompt"
+5. **Save the action**
+
+---
+
+## Step 5: Generate Horoscope Text (Structured Data)
+
+1. Click **"Add action"** after "Build Image Prompt"
 2. Select **"Generate structured data with AI"** (or "Generate text with AI" if structured data isn't available)
 3. Configure the AI generation:
 
 ### If Using "Generate structured data with AI":
 
 **Input Data:**
-- Access webhook data using: `{{trigger.body.cafeAstrologyText}}` and `{{trigger.body.starSign}}`
+- Access Cafe Astrology text: `{{action_1.output.cafeAstrologyText}}` (replace `action_1` with your "Fetch Cafe Astrology Text" action name)
+- Access star sign: `{{trigger.body.starSign}}`
 
 **Prompt:**
 ```
 Transform this horoscope from Cafe Astrology into the irreverent, silly style of Co-Star. Make it witty, slightly sarcastic, and fun. Keep the core meaning but make it more casual and entertaining.
 
 Original horoscope for {{trigger.body.starSign}}:
-{{trigger.body.cafeAstrologyText}}
+{{action_1.output.cafeAstrologyText}}
 
 Return a JSON object with this exact structure:
 {
@@ -73,7 +275,7 @@ Return a JSON object with this exact structure:
 Make the do's and don'ts silly, specific, and related to the horoscope content. They should be funny and slightly absurd but still relevant.
 ```
 
-**Output Schema** (if using structured data):
+**Output Schema:**
 ```json
 {
   "type": "object",
@@ -119,18 +321,19 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
 
 ---
 
-## Step 4: Generate Image (Parallel to Text Generation)
+## Step 6: Generate Image (Parallel to Text Generation)
 
-**Important:** This should run in parallel with text generation for speed.
+**Important:** This can run in parallel with text generation for speed, but Airtable may require sequential execution.
 
-1. Click **"Add action"** after the webhook trigger (not after the text generation)
+1. Click **"Add action"** after "Build Image Prompt"
 2. Select **"Generate image with AI"** (or "Generate image")
 3. Configure the image generation:
 
 **Image Prompt:**
 ```
-{{trigger.body.imagePrompt}}
+{{action_2.output}} 
 ```
+(Replace `action_2` with your "Build Image Prompt" action name/number)
 
 **Settings:**
 - Model: DALL-E 3 (or best available)
@@ -141,11 +344,11 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
 4. **Name this action:** "Generate Horoscope Image"
 5. **Save the action**
 
-**Note:** Airtable may not support parallel execution directly. If not, run image generation after text generation.
+**Note:** If Airtable doesn't support parallel execution, run image generation after text generation.
 
 ---
 
-## Step 5: Parse Text Result (If Needed)
+## Step 7: Parse Text Result (If Needed)
 
 If you used "Generate text with AI" instead of structured data, add a parsing step:
 
@@ -155,7 +358,7 @@ If you used "Generate text with AI" instead of structured data, add a parsing st
 
 ```javascript
 // Get the AI text generation result
-const textResult = {{action_1.output}}; // Replace action_1 with your actual action name
+const textResult = {{action_3.output}}; // Replace action_3 with your actual action name
 
 // Extract the JSON content
 let jsonString = textResult;
@@ -195,7 +398,7 @@ return {
 
 ---
 
-## Step 6: Combine Results
+## Step 8: Combine Results
 
 1. Click **"Add action"** after both text and image generation
 2. Select **"Run a script"** or use a **"Merge"** action if available
@@ -204,12 +407,12 @@ return {
 **If using script:**
 ```javascript
 // Get text result (from structured data or parsed)
-const textData = {{action_2.output}}; // Your text generation action
+const textData = {{action_4.output}}; // Your text generation action
 // OR if you parsed it:
-// const textData = {{action_3.output}}; // Your parse action
+// const textData = {{action_5.output}}; // Your parse action
 
 // Get image result
-const imageData = {{action_2.output}}; // Your image generation action
+const imageData = {{action_3.output}}; // Your image generation action
 
 // Extract image URL
 let imageUrl = imageData.url || imageData.imageUrl || imageData.output?.url;
@@ -217,10 +420,14 @@ if (!imageUrl && imageData.content) {
   imageUrl = imageData.content;
 }
 
+// Get original webhook data
+const userId = {{trigger.body.userId}};
+const date = {{trigger.body.date}};
+
 // Combine everything
 return {
-  userId: {{trigger.body.userId}},
-  date: {{trigger.body.date}},
+  userId: userId,
+  date: date,
   horoscope: textData.horoscope || textData.output?.horoscope,
   dos: textData.dos || textData.output?.dos || [],
   donts: textData.donts || textData.output?.donts || [],
@@ -229,12 +436,18 @@ return {
 };
 ```
 
+**Note:** Replace action numbers with your actual action names/numbers:
+- `action_1` = Fetch Cafe Astrology Text
+- `action_2` = Build Image Prompt
+- `action_3` = Generate Image
+- `action_4` = Generate Horoscope Text (or `action_5` = Parse Horoscope Text)
+
 4. **Name this action:** "Combine Results"
 5. **Save the action**
 
 ---
 
-## Step 7: Send Webhook Back to Your App
+## Step 9: Send Webhook Back to Your App
 
 1. Click **"Add action"** after "Combine Results"
 2. Select **"Send webhook"** or **"Make HTTP request"**
@@ -259,24 +472,24 @@ Content-Type: application/json
 **Body:**
 ```json
 {
-  "userId": "{{action_4.output.userId}}",
-  "date": "{{action_4.output.date}}",
+  "userId": "{{action_6.output.userId}}",
+  "date": "{{action_6.output.date}}",
   "status": "Completed",
-  "horoscope": "{{action_4.output.horoscope}}",
-  "dos": {{action_4.output.dos}},
-  "donts": {{action_4.output.donts}},
-  "imageUrl": "{{action_4.output.imageUrl}}"
+  "horoscope": "{{action_6.output.horoscope}}",
+  "dos": {{action_6.output.dos}},
+  "donts": {{action_6.output.donts}},
+  "imageUrl": "{{action_6.output.imageUrl}}"
 }
 ```
 
-**Note:** Replace `action_4` with your actual "Combine Results" action name/number.
+**Note:** Replace `action_6` with your actual "Combine Results" action name/number.
 
 4. **Name this action:** "Send Results to App"
 5. **Save the action**
 
 ---
 
-## Step 8: Add Error Handling (Optional but Recommended)
+## Step 10: Add Error Handling (Optional but Recommended)
 
 1. Add error handling to each AI generation action:
    - Most Airtable actions have an "On error" option
@@ -298,7 +511,7 @@ Content-Type: application/json
 
 ---
 
-## Step 9: Test the Automation
+## Step 11: Test the Automation
 
 1. **Turn on the automation** (toggle switch at top)
 2. **Test with a sample webhook** from your app or use Airtable's test feature
@@ -311,15 +524,25 @@ Content-Type: application/json
   "userId": "test-user-123",
   "date": "2024-12-12",
   "starSign": "Aries",
-  "cafeAstrologyText": "Today is a good day for Aries to take action...",
-  "imagePrompt": "A mystical scene with stars and cosmic energy, vibrant colors, fantasy style",
+  "userProfile": {
+    "name": "Test User",
+    "role": "Designer",
+    "hobbies": ["photography"],
+    "likes_fantasy": true,
+    "likes_scifi": false,
+    "likes_cute": true,
+    "likes_minimal": false,
+    "hates_clowns": true
+  },
+  "weekday": "Thursday",
+  "season": "Winter",
   "callbackUrl": "https://your-app.vercel.app/api/airtable/horoscope-webhook"
 }
 ```
 
 ---
 
-## Step 10: Set Environment Variable
+## Step 12: Set Environment Variable
 
 In your Vercel project:
 
@@ -332,6 +555,16 @@ In your Vercel project:
 ---
 
 ## Troubleshooting
+
+### Cafe Astrology fetch fails
+- Check that the star sign mapping is correct
+- Verify the URL format matches Cafe Astrology's structure
+- Check if Cafe Astrology blocks automated requests (may need different headers)
+
+### Image prompt generation fails
+- Ensure all user profile fields are passed correctly
+- Check that the AI model has access to generate text
+- Try a simpler prompt first
 
 ### Text generation returns invalid JSON
 - Check that you're using "Generate structured data" if available
@@ -358,7 +591,11 @@ In your Vercel project:
 ## Complete Automation Flow Diagram
 
 ```
-Webhook Trigger
+Webhook Trigger (receives user profile)
+    ↓
+Fetch Cafe Astrology Text (from website)
+    ↓
+Build Image Prompt (using AI + user profile)
     ↓
     ├─→ Generate Horoscope Text (Structured Data)
     │       ↓
@@ -381,6 +618,10 @@ If Airtable doesn't support parallel execution:
 ```
 Webhook Trigger
     ↓
+Fetch Cafe Astrology Text
+    ↓
+Build Image Prompt
+    ↓
 Generate Horoscope Text
     ↓
 Generate Image
@@ -400,4 +641,3 @@ This will be slower but will work the same way.
 2. Test with a sample request
 3. Add the `AIRTABLE_WEBHOOK_URL` to Vercel
 4. Test from your app - the horoscope generation should now use Airtable AI!
-
