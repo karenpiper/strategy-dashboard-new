@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateHoroscopeDirect } from '@/lib/horoscope-direct-service'
+import { generateHoroscopeViaAirtable } from '@/lib/airtable-ai-service'
 import { fetchCafeAstrologyHoroscope } from '@/lib/cafe-astrology'
 import {
   buildUserProfile,
@@ -744,31 +745,62 @@ export async function GET(request: NextRequest) {
           throw new Error('Failed to build image prompt - prompt is empty')
         }
         
-        console.log('🚀 Generating horoscope text and image via direct OpenAI API calls...')
-        console.log('   This replaces n8n workflow with direct API calls for better performance')
-        console.log('🔍 DEBUG: Direct API call parameters:', {
-          starSign,
-          imagePromptLength: imagePrompt?.length || 0,
-          userId,
-          date: todayDate,
-          dateType: typeof todayDate,
-          cafeAstrologyTextLength: cafeAstrologyText?.length || 0
-        })
-        const directStartTime = Date.now()
+        // Check if we should use Airtable AI (if configured)
+        const useAirtableAI = process.env.AIRTABLE_API_KEY && process.env.AIRTABLE_AI_BASE_ID
         
-        // Call direct service for both text transformation and image generation
-        const directResult = await generateHoroscopeDirect({
-          cafeAstrologyText,
-          starSign,
-          imagePrompt,
-          slots: promptSlots,
-          reasoning: promptReasoning,
-          userId,
-          date: todayDate,
-        })
-        
-        const directElapsed = Date.now() - directStartTime
-        console.log(`✅ Direct API calls completed in ${directElapsed}ms`)
+        let directResult
+        if (useAirtableAI) {
+          console.log('🚀 Generating horoscope text and image via Airtable AI...')
+          console.log('   Using Airtable AI tokens for generation')
+          console.log('🔍 DEBUG: Airtable AI call parameters:', {
+            starSign,
+            imagePromptLength: imagePrompt?.length || 0,
+            userId,
+            date: todayDate,
+            cafeAstrologyTextLength: cafeAstrologyText?.length || 0
+          })
+          const airtableStartTime = Date.now()
+          
+          // Call Airtable AI service
+          directResult = await generateHoroscopeViaAirtable({
+            cafeAstrologyText,
+            starSign,
+            imagePrompt,
+            slots: promptSlots,
+            reasoning: promptReasoning,
+            userId,
+            date: todayDate,
+          })
+          
+          const airtableElapsed = Date.now() - airtableStartTime
+          console.log(`✅ Airtable AI generation completed in ${airtableElapsed}ms`)
+        } else {
+          console.log('🚀 Generating horoscope text and image via direct OpenAI API calls...')
+          console.log('   This replaces n8n workflow with direct API calls for better performance')
+          console.log('🔍 DEBUG: Direct API call parameters:', {
+            starSign,
+            imagePromptLength: imagePrompt?.length || 0,
+            userId,
+            date: todayDate,
+            dateType: typeof todayDate,
+            cafeAstrologyTextLength: cafeAstrologyText?.length || 0
+          })
+          const directStartTime = Date.now()
+          
+          // Call direct service for both text transformation and image generation
+          directResult = await generateHoroscopeDirect({
+            cafeAstrologyText,
+            starSign,
+            imagePrompt,
+            slots: promptSlots,
+            reasoning: promptReasoning,
+            userId,
+            date: todayDate,
+          })
+          
+          const directElapsed = Date.now() - directStartTime
+          console.log(`✅ Direct API calls completed in ${directElapsed}ms`)
+        }
         
         // Validate result before using it
         console.log('📥 Received direct API result:', {
