@@ -114,13 +114,20 @@ for (let record of query.records) {
 
 ##### Option B1: Webhook Trigger (Best - No Record Needed)
 
+**📖 See [AIRTABLE_AI_STEP_BY_STEP.md](./AIRTABLE_AI_STEP_BY_STEP.md) for detailed step-by-step instructions!**
+
+Quick overview:
 1. Create an Automation in Airtable
 2. **Trigger**: "When webhook is received" 
    - Get the webhook URL from Airtable (e.g., `https://hooks.airtable.com/workflows/...`)
    - Set this as `AIRTABLE_WEBHOOK_URL` environment variable
-3. **Action 1**: Run a script or use Airtable AI extension to generate horoscope & image
-   - Access webhook payload data (cafeAstrologyText, starSign, imagePrompt, etc.)
-4. **Action 2**: Send webhook back to your app:
+3. **Action 1**: Generate horoscope text using "Generate structured data with AI"
+   - Uses Cafe Astrology text and star sign
+   - Returns JSON with `horoscope`, `dos`, `donts`
+4. **Action 2**: Generate image using "Generate image with AI"
+   - Uses the image prompt from webhook
+   - Returns image URL
+5. **Action 3**: Combine results and send webhook back to your app
    - URL: `https://your-app.vercel.app/api/airtable/horoscope-webhook`
    - Method: POST
    - Body: Include `userId`, `date`, `horoscope`, `dos`, `donts`, `imageUrl`, etc.
@@ -129,6 +136,7 @@ for (let record of query.records) {
 - ✅ No Airtable record needed (cleaner)
 - ✅ Direct webhook-to-webhook communication
 - ✅ Faster (no database operations in Airtable)
+- ✅ Uses Airtable AI tokens (no direct OpenAI needed)
 
 ##### Option B2: Record-Based with Webhook Callback
 
