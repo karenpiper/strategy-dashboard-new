@@ -106,13 +106,17 @@ If you prefer Airtable to fetch the text itself, create a table with URLs:
 
 **Script:**
 ```javascript
+// IMPORTANT: input.config() can only be called ONCE in Airtable scripts
+// Store it in a variable first
+const config = input.config();
+
 // Get the HTML response from the HTTP request
 // Adjust field names based on your Airtable setup
-const html = input.config().htmlResponse || input.config().response || input.config().body || '';
+const html = config.htmlResponse || config.response || config.body || '';
 
 // Get star sign from webhook (passed through)
-const triggerBody = input.config().triggerBody || {};
-const starSign = input.config().starSign || triggerBody.starSign || '';
+const triggerBody = config.triggerBody || {};
+const starSign = config.starSign || triggerBody.starSign || '';
 
 if (!html) {
   throw new Error('No HTML response received from Cafe Astrology');
