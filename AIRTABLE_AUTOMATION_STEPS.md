@@ -230,7 +230,7 @@ Since Airtable requires a Record ID and Attachment Field, you need a table to st
 
 4. Click **"Save"**
 
-**Note:** This creates a record and gives you a Record ID to use in the next step.
+**Important:** After saving, note the action name/number (e.g., "Action 2" or "Create Image Record"). You'll need this in the next step.
 
 ---
 
@@ -246,16 +246,18 @@ Since Airtable requires a Record ID and Attachment Field, you need a table to st
 ```
 {{action_1.output}}
 ```
-*(Replace `action_1` with the actual name/number of your "Build Image Prompt" action)*
+*(Replace `action_1` with the actual name/number of your "Build Image Prompt" action - use Airtable's variable picker to select it)*
 
-**Record ID:**
-- Use: `{{action_2.id}}` or `{{action_2.recordId}}`
-- (Replace `action_2` with your "Create Image Record" action name/number)
-- This is the record ID from the record you just created
+**Record ID (Required):**
+- Click the field and use Airtable's variable picker
+- Select: `{{Create Image Record.id}}` or `{{Action 2.id}}` 
+- (Use the exact name/number of your "Create Image Record" action)
+- This references the record ID from the record you just created in Step 6a
 
-**Output Attachment Field:**
-- Select the **"Image"** attachment field from your "Horoscope Images" table
-- This is where Airtable will save the generated image
+**Output Attachment Field (Required):**
+- Click the dropdown
+- Select: **"Image"** (the attachment field from your "Horoscope Images" table)
+- This is where Airtable will save the generated image file
 
 **Settings:**
 - **Model:** DALL-E 3 (or best available)
