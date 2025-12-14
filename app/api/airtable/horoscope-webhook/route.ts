@@ -1,5 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSupabaseAdminClient } from '@/app/api/horoscope/route'
+
+/**
+ * Get Supabase admin client (same as horoscope route)
+ */
+async function getSupabaseAdminClient() {
+  const { createClient } = await import('@supabase/supabase-js')
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Supabase configuration missing. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables.')
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
 
 /**
  * Webhook endpoint for Airtable to call when horoscope generation is complete
