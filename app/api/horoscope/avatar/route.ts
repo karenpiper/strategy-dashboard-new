@@ -603,23 +603,6 @@ export async function GET(request: NextRequest) {
           generating: true, // Indicates image is being generated in background
           message: 'Image generation started in background. Please check again in a few moments.',
         })
-          .catch((imageError: any) => {
-            console.error('❌ Background image generation failed:', imageError)
-            console.error('   Error message:', imageError.message)
-            // Don't throw - this is background, user can retry later
-          })
-        
-        // Return immediately - image is generating in background
-        // Frontend can poll this endpoint again to check if image is ready
-        return NextResponse.json({
-          image_url: null,
-          image_prompt: cachedHoroscope.image_prompt,
-          prompt_slots: cachedHoroscope.prompt_slots_json || null,
-          prompt_slots_labels: null,
-          prompt_slots_reasoning: cachedHoroscope.prompt_slots_json?.reasoning || null,
-          generating: true, // Indicates image is being generated in background
-          message: 'Image generation started in background. Please check again in a few moments.',
-        })
       } else {
         console.log('⚠️ No image prompt available - cannot generate image')
         return NextResponse.json(
