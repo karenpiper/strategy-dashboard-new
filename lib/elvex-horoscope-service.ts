@@ -344,12 +344,19 @@ async function generateImageViaAirtable(prompt: string, timezone?: string): Prom
   // Get Airtable configuration
   const apiKey = process.env.AIRTABLE_API_KEY
   const baseId = process.env.AIRTABLE_IMAGE_BASE_ID || process.env.AIRTABLE_AI_BASE_ID || process.env.AIRTABLE_BASE_ID
+  // Use table ID if provided, otherwise use table name
+  // Table ID: tblKPuAESzyVMrK5M (from Airtable API docs)
+  const tableId = process.env.AIRTABLE_IMAGE_TABLE_ID || 'tblKPuAESzyVMrK5M'
   const tableName = process.env.AIRTABLE_IMAGE_TABLE_NAME || 'Image Generation'
+  // Prefer table ID over table name (more reliable, won't break if name changes)
+  const tableIdentifier = tableId
 
   console.log('🔍 Resolved configuration:')
   console.log('   apiKey:', apiKey ? 'SET' : 'MISSING')
   console.log('   baseId:', baseId || 'MISSING')
+  console.log('   tableId:', tableId)
   console.log('   tableName:', tableName)
+  console.log('   Using table identifier:', tableIdentifier)
 
   if (!apiKey || !baseId) {
     const errorMsg = 'Airtable configuration missing. Please set AIRTABLE_API_KEY and AIRTABLE_IMAGE_BASE_ID (or AIRTABLE_AI_BASE_ID) environment variables.'
@@ -361,7 +368,8 @@ async function generateImageViaAirtable(prompt: string, timezone?: string): Prom
     throw new Error(errorMsg)
   }
 
-  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`
+  // Use table ID for more reliable API calls (won't break if table name changes)
+  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableIdentifier)}`
 
   // Format Created At in user's timezone, or UTC if not provided
   const createdAt = timezone 
@@ -472,7 +480,7 @@ To fix:
     
     // Verify the record was actually created by fetching it back
     console.log('🔍 Verifying record was created in Airtable...')
-    const verifyUrl = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}/${recordId}`
+    const verifyUrl = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableIdentifier)}/${recordId}`
     const verifyResponse = await fetch(verifyUrl, {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
