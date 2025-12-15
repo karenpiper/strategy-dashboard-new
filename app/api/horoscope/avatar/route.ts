@@ -3,7 +3,6 @@ import { fetchHoroscopeConfig } from '@/lib/horoscope-config'
 import { createClient } from '@/lib/supabase/server'
 import { getTodayDateUTC, getTodayDateInTimezone } from '@/lib/utils'
 import { generateImageViaAirtable } from '@/lib/elvex-horoscope-service'
-import { generateImageViaAirtable } from '@/lib/elvex-horoscope-service'
 
 // Supabase client setup - uses service role for database operations
 async function getSupabaseAdminClient() {
