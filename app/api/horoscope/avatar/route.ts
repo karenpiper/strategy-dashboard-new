@@ -441,24 +441,47 @@ export async function GET(request: NextRequest) {
     }
     */
     
-    // Image generation is now handled in the main horoscope route via n8n
+    // Image generation is now handled in the main horoscope route via Elvex/Airtable
     // This endpoint now just returns the cached image if it exists
-    // If no image exists, it means the horoscope hasn't been generated yet
-    if (!cachedHoroscope?.image_url || !isFromToday) {
-      if (!cachedHoroscope?.image_url) {
-        console.log('⚠️ No image found in database. Image generation is now handled by the main horoscope route.')
-        console.log('   Please call /api/horoscope first to generate both text and image via n8n.')
-      } else if (!isFromToday) {
-        console.log('⚠️ Image found but was generated on a different day (EST)')
-        console.log('   Cached date:', cachedHoroscope.date)
-        console.log('   Generated at:', cachedHoroscope.generated_at)
-        console.log('   Today (EST):', todayDate)
-        console.log('   Will need to regenerate via main horoscope route')
-      }
+    // If no image exists, check if horoscope exists (image generation may have failed)
+    if (!cachedHoroscope) {
+      console.log('⚠️ No horoscope found in database. Please call /api/horoscope first to generate horoscope.')
       return NextResponse.json(
         { 
-          error: 'Image not found or needs regeneration. Please generate horoscope first by calling /api/horoscope endpoint.',
-          details: 'Image generation is now combined with text generation in the main horoscope route.'
+          error: 'Horoscope not found. Please generate horoscope first by calling /api/horoscope endpoint.',
+          details: 'Horoscope generation is required before image can be retrieved.'
+        },
+        { status: 404 }
+      )
+    }
+    
+    if (!isFromToday) {
+      console.log('⚠️ Image found but was generated on a different day')
+      console.log('   Cached date:', cachedHoroscope.date)
+      console.log('   Generated at:', cachedHoroscope.generated_at)
+      console.log('   Today (EST):', todayDate)
+      console.log('   Will need to regenerate via main horoscope route')
+      return NextResponse.json(
+        { 
+          error: 'Image needs regeneration. Please generate horoscope first by calling /api/horoscope endpoint.',
+          details: 'Image was generated on a different day and needs to be regenerated.'
+        },
+        { status: 404 }
+      )
+    }
+    
+    if (!cachedHoroscope.image_url || cachedHoroscope.image_url.trim() === '') {
+      console.log('⚠️ Horoscope exists but image_url is null or empty')
+      console.log('   This means image generation failed (likely Airtable error)')
+      console.log('   Horoscope date:', cachedHoroscope.date)
+      console.log('   Has text:', !!cachedHoroscope.horoscope_text)
+      console.log('   Image URL:', cachedHoroscope.image_url)
+      return NextResponse.json(
+        { 
+          error: 'Image generation failed. The horoscope was generated but image generation via Airtable failed. Please check Airtable configuration and try regenerating.',
+          details: 'Image generation is handled separately from text generation. Check Vercel logs for Airtable errors.',
+          hasHoroscope: true,
+          imageUrl: null
         },
         { status: 404 }
       )
