@@ -310,8 +310,13 @@ export async function generateHoroscopeViaAirtable(
       console.log('⏳ Waiting for Airtable to process and call webhook callback...')
       
       // For direct webhook mode, we need to wait for the callback
-      // The webhook will store results in Supabase
-      // We'll poll Supabase for the results (since we know userId and date)
+      // If Airtable can't send webhooks, we'll poll Airtable API for results
+      // OR poll Supabase if results are stored there
+      
+      // Option 1: Poll Airtable API for results (if stored in a table)
+      // Option 2: Poll Supabase (if webhook stores results)
+      // For now, fall back to polling Supabase
+      
       const maxWaitTime = 120000 // 2 minutes
       const pollInterval = 2000 // 2 seconds
       const startTime = Date.now()
@@ -332,7 +337,7 @@ export async function generateHoroscopeViaAirtable(
       while (Date.now() - startTime < maxWaitTime) {
         await new Promise(resolve => setTimeout(resolve, pollInterval))
         
-        // Check Supabase for the horoscope
+        // Check Supabase for the horoscope (webhook may have stored it)
         const { data: horoscope } = await supabaseAdmin
           .from('horoscopes')
           .select('*')
@@ -341,7 +346,7 @@ export async function generateHoroscopeViaAirtable(
           .single()
         
         if (horoscope && horoscope.horoscope_text && horoscope.image_url) {
-          console.log('✅ Horoscope found in Supabase (via webhook callback)')
+          console.log('✅ Horoscope found in Supabase (via webhook callback or polling)')
           return {
             horoscope: horoscope.horoscope_text,
             dos: horoscope.horoscope_dos || [],
@@ -355,7 +360,7 @@ export async function generateHoroscopeViaAirtable(
         }
       }
       
-      throw new Error('Timeout waiting for Airtable webhook callback. Results may still be processing.')
+      throw new Error('Timeout waiting for Airtable results. Results may still be processing.')
     } else {
       // Step 1b: Create record in Airtable (fallback method)
       console.log('📝 Creating horoscope generation request in Airtable...')

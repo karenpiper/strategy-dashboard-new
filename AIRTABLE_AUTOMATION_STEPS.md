@@ -350,42 +350,88 @@ return {
 
 ## Step 8: Send Webhook Back to Your App
 
+If Airtable doesn't have "Send webhook" or "Make HTTP request" actions, you have a few options:
+
+### Option 1: Use "Run a script" with HTTP Request (If Available)
+
 1. Click **"Add action"** (after "Combine Results")
-2. Select **"Send webhook"** or **"Make HTTP request"**
-3. Configure the action:
+2. Select **"Run a script"**
+3. **Action Name:** `Send Results to App`
 
-**Action Name:** `Send Results to App`
+**Script:**
+```javascript
+const config = input.config();
+const combinedResults = config.output || config.result || {};
 
-**URL:**
-```
-{{trigger.body.callbackUrl}}
-```
-OR hardcode:
-```
-https://your-app.vercel.app/api/airtable/horoscope-webhook
-```
+// Get callback URL from webhook trigger
+const triggerBody = config.triggerBody || {};
+const callbackUrl = triggerBody.callbackUrl || 'https://your-app.vercel.app/api/airtable/horoscope-webhook';
 
-**Method:** POST
+// Prepare webhook payload
+const payload = {
+  userId: combinedResults.userId || triggerBody.userId || '',
+  date: combinedResults.date || triggerBody.date || '',
+  status: "Completed",
+  horoscope: combinedResults.horoscope || '',
+  dos: combinedResults.dos || [],
+  donts: combinedResults.donts || [],
+  imageUrl: combinedResults.imageUrl || ''
+};
 
-**Headers:**
-```
-Content-Type: application/json
-```
-
-**Body:**
-```json
-{
-  "userId": "{{action_5.output.userId}}",
-  "date": "{{action_5.output.date}}",
-  "status": "Completed",
-  "horoscope": "{{action_5.output.horoscope}}",
-  "dos": {{action_5.output.dos}},
-  "donts": {{action_5.output.donts}},
-  "imageUrl": "{{action_5.output.imageUrl}}"
+// Send HTTP request (if Airtable scripts support fetch/HTTP)
+// Note: This may not be available in all Airtable plans
+try {
+  const response = await fetch(callbackUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload)
+  });
+  
+  if (!response.ok) {
+    throw new Error('Webhook failed: ' + response.statusText);
+  }
+  
+  return { success: true, status: response.status };
+} catch (error) {
+  throw new Error('Failed to send webhook: ' + error.message);
 }
 ```
 
-*(Replace `action_5` with your actual "Combine Results" action name/number)*
+### Option 2: Store Results in Airtable Table (App Polls Instead)
+
+If HTTP requests aren't available, store the results in an Airtable table and have your app poll for them:
+
+1. Click **"Add action"** (after "Combine Results")
+2. Select **"Update record"** or **"Create record"**
+3. **Action Name:** `Store Results`
+
+**Table:** Create a "Horoscope Results" table with fields:
+- User ID (Single line text)
+- Date (Date)
+- Status (Single select: Completed, Failed)
+- Horoscope Text (Long text)
+- Dos (Multiple select or JSON)
+- Donts (Multiple select or JSON)
+- Image URL (URL)
+
+**Fields to set:**
+- **User ID:** `{{Combine Results.output.userId}}`
+- **Date:** `{{Combine Results.output.date}}`
+- **Status:** `Completed`
+- **Horoscope Text:** `{{Combine Results.output.horoscope}}`
+- **Dos:** `{{Combine Results.output.dos}}`
+- **Donts:** `{{Combine Results.output.donts}}`
+- **Image URL:** `{{Combine Results.output.imageUrl}}`
+
+4. Click **"Save"**
+
+**Then update your app** to poll this Airtable table instead of waiting for a webhook callback.
+
+### Option 3: Use Airtable Extension (If Available)
+
+Some Airtable extensions (like "Data Fetcher" or "HTTP Request") might be available in your plan. Check the Extensions marketplace.
 
 4. Click **"Save"**
 
