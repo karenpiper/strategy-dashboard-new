@@ -178,31 +178,8 @@ export async function GET(request: NextRequest) {
       dateStringLength: todayDate.length
     })
     
-    // DEBUG: First, get ALL horoscopes for this user to see what dates exist
-    const { data: allHoroscopesDebug, error: debugError } = await supabaseAdmin
-      .from('horoscopes')
-      .select('id, date, generated_at, horoscope_text, image_url')
-      .eq('user_id', userId)
-      .order('date', { ascending: false })
-      .limit(10)
-    
-    if (!debugError && allHoroscopesDebug) {
-      console.log('🔍 DEBUG: All horoscope records for user:', allHoroscopesDebug.map(h => ({
-        id: h.id,
-        date: h.date,
-        dateType: typeof h.date,
-        dateString: String(h.date),
-        dateLength: String(h.date).length,
-        generated_at: h.generated_at,
-        hasText: !!h.horoscope_text,
-        hasImage: !!h.image_url,
-        dateMatchesToday: String(h.date) === todayDate,
-        dateMatchesTodayStrict: h.date === todayDate
-      })))
-    } else {
-      console.log('⚠️ DEBUG: Could not fetch all horoscopes:', debugError?.message)
-    }
-    
+    // OPTIMIZED: Only query for today's horoscope (1 per person per day)
+    // No need to fetch multiple records - we only need today's
     const { data: cachedHoroscope, error: cacheError } = await supabaseAdmin
       .from('horoscopes')
       .select('star_sign, horoscope_text, horoscope_dos, horoscope_donts, image_url, date, generated_at, character_name, prompt_slots_json')
