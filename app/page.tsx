@@ -1541,8 +1541,11 @@ export default function TeamDashboard() {
               setHoroscopeImage(textData.image_url)
               setHoroscopeImageLoading(false)
               setHoroscopeImageError(null)
-              // Set caption if available from Airtable
-              if (textData.image_caption) {
+              // Set caption if available from Airtable (check both character_name and image_caption for compatibility)
+              if (textData.character_name) {
+                setHoroscopeImageCaption(textData.character_name)
+                setCharacterName(textData.character_name)
+              } else if (textData.image_caption) {
                 setHoroscopeImageCaption(textData.image_caption)
               }
             } else if (!horoscopeAvatarEnabled) {

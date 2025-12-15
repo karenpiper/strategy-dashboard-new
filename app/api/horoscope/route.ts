@@ -461,7 +461,7 @@ export async function GET(request: NextRequest) {
                       .getPublicUrl(filePath)
                     
                     // Update the horoscope record with the image URL
-                    await supabaseAdmin
+                    const { error: updateError } = await supabaseAdmin
                       .from('horoscopes')
                       .update({ 
                         image_url: urlData.publicUrl,
@@ -470,14 +470,19 @@ export async function GET(request: NextRequest) {
                       .eq('user_id', userId)
                       .eq('date', todayDate)
                     
-                    console.log('✅ Uploaded existing Airtable image to Supabase and updated database')
+                    if (updateError) {
+                      console.error('❌ Failed to update database with image URL:', updateError)
+                    } else {
+                      console.log('✅ Uploaded existing Airtable image to Supabase and updated database')
+                    }
                     
+                    // Return the horoscope with the newly uploaded image URL
                     return NextResponse.json({
                       star_sign: cachedHoroscope.star_sign,
                       horoscope_text: cachedHoroscope.horoscope_text,
                       horoscope_dos: cachedHoroscope.horoscope_dos || [],
                       horoscope_donts: cachedHoroscope.horoscope_donts || [],
-                      image_url: urlData.publicUrl,
+                      image_url: urlData.publicUrl, // Return the Supabase URL
                       character_name: airtableImageResult.caption || null,
                       cached: true,
                     })
