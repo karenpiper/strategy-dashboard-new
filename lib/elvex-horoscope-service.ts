@@ -556,7 +556,7 @@ To fix:
     // Step 2: Poll Airtable for the generated image
     // Airtable Automation/Script should generate the image and update the record
     console.log('⏳ Polling Airtable for image generation result...')
-    const maxAttempts = 60 // 2 minutes max (60 attempts * 2 seconds)
+    const maxAttempts = 120 // 4 minutes max (120 attempts * 2 seconds) - image generation can take time
     const delayMs = 2000 // 2 seconds between polls
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {

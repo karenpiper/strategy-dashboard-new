@@ -485,6 +485,7 @@ export async function GET(request: NextRequest) {
           console.log('🚀 ========== GENERATING IMAGE VIA AIRTABLE FROM AVATAR ENDPOINT ==========')
           console.log('   Prompt:', cachedHoroscope.image_prompt.substring(0, 200) + '...')
           console.log('   Timezone:', profile.timezone || 'UTC')
+          console.log('   ⚠️ NOTE: This may take up to 4 minutes while polling Airtable for image generation...')
           
           const imageResult = await generateImageViaAirtable(cachedHoroscope.image_prompt, profile.timezone || undefined)
           
