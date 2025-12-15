@@ -143,6 +143,7 @@ export async function POST(request: NextRequest) {
       category, 
       tags, 
       pinned,
+      headline_only,
       published_date
     } = body
 
@@ -193,6 +194,7 @@ export async function POST(request: NextRequest) {
         category: category || null,
         tags: tagsArray.length > 0 ? tagsArray : null,
         pinned: pinned || false,
+        headline_only: headline_only || false,
         published_date: publishedDate,
         submitted_by: user.id,
       })
@@ -205,6 +207,7 @@ export async function POST(request: NextRequest) {
         category,
         tags,
         pinned,
+        headline_only,
         published_date,
         submitted_by,
         created_at,
@@ -254,6 +257,7 @@ export async function PUT(request: NextRequest) {
       category, 
       tags, 
       pinned,
+      headline_only,
       published_date
     } = body
 
@@ -307,6 +311,9 @@ export async function PUT(request: NextRequest) {
     if (pinned !== undefined) {
       updateData.pinned = pinned || false
     }
+    if (headline_only !== undefined) {
+      updateData.headline_only = headline_only || false
+    }
     if (published_date !== undefined) {
       updateData.published_date = published_date
     }
@@ -324,6 +331,7 @@ export async function PUT(request: NextRequest) {
         category,
         tags,
         pinned,
+        headline_only,
         published_date,
         submitted_by,
         created_at,

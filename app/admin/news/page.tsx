@@ -31,6 +31,7 @@ interface NewsItem {
   category: string | null
   tags: string[] | null
   pinned: boolean
+  headline_only: boolean
   published_date: string
   submitted_by: string
   created_at: string
@@ -80,6 +81,7 @@ export default function NewsPage() {
     category: '',
     tags: '',
     pinned: false,
+    headline_only: false,
     published_date: getTodayDate(),
   })
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -193,6 +195,7 @@ export default function NewsPage() {
           category: formData.category || null,
           tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(Boolean) : null,
           pinned: formData.pinned,
+          headline_only: formData.headline_only,
           published_date: formData.published_date,
         }),
       })
@@ -227,6 +230,7 @@ export default function NewsPage() {
       category: item.category || '',
       tags: item.tags ? item.tags.join(', ') : '',
       pinned: item.pinned,
+      headline_only: item.headline_only || false,
       published_date: item.published_date || getTodayDate(),
     })
     setImagePreview(item.image_url || null)
@@ -329,6 +333,7 @@ export default function NewsPage() {
       category: '',
       tags: '',
       pinned: false,
+      headline_only: false,
       published_date: getTodayDate(),
     })
     setImagePreview(null)
@@ -476,8 +481,8 @@ export default function NewsPage() {
               <DialogHeader>
                 <DialogTitle className={cardStyle.text}>Add New News Item</DialogTitle>
               </DialogHeader>
-              {/* Pinned at the top */}
-              <div className="mb-4">
+              {/* Pinned and Headline Only at the top */}
+              <div className="mb-4 space-y-2">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -487,6 +492,16 @@ export default function NewsPage() {
                     className="w-4 h-4"
                   />
                   <Label htmlFor="pinned-add" className={cardStyle.text}>Pinned</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="headline-only-add"
+                    checked={formData.headline_only}
+                    onChange={(e) => setFormData({ ...formData, headline_only: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="headline-only-add" className={cardStyle.text}>Headline Only (Oversized scrolling text)</Label>
                 </div>
               </div>
               <div className="space-y-4">
@@ -810,8 +825,8 @@ export default function NewsPage() {
             <DialogHeader>
               <DialogTitle className={cardStyle.text}>Edit News Item</DialogTitle>
             </DialogHeader>
-            {/* Pinned at the top */}
-            <div className="mb-4">
+            {/* Pinned and Headline Only at the top */}
+            <div className="mb-4 space-y-2">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -821,6 +836,16 @@ export default function NewsPage() {
                   className="w-4 h-4"
                 />
                 <Label htmlFor="pinned-edit" className={cardStyle.text}>Pinned</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="headline-only-edit"
+                  checked={formData.headline_only}
+                  onChange={(e) => setFormData({ ...formData, headline_only: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <Label htmlFor="headline-only-edit" className={cardStyle.text}>Headline Only (Oversized scrolling text)</Label>
               </div>
             </div>
             <div className="space-y-4">
