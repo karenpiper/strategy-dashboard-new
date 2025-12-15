@@ -397,15 +397,23 @@ async function generateImageViaAirtable(prompt: string, timezone?: string): Prom
       }
     })
     
+    // Read verification response body once
+    const verifyResponseText = await verifyResponse.text()
+    
     if (verifyResponse.ok) {
-      const verifyData = await verifyResponse.json()
-      console.log('✅ Verification successful - record exists in Airtable')
-      console.log('   Verified record:', JSON.stringify(verifyData, null, 2))
+      let verifyData
+      try {
+        verifyData = JSON.parse(verifyResponseText)
+        console.log('✅ Verification successful - record exists in Airtable')
+        console.log('   Verified record:', JSON.stringify(verifyData, null, 2))
+      } catch (parseError: any) {
+        console.error('❌ Failed to parse verification response as JSON:', parseError)
+        console.error('   Response text:', verifyResponseText.substring(0, 500))
+      }
     } else {
       console.error('❌ Verification failed - record not found in Airtable!')
       console.error('   Status:', verifyResponse.status, verifyResponse.statusText)
-      const errorText = await verifyResponse.text()
-      console.error('   Error:', errorText)
+      console.error('   Error:', verifyResponseText)
     }
 
     // Step 2: Poll Airtable for the generated image
