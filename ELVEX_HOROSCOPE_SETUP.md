@@ -99,21 +99,31 @@ ELVEX_API_KEY=your-elvex-api-key
 
 You need an Elvex Assistant configured to transform horoscope text. You can either:
 
-**Option A: Reuse Deck Talk Assistant** (if it's flexible enough)
+**Option B: Reuse Deck Talk Assistant** (if you want to use the same one)
 - Use the same `ELVEX_ASSISTANT_ID` and `ELVEX_VERSION` as deck talk
 - The assistant will receive the horoscope transformation prompt
+- No additional setup needed if those are already set
 
-**Option B: Create a New Assistant** (recommended for better control)
-1. In Elvex dashboard, create a new assistant
-2. Configure it to:
-   - Transform text in Co-Star style
-   - Return structured JSON with `horoscope`, `dos`, and `donts` fields
-3. Publish the assistant and note the Assistant ID and Version
-4. Set environment variables:
+**Option A: Use Your Horoscope Assistant** (recommended)
+You have an assistant ID: `36rfVVxRbLqTq5uODWAXQZttj9V`
+
+1. In Elvex dashboard, find this assistant
+2. Get the **Version**:
+   - Go to the assistant settings
+   - Look for "Version" or "Published Version" 
+   - It might be a number (like `1`, `2`) or a hash/string
+   - Copy that value
+3. Set environment variables in Vercel:
    ```bash
-   ELVEX_HOROSCOPE_ASSISTANT_ID=your-horoscope-assistant-id
-   ELVEX_HOROSCOPE_VERSION=your-assistant-version
+   ELVEX_HOROSCOPE_ASSISTANT_ID=36rfVVxRbLqTq5uODWAXQZttj9V
+   ELVEX_HOROSCOPE_VERSION=your-version-here
    ```
+
+**To find the Version:**
+- In Elvex dashboard, go to your assistant
+- Look for "Version" or "Published Version" in the settings
+- It might be a number (like `1`, `2`) or a hash
+- Copy that value for `ELVEX_HOROSCOPE_VERSION`
 
 **Note:** If `ELVEX_HOROSCOPE_ASSISTANT_ID` is not set, it will fall back to `ELVEX_ASSISTANT_ID` (deck talk assistant).
 
