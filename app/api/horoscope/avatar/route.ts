@@ -491,12 +491,13 @@ export async function GET(request: NextRequest) {
     // CRITICAL: Also check isFromToday to prevent generating for old horoscopes
     if ((!cachedHoroscope.image_url || cachedHoroscope.image_url.trim() === '') && isFromToday) {
       console.log('⚠️ Horoscope exists but image_url is null or empty')
-      console.log('   Attempting to generate image via Airtable...')
       console.log('   Horoscope date:', cachedHoroscope.date)
       console.log('   Has text:', !!cachedHoroscope.horoscope_text)
       console.log('   Has image prompt:', !!cachedHoroscope.image_prompt)
       console.log('   Image prompt length:', cachedHoroscope.image_prompt?.length || 0)
       
+      // IMPORTANT: generateImageViaAirtable now checks for existing records first
+      // It will use an existing completed image if found, or create a new record if needed
       // Try to generate image via Airtable if we have a prompt
       // IMPORTANT: This is completely independent from horoscope text generation
       // We return immediately and generate in the background to avoid blocking
