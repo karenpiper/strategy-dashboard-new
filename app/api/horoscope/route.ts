@@ -210,45 +210,27 @@ export async function GET(request: NextRequest) {
       .eq('date', todayDate)
       .maybeSingle()
     
-    // CRITICAL: Check if the horoscope date matches today's date
-    // Primary check: date field must match todayDate
-    // Secondary check: if generated_at exists, verify it's from today (within 24 hours)
+    // CRITICAL: Check if the horoscope date matches today's date in user's timezone
+    // The horoscope resets at midnight user local time - we only check if the date matches
+    // If the date matches today (in user's timezone), the horoscope is valid for the entire day
     let isFromToday = false
     if (cachedHoroscope) {
-      // Primary check: date field matches today
+      // Check if date field matches today's date in user's timezone
       const dateMatches = cachedHoroscope.date === todayDate
       
       if (dateMatches) {
-        // If date matches, check generated_at as secondary validation
-        if (cachedHoroscope.generated_at) {
-          const generatedAt = new Date(cachedHoroscope.generated_at)
-          const hoursAgo = (now.getTime() - generatedAt.getTime()) / (1000 * 60 * 60)
-          
-          // If generated within last 24 hours, it's valid
-          if (hoursAgo <= 24) {
-            isFromToday = true
-            console.log('✅ Cached horoscope is valid:', {
-              dateMatches,
-              hoursAgo: hoursAgo.toFixed(2),
-              generatedAt: cachedHoroscope.generated_at
-            })
-          } else {
-            console.log('⚠️ Horoscope date matches but was generated more than 24 hours ago:', {
-              hoursAgo: hoursAgo.toFixed(2),
-              generatedAt: cachedHoroscope.generated_at
-            })
-            isFromToday = false
-          }
-        } else {
-          // Date matches but no generated_at - assume it's valid (might be old record)
-          // This handles legacy records that don't have generated_at
-          isFromToday = true
-          console.log('✅ Cached horoscope date matches (no generated_at timestamp)')
-        }
-      } else {
-        console.log('⚠️ Cached horoscope date does not match today:', {
+        isFromToday = true
+        console.log('✅ Cached horoscope is valid for today:', {
           cachedDate: cachedHoroscope.date,
           todayDate,
+          userTimezone,
+          generatedAt: cachedHoroscope.generated_at
+        })
+      } else {
+        console.log('⚠️ Cached horoscope date does not match today (past midnight in user timezone):', {
+          cachedDate: cachedHoroscope.date,
+          todayDate,
+          userTimezone,
           datesMatch: dateMatches
         })
         isFromToday = false
@@ -263,11 +245,13 @@ export async function GET(request: NextRequest) {
       cachedDateString: cachedHoroscope?.date ? String(cachedHoroscope.date) : null,
       queryDate: todayDate,
       queryDateType: typeof todayDate,
+      userTimezone,
       datesEqual: cachedHoroscope?.date ? cachedHoroscope.date === todayDate : false,
       datesEqualString: cachedHoroscope?.date ? String(cachedHoroscope.date) === todayDate : false,
       generatedAt: cachedHoroscope?.generated_at || null,
       isFromToday,
-      shouldRegenerate: !isFromToday
+      shouldRegenerate: !isFromToday,
+      note: 'Horoscope resets at midnight user local time - only date match is checked'
     })
     
     if (cacheError) {
@@ -384,8 +368,8 @@ export async function GET(request: NextRequest) {
     
     // CACHE CHECK: Return cached horoscope if it exists and force regeneration is not requested
     // This ensures horoscope text is generated ONCE per day per user and cached in the database
+    // The horoscope resets at midnight user local time - we check if the date matches today
     // This prevents hitting billing limits by regenerating unnecessarily
-    // CRITICAL: Also verify the horoscope was generated today in the user's timezone
     console.log('🔍 DEBUG: Cache check decision:', {
       hasCachedHoroscope: !!cachedHoroscope,
       forceRegenerate,
@@ -393,12 +377,14 @@ export async function GET(request: NextRequest) {
       willReturnCached: !!cachedHoroscope && !forceRegenerate && isFromToday,
       cachedDate: cachedHoroscope?.date,
       todayDate,
+      userTimezone,
       dateComparison: {
         strict: cachedHoroscope?.date === todayDate,
         string: cachedHoroscope?.date ? String(cachedHoroscope.date) === todayDate : false,
         cachedString: cachedHoroscope?.date ? String(cachedHoroscope.date) : null,
         todayString: todayDate
-      }
+      },
+      note: 'Horoscope resets at midnight user local time'
     })
     
     if (cachedHoroscope && !forceRegenerate && isFromToday) {
@@ -430,10 +416,11 @@ export async function GET(request: NextRequest) {
         console.log('   Will regenerate to ensure complete data')
       }
     } else if (cachedHoroscope && !isFromToday) {
-      console.log('⚠️ Cached horoscope found but was generated on a different day')
+      console.log('⚠️ Cached horoscope found but was generated on a different day (past midnight in user timezone)')
       console.log('   Cached date:', cachedHoroscope.date)
+      console.log('   Today (user timezone):', todayDate)
+      console.log('   User timezone:', userTimezone)
       console.log('   Generated at:', cachedHoroscope.generated_at)
-      console.log('   Today (EST):', todayDate)
       console.log('   Will regenerate because it\'s from a previous day')
       
       // Delete the old record so we can generate a new one

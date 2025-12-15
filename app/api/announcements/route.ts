@@ -16,10 +16,12 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const { searchParams } = new URL(request.url)
+    const admin = searchParams.get('admin') === 'true'
+
     const today = new Date().toISOString().split('T')[0]
 
-    // Get active announcements that are within their date range
-    const { data, error } = await supabase
+    let query = supabase
       .from('announcements')
       .select(`
         id,
@@ -34,11 +36,21 @@ export async function GET(request: NextRequest) {
         updated_at,
         created_by_profile:profiles!created_by(id, email, full_name)
       `)
-      .eq('active', true)
-      .lte('start_date', today)
-      .or(`end_date.is.null,end_date.gte.${today}`)
-      .order('created_at', { ascending: false })
-      .limit(1) // Only get the most recent active announcement
+
+    if (!admin) {
+      // Public endpoint: only get active announcements within date range
+      query = query
+        .eq('active', true)
+        .lte('start_date', today)
+        .or(`end_date.is.null,end_date.gte.${today}`)
+        .order('created_at', { ascending: false })
+        .limit(1) // Only get the most recent active announcement
+    } else {
+      // Admin endpoint: get all announcements
+      query = query.order('created_at', { ascending: false })
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching announcements:', error)

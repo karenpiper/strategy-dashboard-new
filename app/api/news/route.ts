@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const pinned = searchParams.get('pinned')
     const category = searchParams.get('category')
+    const publishedAfter = searchParams.get('publishedAfter') // Filter by date
     const sortBy = searchParams.get('sortBy') || 'published_date'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
     const offset = parseInt(searchParams.get('offset') || '0', 10)
@@ -54,6 +55,10 @@ export async function GET(request: NextRequest) {
 
     if (category) {
       query = query.eq('category', category)
+    }
+
+    if (publishedAfter) {
+      query = query.gte('published_date', publishedAfter)
     }
 
     // Apply sorting - always prioritize pinned items first

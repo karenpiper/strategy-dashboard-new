@@ -30,6 +30,7 @@ import { Footer } from '@/components/footer'
 import { BeastBabeCard } from '@/components/beast-babe-card'
 import { VideoEmbed } from '@/components/video-embed'
 import { NewsCard } from '@/components/news-card'
+import { AnnouncementBanner } from '@/components/announcement-banner'
 import Image from 'next/image'
 
 // Force dynamic rendering to avoid SSR issues with context
@@ -2195,7 +2196,10 @@ export default function TeamDashboard() {
       <SiteHeader rightContent={horoscopeImageActions} />
 
       <main className="w-full max-w-[1200px] mx-auto px-6 py-4 flex-1 pb-0 pt-24 relative">
-        {/* News Card - Full Width */}
+        {/* Announcement Banner - Above Hero */}
+        <AnnouncementBanner />
+
+        {/* News Card - Full Width (only shows if news from past 7 days) */}
         <NewsCard />
 
         {/* Hero Section and Quick Links - Side by Side */}

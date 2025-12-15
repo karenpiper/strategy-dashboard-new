@@ -36,8 +36,13 @@ export function NewsCard() {
   useEffect(() => {
     async function fetchNews() {
       try {
-        // Fetch pinned news first, then most recent if no pinned
-        const response = await fetch('/api/news?pinned=true&limit=1&sortBy=published_date&sortOrder=desc', {
+        // Calculate date 7 days ago
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0]
+
+        // Fetch pinned news from past 7 days first
+        const response = await fetch(`/api/news?pinned=true&limit=1&sortBy=published_date&sortOrder=desc&publishedAfter=${sevenDaysAgoStr}`, {
           cache: 'no-store'
         })
         const result = await response.json()
@@ -45,8 +50,8 @@ export function NewsCard() {
         if (response.ok && result.data && result.data.length > 0) {
           setNews(result.data)
         } else {
-          // If no pinned news, fetch most recent
-          const recentResponse = await fetch('/api/news?limit=1&sortBy=published_date&sortOrder=desc', {
+          // If no pinned news, fetch most recent from past 7 days
+          const recentResponse = await fetch(`/api/news?limit=1&sortBy=published_date&sortOrder=desc&publishedAfter=${sevenDaysAgoStr}`, {
             cache: 'no-store'
           })
           const recentResult = await recentResponse.json()

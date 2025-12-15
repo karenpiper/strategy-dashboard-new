@@ -27,7 +27,8 @@ import {
   BarChart3,
   MessageSquare,
   Link as LinkIcon,
-  Calendar
+  Calendar,
+  Megaphone
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -212,6 +213,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       items: [
         { href: '/admin/pipeline', label: 'Pipeline', icon: GitBranch, permission: null, sectionAccess: 'leadership' as const },
         { href: '/admin/news', label: 'News', icon: Newspaper, permission: null, sectionAccess: 'leadership' as const },
+        { href: '/admin/announcements', label: 'Announcements', icon: Megaphone, permission: null, sectionAccess: 'leadership' as const },
         { href: '/admin/this-week', label: 'This Week Stats', icon: BarChart3, permission: null, sectionAccess: 'leadership' as const },
         { href: '/admin/curator-rotation', label: 'Curator Rotation', icon: RotateCw, permission: null, sectionAccess: 'leadership' as const },
         { href: '/admin/channel-polls', label: 'Channel Polls', icon: MessageSquare, permission: 'canManagePlaylists' as const, sectionAccess: 'leadership' as const },
