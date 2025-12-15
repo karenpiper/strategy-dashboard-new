@@ -1575,11 +1575,36 @@ export default function TeamDashboard() {
             setHoroscopeImageSlots(imageData.prompt_slots || null)
             setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
             setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
-            // Ensure character_name is a string, not an object
+            // Ensure character_name is a string, not an object or JSON string
             const caption = imageData.character_name
             let finalCaption: string | null = null
             if (typeof caption === 'string' && caption.length > 0) {
-              finalCaption = caption
+              // Check if it's a JSON stringified object
+              if (caption.startsWith('{') || caption.startsWith('[')) {
+                try {
+                  const parsed = JSON.parse(caption)
+                  if (parsed && typeof parsed === 'object') {
+                    // Extract value from parsed object
+                    if ('value' in parsed && typeof parsed.value === 'string' && parsed.value.length > 0) {
+                      finalCaption = parsed.value
+                    } else if ('data' in parsed && typeof parsed.data === 'string' && parsed.data.length > 0) {
+                      finalCaption = parsed.data
+                    } else {
+                      console.warn('   Character name is JSON string but no valid value found:', parsed)
+                      finalCaption = null
+                    }
+                  } else {
+                    // Not an object, use as-is
+                    finalCaption = caption
+                  }
+                } catch (e) {
+                  // Not valid JSON, use as-is
+                  finalCaption = caption
+                }
+              } else {
+                // Regular string, use as-is
+                finalCaption = caption
+              }
             } else if (caption && typeof caption === 'object') {
               // Handle React Query/SWR state objects
               const captionObj = caption as any
@@ -1597,10 +1622,10 @@ export default function TeamDashboard() {
             console.log('   Final caption to set:', finalCaption)
             console.log('   Final caption type:', typeof finalCaption)
             // CRITICAL: Only set if it's actually a string, never set an object
-            if (typeof finalCaption === 'string') {
+            if (typeof finalCaption === 'string' && finalCaption.length > 0) {
               setHoroscopeImageCaption(finalCaption)
             } else {
-              console.error('   ERROR: Attempted to set non-string caption:', finalCaption)
+              console.error('   ERROR: Attempted to set non-string or empty caption:', finalCaption)
               setHoroscopeImageCaption(null)
             }
             setHoroscopeImageLoading(false)
