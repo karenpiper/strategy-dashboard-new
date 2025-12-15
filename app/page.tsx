@@ -1594,7 +1594,13 @@ export default function TeamDashboard() {
                     setHoroscopeImageSlots(pollData.prompt_slots || null)
                     setHoroscopeImageSlotsLabels(pollData.prompt_slots_labels || null)
                     setHoroscopeImageSlotsReasoning(pollData.prompt_slots_reasoning || null)
-                    setHoroscopeImageCaption(pollData.character_name || null)
+                    // Ensure character_name is a string, not an object
+                    const pollCaption = pollData.character_name
+                    setHoroscopeImageCaption(
+                      typeof pollCaption === 'string' ? pollCaption : 
+                      (pollCaption && typeof pollCaption === 'object' && 'value' in pollCaption) ? pollCaption.value :
+                      null
+                    )
                     setHoroscopeImageLoading(false)
                     setHoroscopeImageError(null)
                     hasFetchedRef.current = true
@@ -2356,7 +2362,7 @@ export default function TeamDashboard() {
                         }
                       </p>
                     )}
-                    {horoscopeImageCaption && horoscopeImage && (
+                    {horoscopeImageCaption && horoscopeImage && typeof horoscopeImageCaption === 'string' && (
                       <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                         {horoscopeImageCaption}
                       </p>
