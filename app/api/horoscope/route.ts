@@ -288,66 +288,15 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // SAFETY CHECK: Also check for records from the last 2 days as a fallback
-    // This catches timezone issues or date calculation problems
-    const yesterdayUTC = new Date(now)
-    yesterdayUTC.setUTCDate(yesterdayUTC.getUTCDate() - 1)
-    const yesterdayDate = `${yesterdayUTC.getUTCFullYear()}-${String(yesterdayUTC.getUTCMonth() + 1).padStart(2, '0')}-${String(yesterdayUTC.getUTCDate()).padStart(2, '0')}`
-    
-    const { data: recentRecords, error: recentRecordsError } = await supabaseAdmin
-      .from('horoscopes')
-      .select('date, horoscope_text, image_url, generated_at')
-      .eq('user_id', userId)
-      .in('date', [todayDate, yesterdayDate])
-      .order('date', { ascending: false })
-      .limit(2)
-    
-    if (recentRecordsError) {
-      console.error('⚠️ Error checking recent records:', recentRecordsError)
-    }
-    
-    // If we found records for today or yesterday, log them
-    if (recentRecords && recentRecords.length > 0) {
-      console.log('📅 Found recent records:', recentRecords.map(r => ({
-        date: r.date,
-        dateType: typeof r.date,
-        hasText: !!r.horoscope_text,
-        hasImage: !!r.image_url
-      })))
-    }
-    
-    // Also check if there are any recent horoscopes for debugging
-    // This helps identify if records exist but with different dates
-    const { data: recentHoroscopes, error: recentHoroscopesError } = await supabaseAdmin
-      .from('horoscopes')
-      .select('date, horoscope_text, generated_at, image_url')
-      .eq('user_id', userId)
-      .order('date', { ascending: false })
-      .limit(5)
-    
-    if (recentHoroscopesError) {
-      console.error('❌ Error fetching recent horoscopes:', recentHoroscopesError)
-      console.error('   This might indicate a database connection or permission issue')
-    }
-    
-    // Also check if ANY records exist for this user (no date filter)
-    const { data: allUserRecords, error: allRecordsError } = await supabaseAdmin
-      .from('horoscopes')
-      .select('date, horoscope_text, image_url')
-      .eq('user_id', userId)
-      .limit(1)
-    
     // CRITICAL: Check if table is accessible and working
     // If we can't query the database properly, we should NOT generate
-    if (cacheError || recentHoroscopesError || allRecordsError) {
+    if (cacheError) {
       console.error('❌ DATABASE ERROR: Cannot verify cache - DO NOT GENERATE')
       console.error('   Cache error:', cacheError?.message)
-      console.error('   Recent error:', recentHoroscopesError?.message)
-      console.error('   All records error:', allRecordsError?.message)
       return NextResponse.json(
         { 
           error: 'Database connection error. Cannot verify if horoscope already exists. Please try again or contact support.',
-          details: cacheError?.message || recentHoroscopesError?.message || allRecordsError?.message
+          details: cacheError?.message
         },
         { status: 500 }
       )
@@ -363,26 +312,7 @@ export async function GET(request: NextRequest) {
       cachedDateType: typeof cachedHoroscope?.date,
       expectedDate: todayDate,
       expectedDateType: typeof todayDate,
-      datesMatch: cachedHoroscope?.date === todayDate,
-      dateComparison: {
-        cached: cachedHoroscope?.date,
-        expected: todayDate,
-        match: cachedHoroscope?.date === todayDate,
-        cachedIsString: typeof cachedHoroscope?.date === 'string',
-        expectedIsString: typeof todayDate === 'string'
-      },
-      recentHoroscopes: recentHoroscopes?.map(h => ({ 
-        date: h.date,
-        dateType: typeof h.date,
-        hasText: !!h.horoscope_text,
-        textLength: h.horoscope_text?.length || 0,
-        hasImage: !!h.image_url
-      })),
-      anyRecordsForUser: !!allUserRecords && allUserRecords.length > 0,
-      recentRecordsCount: recentRecords?.length || 0,
-      recentRecordsError: recentRecordsError?.message,
-      recentHoroscopesError: recentHoroscopesError?.message,
-      allRecordsError: allRecordsError?.message
+      datesMatch: cachedHoroscope?.date === todayDate
     })
     
     // CACHE CHECK: Return cached horoscope if it exists and force regeneration is not requested
@@ -406,31 +336,23 @@ export async function GET(request: NextRequest) {
       note: 'Horoscope resets at midnight user local time'
     })
     
-    if (cachedHoroscope && !forceRegenerate && isFromToday) {
-      // Return cached horoscope if text exists (image is optional)
-      // The text is the primary content - image can be generated separately if missing
-      if (cachedHoroscope.horoscope_text) {
-        console.log('✅ Returning cached horoscope from database')
-        console.log('   Cached date:', cachedHoroscope.date, '(type:', typeof cachedHoroscope.date, ', string:', String(cachedHoroscope.date), ')')
-        console.log('   Expected date:', todayDate, '(type:', typeof todayDate, ')')
-        console.log('   Dates match (strict):', cachedHoroscope.date === todayDate)
-        console.log('   Dates match (string):', String(cachedHoroscope.date) === todayDate)
-        console.log('   Generated at:', cachedHoroscope.generated_at)
-        console.log('   Text length:', cachedHoroscope.horoscope_text.length)
-        // Return cached horoscope text only - images are handled by avatar endpoint
-        return NextResponse.json({
-          star_sign: cachedHoroscope.star_sign,
-          horoscope_text: cachedHoroscope.horoscope_text,
-          horoscope_dos: cachedHoroscope.horoscope_dos || [],
-          horoscope_donts: cachedHoroscope.horoscope_donts || [],
-          cached: true,
-        })
-      } else {
-        console.log('⚠️ Cached horoscope found but missing text')
-        console.log('   Has text:', !!cachedHoroscope.horoscope_text)
-        console.log('   Has image:', !!cachedHoroscope.image_url)
-        console.log('   Will regenerate to get text')
-      }
+    // OPTIMIZED: Return cached horoscope immediately if found and valid
+    // This prevents unnecessary processing and database queries
+    if (cachedHoroscope && !forceRegenerate && isFromToday && cachedHoroscope.horoscope_text) {
+      console.log('✅ Returning cached horoscope from database (fast path)')
+      console.log('   Cached date:', cachedHoroscope.date)
+      console.log('   Expected date:', todayDate)
+      console.log('   Text length:', cachedHoroscope.horoscope_text.length)
+      // Return cached horoscope text only - images are handled by avatar endpoint
+      return NextResponse.json({
+        star_sign: cachedHoroscope.star_sign,
+        horoscope_text: cachedHoroscope.horoscope_text,
+        horoscope_dos: cachedHoroscope.horoscope_dos || [],
+        horoscope_donts: cachedHoroscope.horoscope_donts || [],
+        cached: true,
+      })
+    } else if (cachedHoroscope && !forceRegenerate && isFromToday && !cachedHoroscope.horoscope_text) {
+      console.log('⚠️ Cached horoscope found but missing text - will regenerate')
     } else if (cachedHoroscope && !isFromToday) {
       console.log('⚠️ Cached horoscope found but was generated on a different day (past midnight in user timezone)')
       console.log('   Cached date:', cachedHoroscope.date)
