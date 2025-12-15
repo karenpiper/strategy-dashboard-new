@@ -266,7 +266,10 @@ export async function GET(request: NextRequest) {
     
     // CRITICAL: Check if image exists FIRST - if it does, return it immediately
     // This prevents regenerating images that already exist
+    // IMPORTANT: This check MUST come before any generateImageViaAirtable calls
     if (cachedHoroscope && cachedHoroscope.image_url && cachedHoroscope.image_url.trim() !== '' && isFromToday) {
+      console.log('🚀 ========== AVATAR ENDPOINT: FOUND CACHED IMAGE - RETURNING IMMEDIATELY ==========')
+      console.log('   ⚠️ CRITICAL: Image exists - will NOT call generateImageViaAirtable to prevent regeneration')
       console.log('🚀 ========== AVATAR ENDPOINT: FOUND CACHED IMAGE ==========')
       console.log('✅ Found existing image in database for today - returning it')
       console.log('   Image URL:', cachedHoroscope.image_url.substring(0, 100) + '...')
@@ -789,23 +792,77 @@ export async function GET(request: NextRequest) {
     // CRITICAL: Image generation is now handled by the main horoscope endpoint
     // But this endpoint can check Airtable for existing images that were generated
     // This allows the frontend to poll this endpoint to check if an image is ready
+    // IMPORTANT: Only check Airtable if image_url is truly null/empty - if image exists, we already returned above
     if ((!cachedHoroscope.image_url || cachedHoroscope.image_url.trim() === '') && isFromToday) {
       console.log('⚠️ Horoscope exists but image_url is null or empty')
       console.log('   Horoscope date:', cachedHoroscope.date)
       console.log('   Has text:', !!cachedHoroscope.horoscope_text)
       console.log('   Has image prompt:', !!cachedHoroscope.image_prompt)
+      console.log('   ⚠️ NOTE: Will check Airtable for existing image, but will NOT create new records if none found')
       
       // Check Airtable for existing images that might have been generated
+      // Use read-only query to avoid creating new records
       if (cachedHoroscope.image_prompt && cachedHoroscope.image_prompt.trim() !== '') {
-        console.log('🔍 Checking Airtable for existing images...')
+        console.log('🔍 Checking Airtable for existing images (read-only query)...')
         try {
-          const { generateImageViaAirtable } = await import('@/lib/elvex-horoscope-service')
-          const airtableImageResult = await generateImageViaAirtable(
-            cachedHoroscope.image_prompt,
-            profile.timezone || undefined,
-            userId,
-            userEmail
-          )
+          // Use same read-only query approach as we use for caption
+          const apiKey = process.env.AIRTABLE_API_KEY
+          const baseId = process.env.AIRTABLE_IMAGE_BASE_ID || process.env.AIRTABLE_AI_BASE_ID || process.env.AIRTABLE_BASE_ID
+          const tableId = process.env.AIRTABLE_IMAGE_TABLE_ID || 'tblKPuAESzyVMrK5M'
+          const tableIdentifier = tableId
+          
+          if (!apiKey || !baseId) {
+            console.log('   ⚠️ Airtable credentials not configured')
+          } else {
+            const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableIdentifier)}`
+            const userTimezone = profile.timezone || 'America/New_York'
+            let createdAt: string
+            if (userTimezone) {
+              const dateTimeStr = getTodayDateInTimezone(userTimezone, now)
+              createdAt = dateTimeStr.split('T')[0]
+            } else {
+              const nowUtc = new Date()
+              createdAt = `${nowUtc.getUTCFullYear()}-${String(nowUtc.getUTCMonth() + 1).padStart(2, '0')}-${String(nowUtc.getUTCDate()).padStart(2, '0')}`
+            }
+            
+            // Read-only query - just by User ID to find any records
+            const filterFormula = `{User ID} = "${userId}"`
+            const queryUrl = `${url}?filterByFormula=${encodeURIComponent(filterFormula)}&sort[0][field]=Created At&sort[0][direction]=desc&maxRecords=5`
+            
+            const queryResponse = await fetch(queryUrl, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+              },
+            })
+            
+            if (queryResponse.ok) {
+              const queryData = await queryResponse.json()
+              if (queryData.records && queryData.records.length > 0) {
+                // Find record with image for today
+                const todayRecord = queryData.records.find((r: any) => {
+                  const recordDate = r.fields?.['Created At']
+                  if (!recordDate) return false
+                  const recordDateStr = typeof recordDate === 'string' ? recordDate.split('T')[0] : String(recordDate).split('T')[0]
+                  const hasImage = r.fields?.Image || r.fields?.['Image URL']
+                  return recordDateStr === createdAt && hasImage
+                })
+                
+                if (todayRecord) {
+                  const imageField = todayRecord.fields?.Image
+                  const imageUrl = todayRecord.fields?.['Image URL']
+                  let finalImageUrl = imageUrl
+                  if (!finalImageUrl && imageField && Array.isArray(imageField) && imageField.length > 0) {
+                    finalImageUrl = imageField[0].url
+                  }
+                  
+                  if (finalImageUrl) {
+                    console.log('✅ Found existing image in Airtable (read-only query)!')
+                    const airtableImageResult = {
+                      imageUrl: finalImageUrl,
+                      caption: todayRecord.fields?.['Caption'] || todayRecord.fields?.['Character Name'] || null
+                    }
           
           if (airtableImageResult.imageUrl) {
             console.log('✅ Found existing image in Airtable!')
