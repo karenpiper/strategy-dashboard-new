@@ -2395,11 +2395,26 @@ export default function TeamDashboard() {
                         }
                       </p>
                     )}
-                    {horoscopeImageCaption && horoscopeImage && typeof horoscopeImageCaption === 'string' && (
-                      <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
-                        {horoscopeImageCaption}
-                      </p>
-                    )}
+                    {horoscopeImage && (() => {
+                      // Safely extract caption string from potentially nested object
+                      let displayCaption: string | null = null
+                      if (typeof horoscopeImageCaption === 'string') {
+                        displayCaption = horoscopeImageCaption
+                      } else if (horoscopeImageCaption && typeof horoscopeImageCaption === 'object') {
+                        // Handle React Query/SWR state objects
+                        if ('value' in horoscopeImageCaption && typeof horoscopeImageCaption.value === 'string') {
+                          displayCaption = horoscopeImageCaption.value
+                        } else if ('data' in horoscopeImageCaption && typeof horoscopeImageCaption.data === 'string') {
+                          displayCaption = horoscopeImageCaption.data
+                        }
+                      }
+                      
+                      return displayCaption ? (
+                        <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
+                          {displayCaption}
+                        </p>
+                      ) : null
+                    })()}
                   </div>
                   </div>
                   </Card>
