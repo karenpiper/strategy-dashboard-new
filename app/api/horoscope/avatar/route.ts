@@ -468,9 +468,10 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Only generate if image_url is truly empty/null
+    // Only generate if image_url is truly empty/null AND it's from today
     // This prevents regenerating when image already exists
-    if (!cachedHoroscope.image_url || cachedHoroscope.image_url.trim() === '') {
+    // CRITICAL: Also check isFromToday to prevent generating for old horoscopes
+    if ((!cachedHoroscope.image_url || cachedHoroscope.image_url.trim() === '') && isFromToday) {
       console.log('⚠️ Horoscope exists but image_url is null or empty')
       console.log('   Attempting to generate image via Airtable...')
       console.log('   Horoscope date:', cachedHoroscope.date)
