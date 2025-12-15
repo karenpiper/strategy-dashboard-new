@@ -646,10 +646,31 @@ To fix:
       // Still processing, continue polling
       if (attempt % 10 === 0) { // Log every 10th attempt (every 20 seconds)
         console.log(`⏳ Image generation in progress (attempt ${attempt + 1}/${maxAttempts})...`)
+        console.log(`   Current Status: ${fields.Status || 'Unknown'}`)
+        console.log(`   Elapsed time: ${(attempt * delayMs / 1000).toFixed(0)} seconds`)
       }
     }
 
-    throw new Error('Airtable image generation timed out after maximum attempts')
+    // Timeout reached - log what we found
+    console.error('❌ Polling timeout - checking final state...')
+    const finalCheck = await fetch(`${url}/${recordId}`, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      }
+    })
+    
+    if (finalCheck.ok) {
+      const finalData = JSON.parse(await finalCheck.text())
+      console.error('   Final Status:', finalData.fields?.Status || 'Unknown')
+      console.error('   Final fields:', Object.keys(finalData.fields || {}))
+      console.error('   Has Image field:', !!finalData.fields?.Image)
+      console.error('   Has Image URL field:', !!finalData.fields?.['Image URL'])
+      if (finalData.fields?.Image) {
+        console.error('   Image field value:', JSON.stringify(finalData.fields.Image).substring(0, 500))
+      }
+    }
+    
+    throw new Error(`Airtable image generation timed out after ${maxAttempts} attempts (${(maxAttempts * delayMs / 1000 / 60).toFixed(1)} minutes). Check Airtable to see if image was generated.`)
   } catch (error: any) {
     console.error('❌ Error generating image via Airtable:', error)
     throw new Error(`Failed to generate image via Airtable: ${error.message || 'Unknown error'}`)
