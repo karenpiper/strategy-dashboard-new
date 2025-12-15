@@ -362,7 +362,37 @@ async function generateImageViaAirtable(prompt: string, timezone?: string): Prom
     
     if (!createResponse.ok) {
       console.error('❌ Airtable API error response:', responseText)
-      throw new Error(`Failed to create Airtable record: ${responseText}`)
+      console.error('❌ Airtable API error details:')
+      console.error('   Status:', createResponse.status, createResponse.statusText)
+      console.error('   URL:', url)
+      console.error('   Base ID:', baseId)
+      console.error('   Table Name:', tableName)
+      console.error('   API Key prefix:', apiKey ? apiKey.substring(0, 12) + '...' : 'MISSING')
+      
+      // Parse error for better messaging
+      let errorMessage = `Failed to create Airtable record: ${responseText}`
+      try {
+        const errorData = JSON.parse(responseText)
+        if (errorData.error?.type === 'INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND') {
+          errorMessage = `Airtable API permission error (403 Forbidden). Possible causes:
+1. API token doesn't have write access to base "${baseId}"
+2. Table "${tableName}" doesn't exist in the base
+3. Field names don't match (check: "Image Prompt", "Status", "Created At")
+4. API token is invalid or expired
+
+Error: ${errorData.error.message}
+
+To fix:
+- Go to Airtable > Help > API documentation
+- Check that your API token has access to base "${baseId}"
+- Verify table name is exactly: "${tableName}"
+- Verify field names match exactly (case-sensitive)`
+        }
+      } catch (e) {
+        // Error text is not JSON, use as-is
+      }
+      
+      throw new Error(errorMessage)
     }
 
     // Parse the response text as JSON
