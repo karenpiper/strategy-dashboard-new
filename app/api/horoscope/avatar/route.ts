@@ -345,17 +345,34 @@ export async function GET(request: NextRequest) {
     console.log('🔄 SAFETY CHECK DISABLED - Will return latest from database (debugging mode)')
     
     // Double-check database to get the absolute latest (in case it was just updated)
+    // CRITICAL: Also check isFromToday here to prevent returning old images
     const { data: doubleCheckHoroscope } = await supabaseAdmin
       .from('horoscopes')
-      .select('image_url, image_prompt, prompt_slots_json, date, generated_at')
+      .select('image_url, image_prompt, prompt_slots_json, character_name, date, generated_at')
       .eq('user_id', userId)
       .eq('date', todayDate)
       .maybeSingle()
     
-    if (doubleCheckHoroscope && doubleCheckHoroscope.image_url && doubleCheckHoroscope.image_url.trim() !== '') {
-      console.log('✅ Found latest image in database (from double-check)')
+    // Check if double-check found an image AND verify it's from today
+    let doubleCheckIsFromToday = false
+    if (doubleCheckHoroscope?.generated_at) {
+      const doubleCheckGeneratedAt = new Date(doubleCheckHoroscope.generated_at)
+      const doubleCheckGeneratedAtInUserTz = getTodayDateInTimezone(userTimezone, doubleCheckGeneratedAt)
+      doubleCheckIsFromToday = doubleCheckGeneratedAtInUserTz === todayDate
+      
+      const hoursAgo = (now.getTime() - doubleCheckGeneratedAt.getTime()) / (1000 * 60 * 60)
+      if (hoursAgo > 24) {
+        doubleCheckIsFromToday = false
+      }
+    }
+    
+    if (doubleCheckHoroscope && doubleCheckHoroscope.image_url && doubleCheckHoroscope.image_url.trim() !== '' && doubleCheckIsFromToday) {
+      console.log('✅ Found image in database (from double-check) - returning it')
       console.log('   Image URL:', doubleCheckHoroscope.image_url.substring(0, 100) + '...')
       console.log('   Generated at:', doubleCheckHoroscope.generated_at)
+      console.log('   Date:', doubleCheckHoroscope.date)
+      console.log('   Is from today:', doubleCheckIsFromToday)
+      console.log('   ⚠️ NOT regenerating - image already exists for today')
       // Return latest image from database
       // Re-fetch labels if needed (simplified for safety check)
       const slots = doubleCheckHoroscope.prompt_slots_json
@@ -409,6 +426,7 @@ export async function GET(request: NextRequest) {
         prompt_slots: slots || null,
         prompt_slots_labels: Object.keys(slotLabels).length > 0 ? slotLabels : null,
         prompt_slots_reasoning: cachedReasoning,
+        character_name: doubleCheckHoroscope.character_name || null,
         cached: true,
       })
     }
