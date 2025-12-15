@@ -312,11 +312,51 @@ export async function GET(request: NextRequest) {
         console.log('   User ID:', userId)
         console.log('   Image prompt exists:', !!cachedHoroscope.image_prompt)
         try {
-          // Direct Airtable query to check for existing records without creating new ones
-          const baseId = process.env.AIRTABLE_IMAGE_BASE_ID
-          const tableName = process.env.AIRTABLE_IMAGE_TABLE_NAME || 'Image Generation'
-          const apiKey = process.env.AIRTABLE_API_KEY
+          // Use generateImageViaAirtable to get the caption - it already knows how to find records!
+          // This function successfully finds the image, so it should find the caption too
+          const { generateImageViaAirtable } = await import('@/lib/elvex-horoscope-service')
+          const airtableResult = await generateImageViaAirtable(
+            cachedHoroscope.image_prompt,
+            profile.timezone || undefined,
+            userId,
+            userEmail
+          )
           
+          console.log('   📋 generateImageViaAirtable result:', {
+            hasImageUrl: !!airtableResult.imageUrl,
+            hasCaption: !!airtableResult.caption,
+            captionValue: airtableResult.caption,
+            captionType: typeof airtableResult.caption
+          })
+          
+          if (airtableResult.caption && typeof airtableResult.caption === 'string' && airtableResult.caption.length > 0) {
+            console.log('   ✅ Found character name via generateImageViaAirtable:', airtableResult.caption)
+            characterName = airtableResult.caption
+            // Update database with character name
+            const { error: updateError, data: updateData } = await supabaseAdmin
+              .from('horoscopes')
+              .update({ character_name: characterName })
+              .eq('user_id', userId)
+              .eq('date', todayDate)
+              .select('character_name')
+            
+            if (updateError) {
+              console.error('   ❌ Error updating database with character name:', updateError)
+            } else {
+              console.log('   ✅ Updated database with character_name from Airtable:', characterName)
+              console.log('   📊 Database update result:', updateData)
+            }
+          } else {
+            console.log('   ⚠️ generateImageViaAirtable found image but no caption')
+          }
+        } catch (error: any) {
+          console.error('   ❌ Error checking Airtable for character name:', error.message)
+          // Continue without character name - don't fail the request
+        }
+      }
+      
+      // OLD CODE BELOW - REMOVED
+      /*
           if (!baseId || !apiKey) {
             console.log('   ⚠️ Airtable credentials not configured - skipping character name check')
           } else {
@@ -432,19 +472,7 @@ export async function GET(request: NextRequest) {
                 if (!characterName) {
                   console.log('   ⚠️ No character name found in any Airtable record after checking all records')
                 }
-              } else {
-                console.log('   ⚠️ No Airtable records found for today')
-              }
-            } else {
-              const errorText = await queryResponse.text().catch(() => 'Unknown error')
-              console.log('   ⚠️ Airtable query failed:', queryResponse.status, errorText.substring(0, 200))
-            }
-          }
-        } catch (error: any) {
-          console.error('   ❌ Error checking Airtable for character name:', error.message)
-          // Continue without character name - don't fail the request
-        }
-      }
+      */
       
       // Resolve slot IDs to labels for display (only if prompt_slots_json exists)
       const slots = cachedHoroscope.prompt_slots_json
