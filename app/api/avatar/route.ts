@@ -344,19 +344,20 @@ export async function GET(request: NextRequest) {
               
               if (queryData.records && queryData.records.length > 0) {
                 // Check all records for character name (in case first one doesn't have it)
+                // Priority: "Caption" field first (this is where Airtable stores it), then "Character Name"
                 for (const record of queryData.records) {
-                  const foundCaption = record.fields?.['Character Name'] || record.fields?.['Caption']
+                  const foundCaption = record.fields?.['Caption'] || record.fields?.['Character Name']
                   console.log('   🔍 Checking record:', {
                     id: record.id,
-                    hasCharacterName: !!record.fields?.['Character Name'],
                     hasCaption: !!record.fields?.['Caption'],
-                    characterNameValue: record.fields?.['Character Name'],
+                    hasCharacterName: !!record.fields?.['Character Name'],
                     captionValue: record.fields?.['Caption'],
+                    characterNameValue: record.fields?.['Character Name'],
                     allFields: Object.keys(record.fields || {})
                   })
                   
                   if (foundCaption && typeof foundCaption === 'string' && foundCaption.length > 0) {
-                    console.log('   ✅ Found character name in Airtable:', foundCaption)
+                    console.log('   ✅ Found character name in Airtable (from Caption field):', foundCaption)
                     characterName = foundCaption
                     // Update database with character name
                     const { error: updateError } = await supabaseAdmin
@@ -368,7 +369,7 @@ export async function GET(request: NextRequest) {
                     if (updateError) {
                       console.error('   ❌ Error updating database with character name:', updateError)
                     } else {
-                      console.log('   ✅ Updated database with character name from Airtable:', characterName)
+                      console.log('   ✅ Updated database with character_name from Airtable Caption field:', characterName)
                     }
                     break // Found it, stop looking
                   }
