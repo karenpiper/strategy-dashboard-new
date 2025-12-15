@@ -1409,15 +1409,28 @@ export default function TeamDashboard() {
         // Fetch horoscope text first (it includes image_url from n8n)
         const textResponse = await fetch('/api/horoscope')
         
+        // Check if response is ok BEFORE reading the body
+        const isTextResponseOk = textResponse.ok
+        
         // Process text response first to get image URL
-        const textData = await textResponse.json()
+        // Read response body once - clone if we need to check status after
+        let textData
+        try {
+          textData = await textResponse.json()
+        } catch (jsonError: any) {
+          // If JSON parsing fails, try to get error message
+          const errorText = await textResponse.text().catch(() => 'Unknown error')
+          console.error('❌ Failed to parse horoscope response as JSON:', jsonError)
+          console.error('   Response text:', errorText.substring(0, 500))
+          throw new Error(`Failed to parse horoscope response: ${jsonError.message}`)
+        }
         
         // Only fetch avatar endpoint if we don't have image_url from main endpoint
         // This prevents race conditions where avatar endpoint returns old cached data
         let imageResponse = null
         let imageData = null
         
-        if (!textData.image_url && textResponse.ok && horoscopeAvatarEnabled) {
+        if (!textData.image_url && isTextResponseOk && horoscopeAvatarEnabled) {
           // No image URL in main response, try avatar endpoint (only if avatar is enabled)
           console.log('No image_url in main response, fetching from avatar endpoint...')
           imageResponse = await fetch('/api/horoscope/avatar')
