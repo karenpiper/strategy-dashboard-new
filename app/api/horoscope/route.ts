@@ -1216,18 +1216,17 @@ export async function GET(request: NextRequest) {
       image_url_preview: upsertData.image_url?.substring(0, 100) || 'MISSING'
     })
     
-    // CRITICAL: Final verification before upsert
+    // Image URL is optional - horoscope can be saved without image
     if (!upsertData.image_url || upsertData.image_url.trim() === '') {
-      console.error('❌ CRITICAL ERROR: Cannot save - image_url is empty in upsertData!')
-      console.error('   This means the image URL was lost somewhere in the process')
-      console.error('   horoscopeText exists:', !!upsertData.horoscope_text)
-      console.error('   imageUrl variable:', imageUrl)
-      console.error('   upsertData keys:', Object.keys(upsertData))
-      throw new Error('Cannot save horoscope: image_url is empty. This should not happen.')
+      console.log('⚠️ No image URL in upsert data - horoscope will be saved without image')
+      console.log('   horoscopeText exists:', !!upsertData.horoscope_text)
+      console.log('   imageUrl variable:', imageUrl)
+      // Set to null explicitly to ensure database accepts it
+      upsertData.image_url = null
     }
     
     console.log('💾 Executing database upsert...')
-    console.log('   Upsert data image_url:', upsertData.image_url.substring(0, 150) + '...')
+    console.log('   Upsert data image_url:', upsertData.image_url ? upsertData.image_url.substring(0, 150) + '...' : 'null (no image)')
     console.log('🔍 DEBUG: Upsert operation details:', {
       table: 'horoscopes',
       conflictColumns: 'user_id,date',
