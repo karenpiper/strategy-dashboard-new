@@ -215,21 +215,30 @@ export async function GET(request: NextRequest) {
     // If the date matches today (in user's timezone), the horoscope is valid for the entire day
     let isFromToday = false
     if (cachedHoroscope) {
+      // Normalize both dates to strings in YYYY-MM-DD format for comparison
+      // Supabase returns dates as strings, but we want to ensure exact match
+      const cachedDateStr = String(cachedHoroscope.date).split('T')[0] // Extract YYYY-MM-DD from date string
+      const todayDateStr = String(todayDate).split('T')[0] // Ensure todayDate is also YYYY-MM-DD
+      
       // Check if date field matches today's date in user's timezone
-      const dateMatches = cachedHoroscope.date === todayDate
+      const dateMatches = cachedDateStr === todayDateStr
       
       if (dateMatches) {
         isFromToday = true
         console.log('✅ Cached horoscope is valid for today:', {
           cachedDate: cachedHoroscope.date,
+          cachedDateNormalized: cachedDateStr,
           todayDate,
+          todayDateNormalized: todayDateStr,
           userTimezone,
           generatedAt: cachedHoroscope.generated_at
         })
       } else {
         console.log('⚠️ Cached horoscope date does not match today (past midnight in user timezone):', {
           cachedDate: cachedHoroscope.date,
+          cachedDateNormalized: cachedDateStr,
           todayDate,
+          todayDateNormalized: todayDateStr,
           userTimezone,
           datesMatch: dateMatches
         })
@@ -237,20 +246,30 @@ export async function GET(request: NextRequest) {
       }
     }
     
+    // Normalize dates for comparison logging
+    const cachedDateNormalized = cachedHoroscope?.date ? String(cachedHoroscope.date).split('T')[0] : null
+    const todayDateNormalized = String(todayDate).split('T')[0]
+    
     console.log('🔍 DEBUG: Query result:', {
       found: !!cachedHoroscope,
       error: cacheError?.message || null,
       cachedDate: cachedHoroscope?.date || null,
       cachedDateType: cachedHoroscope?.date ? typeof cachedHoroscope.date : null,
       cachedDateString: cachedHoroscope?.date ? String(cachedHoroscope.date) : null,
+      cachedDateNormalized,
       queryDate: todayDate,
       queryDateType: typeof todayDate,
+      todayDateNormalized,
       userTimezone,
       datesEqual: cachedHoroscope?.date ? cachedHoroscope.date === todayDate : false,
       datesEqualString: cachedHoroscope?.date ? String(cachedHoroscope.date) === todayDate : false,
+      datesEqualNormalized: cachedDateNormalized === todayDateNormalized,
+      hasText: !!cachedHoroscope?.horoscope_text,
+      textLength: cachedHoroscope?.horoscope_text?.length || 0,
+      hasImage: !!cachedHoroscope?.image_url,
       generatedAt: cachedHoroscope?.generated_at || null,
       isFromToday,
-      shouldRegenerate: !isFromToday,
+      shouldRegenerate: !isFromToday || !cachedHoroscope?.horoscope_text,
       note: 'Horoscope resets at midnight user local time - only date match is checked'
     })
     
@@ -388,8 +407,9 @@ export async function GET(request: NextRequest) {
     })
     
     if (cachedHoroscope && !forceRegenerate && isFromToday) {
-      // Verify the cached horoscope has all required data
-      if (cachedHoroscope.horoscope_text && cachedHoroscope.image_url) {
+      // Return cached horoscope if text exists (image is optional)
+      // The text is the primary content - image can be generated separately if missing
+      if (cachedHoroscope.horoscope_text) {
         console.log('✅ Returning cached horoscope from database')
         console.log('   Cached date:', cachedHoroscope.date, '(type:', typeof cachedHoroscope.date, ', string:', String(cachedHoroscope.date), ')')
         console.log('   Expected date:', todayDate, '(type:', typeof todayDate, ')')
@@ -398,22 +418,21 @@ export async function GET(request: NextRequest) {
         console.log('   Generated at:', cachedHoroscope.generated_at)
         console.log('   Text length:', cachedHoroscope.horoscope_text.length)
         console.log('   Has image URL:', !!cachedHoroscope.image_url)
-        console.log('   ⚠️ DEBUG: This cached horoscope is being returned - is the date correct?')
         
         return NextResponse.json({
           star_sign: cachedHoroscope.star_sign,
           horoscope_text: cachedHoroscope.horoscope_text,
           horoscope_dos: cachedHoroscope.horoscope_dos || [],
           horoscope_donts: cachedHoroscope.horoscope_donts || [],
-          image_url: cachedHoroscope.image_url,
+          image_url: cachedHoroscope.image_url || null,
           character_name: cachedHoroscope.character_name || null,
           cached: true,
         })
       } else {
-        console.log('⚠️ Cached horoscope found but missing required data')
+        console.log('⚠️ Cached horoscope found but missing text')
         console.log('   Has text:', !!cachedHoroscope.horoscope_text)
         console.log('   Has image:', !!cachedHoroscope.image_url)
-        console.log('   Will regenerate to ensure complete data')
+        console.log('   Will regenerate to get text')
       }
     } else if (cachedHoroscope && !isFromToday) {
       console.log('⚠️ Cached horoscope found but was generated on a different day (past midnight in user timezone)')
