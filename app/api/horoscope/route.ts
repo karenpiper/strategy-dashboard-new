@@ -1024,7 +1024,8 @@ export async function GET(request: NextRequest) {
       // CRITICAL: Verify imageUrl is set before saving
       if (!imageUrl || imageUrl.trim() === '') {
         console.error('❌ CRITICAL ERROR: imageUrl is empty before saving to database!')
-        throw new Error('Cannot save horoscope: imageUrl is empty. Image generation may have failed.')
+        // Image URL is optional - horoscope can be saved without image
+        console.log('⚠️ No image URL to save - horoscope will be saved without image')
       }
     } catch (error: any) {
       console.error('❌ Error generating horoscope:', error)
