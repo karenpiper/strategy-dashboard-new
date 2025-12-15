@@ -136,21 +136,33 @@ export default function AnnouncementsPage() {
 
   const handleAdd = async () => {
     try {
+      const requestBody: any = {
+        mode: formData.mode,
+        event_name: formData.mode === 'countdown' ? formData.event_name : null,
+        target_date: formData.mode === 'countdown' && formData.target_date ? new Date(formData.target_date).toISOString() : null,
+        text_format: formData.mode === 'countdown' ? formData.text_format : null,
+        custom_format: formData.mode === 'countdown' && formData.text_format === 'custom' ? formData.custom_format : null,
+        sticker_url: formData.sticker_url || null,
+        start_date: formData.start_date,
+        end_date: formData.end_date || null,
+        active: formData.active,
+      }
+
+      // Only include headline for text mode
+      if (formData.mode === 'text') {
+        requestBody.headline = formData.headline
+      } else if (formData.headline) {
+        // Optional headline for countdown mode
+        requestBody.headline = formData.headline
+      }
+      
+      console.log('Adding announcement with data:', requestBody)
+      console.log('Form data state:', formData)
+      
       const response = await fetch('/api/announcements', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          headline: formData.headline,
-          mode: formData.mode,
-          event_name: formData.mode === 'countdown' ? formData.event_name : null,
-          target_date: formData.mode === 'countdown' && formData.target_date ? new Date(formData.target_date).toISOString() : null,
-          text_format: formData.mode === 'countdown' ? formData.text_format : null,
-          custom_format: formData.mode === 'countdown' && formData.text_format === 'custom' ? formData.custom_format : null,
-          sticker_url: formData.sticker_url || null,
-          start_date: formData.start_date,
-          end_date: formData.end_date || null,
-          active: formData.active,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       const result = await response.json()
@@ -197,20 +209,33 @@ export default function AnnouncementsPage() {
     if (!editingItem) return
 
     try {
+      const requestBody = {
+        id: editingItem.id,
+        mode: formData.mode,
+        event_name: formData.mode === 'countdown' ? formData.event_name : null,
+        target_date: formData.mode === 'countdown' && formData.target_date ? new Date(formData.target_date).toISOString() : null,
+        text_format: formData.mode === 'countdown' ? formData.text_format : null,
+        custom_format: formData.mode === 'countdown' && formData.text_format === 'custom' ? formData.custom_format : null,
+        sticker_url: formData.sticker_url || null,
+        start_date: formData.start_date,
+        end_date: formData.end_date || null,
+        active: formData.active,
+      }
+
+      // Only include headline if it's text mode or if it exists
+      if (formData.mode === 'text') {
+        (requestBody as any).headline = formData.headline
+      } else if (formData.headline) {
+        (requestBody as any).headline = formData.headline
+      }
+
+      console.log('Updating announcement with data:', requestBody)
+      console.log('Form data state:', formData)
+
       const response = await fetch('/api/announcements', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: editingItem.id,
-          headline: formData.headline,
-          mode: formData.mode,
-          event_name: formData.mode === 'countdown' ? formData.event_name : null,
-          target_date: formData.mode === 'countdown' && formData.target_date ? new Date(formData.target_date).toISOString() : null,
-          text_format: formData.mode === 'countdown' ? formData.text_format : null,
-          start_date: formData.start_date,
-          end_date: formData.end_date || null,
-          active: formData.active,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       const result = await response.json()
@@ -314,7 +339,8 @@ export default function AnnouncementsPage() {
         .from('work-sample-thumbnails')
         .getPublicUrl(filePath)
 
-      setFormData({ ...formData, sticker_url: publicUrl })
+      // Use functional update to avoid stale closure
+      setFormData(prev => ({ ...prev, sticker_url: publicUrl }))
       
       // Reset file input
       if (stickerUploadRef.current) {

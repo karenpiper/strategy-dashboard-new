@@ -100,9 +100,10 @@ export async function POST(request: NextRequest) {
       active
     } = body
 
-    if (!headline) {
+    // Headline is only required for text mode
+    if (mode !== 'countdown' && !headline) {
       return NextResponse.json(
-        { error: 'Headline is required' },
+        { error: 'Headline is required for text mode' },
         { status: 400 }
       )
     }
@@ -114,21 +115,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const insertData: any = {
+      mode: mode || 'text',
+      event_name: mode === 'countdown' ? event_name : null,
+      target_date: mode === 'countdown' ? target_date : null,
+      text_format: mode === 'countdown' ? (text_format || 'days_until') : null,
+      start_date: start_date || new Date().toISOString().split('T')[0],
+      end_date: end_date || null,
+      active: active !== undefined ? active : true,
+      created_by: user.id,
+    }
+
+    // Headline is only required for text mode
+    if (mode === 'text') {
+      insertData.headline = headline
+    } else if (headline) {
+      // Allow headline for countdown mode but it's optional
+      insertData.headline = headline
+    }
+
+    // Only add custom_format if it's a custom format
+    if (mode === 'countdown' && text_format === 'custom' && custom_format) {
+      insertData.custom_format = custom_format
+    }
+
+    // Only add sticker_url if it exists
+    if (sticker_url) {
+      insertData.sticker_url = sticker_url
+    }
+
+    console.log('Inserting announcement with data:', insertData)
+
     const { data, error } = await supabase
       .from('announcements')
-      .insert({
-        headline,
-        mode: mode || 'text',
-        event_name: mode === 'countdown' ? event_name : null,
-        target_date: mode === 'countdown' ? target_date : null,
-        text_format: mode === 'countdown' ? (text_format || 'days_until') : null,
-        custom_format: mode === 'countdown' && text_format === 'custom' ? custom_format : null,
-        sticker_url: sticker_url || null,
-        start_date: start_date || new Date().toISOString().split('T')[0],
-        end_date: end_date || null,
-        active: active !== undefined ? active : true,
-        created_by: user.id,
-      })
+      .insert(insertData)
       .select()
       .single()
 
@@ -193,8 +213,27 @@ export async function PUT(request: NextRequest) {
     if (mode !== undefined) updateData.mode = mode
     if (event_name !== undefined) updateData.event_name = event_name
     if (target_date !== undefined) updateData.target_date = target_date
-    if (text_format !== undefined) updateData.text_format = text_format
-    if (custom_format !== undefined) updateData.custom_format = custom_format
+    if (text_format !== undefined) {
+      updateData.text_format = text_format
+      // If switching away from custom format, clear custom_format
+      if (text_format !== 'custom') {
+        updateData.custom_format = null
+      }
+    }
+    if (custom_format !== undefined) {
+      // Only set custom_format if text_format is 'custom'
+      // If text_format is also being updated, use that; otherwise we need to check existing value
+      if (text_format === 'custom') {
+        updateData.custom_format = custom_format || null
+      } else if (text_format === undefined) {
+        // If text_format isn't being updated, we need to fetch the existing value
+        // For now, allow custom_format to be set if provided (will be validated by text_format check)
+        updateData.custom_format = custom_format || null
+      } else {
+        // text_format is being set to something other than 'custom', so clear custom_format
+        updateData.custom_format = null
+      }
+    }
     if (sticker_url !== undefined) updateData.sticker_url = sticker_url
     if (start_date !== undefined) updateData.start_date = start_date
     if (end_date !== undefined) updateData.end_date = end_date

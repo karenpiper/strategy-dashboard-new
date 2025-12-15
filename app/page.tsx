@@ -126,38 +126,7 @@ export default function TeamDashboard() {
   const horoscopeEnabled = appSettings.horoscope_enabled !== 'false'
   const horoscopeAvatarEnabled = appSettings.horoscope_avatar_enabled !== 'false'
   
-  // Fetch image caption when image is loaded
-  useEffect(() => {
-    async function fetchImageCaption() {
-      if (!horoscopeImage || !horoscopeAvatarEnabled) {
-        setHoroscopeImageCaption(null)
-        return
-      }
-
-      try {
-        const response = await fetch('/api/horoscope/image-caption', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ imageUrl: horoscopeImage }),
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          setHoroscopeImageCaption(data.caption || null)
-        } else {
-          console.error('Failed to fetch image caption:', response.statusText)
-          setHoroscopeImageCaption(null)
-        }
-      } catch (error) {
-        console.error('Error fetching image caption:', error)
-        setHoroscopeImageCaption(null)
-      }
-    }
-
-    fetchImageCaption()
-  }, [horoscopeImage, horoscopeAvatarEnabled])
+  // Image caption is now fetched from the horoscope API response (generated in Airtable)
   
   // Rotating loading messages
   const horoscopeLoadingMessages = [
@@ -1572,9 +1541,14 @@ export default function TeamDashboard() {
               setHoroscopeImage(textData.image_url)
               setHoroscopeImageLoading(false)
               setHoroscopeImageError(null)
+              // Set caption if available from Airtable
+              if (textData.image_caption) {
+                setHoroscopeImageCaption(textData.image_caption)
+              }
             } else if (!horoscopeAvatarEnabled) {
               // Avatar is disabled, clear image state
               setHoroscopeImage(null)
+              setHoroscopeImageCaption(null)
               setHoroscopeImageLoading(false)
               setHoroscopeImageError(null)
             } else {

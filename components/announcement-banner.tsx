@@ -104,6 +104,7 @@ export function AnnouncementBanner() {
       // Default: 'days_until'
       displayText = `${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} until ${announcement.event_name}`
     }
+    
 
     // Create repeating text with sticker breakers
     const renderScrollingText = () => {
@@ -123,12 +124,13 @@ export function AnnouncementBanner() {
                 key={`sticker-${i}`}
                 src={announcement.sticker_url}
                 alt=""
-                className="inline-block h-[clamp(2.5rem,8vw,5rem)] w-auto mx-4 align-middle"
+                className="inline-block h-[clamp(2.5rem,8vw,5rem)] w-auto mx-6 align-middle flex-shrink-0"
+                style={{ objectFit: 'contain' }}
               />
             )
           } else {
             elements.push(
-              <span key={`bullet-${i}`} className="text-white text-[clamp(2.5rem,8vw,5rem)] mx-4">•</span>
+              <span key={`bullet-${i}`} className="text-white text-[clamp(2.5rem,8vw,5rem)] mx-6">•</span>
             )
           }
         }
