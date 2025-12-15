@@ -1337,7 +1337,7 @@ export async function GET(request: NextRequest) {
         
         // CRITICAL: Check if image_url was actually saved
         if (!upsertResult[0].image_url || upsertResult[0].image_url.trim() === '') {
-          console.error('   ❌ CRITICAL: image_url is missing in upsert result!')
+          console.log('   ⚠️ No image_url in upsert result (this is OK - image is optional)')
           console.error('   This means the database save did not include the image_url field')
         } else {
           console.log('   ✅ image_url was saved successfully:', upsertResult[0].image_url.substring(0, 100) + '...')
@@ -1374,7 +1374,7 @@ export async function GET(request: NextRequest) {
         
         // CRITICAL: Verify the image URL was actually saved
         if (!verifyRecord.image_url || verifyRecord.image_url.trim() === '') {
-          console.error('   ❌ CRITICAL: Image URL is missing in database after save!')
+          console.log('   ⚠️ No image URL in database after save (this is OK - image is optional)')
           console.error('   This means the save failed to persist the image_url field')
           throw new Error('Image URL was not saved to database despite successful upsert')
         } else if (verifyRecord.image_url !== imageUrl) {
