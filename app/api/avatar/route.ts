@@ -961,21 +961,22 @@ export async function GET(request: NextRequest) {
                 }
               }
             }
-          } catch (error: any) {
-            console.error('   ❌ Error checking Airtable for existing image:', error.message)
-            // Return generating status on error
-            const slots = cachedHoroscope.prompt_slots_json || {}
-            return NextResponse.json({
-              image_url: null,
-              image_prompt: cachedHoroscope.image_prompt,
-              prompt_slots: slots,
-              prompt_slots_labels: null,
-              prompt_slots_reasoning: slots?.reasoning || null,
-              character_name: null,
-              generating: true,
-              message: 'Error checking for image. Please try again later.',
-            })
           }
+        } catch (error: any) {
+          console.error('   ❌ Error checking Airtable for existing image:', error.message)
+          // Return generating status on error
+          const slots = cachedHoroscope.prompt_slots_json || {}
+          return NextResponse.json({
+            image_url: null,
+            image_prompt: cachedHoroscope.image_prompt,
+            prompt_slots: slots,
+            prompt_slots_labels: null,
+            prompt_slots_reasoning: slots?.reasoning || null,
+            character_name: null,
+            generating: true,
+            message: 'Error checking for image. Please try again later.',
+          })
+        }
       }
       
       // If we reach here, no image was found
