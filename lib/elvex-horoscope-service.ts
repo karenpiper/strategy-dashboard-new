@@ -110,81 +110,98 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
 
   try {
     // Use Elvex Assistant API (same as deck talk)
-    const elvexUrl = `${config.baseUrl}/v0/apps/${config.assistantId}/versions/${config.version}/text/generate`
+    // Try the configured version first, then try version 2 as fallback (since deck talk uses version 2)
+    const versionsToTry = [config.version, '2'].filter((v, i, arr) => arr.indexOf(v) === i) // Remove duplicates
     
-    console.log('🔍 Calling Elvex Assistant API:', {
-      url: elvexUrl,
-      assistantId: config.assistantId,
-      version: config.version
-    })
+    let lastError: Error | null = null
     
-    // Build the full prompt with system instructions
-    const fullPrompt = `You are a witty horoscope transformer. You take traditional horoscopes and make them irreverent and fun in the style of Co-Star. You always return valid JSON.
+    for (const version of versionsToTry) {
+      const elvexUrl = `${config.baseUrl}/v0/apps/${config.assistantId}/versions/${version}/text/generate`
+      
+      console.log('🔍 Calling Elvex Assistant API:', {
+        url: elvexUrl,
+        assistantId: config.assistantId,
+        version: version,
+        attempt: versionsToTry.indexOf(version) + 1,
+        totalAttempts: versionsToTry.length
+      })
+      
+      // Build the full prompt with system instructions
+      const fullPrompt = `You are a witty horoscope transformer. You take traditional horoscopes and make them irreverent and fun in the style of Co-Star. You always return valid JSON.
 
 ${prompt}`
 
-    const response = await fetch(elvexUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiKey}`,
-      },
-      body: JSON.stringify({
-        prompt: fullPrompt,
-      }),
-    })
+      const response = await fetch(elvexUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          prompt: fullPrompt,
+        }),
+      })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      const errorMessage = `Elvex API call failed: ${response.status} ${errorText}`
-      
-      // Provide helpful error message for 404
-      if (response.status === 404) {
-        console.error('❌ 404 Error Details:', {
-          assistantId: config.assistantId,
-          version: config.version,
-          url: elvexUrl,
-          suggestion: 'Check Elvex dashboard to verify: 1) Assistant ID is correct, 2) Version exists and is published, 3) Assistant is active'
-        })
-        throw new Error(`${errorMessage}\n\nTroubleshooting:\n- Verify assistant ID "${config.assistantId}" exists in Elvex dashboard\n- Check that version "${config.version}" exists and is published for this assistant\n- Ensure the assistant is active/published`)
-      }
-      
-      throw new Error(errorMessage)
-    }
+      if (response.ok) {
+        // Success! Use this version
+        console.log(`✅ Successfully connected with version ${version}`)
+        const result = await response.json()
+        
+        // Elvex Assistant API returns: { data: { response: "..." } }
+        const content = result.data?.response || result.response || result.text || result.content
 
-    const result = await response.json()
-    
-    // Elvex Assistant API returns: { data: { response: "..." } }
-    const content = result.data?.response || result.response || result.text || result.content
+        if (!content) {
+          throw new Error('Empty response from Elvex')
+        }
 
-    if (!content) {
-      throw new Error('Empty response from Elvex')
-    }
+        // Parse JSON response (might be wrapped in text or already be JSON)
+        let parsed
+        try {
+          parsed = typeof content === 'string' ? JSON.parse(content) : content
+        } catch (e) {
+          // If not JSON, try to extract JSON from the response
+          const jsonMatch = content.match(/\{[\s\S]*\}/)
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0])
+          } else {
+            throw new Error('Could not parse JSON from Elvex response')
+          }
+        }
+        
+        if (!parsed.horoscope || !Array.isArray(parsed.dos) || !Array.isArray(parsed.donts)) {
+          throw new Error('Invalid response format from Elvex')
+        }
 
-    // Parse JSON response (might be wrapped in text or already be JSON)
-    let parsed
-    try {
-      parsed = typeof content === 'string' ? JSON.parse(content) : content
-    } catch (e) {
-      // If not JSON, try to extract JSON from the response
-      const jsonMatch = content.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        parsed = JSON.parse(jsonMatch[0])
+        console.log('✅ Successfully transformed horoscope with Elvex')
+        return {
+          horoscope: parsed.horoscope,
+          dos: parsed.dos,
+          donts: parsed.donts,
+        }
       } else {
-        throw new Error('Could not parse JSON from Elvex response')
+        // Not successful, try next version
+        const errorText = await response.text()
+        lastError = new Error(`Elvex API call failed with version ${version}: ${response.status} ${errorText}`)
+        console.log(`⚠️ Version ${version} failed, trying next...`)
+        
+        // If this was the last version to try, throw the error
+        if (version === versionsToTry[versionsToTry.length - 1]) {
+          if (response.status === 404) {
+            console.error('❌ 404 Error Details:', {
+              assistantId: config.assistantId,
+              triedVersions: versionsToTry,
+              url: elvexUrl,
+              suggestion: 'Check Elvex dashboard to verify: 1) Assistant ID is correct, 2) Version exists and is published, 3) Assistant is active'
+            })
+            throw new Error(`${lastError.message}\n\nTroubleshooting:\n- Verify assistant ID "${config.assistantId}" exists in Elvex dashboard\n- Check that one of these versions exists and is published: ${versionsToTry.join(', ')}\n- Ensure the assistant is active/published`)
+          }
+          throw lastError
+        }
       }
     }
     
-    if (!parsed.horoscope || !Array.isArray(parsed.dos) || !Array.isArray(parsed.donts)) {
-      throw new Error('Invalid response format from Elvex')
-    }
-
-    console.log('✅ Successfully transformed horoscope with Elvex')
-    return {
-      horoscope: parsed.horoscope,
-      dos: parsed.dos,
-      donts: parsed.donts,
-    }
+    // Should never reach here, but just in case
+    throw lastError || new Error('Failed to connect to Elvex API')
   } catch (error: any) {
     console.error('❌ Error transforming horoscope with Elvex:', error)
     throw new Error(`Failed to transform horoscope with Elvex: ${error.message || 'Unknown error'}`)
