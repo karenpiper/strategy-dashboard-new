@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateHoroscopeDirect } from '@/lib/horoscope-direct-service'
 import { generateHoroscopeViaAirtable } from '@/lib/airtable-ai-service'
-import { generateHoroscopeViaElvex } from '@/lib/elvex-horoscope-service'
+import { generateHoroscopeViaElvex, generateImageViaAirtable } from '@/lib/elvex-horoscope-service'
 import { fetchCafeAstrologyHoroscope } from '@/lib/cafe-astrology'
 import {
   buildUserProfile,
@@ -819,73 +819,48 @@ export async function GET(request: NextRequest) {
           throw new Error('Invalid direct API result: missing horoscope text, dos, or donts')
         }
 
-        // Elvex only returns horoscope text - image and caption are handled separately via Airtable
+        // Elvex returns horoscope text - now generate image via Airtable
         horoscopeText = directResult.horoscope
         horoscopeDos = directResult.dos
         horoscopeDonts = directResult.donts
-        // Image and caption are fetched separately from the avatar endpoint or database
-        imageUrl = null // Will be set from avatar endpoint or database
         
-        // Character name is not generated in direct mode (was previously from n8n image analysis)
-        // Set to null for now - can be added later if needed
-        characterName = directResult.character_name || null
-        if (characterName) {
-          console.log('✅ Using character name from direct API:', characterName)
-        } else {
-          console.log('ℹ️ Character name not generated (not available in direct mode)')
-        }
-      }
-
-      if (hasValidBirthday) {
-        console.log('✅ Using direct API result:', {
-          horoscopeText: horoscopeText?.substring(0, 100) + '...',
-          dosCount: horoscopeDos?.length || 0,
-          dontsCount: horoscopeDonts?.length || 0,
-          imageUrl: imageUrl ? imageUrl.substring(0, 100) + '...' : 'null (no image)'
-        })
-      }
-      
-      // OPTIMIZATION: Start image download/upload in parallel with avatar state update
-      // These operations are independent and can run concurrently
-      // Note: If image was generated directly (no birthday), it's already in Supabase, skip upload
-      if (!hasValidBirthday) {
-        // Image already in Supabase from direct generation, skip upload
-        console.log('✅ Image already in Supabase storage (generated directly), skipping upload')
-      } else if (!imageUrl) {
-        // No image URL available, skip upload
-        console.log('⚠️ No image URL available, skipping image upload')
-      } else {
-        console.log('⚡ Starting parallel operations: image upload + avatar state update...')
+        // Generate image via Airtable (together with text generation)
+        console.log('🚀 ========== GENERATING IMAGE VIA AIRTABLE ==========')
+        console.log('   Image prompt length:', imagePrompt.length)
+        console.log('   User ID:', userId)
+        console.log('   User email:', user.email || 'not available')
         
-        const [permanentImageUrl] = await Promise.all([
-        // Download and upload image to Supabase storage
-        (async () => {
-          console.log('📥 Downloading image and uploading to Supabase storage...')
-          console.log('   Source image URL:', imageUrl.substring(0, 100) + '...')
+        try {
+          const imageResult = await generateImageViaAirtable(
+            imagePrompt,
+            userTimezone,
+            userId,
+            user.email || undefined
+          )
           
-          try {
-            // Download the image
-            console.log('   Fetching image...')
-            const imageResponse = await fetch(imageUrl)
+          if (imageResult.imageUrl) {
+            console.log('✅ Image generated via Airtable successfully')
+            console.log('   Airtable image URL:', imageResult.imageUrl.substring(0, 100) + '...')
+            console.log('   Caption:', imageResult.caption || 'none')
+            
+            // Download image from Airtable and upload to Supabase storage
+            console.log('📥 Downloading image from Airtable and uploading to Supabase storage...')
+            const imageResponse = await fetch(imageResult.imageUrl)
             if (!imageResponse.ok) {
-              throw new Error(`Failed to download image: ${imageResponse.statusText} (${imageResponse.status})`)
+              throw new Error(`Failed to download image from Airtable: ${imageResponse.statusText}`)
             }
-            console.log('   Image downloaded successfully, size:', imageResponse.headers.get('content-length') || 'unknown')
+            
             const imageBlob = await imageResponse.blob()
             const imageBuffer = Buffer.from(await imageBlob.arrayBuffer())
-            console.log('   Image buffer size:', imageBuffer.length, 'bytes')
+            console.log('✅ Image downloaded, size:', imageBuffer.length, 'bytes')
             
-            // Upload to Supabase storage (horoscope-avatars bucket - separate from profile avatars)
+            // Upload to Supabase storage
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
             const fileName = `horoscope-${userId}-${todayDate}-${timestamp}.png`
             const filePath = `${userId}/${fileName}`
             const bucketName = 'horoscope-avatars'
             
             console.log('📤 Uploading image to Supabase storage...')
-            console.log('   Bucket:', bucketName)
-            console.log('   File path:', filePath)
-            console.log('   File size:', imageBuffer.length, 'bytes')
-            
             const { error: uploadError } = await supabaseAdmin.storage
               .from(bucketName)
               .upload(filePath, imageBuffer, {
@@ -894,60 +869,38 @@ export async function GET(request: NextRequest) {
               })
             
             if (uploadError) {
-              console.error('❌ CRITICAL: Error uploading image to Supabase storage:', uploadError)
-              throw new Error(`Failed to upload image to Supabase storage: ${uploadError.message}. Cannot save horoscope with temporary image URL.`)
+              console.error('❌ Failed to upload image to Supabase storage:', uploadError)
+              throw new Error(`Failed to upload image to Supabase storage: ${uploadError.message}`)
             }
             
-            // Get public URL from Supabase storage
+            // Get the public URL for the uploaded image
             const { data: urlData } = supabaseAdmin.storage
               .from(bucketName)
               .getPublicUrl(filePath)
             
-            if (!urlData || !urlData.publicUrl) {
-              console.error('❌ CRITICAL: Failed to get public URL from Supabase storage')
-              throw new Error('Failed to get public URL for uploaded image. Upload may have succeeded but URL generation failed.')
-            }
+            imageUrl = urlData.publicUrl
+            characterName = imageResult.caption || null
             
-            const permanentUrl = urlData.publicUrl
             console.log('✅ Image uploaded to Supabase storage successfully')
-            console.log('   Public URL:', permanentUrl.substring(0, 100) + '...')
-            
-            // Verify the URL is a Supabase URL
-            if (permanentUrl === imageUrl) {
-              console.error('❌ CRITICAL: Permanent URL is same as original URL - upload failed!')
-              throw new Error('Image upload failed - permanent URL matches temporary OpenAI URL')
-            }
-            
-            if (!permanentUrl.includes('supabase.co') && !permanentUrl.includes('supabase')) {
-              console.error('❌ CRITICAL: Permanent URL does not appear to be a Supabase URL!')
-              throw new Error('Image upload may have failed - URL is not a Supabase storage URL')
-            }
-            
-            // Verify the uploaded file exists
-            const { data: fileData, error: fileCheckError } = await supabaseAdmin.storage
-              .from(bucketName)
-              .list(userId, {
-                limit: 1,
-                search: fileName
-              })
-            
-            if (fileCheckError) {
-              console.warn('⚠️ Could not verify uploaded file exists:', fileCheckError)
-            } else if (!fileData || fileData.length === 0) {
-              console.error('❌ CRITICAL: Uploaded file not found in storage!')
-              throw new Error('Image upload verification failed - file not found in storage after upload')
-            } else {
-              console.log('✅ Verified uploaded file exists in storage:', fileData[0].name)
-            }
-            
-            return permanentUrl
-          } catch (imageError: any) {
-            console.error('❌ CRITICAL: Error processing image upload:', imageError)
-            throw imageError // Re-throw to fail the request
+            console.log('   Supabase storage URL:', imageUrl.substring(0, 100) + '...')
+            console.log('   Character name:', characterName || 'none')
+          } else {
+            console.warn('⚠️ Image generation returned no image URL')
+            imageUrl = null
+            characterName = null
           }
-        })(),
-        // Update user avatar state (parallel with image upload)
-        (async () => {
+        } catch (imageError: any) {
+          console.error('❌ Failed to generate image via Airtable:', imageError)
+          console.error('   Error message:', imageError.message)
+          // Don't fail the entire request if image generation fails - text is still valid
+          imageUrl = null
+          characterName = null
+        }
+      }
+
+      // Update user avatar state (if we have prompt slots)
+      if (hasValidBirthday && promptSlots) {
+        try {
           const { data: styleReference } = await supabaseAdmin
             .from('prompt_slot_catalogs')
             .select('style_group_id')
@@ -959,7 +912,7 @@ export async function GET(request: NextRequest) {
           const { data: avatarState } = await supabaseAdmin
             .from('user_avatar_state')
             .select('*')
-        .eq('user_id', userId)
+            .eq('user_id', userId)
             .single()
           
           const recentStyleGroupIds = avatarState?.recent_style_group_ids || []
@@ -995,10 +948,20 @@ export async function GET(request: NextRequest) {
           })
           
           console.log('✅ Updated user avatar state')
-        })()
-        ])
-        
-        imageUrl = permanentImageUrl
+        } catch (avatarStateError: any) {
+          console.warn('⚠️ Failed to update avatar state:', avatarStateError)
+          // Don't fail the request if avatar state update fails
+        }
+      }
+      
+      if (hasValidBirthday) {
+        console.log('✅ Generation complete:', {
+          horoscopeText: horoscopeText?.substring(0, 100) + '...',
+          dosCount: horoscopeDos?.length || 0,
+          dontsCount: horoscopeDonts?.length || 0,
+          imageUrl: imageUrl ? imageUrl.substring(0, 100) + '...' : 'null (no image)',
+          characterName: characterName || 'none'
+        })
       }
       
       const elapsedTime = Date.now() - startTime
