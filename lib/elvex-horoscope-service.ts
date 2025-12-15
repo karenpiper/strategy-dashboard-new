@@ -783,10 +783,10 @@ To fix:
           // Extract caption from "Caption" field (renamed from "Error Message")
           const caption = fields['Caption'] || null
           console.log('✅ Image generated successfully via Airtable')
-          console.log('   Image URL length:', imageUrl.length)
+          console.log('   Image URL length:', finalImageUrl.length)
           console.log('   Caption:', caption || 'not found')
           console.log('   Available fields:', Object.keys(fields))
-          return { imageUrl, caption: caption || null }
+          return { imageUrl: finalImageUrl, caption: caption || null }
         } else {
           console.error('❌ No image URL found in any field')
           console.error('   Fields available:', Object.keys(fields))
