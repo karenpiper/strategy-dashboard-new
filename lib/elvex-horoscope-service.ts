@@ -136,7 +136,20 @@ ${prompt}`
 
     if (!response.ok) {
       const errorText = await response.text()
-      throw new Error(`Elvex API call failed: ${response.status} ${errorText}`)
+      const errorMessage = `Elvex API call failed: ${response.status} ${errorText}`
+      
+      // Provide helpful error message for 404
+      if (response.status === 404) {
+        console.error('❌ 404 Error Details:', {
+          assistantId: config.assistantId,
+          version: config.version,
+          url: elvexUrl,
+          suggestion: 'Check Elvex dashboard to verify: 1) Assistant ID is correct, 2) Version exists and is published, 3) Assistant is active'
+        })
+        throw new Error(`${errorMessage}\n\nTroubleshooting:\n- Verify assistant ID "${config.assistantId}" exists in Elvex dashboard\n- Check that version "${config.version}" exists and is published for this assistant\n- Ensure the assistant is active/published`)
+      }
+      
+      throw new Error(errorMessage)
     }
 
     const result = await response.json()
