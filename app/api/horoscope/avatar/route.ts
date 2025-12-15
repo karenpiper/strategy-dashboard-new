@@ -487,19 +487,105 @@ export async function GET(request: NextRequest) {
     }
     
     // CRITICAL: Image generation is now handled by the main horoscope endpoint
-    // This avatar endpoint should ONLY return existing images, never generate new ones
-    // This prevents duplicate image generation when both endpoints are called
+    // But this endpoint can check Airtable for existing images that were generated
+    // This allows the frontend to poll this endpoint to check if an image is ready
     if ((!cachedHoroscope.image_url || cachedHoroscope.image_url.trim() === '') && isFromToday) {
       console.log('⚠️ Horoscope exists but image_url is null or empty')
       console.log('   Horoscope date:', cachedHoroscope.date)
       console.log('   Has text:', !!cachedHoroscope.horoscope_text)
       console.log('   Has image prompt:', !!cachedHoroscope.image_prompt)
-      console.log('   ⚠️ NOTE: Image generation is now handled by /api/horoscope endpoint')
-      console.log('   ⚠️ This endpoint will NOT generate images - only return existing ones')
-      console.log('   ⚠️ If image is missing, call /api/horoscope endpoint to generate both text and image')
       
-      // Return null image_url - don't generate here
-      // The main horoscope endpoint will generate the image when text is generated
+      // Check Airtable for existing images that might have been generated
+      if (cachedHoroscope.image_prompt && cachedHoroscope.image_prompt.trim() !== '') {
+        console.log('🔍 Checking Airtable for existing images...')
+        try {
+          const { generateImageViaAirtable } = await import('@/lib/elvex-horoscope-service')
+          const airtableImageResult = await generateImageViaAirtable(
+            cachedHoroscope.image_prompt,
+            profile.timezone || undefined,
+            userId,
+            userEmail
+          )
+          
+          if (airtableImageResult.imageUrl) {
+            console.log('✅ Found existing image in Airtable!')
+            console.log('   Airtable image URL:', airtableImageResult.imageUrl.substring(0, 100) + '...')
+            
+            // Check if it's an Airtable URL (needs to be uploaded to Supabase)
+            const isAirtableUrl = !airtableImageResult.imageUrl.includes('supabase.co')
+            
+            if (isAirtableUrl) {
+              // Download and upload to Supabase
+              console.log('📥 Downloading image from Airtable and uploading to Supabase...')
+              const imageResponse = await fetch(airtableImageResult.imageUrl)
+              if (imageResponse.ok) {
+                const imageBlob = await imageResponse.blob()
+                const imageBuffer = Buffer.from(await imageBlob.arrayBuffer())
+                
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+                const fileName = `horoscope-${userId}-${todayDate}-${timestamp}.png`
+                const filePath = `${userId}/${fileName}`
+                const bucketName = 'horoscope-avatars'
+                
+                const { error: uploadError } = await supabaseAdmin.storage
+                  .from(bucketName)
+                  .upload(filePath, imageBuffer, {
+                    contentType: 'image/png',
+                    upsert: false,
+                  })
+                
+                if (!uploadError) {
+                  const { data: urlData } = supabaseAdmin.storage
+                    .from(bucketName)
+                    .getPublicUrl(filePath)
+                  
+                  // Update the database
+                  await supabaseAdmin
+                    .from('horoscopes')
+                    .update({ 
+                      image_url: urlData.publicUrl,
+                      character_name: airtableImageResult.caption || null
+                    })
+                    .eq('user_id', userId)
+                    .eq('date', todayDate)
+                  
+                  console.log('✅ Uploaded image to Supabase and updated database')
+                  
+                  // Return the Supabase URL
+                  const slots = cachedHoroscope.prompt_slots_json || {}
+                  return NextResponse.json({
+                    image_url: urlData.publicUrl,
+                    image_prompt: cachedHoroscope.image_prompt,
+                    prompt_slots: slots,
+                    prompt_slots_labels: null,
+                    prompt_slots_reasoning: slots?.reasoning || null,
+                    character_name: airtableImageResult.caption || null,
+                    cached: true,
+                  })
+                }
+              }
+            } else {
+              // Already in Supabase, just return it
+              const slots = cachedHoroscope.prompt_slots_json || {}
+              return NextResponse.json({
+                image_url: airtableImageResult.imageUrl,
+                image_prompt: cachedHoroscope.image_prompt,
+                prompt_slots: slots,
+                prompt_slots_labels: null,
+                prompt_slots_reasoning: slots?.reasoning || null,
+                character_name: airtableImageResult.caption || null,
+                cached: true,
+              })
+            }
+          } else {
+            console.log('⚠️ No image found in Airtable yet')
+          }
+        } catch (airtableCheckError: any) {
+          console.warn('⚠️ Could not check Airtable for existing images:', airtableCheckError.message)
+        }
+      }
+      
+      // No image found in Airtable yet - return generating status so frontend can poll again
       const slots = cachedHoroscope.prompt_slots_json || {}
       return NextResponse.json({
         image_url: null,
@@ -508,8 +594,8 @@ export async function GET(request: NextRequest) {
         prompt_slots_labels: null,
         prompt_slots_reasoning: slots?.reasoning || null,
         character_name: cachedHoroscope.character_name || null,
-        generating: false, // Not generating - image should be generated via main endpoint
-        message: 'Image generation is handled by /api/horoscope endpoint. Please call that endpoint to generate both text and image together.'
+        generating: true, // Indicates image might still be generating in Airtable
+        message: 'Image is being generated in Airtable. Please check again in a few moments.',
       })
     }
     
