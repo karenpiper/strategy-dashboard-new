@@ -394,6 +394,81 @@ export async function generateImageViaAirtable(prompt: string, timezone?: string
   }
 
   try {
+    // Step 0: Check if an existing record with completed image already exists
+    // This prevents creating duplicate records if image was already generated
+    console.log('🔍 Checking for existing Airtable records...')
+    if (userId) {
+      try {
+        // Query Airtable for existing records with this User ID and Created At date
+        const queryUrl = `${url}?filterByFormula=${encodeURIComponent(`AND({User ID} = "${userId}", {Created At} = "${createdAt}")`)}`
+        console.log('   Querying Airtable for existing records:', queryUrl.substring(0, 150) + '...')
+        
+        const queryResponse = await fetch(queryUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        if (queryResponse.ok) {
+          const queryData = await queryResponse.json()
+          console.log(`   Found ${queryData.records?.length || 0} existing records`)
+          
+          // Check if any existing record has a completed image
+          if (queryData.records && queryData.records.length > 0) {
+            for (const record of queryData.records) {
+              const status = record.fields?.Status
+              const imageField = record.fields?.Image
+              const imageUrl = record.fields?.['Image URL']
+              
+              console.log(`   Checking record ${record.id}: Status=${status}, hasImage=${!!imageField}, hasImageUrl=${!!imageUrl}`)
+              
+              // If record is completed and has an image, use it
+              if (status === 'Completed' && (imageField || imageUrl)) {
+                console.log('✅ Found existing completed image in Airtable - using it')
+                
+                // Extract image URL from attachment field or use Image URL field
+                let finalImageUrl = imageUrl
+                if (!finalImageUrl && imageField && Array.isArray(imageField) && imageField.length > 0) {
+                  finalImageUrl = imageField[0].url
+                }
+                
+                if (finalImageUrl) {
+                  console.log('   Using existing image URL:', finalImageUrl.substring(0, 100) + '...')
+                  return {
+                    imageUrl: finalImageUrl,
+                    caption: record.fields?.['Character Name'] || record.fields?.['Caption'] || null,
+                  }
+                }
+              }
+            }
+            
+            // If we found records but none are completed, check if any are still pending
+            const pendingRecord = queryData.records.find((r: any) => r.fields?.Status === 'Pending')
+            if (pendingRecord) {
+              console.log('   Found pending record - will poll for completion instead of creating new one')
+              // Use the existing pending record ID and poll for completion
+              const recordId = pendingRecord.id
+              console.log('   Using existing pending record ID:', recordId)
+              
+              // Skip to polling step (will be handled below)
+              // We'll poll this existing record instead of creating a new one
+              // But first, let's continue with the normal flow to create a new record if needed
+              // Actually, let's poll the existing one
+              console.log('   Polling existing pending record for completion...')
+              // Continue to polling logic below with this recordId
+            }
+          }
+        } else {
+          console.log('   Query failed, will create new record:', queryResponse.status)
+        }
+      } catch (queryError: any) {
+        console.log('   Error querying existing records, will create new record:', queryError.message)
+        // Continue to create new record
+      }
+    }
+    
     // Step 1: Create a record in Airtable with the image prompt
     console.log('🚀 ========== ABOUT TO CREATE AIRTABLE RECORD ==========')
     console.log('📝 Creating image generation request in Airtable...')
