@@ -152,7 +152,7 @@ export default function WorkSampleAdmin() {
 
   const cardStyle = getCardStyle()
 
-  // Fetch work samples
+  // Fetch work samples - always fetch fresh data (no caching)
   const fetchWorkSamples = async () => {
     try {
       setLoading(true)
@@ -162,11 +162,21 @@ export default function WorkSampleAdmin() {
       if (filterAuthorId) params.append('author_id', filterAuthorId)
       if (sortBy) params.append('sortBy', sortBy)
       if (sortOrder) params.append('sortOrder', sortOrder)
+      
+      // Always add timestamp to ensure fresh fetch
+      params.append('_t', Date.now().toString())
 
-      const response = await fetch(`/api/work-samples?${params.toString()}`)
+      const response = await fetch(`/api/work-samples?${params.toString()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      })
       const result = await response.json()
       
       if (response.ok) {
+        console.log(`Fetched ${result.data?.length || 0} work samples`)
         setWorkSamples(result.data || [])
       } else {
         console.error('Error fetching work samples:', result)
@@ -514,9 +524,18 @@ export default function WorkSampleAdmin() {
       return
     }
 
-    if (!formData.file_url && !formData.file_link) {
-      alert('Either a file upload or file link is required')
+    // If a file is selected but still uploading, wait for it to complete
+    if (selectedFile && uploadingFile) {
+      alert('Please wait for the file upload to complete before submitting.')
       return
+    }
+
+    // If a file is selected but file_url is not set, the upload may have failed
+    if (selectedFile && !formData.file_url && !formData.file_link) {
+      const shouldContinue = confirm('The file upload may not have completed. Do you want to submit without the file?')
+      if (!shouldContinue) {
+        return
+      }
     }
 
     // If no thumbnail was uploaded and we have a PDF file, try to generate one
@@ -551,33 +570,50 @@ export default function WorkSampleAdmin() {
     }
 
     try {
+      const requestBody = {
+        ...formData,
+        type_id: formData.type_id || null,
+        client: formData.client || null,
+        author_id: formData.author_id || user?.id,
+        // created_by is automatically set to logged-in user by API
+        thumbnail_url: formData.thumbnail_url || null,
+        file_url: formData.file_url || null,
+        file_link: formData.file_link || null,
+        file_name: formData.file_name || null,
+        pitch_won: formData.pitch_won || false,
+      }
+
+      console.log('Submitting work sample:', requestBody)
+
       const response = await fetch('/api/work-samples', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          type_id: formData.type_id || null,
-          client: formData.client || null,
-          author_id: formData.author_id || user?.id,
-          // created_by is automatically set to logged-in user by API
-          thumbnail_url: formData.thumbnail_url || null,
-          file_url: formData.file_url || null,
-          file_link: formData.file_link || null,
-          file_name: formData.file_name || null,
-          pitch_won: formData.pitch_won || false,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       const result = await response.json()
+      console.log('API Response:', { status: response.status, ok: response.ok, result })
       
       if (response.ok) {
-        setIsAddDialogOpen(false)
-        resetForm()
-        fetchWorkSamples()
+        if (result.data) {
+          console.log('Work sample created successfully:', result.data)
+          setIsAddDialogOpen(false)
+          resetForm()
+          // Fetch fresh data to show new item
+          fetchWorkSamples()
+        } else {
+          console.error('API returned success but no data:', result)
+          alert('Work sample was created but no data was returned. Please refresh the page to see it.')
+          setIsAddDialogOpen(false)
+          resetForm()
+          // Fetch fresh data
+          fetchWorkSamples()
+        }
       } else {
         const errorMsg = result.details 
           ? `${result.error}\n\nDetails: ${result.details}`
           : result.error || 'Failed to add work sample'
+        console.error('API Error:', { status: response.status, error: result })
         alert(errorMsg)
       }
     } catch (error) {
@@ -643,6 +679,7 @@ export default function WorkSampleAdmin() {
         setIsEditDialogOpen(false)
         setEditingItem(null)
         resetForm()
+        // Fetch fresh data to show updated item
         fetchWorkSamples()
       } else {
         const errorMsg = result.details 
@@ -662,21 +699,31 @@ export default function WorkSampleAdmin() {
     if (!confirm('Are you sure you want to delete this work sample?')) return
 
     try {
+      console.log('Deleting work sample:', id)
       const response = await fetch(`/api/work-samples?id=${id}`, {
         method: 'DELETE',
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       })
 
       const result = await response.json()
+      console.log('Delete response:', { status: response.status, ok: response.ok, result })
       
       if (response.ok) {
-        fetchWorkSamples()
+        console.log('Delete successful, refreshing work samples list')
+        // Fetch fresh data immediately
+        await fetchWorkSamples()
         setSelectedIds(new Set())
       } else {
-        alert(`Error: ${result.error}`)
+        console.error('Delete failed:', result)
+        alert(`Error: ${result.error || 'Failed to delete work sample'}`)
       }
     } catch (error) {
       console.error('Error deleting work sample:', error)
-      alert('Failed to delete work sample')
+      alert(`Failed to delete work sample: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -687,21 +734,31 @@ export default function WorkSampleAdmin() {
 
     try {
       const ids = Array.from(selectedIds).join(',')
+      console.log('Bulk deleting work samples:', ids)
       const response = await fetch(`/api/work-samples?ids=${ids}`, {
         method: 'DELETE',
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       })
 
       const result = await response.json()
+      console.log('Bulk delete response:', { status: response.status, ok: response.ok, result })
       
       if (response.ok) {
-        fetchWorkSamples()
+        console.log('Bulk delete successful, refreshing work samples list')
+        // Fetch fresh data immediately
+        await fetchWorkSamples()
         setSelectedIds(new Set())
       } else {
-        alert(`Error: ${result.error}`)
+        console.error('Bulk delete failed:', result)
+        alert(`Error: ${result.error || 'Failed to delete work samples'}`)
       }
     } catch (error) {
       console.error('Error deleting work samples:', error)
-      alert('Failed to delete work samples')
+      alert(`Failed to delete work samples: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -929,14 +986,13 @@ export default function WorkSampleAdmin() {
                     </select>
                   </div>
                   <div>
-                    <Label className={cardStyle.text}>File Upload <span className="text-red-500">*</span></Label>
+                    <Label className={cardStyle.text}>File Upload (optional)</Label>
                     <p className={`text-xs ${cardStyle.text}/70 mb-1`}>PDF, Keynote, ZIP, PPT, DOC (max 100MB)</p>
                     <Input
                       type="file"
                       accept=".pdf,.zip,.ppt,.pptx,.doc,.docx,.key"
                       onChange={handleFileUpload}
                       disabled={uploadingFile}
-                      required
                       className={`${cardStyle.bg} ${cardStyle.border} border ${cardStyle.text}`}
                     />
                     {selectedFile && (

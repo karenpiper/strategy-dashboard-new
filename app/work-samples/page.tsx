@@ -154,8 +154,16 @@ export default function WorkSamplesPage() {
         if (filterClient) params.set('client', filterClient)
         params.set('sortBy', sortBy)
         params.set('sortOrder', sortOrder)
+        // Add timestamp to ensure fresh fetch (no caching)
+        params.set('_t', Date.now().toString())
         
-        const response = await fetch(`/api/work-samples?${params.toString()}`)
+        const response = await fetch(`/api/work-samples?${params.toString()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        })
         if (response.ok) {
           const result = await response.json()
           if (result.data && Array.isArray(result.data)) {

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-// Cache configuration: 10 minutes for work samples
-export const revalidate = 600
+// No caching - always fetch fresh data
+export const revalidate = 0
+export const dynamic = 'force-dynamic'
 
 // GET - Fetch all work samples with optional search and filter
 export async function GET(request: NextRequest) {
@@ -180,8 +181,10 @@ export async function GET(request: NextRequest) {
         hasMore: count ? offset + limit < count : false
       }
     })
-    // Add cache headers for client-side caching
-    response.headers.set('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=1200')
+    // No caching - always return fresh data
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
     return response
   } catch (error: any) {
     console.error('Error in work-samples API:', error)
@@ -266,7 +269,18 @@ export async function POST(request: NextRequest) {
       pitch_won: pitch_won !== undefined ? pitch_won : false,
     }
 
-    const { data, error } = await supabase
+    console.log('Creating work sample with data:', {
+      project_name,
+      description,
+      author_id: authorId,
+      created_by: user.id,
+      date: finalDate,
+      has_file_url: !!file_url,
+      has_file_link: !!file_link,
+    })
+
+    // First, insert the data without complex joins to ensure insert succeeds
+    const { data: insertedData, error: insertError } = await supabase
       .from('work_samples')
       .insert(insertData)
       .select(`
@@ -284,28 +298,87 @@ export async function POST(request: NextRequest) {
         file_url,
         file_link,
         file_name,
-        pitch_won,
-        type:work_sample_types(id, name),
-        author:profiles!author_id(id, email, full_name),
-        created_by_profile:profiles!created_by(id, email, full_name)
+        pitch_won
       `)
       .single()
 
-    if (error) {
-      console.error('Error creating work sample:', error)
+    if (insertError) {
+      console.error('Error creating work sample:', {
+        message: insertError.message,
+        code: insertError.code,
+        hint: insertError.hint,
+        details: insertError.details,
+        fullError: JSON.stringify(insertError, null, 2),
+      })
       return NextResponse.json(
         { 
           error: 'Failed to create work sample', 
-          details: error.message, 
-          code: error.code,
-          hint: error.hint,
-          fullError: error
+          details: insertError.message, 
+          code: insertError.code,
+          hint: insertError.hint,
+          fullError: insertError
         },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ data })
+    if (!insertedData) {
+      console.error('Insert succeeded but no data returned - this should not happen')
+      return NextResponse.json(
+        { 
+          error: 'Work sample was created but no data was returned',
+          details: 'Please check the database directly'
+        },
+        { status: 500 }
+      )
+    }
+
+    console.log('Work sample created successfully:', {
+      id: insertedData.id,
+      project_name: insertedData.project_name,
+      created_at: insertedData.created_at,
+    })
+
+    // Now fetch the related data separately to avoid join issues
+    const enrichedData = { ...insertedData, type: null, author: null, created_by_profile: null }
+
+    // Fetch type if type_id exists
+    if (insertedData.type_id) {
+      const { data: typeData } = await supabase
+        .from('work_sample_types')
+        .select('id, name')
+        .eq('id', insertedData.type_id)
+        .single()
+      if (typeData) {
+        enrichedData.type = typeData
+      }
+    }
+
+    // Fetch author if author_id exists
+    if (insertedData.author_id) {
+      const { data: authorData } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .eq('id', insertedData.author_id)
+        .single()
+      if (authorData) {
+        enrichedData.author = authorData
+      }
+    }
+
+    // Fetch created_by profile if created_by exists
+    if (insertedData.created_by) {
+      const { data: createdByData } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .eq('id', insertedData.created_by)
+        .single()
+      if (createdByData) {
+        enrichedData.created_by_profile = createdByData
+      }
+    }
+
+    return NextResponse.json({ data: enrichedData })
   } catch (error: any) {
     console.error('Error in work-samples API:', error)
     return NextResponse.json(
@@ -439,10 +512,12 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete a work sample
 export async function DELETE(request: NextRequest) {
   try {
+    console.log('DELETE request received for work samples')
     const supabase = await createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
+      console.error('Authentication failed for DELETE request:', authError)
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -453,7 +528,10 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id')
     const ids = searchParams.get('ids') // For bulk delete
 
+    console.log('Delete request params:', { id, ids, userId: user.id })
+
     if (!id && !ids) {
+      console.error('No ID provided for delete')
       return NextResponse.json(
         { error: 'Work sample ID(s) required' },
         { status: 400 }
@@ -579,16 +657,20 @@ export async function DELETE(request: NextRequest) {
     if (ids) {
       // Bulk delete
       const idArray = ids.split(',').map(id => id.trim())
+      console.log(`Deleting ${idArray.length} work samples:`, idArray)
       query = query.in('id', idArray)
     } else if (id) {
+      console.log(`Deleting work sample with ID: ${id}`)
       query = query.eq('id', id)
     }
 
-    const { error } = await query
+    console.log('Executing delete query...')
+    const { error, data } = await query
+    console.log('Delete query result:', { error: error?.message, hasError: !!error, data })
 
     if (error) {
       console.error('Error deleting work sample:', error)
-      return NextResponse.json(
+      const errorResponse = NextResponse.json(
         { 
           error: 'Failed to delete work sample', 
           details: error.message, 
@@ -596,9 +678,19 @@ export async function DELETE(request: NextRequest) {
         },
         { status: 500 }
       )
+      // No caching for error responses
+      errorResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+      errorResponse.headers.set('Pragma', 'no-cache')
+      return errorResponse
     }
 
-    return NextResponse.json({ success: true })
+    console.log(`Successfully deleted work sample(s): ${id || ids}`)
+    const successResponse = NextResponse.json({ success: true })
+    // No caching for delete responses
+    successResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    successResponse.headers.set('Pragma', 'no-cache')
+    successResponse.headers.set('Expires', '0')
+    return successResponse
   } catch (error: any) {
     console.error('Error in work-samples API:', error)
     return NextResponse.json(
