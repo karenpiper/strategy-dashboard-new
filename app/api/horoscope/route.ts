@@ -774,19 +774,7 @@ export async function GET(request: NextRequest) {
             userId,
             date: todayDate,
             cafeAstrologyText: cafeAstrologyText,
-            userProfile: {
-              name: profile.full_name || null,
-              role: profile.role || null,
-              hobbies: profile.hobbies || null,
-              likes_fantasy: profile.likes_fantasy || false,
-              likes_scifi: profile.likes_scifi || false,
-              likes_cute: profile.likes_cute || false,
-              likes_minimal: profile.likes_minimal || false,
-              hates_clowns: profile.hates_clowns || false,
-            },
-            weekday: userProfile.weekday,
-            season: userProfile.season,
-            imagePrompt: imagePrompt, // Optional - Elvex will generate if not provided
+            imagePrompt: imagePrompt, // Built by buildHoroscopePrompt() with slot-based logic
             slots: promptSlots,
             reasoning: promptReasoning,
           })

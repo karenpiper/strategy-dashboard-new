@@ -8,7 +8,7 @@ The system uses Elvex API for both horoscope text and image generation. It makes
 
 ## How It Works
 
-The system makes **3 API calls to Elvex**:
+The system makes **2 API calls to Elvex** (the image prompt is built locally using the slot-based system):
 
 ### 1. Text Transformation (Chat Completions)
 **Endpoint:** `POST /v1/chat/completions`
@@ -42,27 +42,35 @@ The system makes **3 API calls to Elvex**:
 }
 ```
 
-### 2. Image Prompt Generation (Chat Completions)
-**Endpoint:** `POST /v1/chat/completions`
+### 2. Image Prompt Building (Local - Slot-Based System)
+**NOT an Elvex API call** - Built locally using `buildHoroscopePrompt()`
 
-**What's sent:**
-```json
-{
-  "model": "gpt-4o-mini",
-  "messages": [
-    {
-      "role": "user",
-      "content": "You are an expert at creating detailed, vivid image prompts for AI image generation (like DALL-E 3).\n\nCreate a detailed image prompt based on this user profile:\n- Name: [USER_NAME]\n- Role: [USER_ROLE]\n- Hobbies: [USER_HOBBIES]\n- Likes fantasy: [Yes/No]\n- Likes sci-fi: [Yes/No]\n- Likes cute things: [Yes/No]\n- Likes minimal design: [Yes/No]\n- Hates clowns: [Yes/No]\n- Star Sign: [STAR_SIGN]\n- Day of week: [WEEKDAY]\n- Season: [SEASON]\n\nThe image should be a hero image for a horoscope dashboard. It should be:\n- Visually striking and engaging\n- Related to the user's interests and preferences\n- Appropriate for the star sign, day, and season\n- Professional but fun\n- Suitable for a dashboard background\n\nReturn ONLY the image prompt text, nothing else. Make it detailed and specific (approximately 100-150 words). Include style, mood, colors, composition, and any relevant details."
-    }
-  ],
-  "temperature": 0.8,
-  "max_tokens": 300
-}
-```
+The image prompt is built using a sophisticated slot-based system that:
+- **Maps user profile variables to styles:**
+  - `likes_fantasy` → boosts fantasy styles (Studio Ghibli, Disney, Adventure Time)
+  - `likes_scifi` → boosts sci-fi styles (Cyberpunk, Dreamworks, Pixar)
+  - `likes_cute` → boosts cute styles (Chibi anime, children's book)
+  - `likes_minimal` → boosts minimal styles (flat vector, isometric, charcoal)
+  - `hates_clowns` → excludes clown-related content
 
-**What's returned:**
+- **Applies weighted selection by context:**
+  - **Weekday themes:** Monday (sci-fi), Tuesday (fantasy), Wednesday (cozy), Thursday (energetic), etc.
+  - **Seasonal adjustments:** Winter (cool colors), Spring (pastels), Summer (warm), Fall (sepia)
+  - **Zodiac element themes:** Fire (energetic), Water (mysterious), Earth (cozy), Air (whimsical)
+
+- **Selects from catalogs:**
+  - Style reference (e.g., "Studio Ghibli style", "Cyberpunk concept art")
+  - Subject role (e.g., "fantasy wizard", "sci-fi pilot", "your real face as yourself")
+  - Setting place (e.g., "enchanted forest", "space station", "cozy library")
+  - Mood/vibe (e.g., "whimsical and surreal", "energetic and chaotic")
+  - Color palette (e.g., "pastel candy colors", "cool blues and greens")
+  - And more: style medium, setting time, activity, camera frame, lighting style, constraints
+
+- **Style rotation:** Avoids recently used styles to ensure variety
+
+**Result:** A detailed, structured prompt matching the n8n format, for example:
 ```
-A detailed image prompt text (100-150 words)
+Rubber Hose Cartoon. Marker Illustration. Top Down View of Karen Piper, a co-head, as hero in an rpg living neon sign flying through the air. They are in cozy library at stormy afternoon. sci fi high tech mood, warm oranges and reds palette, soft natural lighting. sharp focus on the face, avatar friendly portrait ratio, clean, simple background, no text in the image.
 ```
 
 ### 3. Image Generation (Images API)
@@ -133,9 +141,9 @@ These are **direct API calls** that don't require creating or configuring an ass
 - Weekday and season
 
 **API Calls Made:**
-1. **Text transformation** → Converts Cafe Astrology text to Co-Star style with dos/donts
-2. **Image prompt generation** → Creates detailed image prompt from user profile
-3. **Image generation** → Generates image from the prompt
+1. **Text transformation** → Converts Cafe Astrology text to Co-Star style with dos/donts (Elvex API)
+2. **Image prompt building** → Creates detailed image prompt using slot-based system (local, not Elvex)
+3. **Image generation** → Generates image from the prompt (Elvex API)
 
 **Output:**
 - Transformed horoscope text

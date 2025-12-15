@@ -5,7 +5,7 @@
  * 
  * Workflow:
  * 1. Transform horoscope text using Elvex chat completions API
- * 2. Generate image prompt using Elvex chat completions API
+ * 2. Use image prompt built by route (via buildHoroscopePrompt with slot-based logic)
  * 3. Generate image using Elvex images API
  * 
  * Setup required:
@@ -19,21 +19,9 @@
 interface HoroscopeGenerationRequest {
   cafeAstrologyText: string
   starSign: string
-  imagePrompt?: string
+  imagePrompt: string // Required - built by route using buildHoroscopePrompt()
   userId: string
   date: string
-  userProfile?: {
-    name?: string
-    role?: string | null
-    hobbies?: string[] | null
-    likes_fantasy?: boolean
-    likes_scifi?: boolean
-    likes_cute?: boolean
-    likes_minimal?: boolean
-    hates_clowns?: boolean
-  }
-  weekday?: string
-  season?: string
   slots?: any
   reasoning?: any
 }
@@ -145,81 +133,17 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
 }
 
 /**
- * Generate image prompt using Elvex API
+ * NOTE: Image prompt is built by the route using buildHoroscopePrompt() with slot-based logic.
+ * The prompt format matches the n8n workflow, for example:
+ * 
+ * "Rubber Hose Cartoon. Marker Illustration. Top Down View of Karen Piper, a co-head, 
+ * as hero in an rpg living neon sign flying through the air. They are in cozy library 
+ * at stormy afternoon. sci fi high tech mood, warm oranges and reds palette, soft natural 
+ * lighting. sharp focus on the face, avatar friendly portrait ratio, clean, simple background, 
+ * no text in the image."
+ * 
+ * The route builds the prompt and passes it as imagePrompt to this service.
  */
-async function generateImagePromptWithElvex(
-  userProfile: HoroscopeGenerationRequest['userProfile'],
-  starSign: string,
-  weekday?: string,
-  season?: string
-): Promise<string> {
-  console.log('🔄 Generating image prompt using Elvex API...')
-  
-  const config = getElvexConfig()
-
-  const prompt = `You are an expert at creating detailed, vivid image prompts for AI image generation (like DALL-E 3).
-
-Create a detailed image prompt based on this user profile:
-- Name: ${userProfile?.name || 'User'}
-- Role: ${userProfile?.role || 'Not specified'}
-- Hobbies: ${userProfile?.hobbies?.join(', ') || 'Not specified'}
-- Likes fantasy: ${userProfile?.likes_fantasy ? 'Yes' : 'No'}
-- Likes sci-fi: ${userProfile?.likes_scifi ? 'Yes' : 'No'}
-- Likes cute things: ${userProfile?.likes_cute ? 'Yes' : 'No'}
-- Likes minimal design: ${userProfile?.likes_minimal ? 'Yes' : 'No'}
-- Hates clowns: ${userProfile?.hates_clowns ? 'Yes' : 'No'}
-- Star Sign: ${starSign}
-- Day of week: ${weekday || 'Not specified'}
-- Season: ${season || 'Not specified'}
-
-The image should be a hero image for a horoscope dashboard. It should be:
-- Visually striking and engaging
-- Related to the user's interests and preferences
-- Appropriate for the star sign, day, and season
-- Professional but fun
-- Suitable for a dashboard background
-
-Return ONLY the image prompt text, nothing else. Make it detailed and specific (approximately 100-150 words). Include style, mood, colors, composition, and any relevant details.`
-
-  try {
-    const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.8,
-        max_tokens: 300,
-      }),
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Elvex API call failed: ${response.status} ${errorText}`)
-    }
-
-    const result = await response.json()
-    const imagePrompt = result.choices?.[0]?.message?.content?.trim()
-
-    if (!imagePrompt) {
-      throw new Error('Empty image prompt from Elvex')
-    }
-
-    console.log('✅ Successfully generated image prompt with Elvex')
-    return imagePrompt
-  } catch (error: any) {
-    console.error('❌ Error generating image prompt with Elvex:', error)
-    throw new Error(`Failed to generate image prompt with Elvex: ${error.message || 'Unknown error'}`)
-  }
-}
 
 /**
  * Generate image using Elvex API
@@ -276,8 +200,12 @@ async function generateImageWithElvex(prompt: string): Promise<string> {
  * 
  * This function:
  * 1. Transforms horoscope text using Elvex chat completions
- * 2. Generates image prompt using Elvex chat completions (if not provided)
+ * 2. Uses image prompt provided by route (built with slot-based logic via buildHoroscopePrompt)
  * 3. Generates image using Elvex images API
+ * 
+ * The image prompt is built by the route using buildHoroscopePrompt() with slot-based logic.
+ * The prompt format matches the n8n workflow (e.g., "Rubber Hose Cartoon. Marker Illustration. 
+ * Top Down View of [name], as [role] in [setting]...")
  */
 export async function generateHoroscopeViaElvex(
   request: HoroscopeGenerationRequest
@@ -287,7 +215,7 @@ export async function generateHoroscopeViaElvex(
     starSign: request.starSign,
     hasCafeAstrologyText: !!request.cafeAstrologyText,
     hasImagePrompt: !!request.imagePrompt,
-    hasUserProfile: !!request.userProfile,
+    imagePromptLength: request.imagePrompt?.length || 0,
   })
 
   // Validate inputs
@@ -301,30 +229,26 @@ export async function generateHoroscopeViaElvex(
 
   const startTime = Date.now()
 
+  // Validate that image prompt is provided (should be built by route using buildHoroscopePrompt)
+  if (!request.imagePrompt || request.imagePrompt.trim() === '') {
+    throw new Error('Image prompt is required. The route should build it using buildHoroscopePrompt() with slot-based logic.')
+  }
+
   try {
     // Step 1: Transform horoscope text using Elvex
-    const textPromise = transformHoroscopeWithElvex(
+    const textResult = await transformHoroscopeWithElvex(
       request.cafeAstrologyText,
       request.starSign
     )
 
-    // Step 2: Generate image prompt using Elvex (if not provided)
-    const imagePromptPromise = request.imagePrompt
-      ? Promise.resolve(request.imagePrompt)
-      : generateImagePromptWithElvex(
-          request.userProfile,
-          request.starSign,
-          request.weekday,
-          request.season
-        )
+    // Step 2: Use the provided image prompt (built by route using slot-based system)
+    // This prompt already includes all the sophisticated logic:
+    // - Style selection based on user preferences
+    // - Weighted selection by weekday, season, zodiac element
+    // - Subject role, setting, mood, colors, etc. from catalogs
+    const imagePrompt = request.imagePrompt
 
-    // Wait for both text and prompt
-    const [textResult, imagePrompt] = await Promise.all([
-      textPromise,
-      imagePromptPromise,
-    ])
-
-    // Step 3: Generate image using Elvex
+    // Step 3: Generate image using Elvex with the slot-based prompt
     const imageUrl = await generateImageWithElvex(imagePrompt)
 
     const elapsed = Date.now() - startTime
