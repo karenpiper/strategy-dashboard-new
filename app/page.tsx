@@ -1575,57 +1575,11 @@ export default function TeamDashboard() {
             setHoroscopeImageSlots(imageData.prompt_slots || null)
             setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
             setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
-            // Ensure character_name is a string, not an object or JSON string
+            // Set character name - should be a clean string from API
             const caption = imageData.character_name
-            let finalCaption: string | null = null
             if (typeof caption === 'string' && caption.length > 0) {
-              // Check if it's a JSON stringified object
-              if (caption.startsWith('{') || caption.startsWith('[')) {
-                try {
-                  const parsed = JSON.parse(caption)
-                  if (parsed && typeof parsed === 'object') {
-                    // Extract value from parsed object
-                    if ('value' in parsed && typeof parsed.value === 'string' && parsed.value.length > 0) {
-                      finalCaption = parsed.value
-                    } else if ('data' in parsed && typeof parsed.data === 'string' && parsed.data.length > 0) {
-                      finalCaption = parsed.data
-                    } else {
-                      console.warn('   Character name is JSON string but no valid value found:', parsed)
-                      finalCaption = null
-                    }
-                  } else {
-                    // Not an object, use as-is
-                    finalCaption = caption
-                  }
-                } catch (e) {
-                  // Not valid JSON, use as-is
-                  finalCaption = caption
-                }
-              } else {
-                // Regular string, use as-is
-                finalCaption = caption
-              }
-            } else if (caption && typeof caption === 'object') {
-              // Handle React Query/SWR state objects
-              const captionObj = caption as any
-              if ('value' in captionObj && typeof captionObj.value === 'string' && captionObj.value.length > 0) {
-                finalCaption = captionObj.value
-              } else if ('data' in captionObj && typeof captionObj.data === 'string' && captionObj.data.length > 0) {
-                finalCaption = captionObj.data
-              } else {
-                console.warn('   Character name is an object but no valid string value found:', JSON.stringify(caption))
-                finalCaption = null
-              }
+              setHoroscopeImageCaption(caption)
             } else {
-              finalCaption = null
-            }
-            console.log('   Final caption to set:', finalCaption)
-            console.log('   Final caption type:', typeof finalCaption)
-            // CRITICAL: Only set if it's actually a string, never set an object
-            if (typeof finalCaption === 'string' && finalCaption.length > 0) {
-              setHoroscopeImageCaption(finalCaption)
-            } else {
-              console.error('   ERROR: Attempted to set non-string or empty caption:', finalCaption)
               setHoroscopeImageCaption(null)
             }
             setHoroscopeImageLoading(false)
@@ -2435,27 +2389,11 @@ export default function TeamDashboard() {
                         }
                       </p>
                     )}
-                    {horoscopeImage && (() => {
-                      // Safely extract caption string from potentially nested object
-                      let displayCaption: string | null = null
-                      if (typeof horoscopeImageCaption === 'string') {
-                        displayCaption = horoscopeImageCaption
-                      } else if (horoscopeImageCaption && typeof horoscopeImageCaption === 'object') {
-                        // Handle React Query/SWR state objects
-                        const captionObj = horoscopeImageCaption as any
-                        if ('value' in captionObj && typeof captionObj.value === 'string') {
-                          displayCaption = captionObj.value
-                        } else if ('data' in captionObj && typeof captionObj.data === 'string') {
-                          displayCaption = captionObj.data
-                        }
-                      }
-                      
-                      return displayCaption ? (
-                        <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
-                          {displayCaption}
-                        </p>
-                      ) : null
-                    })()}
+                    {horoscopeImage && horoscopeImageCaption && (
+                      <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
+                        {horoscopeImageCaption}
+                      </p>
+                    )}
                   </div>
                   </div>
                   </Card>
