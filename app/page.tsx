@@ -1429,13 +1429,14 @@ export default function TeamDashboard() {
         // This prevents race conditions where avatar endpoint returns old cached data
         let imageResponse = null
         let imageData = null
+        let isImageResponseOk = false
         
         if (!textData.image_url && isTextResponseOk && horoscopeAvatarEnabled) {
           // No image URL in main response, try avatar endpoint (only if avatar is enabled)
           console.log('No image_url in main response, fetching from avatar endpoint...')
           imageResponse = await fetch('/api/horoscope/avatar')
           // Check response status before reading body
-          const isImageResponseOk = imageResponse.ok
+          isImageResponseOk = imageResponse.ok
           try {
             imageData = await imageResponse.json()
           } catch (jsonError: any) {
