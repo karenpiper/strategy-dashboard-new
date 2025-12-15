@@ -576,7 +576,6 @@ export async function generateImageViaAirtable(prompt: string, timezone?: string
     console.log('   Full request body:', JSON.stringify(requestBody, null, 2))
     console.log('   Prompt in request body:', requestBody.records[0].fields['Image Prompt'])
     console.log('   Prompt length in request:', requestBody.records[0].fields['Image Prompt'].length)
-    console.log('   Status:', requestBody.records[0].fields['Status'])
     console.log('   Created At:', requestBody.records[0].fields['Created At'])
     
     console.log('🚀 ========== MAKING AIRTABLE API CALL ==========')
@@ -744,16 +743,17 @@ To fix:
       }
       const fields = recordData.fields
 
-      // Check if generation is complete
-      if (fields.Status === 'Completed' || fields.Status === 'Complete') {
+      // Check if image exists (Status field no longer exists)
+      const imageField = fields.Image
+      const imageUrlField = fields['Image URL']
+      if (imageField || imageUrlField) {
         // Extract the image URL from attachment field
         // Airtable "Generate image with AI" saves to the "Image" attachment field (fld19AGdPdfiu3IYV)
         // Attachment fields are arrays: [{ url: "...", filename: "...", size: ... }]
-        let imageUrl: string | null = null
+        let finalImageUrl: string | null = null
         
-        console.log('🔍 Checking for image in completed record...')
+        console.log('🔍 Checking for image in record...')
         console.log('   Available fields:', Object.keys(fields))
-        console.log('   Status:', fields.Status)
         console.log('   Has Image field:', !!fields['Image'])
         console.log('   Has Image URL field:', !!fields['Image URL'])
         console.log('   Image field type:', typeof fields['Image'])
