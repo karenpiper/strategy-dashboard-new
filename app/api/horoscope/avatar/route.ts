@@ -489,7 +489,7 @@ export async function GET(request: NextRequest) {
         console.log('   ⚠️ NOTE: Image generation happens in background - returning immediately')
         
         // Start image generation in background (don't await - return immediately)
-        generateImageViaAirtable(cachedHoroscope.image_prompt, profile.timezone || undefined)
+        generateImageViaAirtable(cachedHoroscope.image_prompt, profile.timezone || undefined, userId, userEmail)
           .then(async (imageResult) => {
             if (imageResult.imageUrl) {
               console.log('✅ Background image generation completed successfully')

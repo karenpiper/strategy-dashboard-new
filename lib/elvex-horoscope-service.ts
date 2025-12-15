@@ -331,7 +331,7 @@ function formatDateInTimezone(timezone: string): string {
   return `${year}-${month}-${day}T${hour}:${minute}:${second}`
 }
 
-export async function generateImageViaAirtable(prompt: string, timezone?: string): Promise<{ imageUrl: string; caption?: string | null }> {
+export async function generateImageViaAirtable(prompt: string, timezone?: string, userId?: string, userEmail?: string): Promise<{ imageUrl: string; caption?: string | null }> {
   console.log('🚀 ========== STARTING AIRTABLE IMAGE GENERATION ==========')
   console.log('🖼️ Generating image via Airtable...')
   console.log('📥 FUNCTION CALLED - generateImageViaAirtable() invoked')
