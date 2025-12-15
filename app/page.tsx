@@ -1555,6 +1555,9 @@ export default function TeamDashboard() {
           console.log('Horoscope image received from avatar endpoint:', imageData)
           console.log('   Image URL:', imageData.image_url)
           console.log('   Image URL length:', imageData.image_url?.length || 0)
+          console.log('   Character name type:', typeof imageData.character_name)
+          console.log('   Character name value:', imageData.character_name)
+          console.log('   Character name stringified:', JSON.stringify(imageData.character_name))
           console.log('Reasoning received:', imageData.prompt_slots_reasoning)
           // Only set today's image - historical images remain in database
           // Only set image if avatar is enabled
@@ -1567,11 +1570,24 @@ export default function TeamDashboard() {
             setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
             // Ensure character_name is a string, not an object
             const caption = imageData.character_name
-            setHoroscopeImageCaption(
-              typeof caption === 'string' ? caption : 
-              (caption && typeof caption === 'object' && 'value' in caption) ? caption.value :
-              null
-            )
+            let finalCaption: string | null = null
+            if (typeof caption === 'string') {
+              finalCaption = caption
+            } else if (caption && typeof caption === 'object') {
+              // Handle React Query/SWR state objects
+              if ('value' in caption && typeof caption.value === 'string') {
+                finalCaption = caption.value
+              } else if ('data' in caption && typeof caption.data === 'string') {
+                finalCaption = caption.data
+              } else {
+                console.warn('   Character name is an object but no string value found:', caption)
+                finalCaption = null
+              }
+            } else {
+              finalCaption = null
+            }
+            console.log('   Final caption to set:', finalCaption)
+            setHoroscopeImageCaption(finalCaption)
             setHoroscopeImageLoading(false)
             setHoroscopeImageError(null)
             console.log('Reasoning state set to:', imageData.prompt_slots_reasoning)
@@ -1602,11 +1618,22 @@ export default function TeamDashboard() {
                     setHoroscopeImageSlotsReasoning(pollData.prompt_slots_reasoning || null)
                     // Ensure character_name is a string, not an object
                     const pollCaption = pollData.character_name
-                    setHoroscopeImageCaption(
-                      typeof pollCaption === 'string' ? pollCaption : 
-                      (pollCaption && typeof pollCaption === 'object' && 'value' in pollCaption) ? pollCaption.value :
-                      null
-                    )
+                    let finalPollCaption: string | null = null
+                    if (typeof pollCaption === 'string') {
+                      finalPollCaption = pollCaption
+                    } else if (pollCaption && typeof pollCaption === 'object') {
+                      // Handle React Query/SWR state objects
+                      if ('value' in pollCaption && typeof pollCaption.value === 'string') {
+                        finalPollCaption = pollCaption.value
+                      } else if ('data' in pollCaption && typeof pollCaption.data === 'string') {
+                        finalPollCaption = pollCaption.data
+                      } else {
+                        finalPollCaption = null
+                      }
+                    } else {
+                      finalPollCaption = null
+                    }
+                    setHoroscopeImageCaption(finalPollCaption)
                     setHoroscopeImageLoading(false)
                     setHoroscopeImageError(null)
                     hasFetchedRef.current = true
