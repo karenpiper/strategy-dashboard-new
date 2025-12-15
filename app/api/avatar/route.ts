@@ -942,21 +942,129 @@ export async function GET(request: NextRequest) {
                     }
                   } else {
                     console.log('⚠️ No image found in Airtable for today')
-                    console.log('   ⚠️ NOT generating new image - avatar endpoint is read-only')
-                    console.log('   Image generation should be handled by /api/horoscope endpoint')
+                    console.log('   ✅ Will generate new image via Airtable')
                     
-                    // Return generating status - don't actually generate here
-                    const slots = cachedHoroscope.prompt_slots_json || {}
-                    return NextResponse.json({
-                      image_url: null,
-                      image_prompt: cachedHoroscope.image_prompt,
-                      prompt_slots: slots,
-                      prompt_slots_labels: null,
-                      prompt_slots_reasoning: slots?.reasoning || null,
-                      character_name: null,
-                      generating: true,
-                      message: 'Image is being generated. Please check again in a few moments.',
-                    })
+                    // Generate new image via Airtable
+                    // This only happens if:
+                    // 1. No image exists in Supabase for today
+                    // 2. No image exists in Airtable for today
+                    // 3. An image_prompt exists
+                    if (cachedHoroscope.image_prompt && cachedHoroscope.image_prompt.trim() !== '') {
+                      console.log('🚀 ========== GENERATING NEW IMAGE VIA AIRTABLE ==========')
+                      console.log('   Image prompt length:', cachedHoroscope.image_prompt.length)
+                      console.log('   User ID:', userId)
+                      console.log('   User email:', userEmail || 'not available')
+                      console.log('   Timezone:', profile.timezone || 'America/New_York')
+                      
+                      // Generate image in background (don't await - return immediately)
+                      // The frontend will poll this endpoint to check for the image
+                      generateImageViaAirtable(
+                        cachedHoroscope.image_prompt,
+                        profile.timezone || undefined,
+                        userId,
+                        userEmail
+                      )
+                      .then(async (imageResult) => {
+                        if (imageResult.imageUrl) {
+                          console.log('✅ Background image generation completed successfully')
+                          console.log('   Airtable image URL:', imageResult.imageUrl.substring(0, 100) + '...')
+                          console.log('   Caption:', imageResult.caption || 'none')
+                          
+                          // Check if image is already in Supabase storage
+                          const isAirtableUrl = !imageResult.imageUrl.includes('supabase.co')
+                          
+                          if (isAirtableUrl) {
+                            // Download and upload to Supabase storage
+                            try {
+                              console.log('📥 Downloading image from Airtable and uploading to Supabase storage...')
+                              const imageResponse = await fetch(imageResult.imageUrl)
+                              if (imageResponse.ok) {
+                                const imageBlob = await imageResponse.blob()
+                                const imageBuffer = Buffer.from(await imageBlob.arrayBuffer())
+                                
+                                const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+                                const fileName = `horoscope-${userId}-${todayDate}-${timestamp}.png`
+                                const filePath = `${userId}/${fileName}`
+                                const bucketName = 'horoscope-avatars'
+                                
+                                const { error: uploadError } = await supabaseAdmin.storage
+                                  .from(bucketName)
+                                  .upload(filePath, imageBuffer, {
+                                    contentType: 'image/png',
+                                    upsert: false,
+                                  })
+                                
+                                if (!uploadError) {
+                                  const { data: urlData } = supabaseAdmin.storage
+                                    .from(bucketName)
+                                    .getPublicUrl(filePath)
+                                  
+                                  // Update the database with the Supabase URL
+                                  await supabaseAdmin
+                                    .from('horoscopes')
+                                    .update({ 
+                                      image_url: urlData.publicUrl,
+                                      character_name: imageResult.caption || null
+                                    })
+                                    .eq('user_id', userId)
+                                    .eq('date', todayDate)
+                                  
+                                  console.log('✅ Background image uploaded to Supabase and database updated')
+                                } else {
+                                  console.error('❌ Failed to upload image to Supabase:', uploadError)
+                                }
+                              }
+                            } catch (uploadError: any) {
+                              console.error('❌ Error uploading image to Supabase:', uploadError)
+                            }
+                          } else {
+                            // Already in Supabase, just update database
+                            await supabaseAdmin
+                              .from('horoscopes')
+                              .update({ 
+                                image_url: imageResult.imageUrl,
+                                character_name: imageResult.caption || null
+                              })
+                              .eq('user_id', userId)
+                              .eq('date', todayDate)
+                            
+                            console.log('✅ Background image URL saved to database')
+                          }
+                        }
+                      })
+                      .catch((imageError: any) => {
+                        console.error('❌ Background image generation failed:', imageError)
+                        console.error('   Error message:', imageError.message)
+                        // Don't throw - this is background, frontend can poll for image
+                      })
+                      
+                      // Return generating status immediately (don't wait for generation)
+                      const slots = cachedHoroscope.prompt_slots_json || {}
+                      return NextResponse.json({
+                        image_url: null,
+                        image_prompt: cachedHoroscope.image_prompt,
+                        prompt_slots: slots,
+                        prompt_slots_labels: null,
+                        prompt_slots_reasoning: slots?.reasoning || null,
+                        character_name: null,
+                        generating: true,
+                        message: 'Image is being generated. Please check again in a few moments.',
+                      })
+                    } else {
+                      // No image prompt - can't generate
+                      console.log('   ⚠️ No image_prompt available - cannot generate image')
+                      const slots = cachedHoroscope.prompt_slots_json || {}
+                      return NextResponse.json({
+                        image_url: null,
+                        image_prompt: null,
+                        prompt_slots: slots,
+                        prompt_slots_labels: null,
+                        prompt_slots_reasoning: slots?.reasoning || null,
+                        character_name: null,
+                        generating: false,
+                        message: 'No image prompt available. Please generate horoscope first.',
+                      })
+                    }
                   }
                 }
               }
