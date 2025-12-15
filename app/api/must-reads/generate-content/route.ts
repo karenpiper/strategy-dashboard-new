@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy initialization - only create client when actually needed
+let openai: OpenAI | null = null
+
+function getOpenAIClient(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not set in environment variables')
+  }
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  }
+  return openai
+}
 
 /**
  * Extract text content from a URL
@@ -66,7 +77,7 @@ Title: ${title}${contentText}
 
 Provide only the summary text, no additional commentary.`
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAIClient().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -101,7 +112,7 @@ Title: ${title}${contentText}
 
 Example format: ["tag1", "tag2", "tag3"]`
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAIClient().chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
