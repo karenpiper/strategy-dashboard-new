@@ -1565,7 +1565,13 @@ export default function TeamDashboard() {
             setHoroscopeImageSlots(imageData.prompt_slots || null)
             setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
             setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
-            setHoroscopeImageCaption(imageData.character_name || null)
+            // Ensure character_name is a string, not an object
+            const caption = imageData.character_name
+            setHoroscopeImageCaption(
+              typeof caption === 'string' ? caption : 
+              (caption && typeof caption === 'object' && 'value' in caption) ? caption.value :
+              null
+            )
             setHoroscopeImageLoading(false)
             setHoroscopeImageError(null)
             console.log('Reasoning state set to:', imageData.prompt_slots_reasoning)
