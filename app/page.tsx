@@ -1156,18 +1156,25 @@ export default function TeamDashboard() {
         // Encode calendar IDs for the API (they're already decoded in the array)
         const calendarIdsParam = calendarIds.map(id => encodeURIComponent(id)).join(',')
         
-        // Build API URL with optional access token
+        // Build API URL with access token (required)
         let apiUrl = `/api/calendar?calendarIds=${calendarIdsParam}&timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&maxResults=50`
         if (googleCalendarToken) {
           apiUrl += `&accessToken=${encodeURIComponent(googleCalendarToken)}`
           console.log('🔄 Fetching calendar events with OAuth token...')
         } else {
-          console.warn('⚠️ No OAuth token available - using fallback authentication (service account)')
-          console.warn('⚠️ Service account may not have access to Code and Theory calendars')
           if (needsAuth) {
             console.warn('💡 User needs to authenticate with Google Calendar. Check for auth button in UI.')
           } else if (tokenLoading) {
             console.log('⏳ Token is still loading, will retry when available...')
+            setCalendarLoading(false)
+            calendarFetchInProgressRef.current = false
+            return
+          } else {
+            console.warn('⚠️ No OAuth token available - cannot fetch calendar events')
+            setCalendarError('Google Calendar authentication required. Please authenticate to view calendar events.')
+            setCalendarLoading(false)
+            calendarFetchInProgressRef.current = false
+            return
           }
         }
         
@@ -1234,10 +1241,6 @@ export default function TeamDashboard() {
             setCalendarError(null)
           }
           
-          if (result.authInfo) {
-            setServiceAccountEmail(result.authInfo)
-          }
-          
           // Check if token expired and refresh if needed (AFTER setting events)
           // This way events are displayed even if token needs refresh
           // NOTE: We refresh the token silently for future use, but don't re-fetch events
@@ -1301,12 +1304,14 @@ export default function TeamDashboard() {
     }
 
     // Fetch events - wait a bit for token to load if it's still loading
-    // Token will be used if available, otherwise falls back to service account
+    // Access token is required for calendar access
     if (tokenLoading && !googleCalendarToken) {
       // Wait a bit for token to load, then fetch
       const timeoutId = setTimeout(() => {
-        console.log('⏳ Token loading timeout - fetching with fallback auth')
-        fetchCalendarEvents()
+        console.log('⏳ Token loading timeout - will retry when token is available')
+        if (googleCalendarToken) {
+          fetchCalendarEvents()
+        }
       }, 2000) // Wait 2 seconds for token to load
       
       return () => {
@@ -3581,20 +3586,13 @@ export default function TeamDashboard() {
                           <p className="font-semibold mb-1">Debug Info:</p>
                           <p>Token Status: {googleCalendarToken ? '✅ Available' : tokenLoading ? '⏳ Loading...' : '❌ Not available'}</p>
                           <p>Token Error: {tokenError || 'None'}</p>
-                          <p>Auth Method: {serviceAccountEmail || 'Unknown'}</p>
                           {googleCalendarToken && (
                             <p className="text-green-400">✅ Using OAuth token (should work with shared calendars)</p>
                           )}
                           {!googleCalendarToken && !tokenLoading && (
-                            <p className="text-yellow-400">⚠️ Using fallback authentication (service account - may not work with shared calendars)</p>
+                            <p className="text-yellow-400">⚠️ OAuth token required to view calendar events</p>
                           )}
                         </div>
-                        {serviceAccountEmail && !serviceAccountEmail.includes('OAuth2') && (
-                          <div className={`${getRoundedClass('rounded-lg')} p-2 mt-2`} style={{ backgroundColor: `${mintColor}22` }}>
-                            <p className="font-semibold mb-1">Fallback Authentication:</p>
-                            <p className="font-mono text-[10px] break-all">{serviceAccountEmail}</p>
-                          </div>
-                        )}
                         <p className="mt-2 font-semibold">To fix shared calendar access:</p>
                         <ol className="list-decimal list-inside space-y-1 ml-2">
                           <li>Make sure you're logged in with the Google account that has access to these calendars</li>

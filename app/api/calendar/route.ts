@@ -3,28 +3,7 @@ import { google } from 'googleapis'
 import { createClient } from '@/lib/supabase/server'
 
 // Initialize Google Calendar API
-// Only supports OAuth2 authentication (no service account fallback)
-function getCalendarClient() {
-  const oauthClientId = process.env.GOOGLE_OAUTH_CLIENT_ID
-  const oauthClientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET
-  const oauthRefreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN
-
-  if (!oauthClientId || !oauthClientSecret || !oauthRefreshToken) {
-    throw new Error(
-      'Google Calendar OAuth2 authentication required: GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, and GOOGLE_OAUTH_REFRESH_TOKEN must be set. Service accounts are not supported.'
-    )
-  }
-
-  console.log('Using OAuth2 authentication for Google Calendar')
-  const oauth2Client = new google.auth.OAuth2(
-    oauthClientId,
-    oauthClientSecret
-  )
-  oauth2Client.setCredentials({
-    refresh_token: oauthRefreshToken,
-  })
-  return google.calendar({ version: 'v3', auth: oauth2Client })
-}
+// Only supports OAuth2 authentication with access token (no service account or refresh token fallback)
 
 export const runtime = 'nodejs'
 
@@ -63,51 +42,33 @@ export async function GET(request: NextRequest) {
     const timeMax = searchParams.get('timeMax') || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     const maxResults = parseInt(searchParams.get('maxResults') || '10')
 
-    // Check if an access token was provided (from client-side OAuth)
+    // Access token is required (from client-side OAuth)
     const accessToken = searchParams.get('accessToken')
-    let calendar
     
-    if (accessToken) {
-      // Use the provided access token (from user's Google OAuth session)
-      console.log('✅ Using provided Google OAuth access token for calendar access')
-      // Try to get client ID from env (optional, but helps with token validation)
-      const oauthClientId = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-      const oauth2Client = oauthClientId 
-        ? new google.auth.OAuth2(oauthClientId)
-        : new google.auth.OAuth2()
-      oauth2Client.setCredentials({ access_token: accessToken })
-      calendar = google.calendar({ version: 'v3', auth: oauth2Client })
-    } else {
-      // Use server-side OAuth2 authentication (refresh token)
-      console.log('⚠️ No access token provided - using server-side OAuth2 authentication')
-      try {
-        calendar = getCalendarClient()
-      } catch (authError: any) {
-        console.error('❌ Failed to initialize calendar client with OAuth2 authentication:', authError.message)
-        return NextResponse.json(
-          {
-            error: 'Calendar authentication failed',
-            details: authError.message,
-            hint: 'Either provide an access token from client-side OAuth, or configure server-side OAuth2 credentials (GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, GOOGLE_OAUTH_REFRESH_TOKEN)',
-          },
-          { status: 500 }
-        )
-      }
+    if (!accessToken) {
+      return NextResponse.json(
+        {
+          error: 'Access token required',
+          details: 'Google Calendar API requires an OAuth access token. Please authenticate with Google Calendar.',
+          hint: 'The access token must be provided via the accessToken query parameter from client-side OAuth.',
+        },
+        { status: 400 }
+      )
     }
+    
+    // Use the provided access token (from user's Google OAuth session)
+    console.log('✅ Using provided Google OAuth access token for calendar access')
+    // Try to get client ID from env (optional, but helps with token validation)
+    const oauthClientId = process.env.GOOGLE_OAUTH_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+    const oauth2Client = oauthClientId 
+      ? new google.auth.OAuth2(oauthClientId)
+      : new google.auth.OAuth2()
+    oauth2Client.setCredentials({ access_token: accessToken })
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
+    
     const allEvents: CalendarEvent[] = []
     const successfulCalendars: string[] = []
     const failedCalendars: Array<{ id: string; error: string; isTokenExpired?: boolean }> = []
-    
-    // Get authentication info for error messages
-    let authInfo: string
-    let usingOAuth2 = false
-    if (accessToken) {
-      authInfo = 'OAuth2 (user session token)'
-      usingOAuth2 = true
-    } else {
-      authInfo = 'OAuth2 (refresh token)'
-      usingOAuth2 = true
-    }
 
     // Fetch events from each calendar
     for (const calendarId of calendarIds) {
@@ -356,8 +317,6 @@ export async function GET(request: NextRequest) {
       successfulCalendars: successfulCalendars.length,
       failedCalendars: failedCalendars.length,
       failedCalendarDetails: failedCalendars,
-      authInfo: authInfo, // Include auth info for debugging
-      usingOAuth2: usingOAuth2,
       tokenExpired: hasTokenExpiration, // Only true if ALL calendars failed with 401
     })
   } catch (error: any) {
