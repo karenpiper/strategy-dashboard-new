@@ -859,6 +859,7 @@ export async function GET(request: NextRequest) {
         horoscopeDonts = directResult.donts
         
         // CRITICAL: Check if image was just created by another request (race condition prevention)
+        // First check Supabase, then Airtable (via generateImageViaAirtable which checks for existing records)
         console.log('🔒 RACE CONDITION CHECK: Checking for image before generation...')
         const { data: imageCheckHoroscope } = await supabaseAdmin
           .from('horoscopes')
@@ -871,25 +872,27 @@ export async function GET(request: NextRequest) {
           const imageCheckDateStr = String(imageCheckHoroscope.date).split('T')[0]
           const todayDateStr = String(todayDate).split('T')[0]
           if (imageCheckDateStr === todayDateStr) {
-            console.log('✅ RACE CONDITION PREVENTED: Image already exists, using existing image')
+            console.log('✅ RACE CONDITION PREVENTED: Image already exists in Supabase, using existing image')
             imageUrl = imageCheckHoroscope.image_url
             characterName = imageCheckHoroscope.character_name || null
             console.log('   Using existing image URL:', imageUrl.substring(0, 100) + '...')
             console.log('   Using existing character name:', characterName || 'none')
           } else {
             // Date doesn't match, proceed with generation
-            console.log('⚠️ Image exists but for different date, will generate new image')
+            console.log('⚠️ Image exists but for different date, will check Airtable for existing image')
             imageUrl = null
             characterName = null
           }
         } else {
-          // No image exists, proceed with generation
-          console.log('📝 No existing image found, proceeding with generation')
+          // No image in Supabase, but might exist in Airtable
+          // generateImageViaAirtable will check Airtable for existing images
+          console.log('📝 No existing image in Supabase, will check Airtable for existing image')
           imageUrl = null
           characterName = null
         }
         
-        // Generate image via Airtable (together with text generation) - only if we don't have one
+        // Generate image via Airtable (together with text generation) - only if we don't have one in Supabase
+        // generateImageViaAirtable will check Airtable for existing images and return them if found
         if (!imageUrl) {
           console.log('🚀 ========== GENERATING IMAGE VIA AIRTABLE ==========')
           console.log('   Image prompt length:', imagePrompt.length)
@@ -905,51 +908,63 @@ export async function GET(request: NextRequest) {
             )
           
           if (imageResult.imageUrl) {
-            console.log('✅ Image generated via Airtable successfully')
+            console.log('✅ Image found/generated via Airtable successfully')
             console.log('   Airtable image URL:', imageResult.imageUrl.substring(0, 100) + '...')
             console.log('   Caption:', imageResult.caption || 'none')
             
-            // Download image from Airtable and upload to Supabase storage
-            console.log('📥 Downloading image from Airtable and uploading to Supabase storage...')
-            const imageResponse = await fetch(imageResult.imageUrl)
-            if (!imageResponse.ok) {
-              throw new Error(`Failed to download image from Airtable: ${imageResponse.statusText}`)
+            // Check if image is already in Supabase storage (by checking if URL contains supabase.co)
+            const isAirtableUrl = !imageResult.imageUrl.includes('supabase.co')
+            
+            if (isAirtableUrl) {
+              // Image is from Airtable, need to download and upload to Supabase storage
+              console.log('📥 Image is from Airtable - downloading and uploading to Supabase storage...')
+              const imageResponse = await fetch(imageResult.imageUrl)
+              if (!imageResponse.ok) {
+                throw new Error(`Failed to download image from Airtable: ${imageResponse.statusText}`)
+              }
+              
+              const imageBlob = await imageResponse.blob()
+              const imageBuffer = Buffer.from(await imageBlob.arrayBuffer())
+              console.log('✅ Image downloaded, size:', imageBuffer.length, 'bytes')
+              
+              // Upload to Supabase storage
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+              const fileName = `horoscope-${userId}-${todayDate}-${timestamp}.png`
+              const filePath = `${userId}/${fileName}`
+              const bucketName = 'horoscope-avatars'
+              
+              console.log('📤 Uploading image to Supabase storage...')
+              const { error: uploadError } = await supabaseAdmin.storage
+                .from(bucketName)
+                .upload(filePath, imageBuffer, {
+                  contentType: 'image/png',
+                  upsert: false,
+                })
+              
+              if (uploadError) {
+                console.error('❌ Failed to upload image to Supabase storage:', uploadError)
+                throw new Error(`Failed to upload image to Supabase storage: ${uploadError.message}`)
+              }
+              
+              // Get the public URL for the uploaded image
+              const { data: urlData } = supabaseAdmin.storage
+                .from(bucketName)
+                .getPublicUrl(filePath)
+              
+              imageUrl = urlData.publicUrl
+              characterName = imageResult.caption || null
+              
+              console.log('✅ Image uploaded to Supabase storage successfully')
+              console.log('   Supabase storage URL:', imageUrl.substring(0, 100) + '...')
+              console.log('   Character name:', characterName || 'none')
+            } else {
+              // Image is already in Supabase storage
+              console.log('✅ Image is already in Supabase storage')
+              imageUrl = imageResult.imageUrl
+              characterName = imageResult.caption || null
+              console.log('   Using existing Supabase storage URL:', imageUrl.substring(0, 100) + '...')
+              console.log('   Character name:', characterName || 'none')
             }
-            
-            const imageBlob = await imageResponse.blob()
-            const imageBuffer = Buffer.from(await imageBlob.arrayBuffer())
-            console.log('✅ Image downloaded, size:', imageBuffer.length, 'bytes')
-            
-            // Upload to Supabase storage
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-            const fileName = `horoscope-${userId}-${todayDate}-${timestamp}.png`
-            const filePath = `${userId}/${fileName}`
-            const bucketName = 'horoscope-avatars'
-            
-            console.log('📤 Uploading image to Supabase storage...')
-            const { error: uploadError } = await supabaseAdmin.storage
-              .from(bucketName)
-              .upload(filePath, imageBuffer, {
-                contentType: 'image/png',
-                upsert: false,
-              })
-            
-            if (uploadError) {
-              console.error('❌ Failed to upload image to Supabase storage:', uploadError)
-              throw new Error(`Failed to upload image to Supabase storage: ${uploadError.message}`)
-            }
-            
-            // Get the public URL for the uploaded image
-            const { data: urlData } = supabaseAdmin.storage
-              .from(bucketName)
-              .getPublicUrl(filePath)
-            
-            imageUrl = urlData.publicUrl
-            characterName = imageResult.caption || null
-            
-            console.log('✅ Image uploaded to Supabase storage successfully')
-            console.log('   Supabase storage URL:', imageUrl.substring(0, 100) + '...')
-            console.log('   Character name:', characterName || 'none')
           } else {
             console.warn('⚠️ Image generation returned no image URL')
             imageUrl = null
