@@ -37,6 +37,7 @@ interface HoroscopeGenerationResponse {
   dos: string[]
   donts: string[]
   imageUrl: string | null // Can be null if image generation fails
+  imageCaption?: string | null // Caption from Airtable, null if not available
   character_name?: string | null
   prompt: string
   slots: any
@@ -332,7 +333,7 @@ function formatDateInTimezone(timezone: string): string {
   return `${year}-${month}-${day}T${hour}:${minute}:${second}`
 }
 
-async function generateImageViaAirtable(prompt: string, timezone?: string): Promise<string> {
+async function generateImageViaAirtable(prompt: string, timezone?: string): Promise<{ imageUrl: string; caption?: string | null }> {
   console.log('🖼️ Generating image via Airtable...')
   console.log('📋 Airtable configuration check:')
   console.log('   AIRTABLE_API_KEY:', process.env.AIRTABLE_API_KEY ? `${process.env.AIRTABLE_API_KEY.substring(0, 8)}...` : 'NOT SET')
@@ -398,7 +399,12 @@ async function generateImageViaAirtable(prompt: string, timezone?: string): Prom
         }
       ]
     }
-    console.log('📤 Request body:', JSON.stringify(requestBody, null, 2))
+    console.log('📤 Request body being sent to Airtable:')
+    console.log('   Full request body:', JSON.stringify(requestBody, null, 2))
+    console.log('   Prompt in request body:', requestBody.records[0].fields['Image Prompt'])
+    console.log('   Prompt length in request:', requestBody.records[0].fields['Image Prompt'].length)
+    console.log('   Status:', requestBody.records[0].fields['Status'])
+    console.log('   Created At:', requestBody.records[0].fields['Created At'])
     
     console.log('🚀 ========== MAKING AIRTABLE API CALL ==========')
     console.log('   Method: POST')
@@ -589,9 +595,12 @@ To fix:
         }
 
         if (imageUrl) {
+          // Extract caption if available
+          const caption = fields['Caption'] || fields['Image Caption'] || null
           console.log('✅ Image generated successfully via Airtable')
           console.log('   Image URL length:', imageUrl.length)
-          return imageUrl
+          console.log('   Caption:', caption || 'not found')
+          return { imageUrl, caption: caption || null }
         } else {
           console.error('❌ No image URL found in any field')
           console.error('   Fields available:', Object.keys(fields))
@@ -670,6 +679,7 @@ export async function generateHoroscopeViaElvex(
     // Generate image using Airtable (separate operation)
     const imagePrompt = request.imagePrompt
     let imageUrl: string | null = null
+    let imageCaption: string | null = null
     
     console.log('🔍 DEBUG: Image generation check:')
     console.log('   imagePrompt exists:', !!imagePrompt)
@@ -687,9 +697,12 @@ export async function generateHoroscopeViaElvex(
       try {
         // Pass timezone from request if available
         console.log('📞 Calling generateImageViaAirtable() now...')
-        imageUrl = await generateImageViaAirtable(imagePrompt, request.timezone)
+        const imageResult = await generateImageViaAirtable(imagePrompt, request.timezone)
+        imageUrl = imageResult.imageUrl
+        imageCaption = imageResult.caption || null
         console.log('✅ Image generated successfully via Airtable')
         console.log('   Image URL:', imageUrl ? imageUrl.substring(0, 100) + '...' : 'null')
+        console.log('   Caption:', imageCaption || 'not provided')
       } catch (imageError: any) {
         // Image generation failed, but we still have the text
         console.error('❌ Image generation via Airtable failed:')
@@ -713,6 +726,7 @@ export async function generateHoroscopeViaElvex(
       dos: textResult.dos,
       donts: textResult.donts,
       imageUrl, // null if image generation failed
+      imageCaption, // caption from Airtable, null if not available
       character_name: null,
       prompt: imagePrompt,
       slots: request.slots || {},
