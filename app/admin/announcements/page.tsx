@@ -23,6 +23,7 @@ interface Announcement {
   start_date: string
   end_date: string | null
   active: boolean
+  working_days_only: boolean | null
   created_at: string
   updated_at: string
   created_by_profile?: {
@@ -57,6 +58,7 @@ export default function AnnouncementsPage() {
     start_date: getTodayDate(),
     end_date: '',
     active: true,
+    working_days_only: false,
   })
   const [stickerPreview, setStickerPreview] = useState<string | null>(null)
   const [uploadingSticker, setUploadingSticker] = useState(false)
@@ -146,6 +148,7 @@ export default function AnnouncementsPage() {
         start_date: formData.start_date,
         end_date: formData.end_date || null,
         active: formData.active,
+        working_days_only: formData.mode === 'countdown' ? formData.working_days_only : false,
       }
 
       // Only include headline for text mode
@@ -200,6 +203,7 @@ export default function AnnouncementsPage() {
       start_date: item.start_date,
       end_date: item.end_date || '',
       active: item.active,
+      working_days_only: item.working_days_only || false,
     })
     setStickerPreview(item.sticker_url || null)
     setIsEditDialogOpen(true)
@@ -220,6 +224,7 @@ export default function AnnouncementsPage() {
         start_date: formData.start_date,
         end_date: formData.end_date || null,
         active: formData.active,
+        working_days_only: formData.mode === 'countdown' ? formData.working_days_only : false,
       }
 
       // Only include headline if it's text mode or if it exists
@@ -290,6 +295,7 @@ export default function AnnouncementsPage() {
       start_date: getTodayDate(),
       end_date: '',
       active: true,
+      working_days_only: false,
     })
     setStickerPreview(null)
   }
@@ -551,6 +557,18 @@ export default function AnnouncementsPage() {
                           </div>
                         </label>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="working-days-only-add"
+                        checked={formData.working_days_only}
+                        onChange={(e) => setFormData({ ...formData, working_days_only: e.target.checked })}
+                        className="w-4 h-4"
+                      />
+                      <Label htmlFor="working-days-only-add" className={cardStyle.text}>
+                        Count working days only (exclude weekends)
+                      </Label>
                     </div>
                   </>
                 )}
@@ -830,6 +848,18 @@ export default function AnnouncementsPage() {
                         </div>
                       </label>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="working-days-only-edit"
+                      checked={formData.working_days_only}
+                      onChange={(e) => setFormData({ ...formData, working_days_only: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="working-days-only-edit" className={cardStyle.text}>
+                      Count working days only (exclude weekends)
+                    </Label>
                   </div>
                 </>
               )}

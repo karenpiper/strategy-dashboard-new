@@ -17,6 +17,7 @@ interface Announcement {
   start_date: string
   end_date: string | null
   active: boolean
+  working_days_only: boolean | null
 }
 
 export function AnnouncementBanner() {
@@ -46,6 +47,35 @@ export function AnnouncementBanner() {
     fetchAnnouncement()
   }, [])
 
+  // Helper function to check if a date is a weekend
+  const isWeekend = (date: Date): boolean => {
+    const day = date.getDay()
+    return day === 0 || day === 6 // Sunday = 0, Saturday = 6
+  }
+
+  // Helper function to count working days between two dates (inclusive)
+  const countWorkingDays = (start: Date, end: Date): number => {
+    let count = 0
+    const current = new Date(start)
+    current.setHours(0, 0, 0, 0)
+    const endDate = new Date(end)
+    endDate.setHours(0, 0, 0, 0)
+
+    // If end is before start, return 0
+    if (endDate < current) {
+      return 0
+    }
+
+    // Count working days from start to end (inclusive)
+    while (current <= endDate) {
+      if (!isWeekend(current)) {
+        count++
+      }
+      current.setDate(current.getDate() + 1)
+    }
+    return count
+  }
+
   // Calculate days remaining
   useEffect(() => {
     if (!announcement || announcement.mode !== 'countdown' || !announcement.target_date) {
@@ -63,9 +93,15 @@ export function AnnouncementBanner() {
         return
       }
 
-      // Calculate days (round up to include partial days, minimum 0)
-      const days = Math.max(0, Math.ceil(difference / (1000 * 60 * 60 * 24)))
-      setDaysRemaining(days)
+      // If working_days_only is true, count only weekdays (excluding weekends)
+      if (announcement.working_days_only) {
+        const workingDays = countWorkingDays(now, target)
+        setDaysRemaining(Math.max(0, workingDays))
+      } else {
+        // Calculate days (round up to include partial days, minimum 0)
+        const days = Math.max(0, Math.ceil(difference / (1000 * 60 * 60 * 24)))
+        setDaysRemaining(days)
+      }
     }
 
     updateCountdown()
@@ -89,6 +125,10 @@ export function AnnouncementBanner() {
   if (announcement.mode === 'countdown' && announcement.event_name) {
     const isExpired = daysRemaining === null || daysRemaining <= 0
     const format = announcement.text_format || 'days_until'
+    const isWorkingDays = announcement.working_days_only || false
+    const dayLabel = isWorkingDays 
+      ? (daysRemaining === 1 ? 'working day' : 'working days')
+      : (daysRemaining === 1 ? 'day' : 'days')
     
     let displayText = ''
     if (isExpired) {
@@ -99,10 +139,10 @@ export function AnnouncementBanner() {
         .replace(/{days}/g, daysRemaining.toString())
         .replace(/{event}/g, announcement.event_name)
     } else if (format === 'happens_in') {
-      displayText = `${announcement.event_name} happens in ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'}`
+      displayText = `${announcement.event_name} happens in ${daysRemaining} ${dayLabel}`
     } else {
       // Default: 'days_until'
-      displayText = `${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} until ${announcement.event_name}`
+      displayText = `${daysRemaining} ${dayLabel} until ${announcement.event_name}`
     }
     
 

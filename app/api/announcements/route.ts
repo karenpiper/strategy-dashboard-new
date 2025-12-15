@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
         start_date,
         end_date,
         active,
+        working_days_only,
         created_at,
         updated_at,
         created_by_profile:profiles!created_by(id, email, full_name)
@@ -97,7 +98,8 @@ export async function POST(request: NextRequest) {
       sticker_url,
       start_date,
       end_date,
-      active
+      active,
+      working_days_only
     } = body
 
     // Headline is only required for text mode
@@ -123,6 +125,7 @@ export async function POST(request: NextRequest) {
       start_date: start_date || new Date().toISOString().split('T')[0],
       end_date: end_date || null,
       active: active !== undefined ? active : true,
+      working_days_only: mode === 'countdown' ? (working_days_only || false) : false,
       created_by: user.id,
     }
 
@@ -195,7 +198,8 @@ export async function PUT(request: NextRequest) {
       sticker_url,
       start_date,
       end_date,
-      active
+      active,
+      working_days_only
     } = body
 
     if (!id) {
@@ -256,6 +260,9 @@ export async function PUT(request: NextRequest) {
     if (start_date !== undefined) updateData.start_date = start_date
     if (end_date !== undefined) updateData.end_date = end_date
     if (active !== undefined) updateData.active = active
+    if (working_days_only !== undefined) {
+      updateData.working_days_only = mode === 'countdown' ? working_days_only : false
+    }
 
     console.log('Updating announcement:', { id, updateData, currentTextFormat })
 
