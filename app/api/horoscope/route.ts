@@ -1156,10 +1156,9 @@ export async function GET(request: NextRequest) {
       .eq('date', todayDate)
       .maybeSingle()
     
-    // CRITICAL: Ensure imageUrl is set before building upsert data
+    // Image URL is optional - horoscope can be saved without image
     if (!imageUrl || imageUrl.trim() === '') {
-      console.error('❌ CRITICAL: imageUrl is empty when building upsert data!')
-      throw new Error('Cannot save horoscope: imageUrl is empty. Image upload may have failed.')
+      console.log('⚠️ No image URL to save - horoscope will be saved without image')
     }
     
     const upsertData: any = {
