@@ -33,7 +33,7 @@ interface HoroscopeGenerationResponse {
   horoscope: string
   dos: string[]
   donts: string[]
-  imageUrl: string
+  imageUrl: string | null // Can be null if image generation fails
   character_name?: string | null
   prompt: string
   slots: any
@@ -397,30 +397,38 @@ export async function generateHoroscopeViaElvex(
   }
 
   try {
-    // Step 1: Transform horoscope text using Elvex
+    // Step 1: Transform horoscope text using Elvex (independent operation)
+    console.log('📝 Step 1: Generating horoscope text...')
     const textResult = await transformHoroscopeWithElvex(
       request.cafeAstrologyText,
       request.starSign
     )
+    console.log('✅ Step 1 complete: Horoscope text generated')
 
-    // Step 2: Use the provided image prompt (built by route using slot-based system)
-    // This prompt already includes all the sophisticated logic:
-    // - Style selection based on user preferences
-    // - Weighted selection by weekday, season, zodiac element
-    // - Subject role, setting, mood, colors, etc. from catalogs
+    // Step 2: Generate image separately (independent operation)
+    // If image generation fails, we still return the text
     const imagePrompt = request.imagePrompt
-
-    // Step 3: Generate image using Elvex with the slot-based prompt
-    const imageUrl = await generateImageWithElvex(imagePrompt)
+    let imageUrl: string | null = null
+    
+    try {
+      console.log('🖼️ Step 2: Generating horoscope image (separate operation)...')
+      imageUrl = await generateImageWithElvex(imagePrompt)
+      console.log('✅ Step 2 complete: Image generated')
+    } catch (imageError: any) {
+      // Image generation failed, but we still have the text
+      console.error('⚠️ Image generation failed, but horoscope text is available:', imageError.message)
+      console.log('📝 Continuing with text-only horoscope (image will be null)')
+      // Don't throw - we want to return the text even if image fails
+    }
 
     const elapsed = Date.now() - startTime
-    console.log(`✅ Horoscope generation completed in ${elapsed}ms`)
+    console.log(`✅ Horoscope generation completed in ${elapsed}ms (text: ✅, image: ${imageUrl ? '✅' : '❌'})`)
 
     return {
       horoscope: textResult.horoscope,
       dos: textResult.dos,
       donts: textResult.donts,
-      imageUrl,
+      imageUrl, // Can be null if image generation failed
       character_name: null,
       prompt: imagePrompt,
       slots: request.slots || {},
