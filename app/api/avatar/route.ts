@@ -350,9 +350,15 @@ export async function GET(request: NextRequest) {
             })
             
             // Query by User ID AND date to get only today's caption
-            // Use same date format as generateImageViaAirtable uses
-            const filterFormula = `AND({User ID} = "${userId}", {Created At} = "${createdAt}")`
-            const queryUrl = `${url}?filterByFormula=${encodeURIComponent(filterFormula)}`
+            // Use date range query instead of exact match (Airtable dates may include time)
+            // Query for records created on or after start of today and before start of tomorrow
+            const tomorrowDate = new Date(createdAt + 'T00:00:00')
+            tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+            const tomorrowStr = tomorrowDate.toISOString().split('T')[0]
+            
+            // Use IS_SAME function for date comparison (more reliable than exact match)
+            const filterFormula = `AND({User ID} = "${userId}", IS_SAME({Created At}, "${createdAt}", "day"))`
+            const queryUrl = `${url}?filterByFormula=${encodeURIComponent(filterFormula)}&sort[0][field]=Created At&sort[0][direction]=desc`
             
             console.log('   🔍 Querying Airtable (read-only) for today\'s caption:', {
               userId,
@@ -825,8 +831,9 @@ export async function GET(request: NextRequest) {
               createdAt = `${nowUtc.getUTCFullYear()}-${String(nowUtc.getUTCMonth() + 1).padStart(2, '0')}-${String(nowUtc.getUTCDate()).padStart(2, '0')}`
             }
             
-            // Read-only query - just by User ID to find any records
-            const filterFormula = `{User ID} = "${userId}"`
+            // Read-only query - by User ID and date to find today's records
+            // Use IS_SAME function for date comparison (more reliable than exact match)
+            const filterFormula = `AND({User ID} = "${userId}", IS_SAME({Created At}, "${createdAt}", "day"))`
             const queryUrl = `${url}?filterByFormula=${encodeURIComponent(filterFormula)}&sort[0][field]=Created At&sort[0][direction]=desc&maxRecords=5`
             
             const queryResponse = await fetch(queryUrl, {
