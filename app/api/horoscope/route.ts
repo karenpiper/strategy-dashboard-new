@@ -748,6 +748,14 @@ export async function GET(request: NextRequest) {
         // Check if we should use Airtable AI (if configured)
         const useAirtableAI = !!process.env.AIRTABLE_WEBHOOK_URL || (process.env.AIRTABLE_API_KEY && process.env.AIRTABLE_AI_BASE_ID)
         
+        // Debug logging
+        console.log('🔍 Airtable AI check:', {
+          hasWebhookUrl: !!process.env.AIRTABLE_WEBHOOK_URL,
+          hasApiKey: !!process.env.AIRTABLE_API_KEY,
+          hasBaseId: !!process.env.AIRTABLE_AI_BASE_ID,
+          willUseAirtable: useAirtableAI
+        })
+        
         let directResult
         if (useAirtableAI) {
           console.log('🚀 Generating horoscope text and image via Airtable AI...')

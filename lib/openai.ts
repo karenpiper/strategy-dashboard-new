@@ -12,16 +12,32 @@ const openai = new OpenAI({
 // Dynamic import for Vercel AI SDK to avoid bundling issues
 async function getVercelAISDK() {
   try {
-    const [aiModule, openaiModule] = await Promise.all([
-      import('ai'),
-      import('@ai-sdk/openai')
-    ])
+    // Use dynamic import with explicit paths to avoid bundling issues
+    const aiModule = await import('ai')
+    const openaiModule = await import('@ai-sdk/openai')
+    
+    // Extract functions explicitly to avoid minification issues
+    const generateText = aiModule.generateText
+    const vercelOpenAI = openaiModule.openai
+    
+    if (typeof generateText !== 'function') {
+      throw new Error('generateText is not a function')
+    }
+    if (typeof vercelOpenAI !== 'function') {
+      throw new Error('vercelOpenAI is not a function')
+    }
+    
     return {
-      generateText: aiModule.generateText,
-      vercelOpenAI: openaiModule.openai
+      generateText,
+      vercelOpenAI
     }
   } catch (error: any) {
     console.error('❌ Failed to load Vercel AI SDK:', error)
+    console.error('   Error details:', {
+      message: error?.message,
+      stack: error?.stack?.substring(0, 500),
+      name: error?.name
+    })
     throw new Error(`Failed to load Vercel AI SDK: ${error.message}. Make sure "ai" and "@ai-sdk/openai" packages are installed.`)
   }
 }
