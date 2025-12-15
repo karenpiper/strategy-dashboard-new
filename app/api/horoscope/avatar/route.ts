@@ -494,37 +494,86 @@ export async function GET(request: NextRequest) {
           .then(async (imageResult) => {
             if (imageResult.imageUrl) {
               console.log('✅ Background image generation completed successfully')
-              console.log('   Image URL:', imageResult.imageUrl.substring(0, 100) + '...')
+              console.log('   Airtable image URL:', imageResult.imageUrl.substring(0, 100) + '...')
               console.log('   Caption:', imageResult.caption || 'none')
               
-              // Update the horoscope record in Supabase with both image URL and caption
-              // This links the Airtable-generated image back to the Supabase user (authenticated via OAuth)
-              const updateData: any = { 
-                image_url: imageResult.imageUrl 
-              }
-              
-              // Save caption to character_name field
-              if (imageResult.caption) {
-                updateData.character_name = imageResult.caption
-                console.log('   Caption from Airtable:', imageResult.caption)
-                console.log('   Saving caption to character_name field in Supabase')
-              }
-              
-              const { error: updateError } = await supabaseAdmin
-                .from('horoscopes')
-                .update(updateData)
-                .eq('user_id', userId) // Supabase user ID from OAuth
-                .eq('date', todayDate)
-              
-              if (updateError) {
-                console.error('❌ Failed to update horoscope with image URL and caption in Supabase:', updateError)
-              } else {
-                console.log('✅ Updated Supabase horoscope record with image URL and caption')
-                console.log('   User ID (from Supabase OAuth):', userId)
-                console.log('   User Email (from Supabase OAuth):', userEmail)
-                console.log('   Image URL saved to Supabase horoscopes table')
-                console.log('   Caption saved to character_name field')
-                console.log('   Image and caption linked to user via Supabase user_id')
+              try {
+                // Download the image from Airtable
+                console.log('📥 Downloading image from Airtable...')
+                const imageResponse = await fetch(imageResult.imageUrl)
+                if (!imageResponse.ok) {
+                  throw new Error(`Failed to download image from Airtable: ${imageResponse.statusText}`)
+                }
+                
+                const imageBlob = await imageResponse.blob()
+                const imageBuffer = Buffer.from(await imageBlob.arrayBuffer())
+                console.log('✅ Image downloaded, size:', imageBuffer.length, 'bytes')
+                
+                // Upload to Supabase storage (horoscope-avatars bucket)
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+                const fileName = `horoscope-${userId}-${todayDate}-${timestamp}.png`
+                const filePath = `${userId}/${fileName}`
+                const bucketName = 'horoscope-avatars'
+                
+                console.log('📤 Uploading image to Supabase storage...')
+                console.log('   Bucket:', bucketName)
+                console.log('   File path:', filePath)
+                console.log('   File size:', imageBuffer.length, 'bytes')
+                
+                const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+                  .from(bucketName)
+                  .upload(filePath, imageBuffer, {
+                    contentType: 'image/png',
+                    upsert: false,
+                  })
+                
+                if (uploadError) {
+                  console.error('❌ Failed to upload image to Supabase storage:', uploadError)
+                  throw uploadError
+                }
+                
+                // Get the public URL for the uploaded image
+                const { data: urlData } = supabaseAdmin.storage
+                  .from(bucketName)
+                  .getPublicUrl(filePath)
+                
+                const supabaseImageUrl = urlData.publicUrl
+                console.log('✅ Image uploaded to Supabase storage')
+                console.log('   Supabase storage URL:', supabaseImageUrl)
+                
+                // Update the horoscope record in Supabase with Supabase storage URL and caption
+                const updateData: any = { 
+                  image_url: supabaseImageUrl // Use Supabase storage URL instead of Airtable URL
+                }
+                
+                // Save caption to character_name field
+                if (imageResult.caption) {
+                  updateData.character_name = imageResult.caption
+                  console.log('   Caption from Airtable:', imageResult.caption)
+                  console.log('   Saving caption to character_name field in Supabase')
+                }
+                
+                const { error: updateError } = await supabaseAdmin
+                  .from('horoscopes')
+                  .update(updateData)
+                  .eq('user_id', userId) // Supabase user ID from OAuth
+                  .eq('date', todayDate)
+                
+                if (updateError) {
+                  console.error('❌ Failed to update horoscope with image URL and caption in Supabase:', updateError)
+                } else {
+                  console.log('✅ Updated Supabase horoscope record with image and caption')
+                  console.log('   User ID (from Supabase OAuth):', userId)
+                  console.log('   User Email (from Supabase OAuth):', userEmail)
+                  console.log('   Image saved to Supabase storage (not just URL)')
+                  console.log('   Supabase storage URL saved to horoscopes table')
+                  console.log('   Caption saved to character_name field')
+                  console.log('   Image and caption linked to user via Supabase user_id')
+                }
+              } catch (storageError: any) {
+                console.error('❌ Failed to save image to Supabase storage:', storageError)
+                console.error('   Error message:', storageError.message)
+                // Don't throw - this is background, user can retry later
               }
             }
           })
