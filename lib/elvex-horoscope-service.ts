@@ -766,20 +766,20 @@ To fix:
         if (attachmentField && Array.isArray(attachmentField) && attachmentField.length > 0) {
           // Airtable attachment field format: [{ url: "...", filename: "...", ... }]
           console.log('   Found Image attachment field with', attachmentField.length, 'attachment(s)')
-          imageUrl = attachmentField[0].url
-          console.log('   Extracted image URL from attachment:', imageUrl ? imageUrl.substring(0, 100) + '...' : 'null')
+          finalImageUrl = attachmentField[0].url
+          console.log('   Extracted image URL from attachment:', finalImageUrl ? finalImageUrl.substring(0, 100) + '...' : 'null')
         } else if (typeof attachmentField === 'object' && attachmentField !== null && attachmentField.url) {
           // Single attachment object (not array)
           console.log('   Found Image as single attachment object')
-          imageUrl = attachmentField.url
+          finalImageUrl = attachmentField.url
         } else if (fields['Image URL'] || fields['fldL8wx5cWDXDwUjJ']) {
           // Fallback: if stored in "Image URL" field (fldL8wx5cWDXDwUjJ)
           const urlField = fields['Image URL'] || fields['fldL8wx5cWDXDwUjJ']
           console.log('   Found Image URL field (fallback)')
-          imageUrl = urlField
+          finalImageUrl = urlField
         }
 
-        if (imageUrl) {
+        if (finalImageUrl) {
           // Extract caption from "Caption" field (renamed from "Error Message")
           const caption = fields['Caption'] || null
           console.log('✅ Image generated successfully via Airtable')
