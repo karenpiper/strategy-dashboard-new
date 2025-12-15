@@ -339,20 +339,26 @@ export async function GET(request: NextRequest) {
               const queryData = await queryResponse.json()
               console.log('   📋 Airtable query response:', {
                 recordCount: queryData.records?.length || 0,
-                hasRecords: !!(queryData.records && queryData.records.length > 0)
+                hasRecords: !!(queryData.records && queryData.records.length > 0),
+                status: queryResponse.status
               })
               
               if (queryData.records && queryData.records.length > 0) {
                 // Check all records for character name (in case first one doesn't have it)
                 // Priority: "Caption" field first (this is where Airtable stores it), then "Character Name"
                 for (const record of queryData.records) {
-                  const foundCaption = record.fields?.['Caption'] || record.fields?.['Character Name']
+                  const captionField = record.fields?.['Caption']
+                  const characterNameField = record.fields?.['Character Name']
+                  const foundCaption = captionField || characterNameField
+                  
                   console.log('   🔍 Checking record:', {
                     id: record.id,
-                    hasCaption: !!record.fields?.['Caption'],
-                    hasCharacterName: !!record.fields?.['Character Name'],
-                    captionValue: record.fields?.['Caption'],
-                    characterNameValue: record.fields?.['Character Name'],
+                    hasCaption: !!captionField,
+                    hasCharacterName: !!characterNameField,
+                    captionValue: captionField,
+                    captionType: typeof captionField,
+                    captionLength: typeof captionField === 'string' ? captionField.length : 0,
+                    characterNameValue: characterNameField,
                     allFields: Object.keys(record.fields || {})
                   })
                   
@@ -360,23 +366,31 @@ export async function GET(request: NextRequest) {
                     console.log('   ✅ Found character name in Airtable (from Caption field):', foundCaption)
                     characterName = foundCaption
                     // Update database with character name
-                    const { error: updateError } = await supabaseAdmin
+                    const { error: updateError, data: updateData } = await supabaseAdmin
                       .from('horoscopes')
                       .update({ character_name: characterName })
                       .eq('user_id', userId)
                       .eq('date', todayDate)
+                      .select('character_name')
                     
                     if (updateError) {
                       console.error('   ❌ Error updating database with character name:', updateError)
                     } else {
                       console.log('   ✅ Updated database with character_name from Airtable Caption field:', characterName)
+                      console.log('   📊 Database update result:', updateData)
                     }
                     break // Found it, stop looking
+                  } else {
+                    console.log('   ⚠️ Record found but no valid caption:', {
+                      foundCaption,
+                      isString: typeof foundCaption === 'string',
+                      length: typeof foundCaption === 'string' ? foundCaption.length : 'N/A'
+                    })
                   }
                 }
                 
                 if (!characterName) {
-                  console.log('   ⚠️ No character name found in any Airtable record')
+                  console.log('   ⚠️ No character name found in any Airtable record after checking all records')
                 }
               } else {
                 console.log('   ⚠️ No Airtable records found for today')
