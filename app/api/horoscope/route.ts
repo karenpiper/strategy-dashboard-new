@@ -205,7 +205,7 @@ export async function GET(request: NextRequest) {
     
     const { data: cachedHoroscope, error: cacheError } = await supabaseAdmin
       .from('horoscopes')
-      .select('star_sign, horoscope_text, horoscope_dos, horoscope_donts, image_url, date, generated_at, character_name, prompt_slots_json')
+      .select('star_sign, horoscope_text, horoscope_dos, horoscope_donts, image_url, image_caption, date, generated_at, character_name, prompt_slots_json')
       .eq('user_id', userId)
       .eq('date', todayDate)
       .maybeSingle()
@@ -425,6 +425,7 @@ export async function GET(request: NextRequest) {
           horoscope_dos: cachedHoroscope.horoscope_dos || [],
           horoscope_donts: cachedHoroscope.horoscope_donts || [],
           image_url: cachedHoroscope.image_url || null,
+          image_caption: cachedHoroscope.image_caption || null,
           character_name: cachedHoroscope.character_name || null,
           cached: true,
         })
@@ -585,6 +586,7 @@ export async function GET(request: NextRequest) {
     
     // Character name will come from n8n (generated from image analysis)
     let characterName: string | null = null
+    let imageCaption: string | null = null
     
     // Fetch from Cafe Astrology and generate via n8n
     console.log('Generating horoscope for:', { starSign, profile: userProfile })
@@ -775,6 +777,10 @@ export async function GET(request: NextRequest) {
           const elvexStartTime = Date.now()
           
           // Call Elvex service
+          console.log('🚀 ========== CALLING GENERATE HOROSCOPE VIA ELVEX ==========')
+          console.log('   This will generate text via Elvex AND image via Airtable')
+          console.log('   Image prompt length:', imagePrompt.length)
+          console.log('   Image prompt preview:', imagePrompt.substring(0, 200) + '...')
           directResult = await generateHoroscopeViaElvex({
             starSign,
             userId,
@@ -785,6 +791,7 @@ export async function GET(request: NextRequest) {
             reasoning: promptReasoning,
             timezone: userTimezone, // Pass timezone for Airtable Created At field
           })
+          console.log('🚀 ========== GENERATE HOROSCOPE VIA ELVEX COMPLETED ==========')
           
           const elvexElapsed = Date.now() - elvexStartTime
           console.log(`✅ Elvex API generation completed in ${elvexElapsed}ms`)
@@ -827,6 +834,7 @@ export async function GET(request: NextRequest) {
         horoscopeDos = directResult.dos
         horoscopeDonts = directResult.donts
         imageUrl = directResult.imageUrl || null // Allow null image URL
+        imageCaption = directResult.imageCaption || null // Caption from Airtable
         
         // Character name is not generated in direct mode (was previously from n8n image analysis)
         // Set to null for now - can be added later if needed
@@ -1177,6 +1185,7 @@ export async function GET(request: NextRequest) {
       date: todayDate, // Explicitly set date to ensure consistency
       generated_at: new Date().toISOString(),
       image_url: imageUrl || null, // Allow null - image is optional
+      image_caption: imageCaption || null, // Caption from Airtable, null if not available
       prompt_slots_json: promptSlots, // Set prompt slots from prompt building
       image_prompt: imagePrompt, // Set image prompt
     }
@@ -1464,6 +1473,7 @@ export async function GET(request: NextRequest) {
       horoscope_dos: horoscopeDos,
       horoscope_donts: horoscopeDonts,
       image_url: imageUrl,
+      image_caption: imageCaption,
       character_name: characterName,
       cached: false,
     })
