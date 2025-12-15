@@ -35,64 +35,8 @@
   }
 }
 
-/* Snow layer at bottom of page */
-.snow-layer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 60px; /* Height of the snow layer */
-  pointer-events: none;
-  z-index: 9998;
-  overflow: hidden;
-  background: linear-gradient(
-    to top,
-    rgba(255, 255, 255, 0.9) 0%,
-    rgba(255, 255, 255, 0.7) 30%,
-    rgba(255, 255, 255, 0.4) 60%,
-    transparent 100%
-  );
-  backdrop-filter: blur(2px);
-}
-
-.snow-layer-content {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-/* Small snow particles in the layer */
-.snow-particle {
-  position: absolute;
-  bottom: 0;
-  width: 8px;
-  height: 8px;
-  background: white;
-  border-radius: 50%;
-  opacity: 0.6;
-  animation: snow-float linear infinite;
-  pointer-events: none;
-}
-
-/* Floating animation for snow particles */
-@keyframes snow-float {
-  0% {
-    transform: translateY(0) translateX(0);
-    opacity: 0.6;
-  }
-  50% {
-    transform: translateY(-10px) translateX(5px);
-    opacity: 0.8;
-  }
-  100% {
-    transform: translateY(0) translateX(0);
-    opacity: 0.6;
-  }
-}
-
 /* Ensure snow doesn't interfere with interactive elements */
-.snow-container *,
-.snow-layer * {
+.snow-container * {
   pointer-events: none;
   user-select: none;
 }

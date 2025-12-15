@@ -39,43 +39,22 @@ export function SnowAnimation() {
   }, [])
 
   return (
-    <>
-      {/* Snowflakes container */}
-      <div className="snow-container" aria-hidden="true">
-        {snowflakes.map((flake) => (
-          <div
-            key={flake.id}
-            className="snowflake"
-            style={{
-              left: `${flake.left}%`,
-              width: `${flake.size}px`,
-              height: `${flake.size}px`,
-              animationDuration: `${flake.animationDuration}s`,
-              animationDelay: `${flake.animationDelay}s`,
-              opacity: flake.opacity,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Snow layer at bottom */}
-      <div className="snow-layer" aria-hidden="true">
-        <div className="snow-layer-content">
-          {/* Small animated snow particles for the layer */}
-          {Array.from({ length: 20 }).map((_, i) => (
-            <div
-              key={i}
-              className="snow-particle"
-              style={{
-                left: `${(i * 5) % 100}%`,
-                animationDelay: `${Math.random() * 2}s`,
-                animationDuration: `${2 + Math.random() * 3}s`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    </>
+    <div className="snow-container" aria-hidden="true">
+      {snowflakes.map((flake) => (
+        <div
+          key={flake.id}
+          className="snowflake"
+          style={{
+            left: `${flake.left}%`,
+            width: `${flake.size}px`,
+            height: `${flake.size}px`,
+            animationDuration: `${flake.animationDuration}s`,
+            animationDelay: `${flake.animationDelay}s`,
+            opacity: flake.opacity,
+          }}
+        />
+      ))}
+    </div>
   )
 }
 
