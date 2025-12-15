@@ -1435,32 +1435,45 @@ export default function TeamDashboard() {
         
         // Always fetch avatar endpoint independently (images are handled separately from text)
         // Horoscope endpoint only returns text, avatar endpoint handles all images
+        // IMPORTANT: Don't await avatar endpoint - fetch it in parallel but don't block text display
         let imageResponse = null
         let imageData = null
         let isImageResponseOk = false
         
-        if (isTextResponseOk && horoscopeAvatarEnabled) {
-          // Fetch avatar endpoint independently (only if avatar is enabled)
-          console.log('Fetching image from avatar endpoint (independent from horoscope text)...')
-          imageResponse = await fetch('/api/avatar')
-          // Check response status before reading body
-          isImageResponseOk = imageResponse.ok
-          try {
-            imageData = await imageResponse.json()
-          } catch (jsonError: any) {
-            const errorText = await imageResponse.text().catch(() => 'Unknown error')
-            console.error('❌ Failed to parse image response as JSON:', jsonError)
-            console.error('   Response text:', errorText.substring(0, 500))
-            imageData = { error: `Failed to parse image response: ${jsonError.message}` }
-          }
-        }
+        // Start avatar fetch in parallel (don't await yet - process text first)
+        const avatarFetchPromise = isTextResponseOk && horoscopeAvatarEnabled
+          ? fetch('/api/avatar')
+              .then(async (response) => {
+                console.log('Avatar endpoint response received:', response.status, response.statusText)
+                const isOk = response.ok
+                try {
+                  const data = await response.json()
+                  return { response, data, isOk, error: null }
+                } catch (jsonError: any) {
+                  const errorText = await response.text().catch(() => 'Unknown error')
+                  console.error('❌ Failed to parse image response as JSON:', jsonError)
+                  return { response, data: { error: `Failed to parse: ${jsonError.message}` }, isOk, error: jsonError }
+                }
+              })
+              .catch((error) => {
+                console.error('❌ Avatar endpoint fetch failed:', error)
+                return { response: null, data: { error: error.message }, isOk: false, error }
+              })
+          : Promise.resolve({ response: null, data: null, isOk: false, error: null })
+        
+        // Process text response immediately (don't wait for avatar)
+        // Avatar will be processed after text is displayed
         
         if (!isMounted) {
           isFetchingRef.current = false
           return // Don't process if component unmounted
         }
         
-        // Process text response (already parsed above)
+        // Process text response immediately (don't wait for avatar)
+        console.log('⏱️ Processing text response at:', new Date().toISOString())
+        console.log('   Response status:', textResponse.status, textResponse.statusText)
+        console.log('   Response ok:', textResponse.ok)
+        
         if (!textResponse.ok) {
           console.error('❌ Horoscope API error:', {
             status: textResponse.status,
@@ -1503,15 +1516,24 @@ export default function TeamDashboard() {
               setCharacterName(textData.character_name || generateSillyCharacterName(textData.star_sign))
             }
             
-            // Clear loading state for horoscope text
+            // Clear loading state for horoscope text IMMEDIATELY
+            console.log('✅ Setting horoscope data and clearing loading state')
             setHoroscopeLoading(false)
             setHoroscopeError(null)
             hasFetchedRef.current = true // Mark as fetched
             
             // Horoscope endpoint no longer returns image_url - images come from avatar endpoint
-            // Image will be processed from imageData below
+            // Image will be processed from avatarFetchPromise below
           }
         }
+        
+        // Now await avatar response (text is already displayed)
+        console.log('⏱️ Waiting for avatar endpoint response...')
+        const avatarResult = await avatarFetchPromise
+        imageResponse = avatarResult.response
+        imageData = avatarResult.data
+        isImageResponseOk = avatarResult.isOk
+        console.log('⏱️ Avatar endpoint response received at:', new Date().toISOString())
         
         // Process image response (already parsed above if fetched)
         // imageData is already set above if imageResponse exists
