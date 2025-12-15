@@ -374,13 +374,31 @@ export async function GET(request: NextRequest) {
               })
               
               if (queryData.records && queryData.records.length > 0) {
-                // Check all records for caption (prioritize Caption field)
-                for (const record of queryData.records) {
+                // Filter records to only those matching today's date
+                // The query should already filter by date, but verify to be safe
+                const todayRecords = queryData.records.filter((record: any) => {
+                  const recordDate = record.fields?.['Created At']
+                  if (!recordDate) return false
+                  // Extract date part (YYYY-MM-DD) from Created At field
+                  const recordDateStr = typeof recordDate === 'string' 
+                    ? recordDate.split('T')[0] 
+                    : String(recordDate).split('T')[0]
+                  return recordDateStr === createdAt
+                })
+                
+                console.log('   📅 Filtered to today\'s records:', {
+                  totalRecords: queryData.records.length,
+                  todayRecords: todayRecords.length,
+                  expectedDate: createdAt
+                })
+                
+                // Check today's records for caption (prioritize Caption field)
+                for (const record of todayRecords) {
                   const captionField = record.fields?.['Caption']
                   const characterNameField = record.fields?.['Character Name']
                   const foundCaption = captionField || characterNameField
                   
-                  console.log('   🔍 Checking record:', {
+                  console.log('   🔍 Checking today\'s record:', {
                     id: record.id,
                     createdAt: record.fields?.['Created At'],
                     hasCaption: !!captionField,
@@ -390,7 +408,7 @@ export async function GET(request: NextRequest) {
                   })
                   
                   if (foundCaption && typeof foundCaption === 'string' && foundCaption.length > 0) {
-                    console.log('   ✅ Found character name in Airtable (from Caption field):', foundCaption)
+                    console.log('   ✅ Found character name in Airtable (from Caption field) for today:', foundCaption)
                     characterName = foundCaption
                     // Update database with character name
                     const { error: updateError, data: updateData } = await supabaseAdmin
@@ -411,7 +429,11 @@ export async function GET(request: NextRequest) {
                 }
                 
                 if (!characterName) {
-                  console.log('   ⚠️ No character name found in any Airtable record')
+                  if (todayRecords.length === 0) {
+                    console.log('   ⚠️ No Airtable records found for today\'s date')
+                  } else {
+                    console.log('   ⚠️ Today\'s records found but no character name in any of them')
+                  }
                 }
               } else {
                 console.log('   ⚠️ No Airtable records found for user')
