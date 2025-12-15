@@ -1,13 +1,21 @@
 import OpenAI from 'openai'
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error('OPENAI_API_KEY is not set in environment variables')
-}
+// Only initialize OpenAI client when actually needed (not at module load time)
+// This allows the module to be imported even if OPENAI_API_KEY is not set
+// (e.g., when using Elvex instead of OpenAI)
+let openai: OpenAI | null = null
 
-// Keep OpenAI SDK for image generation (DALL-E)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+function getOpenAIClient(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not set in environment variables')
+  }
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  }
+  return openai
+}
 
 // Dynamic import for Vercel AI SDK to avoid bundling issues
 async function getVercelAISDK() {
@@ -356,9 +364,8 @@ export async function generateHoroscopeImage(
 
   console.log('Calling OpenAI DALL-E API with generated prompt...')
   
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not set in environment variables')
-    }
+  // Get OpenAI client (will throw if OPENAI_API_KEY is not set)
+  const openaiClient = getOpenAIClient()
     
   // Retry logic with exponential backoff for rate limits
   // IMPORTANT: We use exponential backoff with jitter to avoid thundering herd
@@ -369,7 +376,7 @@ export async function generateHoroscopeImage(
     try {
       console.log(`🔄 Attempting OpenAI DALL-E API call (attempt ${attempt + 1}/${maxRetries + 1})...`)
     
-    const response = await openai.images.generate({
+      const response = await openaiClient.images.generate({
       model: 'dall-e-3',
       prompt: prompt,
       size: '1024x1024', // Square format for portrait/avatar use
