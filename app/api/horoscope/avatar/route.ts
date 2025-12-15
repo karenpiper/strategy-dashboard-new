@@ -503,19 +503,11 @@ export async function GET(request: NextRequest) {
                 image_url: imageResult.imageUrl 
               }
               
-              // Save caption if available (check if character_name field exists or add image_caption field)
-              // The horoscopes table has character_name field - we can use it for caption
-              // Or you can add an image_caption field to the table if you prefer
+              // Save caption to character_name field
               if (imageResult.caption) {
-                // Option 1: Use character_name field for caption (if it's not used for something else)
-                // updateData.character_name = imageResult.caption
-                
-                // Option 2: If you add image_caption field to horoscopes table, use this:
-                // updateData.image_caption = imageResult.caption
-                
-                // For now, we'll log it - you can decide which field to use
+                updateData.character_name = imageResult.caption
                 console.log('   Caption from Airtable:', imageResult.caption)
-                console.log('   ⚠️ NOTE: Caption not saved to Supabase yet - add image_caption field or use character_name')
+                console.log('   Saving caption to character_name field in Supabase')
               }
               
               const { error: updateError } = await supabaseAdmin
@@ -525,12 +517,13 @@ export async function GET(request: NextRequest) {
                 .eq('date', todayDate)
               
               if (updateError) {
-                console.error('❌ Failed to update horoscope with image URL in Supabase:', updateError)
+                console.error('❌ Failed to update horoscope with image URL and caption in Supabase:', updateError)
               } else {
-                console.log('✅ Updated Supabase horoscope record with image URL')
+                console.log('✅ Updated Supabase horoscope record with image URL and caption')
                 console.log('   User ID (from Supabase OAuth):', userId)
                 console.log('   User Email (from Supabase OAuth):', userEmail)
                 console.log('   Image URL saved to Supabase horoscopes table')
+                console.log('   Caption saved to character_name field')
                 console.log('   Image and caption linked to user via Supabase user_id')
               }
             }
