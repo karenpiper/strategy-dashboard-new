@@ -583,6 +583,32 @@ Once everything is set up:
 - Send a test webhook using one of the methods above
 - The message should disappear once a request is received
 
+**Webhook not triggering when loading the app:**
+
+1. **Check Environment Variable:**
+   - Go to Vercel → Settings → Environment Variables
+   - Verify `AIRTABLE_WEBHOOK_URL` is set
+   - Make sure it's set for the correct environment (Production/Preview)
+   - **Redeploy your app** after adding/updating the variable
+
+2. **Check App Logs:**
+   - Go to Vercel → Your Project → Deployments → Click latest deployment → Functions
+   - Look for `/api/horoscope` logs
+   - You should see: `🚀 Generating horoscope text and image via Airtable AI...`
+   - If you see: `🚀 Generating horoscope text and image via direct OpenAI API calls...` instead, then `AIRTABLE_WEBHOOK_URL` is not set
+
+3. **Check if horoscope is cached:**
+   - The app only generates a NEW horoscope if there isn't one for today
+   - Try adding `?force=true` to the URL: `https://your-app.vercel.app/?force=true`
+   - Or check the browser console for horoscope fetch logs
+
+4. **Check for errors:**
+   - Look for error messages in Vercel logs
+   - Common errors:
+     - `AIRTABLE_WEBHOOK_URL is not set` → Environment variable missing
+     - `Failed to send webhook` → Webhook URL might be wrong
+     - Network errors → Check webhook URL is accessible
+
 **Automation not triggering**
 - Make sure the automation is turned ON (toggle at top)
 - Verify the webhook URL is correct
