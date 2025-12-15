@@ -707,9 +707,11 @@ export async function generateHoroscopeViaElvex(
     console.log('   imagePrompt value:', imagePrompt ? imagePrompt.substring(0, 100) + '...' : 'null/undefined')
     
     if (imagePrompt && imagePrompt.trim() !== '') {
+      console.log('🚀 ========== STARTING AIRTABLE IMAGE GENERATION ==========')
       console.log('🖼️ Image prompt provided, attempting Airtable image generation...')
       console.log('   Image prompt length:', imagePrompt.length)
-      console.log('   Image prompt preview:', imagePrompt.substring(0, 100) + '...')
+      console.log('   Image prompt preview (first 200 chars):', imagePrompt.substring(0, 200) + '...')
+      console.log('   Full image prompt:', imagePrompt)
       console.log('   Timezone:', request.timezone || 'not provided')
       console.log('   About to call generateImageViaAirtable()...')
       
@@ -722,13 +724,16 @@ export async function generateHoroscopeViaElvex(
         console.log('✅ Image generated successfully via Airtable')
         console.log('   Image URL:', imageUrl ? imageUrl.substring(0, 100) + '...' : 'null')
         console.log('   Caption:', imageCaption || 'not provided')
+        console.log('🚀 ========== AIRTABLE IMAGE GENERATION COMPLETED SUCCESSFULLY ==========')
       } catch (imageError: any) {
         // Image generation failed, but we still have the text
+        console.error('🚀 ========== AIRTABLE IMAGE GENERATION FAILED ==========')
         console.error('❌ Image generation via Airtable failed:')
         console.error('   Error message:', imageError.message)
         console.error('   Error name:', imageError.name)
         console.error('   Error stack:', imageError.stack?.substring(0, 1000))
         console.log('📝 Continuing with text-only horoscope (image will be null)')
+        console.log('🚀 ========== CONTINUING WITHOUT IMAGE ==========')
         // Don't throw - we want to return the text even if image fails
       }
     } else {
