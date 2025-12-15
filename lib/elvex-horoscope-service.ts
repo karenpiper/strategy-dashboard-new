@@ -1,21 +1,24 @@
 /**
  * Elvex Horoscope Service
  * 
- * Uses Elvex API to generate horoscope text.
+ * Uses Elvex API to generate horoscope text, and Airtable for image generation.
  * 
  * Workflow:
  * 1. Transform horoscope text using Elvex Assistant API
- * 
- * Note: Image generation is NOT available via Elvex API and will be handled separately.
+ * 2. Generate image using Airtable (separate operation)
  * 
  * Setup required:
  * 1. Elvex account and API key
  * 2. Elvex Assistant for horoscope text transformation (or reuse deck talk assistant)
- * 3. Environment variables:
+ * 3. Airtable setup for image generation (see generateImageViaAirtable function)
+ * 4. Environment variables:
  *    - ELVEX_API_KEY: Your Elvex API key
  *    - ELVEX_HOROSCOPE_ASSISTANT_ID: Assistant ID (or use ELVEX_ASSISTANT_ID)
  *    - ELVEX_HOROSCOPE_VERSION: Assistant version (or use ELVEX_VERSION)
  *    - ELVEX_BASE_URL: Elvex API base URL (optional, defaults to https://api.elvex.ai)
+ *    - AIRTABLE_API_KEY: Your Airtable API key (for image generation)
+ *    - AIRTABLE_IMAGE_BASE_ID: Airtable base ID for image generation
+ *    - AIRTABLE_IMAGE_TABLE_NAME: Airtable table name (default: "Image Generation")
  */
 
 interface HoroscopeGenerationRequest {
@@ -244,115 +247,108 @@ ${prompt}`
  */
 
 /**
- * Generate image using Elvex Assistant API
+ * Generate image using Airtable
  * 
- * Elvex supports image generation through the assistant API. The assistant must have
- * "Image Generation" action enabled in its settings.
- * 
- * We send a prompt asking the assistant to generate an image, and it returns the image URL.
+ * Creates a record in Airtable with the image prompt, which triggers an Airtable
+ * Automation/Script that generates the image using Airtable AI, then polls for the result.
  */
-async function generateImageWithElvex(prompt: string): Promise<string> {
-  console.log('🖼️ Generating image using Elvex Assistant API...')
+async function generateImageViaAirtable(prompt: string): Promise<string> {
+  console.log('🖼️ Generating image via Airtable...')
   
-  const config = getElvexConfig()
+  // Get Airtable configuration
+  const apiKey = process.env.AIRTABLE_API_KEY
+  const baseId = process.env.AIRTABLE_IMAGE_BASE_ID || process.env.AIRTABLE_AI_BASE_ID || process.env.AIRTABLE_BASE_ID
+  const tableName = process.env.AIRTABLE_IMAGE_TABLE_NAME || 'Image Generation'
+
+  if (!apiKey || !baseId) {
+    throw new Error('Airtable configuration missing. Please set AIRTABLE_API_KEY and AIRTABLE_IMAGE_BASE_ID (or AIRTABLE_AI_BASE_ID) environment variables.')
+  }
+
+  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}`
 
   try {
-    // Use the same assistant API endpoint, but with an image generation prompt
-    // Try the configured version first, then try version 2 as fallback
-    const versionsToTry = [config.version, '2'].filter((v, i, arr) => arr.indexOf(v) === i)
-    
-    let lastError: Error | null = null
-    
-    for (const version of versionsToTry) {
-      const elvexUrl = `${config.baseUrl}/v0/apps/${config.assistantId}/versions/${version}/text/generate`
-      
-      console.log('🔍 Calling Elvex Assistant API for image generation:', {
-        url: elvexUrl,
-        assistantId: config.assistantId,
-        version: version,
-        promptLength: prompt.length,
-        attempt: versionsToTry.indexOf(version) + 1,
-        totalAttempts: versionsToTry.length
+    // Step 1: Create a record in Airtable with the image prompt
+    console.log('📝 Creating image generation request in Airtable...')
+    const createResponse = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fields: {
+          'Image Prompt': prompt,
+          'Status': 'Pending',
+          'Created At': new Date().toISOString(),
+        }
       })
-      
-      // Build prompt asking assistant to generate an image
-      // Elvex assistants with image generation enabled will process this
-      const imagePrompt = `Generate an image with the following description. Return only the image URL, nothing else.
+    })
 
-${prompt}
+    if (!createResponse.ok) {
+      const errorText = await createResponse.text()
+      throw new Error(`Failed to create Airtable record: ${errorText}`)
+    }
 
-using DALL-E 3`
+    const createData = await createResponse.json()
+    const recordId = createData.id
+    console.log('✅ Image generation request created in Airtable, record ID:', recordId)
 
-      const response = await fetch(elvexUrl, {
-        method: 'POST',
+    // Step 2: Poll Airtable for the generated image
+    // Airtable Automation/Script should generate the image and update the record
+    console.log('⏳ Polling Airtable for image generation result...')
+    const maxAttempts = 60 // 2 minutes max (60 attempts * 2 seconds)
+    const delayMs = 2000 // 2 seconds between polls
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, delayMs))
+      }
+
+      const getResponse = await fetch(`${url}/${recordId}`, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.apiKey}`,
-        },
-        body: JSON.stringify({
-          prompt: imagePrompt,
-        }),
+          'Authorization': `Bearer ${apiKey}`,
+        }
       })
 
-      if (response.ok) {
-        const result = await response.json()
-        
-        // Elvex Assistant API returns: { data: { response: "..." } }
-        const content = result.data?.response || result.response || result.text || result.content
+      if (!getResponse.ok) {
+        throw new Error(`Failed to fetch Airtable record: ${getResponse.statusText}`)
+      }
 
-        if (!content) {
-          throw new Error('Empty response from Elvex for image generation')
-        }
+      const recordData = await getResponse.json()
+      const fields = recordData.fields
 
-        // Try to extract image URL from the response
-        // The assistant might return just the URL, or a JSON object, or text with the URL
-        let imageUrl: string | null = null
-        
-        // Check if it's already a URL
-        if (typeof content === 'string' && (content.startsWith('http://') || content.startsWith('https://'))) {
-          imageUrl = content.trim()
-        } else {
-          // Try to parse as JSON
-          try {
-            const parsed = typeof content === 'string' ? JSON.parse(content) : content
-            imageUrl = parsed.url || parsed.imageUrl || parsed.image_url || parsed.data?.url
-          } catch {
-            // Not JSON, try to extract URL from text
-            const urlMatch = content.match(/https?:\/\/[^\s\)]+/i)
-            if (urlMatch) {
-              imageUrl = urlMatch[0]
-            }
-          }
-        }
+      // Check if generation is complete
+      if (fields.Status === 'Completed' || fields.Status === 'Complete') {
+        // Extract the image URL
+        // Airtable might store it in different fields
+        const imageUrl = fields['Image URL'] || 
+                        fields['Image'] || 
+                        (fields['Image'] && fields['Image'][0] && fields['Image'][0].url) ||
+                        ''
 
         if (imageUrl) {
-          console.log(`✅ Successfully generated image with Elvex Assistant API (version ${version})`)
+          console.log('✅ Image generated successfully via Airtable')
           return imageUrl
         } else {
-          console.log(`⚠️ Elvex returned response but no image URL found, trying next version...`)
-          lastError = new Error('Elvex assistant returned response but no image URL found')
-        }
-      } else {
-        // Not successful, try next version
-        const errorText = await response.text()
-        lastError = new Error(`Elvex image generation failed with version ${version}: ${response.status} ${errorText}`)
-        console.log(`⚠️ Version ${version} failed for image generation, trying next...`)
-        
-        // If this was the last version to try, throw the error
-        if (version === versionsToTry[versionsToTry.length - 1]) {
-          if (response.status === 404) {
-            throw new Error(`${lastError.message}\n\nTroubleshooting:\n- Verify the assistant has "Image Generation" action enabled in Elvex dashboard (Assistant Settings > Actions > Image Generation)\n- Check that image generation provider is configured in Elvex (Settings > Apps > Image generation provider)\n- Ensure the assistant is published after enabling image generation`)
-          }
-          throw lastError
+          throw new Error('Airtable image generation completed but no image URL found')
         }
       }
+
+      if (fields.Status === 'Failed' || fields.Status === 'Error') {
+        const errorMsg = fields['Error Message'] || fields['Error'] || 'Airtable image generation failed'
+        throw new Error(errorMsg)
+      }
+
+      // Still processing, continue polling
+      if (attempt % 10 === 0) { // Log every 10th attempt (every 20 seconds)
+        console.log(`⏳ Image generation in progress (attempt ${attempt + 1}/${maxAttempts})...`)
+      }
     }
-    
-    // Should never reach here, but just in case
-    throw lastError || new Error('Failed to generate image with Elvex Assistant API')
+
+    throw new Error('Airtable image generation timed out after maximum attempts')
   } catch (error: any) {
-    console.error('❌ Error generating image with Elvex:', error)
-    throw new Error(`Failed to generate image with Elvex: ${error.message || 'Unknown error'}`)
+    console.error('❌ Error generating image via Airtable:', error)
+    throw new Error(`Failed to generate image via Airtable: ${error.message || 'Unknown error'}`)
   }
 }
 
@@ -405,20 +401,31 @@ export async function generateHoroscopeViaElvex(
     )
     console.log('✅ Horoscope text generated successfully')
 
-    // Note: Image generation is not available via Elvex API
-    // Image will be handled separately/elsewhere
+    // Generate image using Airtable (separate operation)
     const imagePrompt = request.imagePrompt
-    const imageUrl: string | null = null
+    let imageUrl: string | null = null
+    
+    if (imagePrompt) {
+      try {
+        console.log('🖼️ Generating image via Airtable...')
+        imageUrl = await generateImageViaAirtable(imagePrompt)
+        console.log('✅ Image generated successfully via Airtable')
+      } catch (imageError: any) {
+        // Image generation failed, but we still have the text
+        console.error('⚠️ Image generation via Airtable failed, but horoscope text is available:', imageError.message)
+        console.log('📝 Continuing with text-only horoscope (image will be null)')
+        // Don't throw - we want to return the text even if image fails
+      }
+    }
 
     const elapsed = Date.now() - startTime
-    console.log(`✅ Horoscope text generation completed in ${elapsed}ms`)
-    console.log('ℹ️ Image generation not available via Elvex API - will be handled separately')
+    console.log(`✅ Horoscope generation completed in ${elapsed}ms (text: ✅, image: ${imageUrl ? '✅' : '❌'})`)
 
     return {
       horoscope: textResult.horoscope,
       dos: textResult.dos,
       donts: textResult.donts,
-      imageUrl, // null - image generation not available via Elvex API
+      imageUrl, // null if image generation failed
       character_name: null,
       prompt: imagePrompt,
       slots: request.slots || {},
