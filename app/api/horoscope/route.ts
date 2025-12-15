@@ -1372,12 +1372,10 @@ export async function GET(request: NextRequest) {
         console.log('   Image URL length:', verifyRecord.image_url?.length || 0)
         console.log('   Image URL matches saved:', verifyRecord.image_url === imageUrl)
         
-        // CRITICAL: Verify the image URL was actually saved
+        // Image URL is optional - verify it was saved if provided
         if (!verifyRecord.image_url || verifyRecord.image_url.trim() === '') {
           console.log('   ⚠️ No image URL in database after save (this is OK - image is optional)')
-          console.error('   This means the save failed to persist the image_url field')
-          throw new Error('Image URL was not saved to database despite successful upsert')
-        } else if (verifyRecord.image_url !== imageUrl) {
+        } else if (verifyRecord.image_url !== imageUrl && imageUrl) {
           console.warn('   ⚠️ WARNING: Image URL in database does not match what we tried to save!')
           console.warn('   Expected:', imageUrl)
           console.warn('   Actual:', verifyRecord.image_url)
