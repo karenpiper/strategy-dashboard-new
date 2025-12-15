@@ -696,9 +696,9 @@ export async function generateHoroscopeViaElvex(
     console.log('✅ Horoscope text generated successfully')
 
     // Generate image using Airtable (separate operation)
+    // Note: Caption is handled separately by the avatar endpoint, not returned here
     const imagePrompt = request.imagePrompt
     let imageUrl: string | null = null
-    let imageCaption: string | null = null
     
     console.log('🔍 DEBUG: Image generation check:')
     console.log('   imagePrompt exists:', !!imagePrompt)
@@ -720,10 +720,9 @@ export async function generateHoroscopeViaElvex(
         console.log('📞 Calling generateImageViaAirtable() now...')
         const imageResult = await generateImageViaAirtable(imagePrompt, request.timezone)
         imageUrl = imageResult.imageUrl
-        imageCaption = imageResult.caption || null
+        // Note: Caption is handled separately by the avatar endpoint, not stored here
         console.log('✅ Image generated successfully via Airtable')
         console.log('   Image URL:', imageUrl ? imageUrl.substring(0, 100) + '...' : 'null')
-        console.log('   Caption:', imageCaption || 'not provided')
         console.log('🚀 ========== AIRTABLE IMAGE GENERATION COMPLETED SUCCESSFULLY ==========')
       } catch (imageError: any) {
         // Image generation failed, but we still have the text
