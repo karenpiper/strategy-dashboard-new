@@ -334,7 +334,13 @@ function formatDateInTimezone(timezone: string): string {
 }
 
 async function generateImageViaAirtable(prompt: string, timezone?: string): Promise<{ imageUrl: string; caption?: string | null }> {
+  console.log('🚀 ========== STARTING AIRTABLE IMAGE GENERATION ==========')
   console.log('🖼️ Generating image via Airtable...')
+  console.log('📝 PROMPT RECEIVED:')
+  console.log('   Prompt length:', prompt.length)
+  console.log('   Prompt preview (first 200 chars):', prompt.substring(0, 200))
+  console.log('   Prompt preview (last 200 chars):', prompt.substring(Math.max(0, prompt.length - 200)))
+  console.log('   Full prompt:', prompt)
   console.log('📋 Airtable configuration check:')
   console.log('   AIRTABLE_API_KEY:', process.env.AIRTABLE_API_KEY ? `${process.env.AIRTABLE_API_KEY.substring(0, 8)}...` : 'NOT SET')
   console.log('   AIRTABLE_IMAGE_BASE_ID:', process.env.AIRTABLE_IMAGE_BASE_ID || 'NOT SET')
@@ -496,6 +502,18 @@ To fix:
     console.log('   Record ID:', recordId)
     console.log('   Record fields:', JSON.stringify(createdRecord.fields, null, 2))
     console.log('   Full record data:', JSON.stringify(createdRecord, null, 2))
+    
+    // Verify the prompt was saved correctly
+    const savedPrompt = createdRecord.fields['Image Prompt']
+    console.log('🔍 VERIFICATION: Prompt saved in Airtable:')
+    console.log('   Saved prompt length:', savedPrompt?.length || 0)
+    console.log('   Saved prompt preview (first 200 chars):', savedPrompt?.substring(0, 200) || 'MISSING')
+    console.log('   Prompt matches sent prompt:', savedPrompt === prompt ? 'YES ✅' : 'NO ❌')
+    if (savedPrompt !== prompt) {
+      console.error('   ⚠️ WARNING: Saved prompt does not match sent prompt!')
+      console.error('   Sent prompt length:', prompt.length)
+      console.error('   Saved prompt length:', savedPrompt?.length || 0)
+    }
     
     // Verify the record was actually created by fetching it back
     console.log('🔍 Verifying record was created in Airtable...')
