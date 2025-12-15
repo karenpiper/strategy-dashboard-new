@@ -422,18 +422,17 @@ export async function generateImageViaAirtable(prompt: string, timezone?: string
           const queryData = await queryResponse.json()
           console.log(`   Found ${queryData.records?.length || 0} existing records`)
           
-          // Check if any existing record has a completed image
+          // Check if any existing record has an image (no Status field anymore)
           if (queryData.records && queryData.records.length > 0) {
             for (const record of queryData.records) {
-              const status = record.fields?.Status
               const imageField = record.fields?.Image
               const imageUrl = record.fields?.['Image URL']
               
-              console.log(`   Checking record ${record.id}: Status=${status}, hasImage=${!!imageField}, hasImageUrl=${!!imageUrl}`)
+              console.log(`   Checking record ${record.id}: hasImage=${!!imageField}, hasImageUrl=${!!imageUrl}`)
               
-              // If record is completed and has an image, use it
-              if (status === 'Completed' && (imageField || imageUrl)) {
-                console.log('✅ Found existing completed image in Airtable - using it')
+              // If record has an image, use it (regardless of status since Status field doesn't exist)
+              if (imageField || imageUrl) {
+                console.log('✅ Found existing image in Airtable - using it')
                 
                 // Extract image URL from attachment field or use Image URL field
                 let finalImageUrl = imageUrl
@@ -451,15 +450,19 @@ export async function generateImageViaAirtable(prompt: string, timezone?: string
               }
             }
             
-            // If we found records but none are completed, check if any are still pending
-            const pendingRecord = queryData.records.find((r: any) => r.fields?.Status === 'Pending' || r.fields?.Status === 'Processing')
-            if (pendingRecord) {
-              console.log('✅ Found existing pending/processing record - will poll for completion instead of creating new one')
-              console.log('   Record ID:', pendingRecord.id)
-              console.log('   Status:', pendingRecord.fields?.Status)
-              // Use the existing pending record ID and poll for completion
-              const recordId = pendingRecord.id
-              console.log('   Using existing pending record ID:', recordId)
+            // If we found records but none have images yet, use the most recent one and poll it
+            // This handles the case where image is still being generated
+            const recordWithoutImage = queryData.records.find((r: any) => {
+              const hasImage = r.fields?.Image || r.fields?.['Image URL']
+              return !hasImage
+            })
+            
+            if (recordWithoutImage) {
+              console.log('✅ Found existing record without image yet - will poll for completion instead of creating new one')
+              console.log('   Record ID:', recordWithoutImage.id)
+              // Use the existing record ID and poll for completion
+              const recordId = recordWithoutImage.id
+              console.log('   Using existing record ID:', recordId)
               
               // Don't create a new record - poll the existing one
               shouldCreateNewRecord = false
@@ -482,14 +485,13 @@ export async function generateImageViaAirtable(prompt: string, timezone?: string
                 
                 if (pollResponse.ok) {
                   const pollData = await pollResponse.json()
-                  const status = pollData.fields?.Status
                   const imageField = pollData.fields?.Image
                   const imageUrl = pollData.fields?.['Image URL']
                   
-                  console.log(`   Record status: ${status}, hasImage: ${!!imageField}, hasImageUrl: ${!!imageUrl}`)
+                  console.log(`   Record hasImage: ${!!imageField}, hasImageUrl: ${!!imageUrl}`)
                   
-                  if (status === 'Completed' && (imageField || imageUrl)) {
-                    console.log('✅ Existing pending record completed!')
+                  if (imageField || imageUrl) {
+                    console.log('✅ Existing record now has image!')
                     let finalImageUrl = imageUrl
                     if (!finalImageUrl && imageField && Array.isArray(imageField) && imageField.length > 0) {
                       finalImageUrl = imageField[0].url
@@ -502,12 +504,8 @@ export async function generateImageViaAirtable(prompt: string, timezone?: string
                         caption: pollData.fields?.['Character Name'] || pollData.fields?.['Caption'] || null,
                       }
                     }
-                  } else if (status === 'Failed' || status === 'Error') {
-                    console.log('   Record failed - will create new one')
-                    shouldCreateNewRecord = true
-                    break
                   }
-                  // If still pending/processing, continue polling
+                  // If still no image, continue polling
                 } else {
                   console.log(`   Poll failed: ${pollResponse.status}, will create new record`)
                   shouldCreateNewRecord = true
@@ -554,12 +552,12 @@ export async function generateImageViaAirtable(prompt: string, timezone?: string
     console.log(`   Prompt preview: ${prompt.substring(0, 100)}...`)
     
     // Airtable API requires records array format
+    // Note: Status field no longer exists in Airtable
     const requestBody: any = {
       records: [
         {
           fields: {
             'Image Prompt': prompt,
-            'Status': 'Pending',
             'Created At': createdAt,
           }
         }
