@@ -256,12 +256,13 @@ ${prompt}`
 /**
  * Format a date in a specific timezone as ISO string
  * @param timezone - IANA timezone identifier (e.g., "America/New_York")
- * @returns ISO string formatted in the specified timezone
+ * @returns ISO string with timezone offset (e.g., "2024-01-15T14:30:00-05:00")
  */
 function formatDateInTimezone(timezone: string): string {
   const now = new Date()
-  // Format date in the specified timezone
-  const formatter = new Intl.DateTimeFormat('en-US', {
+  
+  // Create a formatter for the specific timezone
+  const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,
     year: 'numeric',
     month: '2-digit',
@@ -272,19 +273,28 @@ function formatDateInTimezone(timezone: string): string {
     hour12: false
   })
   
-  // Get parts in the timezone
+  // Format the date parts in the timezone
   const parts = formatter.formatToParts(now)
-  const year = parts.find(p => p.type === 'year')?.value
-  const month = parts.find(p => p.type === 'month')?.value
-  const day = parts.find(p => p.type === 'day')?.value
-  const hour = parts.find(p => p.type === 'hour')?.value
-  const minute = parts.find(p => p.type === 'minute')?.value
-  const second = parts.find(p => p.type === 'second')?.value
+  const year = parts.find(p => p.type === 'year')?.value || ''
+  const month = parts.find(p => p.type === 'month')?.value || ''
+  const day = parts.find(p => p.type === 'day')?.value || ''
+  const hour = parts.find(p => p.type === 'hour')?.value || ''
+  const minute = parts.find(p => p.type === 'minute')?.value || ''
+  const second = parts.find(p => p.type === 'second')?.value || ''
   
-  // Create ISO string in the specified timezone
-  // Note: This creates a local time string, not a true ISO with timezone offset
-  // But Airtable will interpret it correctly if the field is set to the right timezone
-  return `${year}-${month}-${day}T${hour}:${minute}:${second}`
+  // Get timezone offset for the specific timezone
+  // Create a date string in the timezone and parse it to get offset
+  const dateInTz = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`)
+  const utcDate = new Date(dateInTz.toLocaleString('en-US', { timeZone: 'UTC' }))
+  const tzDate = new Date(dateInTz.toLocaleString('en-US', { timeZone: timezone }))
+  const offsetMs = tzDate.getTime() - utcDate.getTime()
+  const offsetHours = Math.floor(offsetMs / (1000 * 60 * 60))
+  const offsetMinutes = Math.abs(Math.floor((offsetMs % (1000 * 60 * 60)) / (1000 * 60)))
+  const offsetSign = offsetHours >= 0 ? '+' : '-'
+  const offsetStr = `${offsetSign}${String(Math.abs(offsetHours)).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`
+  
+  // Return ISO string with timezone offset
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}${offsetStr}`
 }
 
 async function generateImageViaAirtable(prompt: string, timezone?: string): Promise<string> {
