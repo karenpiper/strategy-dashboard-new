@@ -450,12 +450,15 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    if (!isFromToday) {
+    // CRITICAL: If we reach here, we have a horoscope but no image OR image is from different day
+    // Check if image exists but is from different day - don't regenerate, just return error
+    if (cachedHoroscope.image_url && cachedHoroscope.image_url.trim() !== '' && !isFromToday) {
       console.log('⚠️ Image found but was generated on a different day')
       console.log('   Cached date:', cachedHoroscope.date)
       console.log('   Generated at:', cachedHoroscope.generated_at)
-      console.log('   Today (EST):', todayDate)
-      console.log('   Will need to regenerate via main horoscope route')
+      console.log('   Today (user timezone):', todayDate)
+      console.log('   Is from today:', isFromToday)
+      console.log('   ⚠️ NOT regenerating - returning error instead')
       return NextResponse.json(
         { 
           error: 'Image needs regeneration. Please generate horoscope first by calling /api/horoscope endpoint.',
@@ -465,6 +468,8 @@ export async function GET(request: NextRequest) {
       )
     }
     
+    // Only generate if image_url is truly empty/null
+    // This prevents regenerating when image already exists
     if (!cachedHoroscope.image_url || cachedHoroscope.image_url.trim() === '') {
       console.log('⚠️ Horoscope exists but image_url is null or empty')
       console.log('   Attempting to generate image via Airtable...')
