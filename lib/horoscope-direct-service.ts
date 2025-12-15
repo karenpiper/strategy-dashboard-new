@@ -10,21 +10,34 @@
 import { transformHoroscopeToCoStarStyle } from './openai'
 import OpenAI from 'openai'
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error('OPENAI_API_KEY is not set in environment variables')
+// Lazy initialization - only create clients when actually needed
+// This allows the module to be imported even if OPENAI_API_KEY is not set
+// (e.g., when using Elvex instead of OpenAI)
+let openai: OpenAI | null = null
+let fallbackOpenai: OpenAI | null = null
+
+function getOpenAIClient(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not set in environment variables')
+  }
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  }
+  return openai
 }
 
-// Primary OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
-// Fallback OpenAI client (optional)
-let fallbackOpenai: OpenAI | null = null
-if (process.env.OPENAI_API_KEY_FALLBACK) {
-  fallbackOpenai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY_FALLBACK,
-  })
+function getFallbackOpenAIClient(): OpenAI | null {
+  if (!process.env.OPENAI_API_KEY_FALLBACK) {
+    return null
+  }
+  if (!fallbackOpenai) {
+    fallbackOpenai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY_FALLBACK,
+    })
+  }
+  return fallbackOpenai
 }
 
 /**
@@ -33,8 +46,9 @@ if (process.env.OPENAI_API_KEY_FALLBACK) {
 async function callOpenAIWithFallback<T>(
   apiCall: (client: OpenAI) => Promise<T>
 ): Promise<T> {
+  const primaryClient = getOpenAIClient()
   try {
-    return await apiCall(openai)
+    return await apiCall(primaryClient)
   } catch (error: any) {
     // Extract error message from various possible locations
     const errorMessage = error?.response?.data?.error?.message || 
@@ -58,11 +72,12 @@ async function callOpenAIWithFallback<T>(
                         lowerMessage.includes('usage limit')
     
     // If we have a fallback key and hit quota/rate limits, try it
-    if ((isQuotaError || status === 429) && fallbackOpenai) {
+    const fallbackClient = getFallbackOpenAIClient()
+    if ((isQuotaError || status === 429) && fallbackClient) {
       console.log('⚠️ Primary OpenAI API key hit limits, trying fallback key...')
       console.log('   Error:', errorMessage.substring(0, 200))
       try {
-        return await apiCall(fallbackOpenai)
+        return await apiCall(fallbackClient)
       } catch (fallbackError: any) {
         console.error('❌ Fallback API key also failed:', fallbackError?.message || fallbackError)
         // If fallback also fails with quota error, throw a clear message
