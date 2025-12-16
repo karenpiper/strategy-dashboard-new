@@ -1314,7 +1314,7 @@ export default function TeamDashboard() {
       const timeoutId = setTimeout(() => {
         console.log('⏳ Token loading timeout - will retry when token is available')
         if (googleCalendarToken) {
-          fetchCalendarEvents()
+        fetchCalendarEvents()
         }
       }, 2000) // Wait 2 seconds for token to load
       
@@ -1362,147 +1362,43 @@ export default function TeamDashboard() {
   const hasFetchedRef = useRef(false) // Track if we've successfully fetched data
   
   useEffect(() => {
-    let isMounted = true // Prevent state updates if component unmounts
-    
-    async function fetchHoroscopeData() {
-      // Only fetch if user is authenticated
       if (!user) {
-        if (isMounted) {
           setHoroscopeLoading(false)
           setHoroscopeImageLoading(false)
           setHoroscopeError('Please log in to view your horoscope')
           setHoroscopeImageError('Please log in to view your horoscope image')
-        }
         return
       }
 
-      // CRITICAL: Don't re-fetch if we already have data for today
-      // This prevents the horoscope from disappearing when component re-renders
-      if (horoscope && horoscopeImage && hasFetchedRef.current) {
-        console.log('✅ Already have horoscope data, skipping fetch')
-        if (isMounted) {
-          setHoroscopeLoading(false)
-          setHoroscopeImageLoading(false)
-        }
-        return
-      }
-
-      // Prevent multiple simultaneous requests
+    let isMounted = true
+    
+    async function fetchHoroscopeData() {
       if (isFetchingRef.current) {
-        console.log('⏸️ Request already in progress, skipping duplicate request')
         return
       }
       
       isFetchingRef.current = true
-      console.log('🚀 Starting horoscope fetch...')
-
-      // Don't redirect to profile setup from here - let the API handle it
-      console.log('Fetching horoscope data for authenticated user...')
-
-      // CRITICAL: Only set loading states if we don't already have data
-      // This prevents clearing existing data during re-fetch
-      if (isMounted && !horoscope) {
         setHoroscopeLoading(true)
-      }
-      if (isMounted && !horoscopeImage) {
         setHoroscopeImageLoading(true)
-      }
-      // Don't clear errors if we're just refreshing
-      if (isMounted && !horoscope && !horoscopeImage) {
         setHoroscopeError(null)
         setHoroscopeImageError(null)
-      }
       
       try {
-        // Fetch horoscope text first (it includes image_url from n8n)
+        // Fetch horoscope text
         const textResponse = await fetch('/api/horoscope')
-        
-        // Check if response is ok BEFORE reading the body
-        const isTextResponseOk = textResponse.ok
-        
-        // Process text response first to get image URL
-        // Read response body once - clone if we need to check status after
-        let textData
-        try {
-          textData = await textResponse.json()
-        } catch (jsonError: any) {
-          // If JSON parsing fails, try to get error message
-          const errorText = await textResponse.text().catch(() => 'Unknown error')
-          console.error('❌ Failed to parse horoscope response as JSON:', jsonError)
-          console.error('   Response text:', errorText.substring(0, 500))
-          throw new Error(`Failed to parse horoscope response: ${jsonError.message}`)
-        }
-        
-        // Always fetch avatar endpoint independently (images are handled separately from text)
-        // Horoscope endpoint only returns text, avatar endpoint handles all images
-        // IMPORTANT: Don't await avatar endpoint - fetch it in parallel but don't block text display
-        let imageResponse = null
-        let imageData = null
-        let isImageResponseOk = false
-        
-        // Start avatar fetch in parallel (don't await yet - process text first)
-        const avatarFetchPromise = isTextResponseOk && horoscopeAvatarEnabled
-          ? fetch('/api/avatar')
-              .then(async (response) => {
-                console.log('Avatar endpoint response received:', response.status, response.statusText)
-                const isOk = response.ok
-                try {
-                  const data = await response.json()
-                  return { response, data, isOk, error: null }
-                } catch (jsonError: any) {
-                  const errorText = await response.text().catch(() => 'Unknown error')
-                  console.error('❌ Failed to parse image response as JSON:', jsonError)
-                  return { response, data: { error: `Failed to parse: ${jsonError.message}` }, isOk, error: jsonError }
-                }
-              })
-              .catch((error) => {
-                console.error('❌ Avatar endpoint fetch failed:', error)
-                return { response: null, data: { error: error.message }, isOk: false, error }
-              })
-          : Promise.resolve({ response: null, data: null, isOk: false, error: null })
-        
-        // Process text response immediately (don't wait for avatar)
-        // Avatar will be processed after text is displayed
-        
-        if (!isMounted) {
-          isFetchingRef.current = false
-          return // Don't process if component unmounted
-        }
-        
-        // Process text response immediately (don't wait for avatar)
-        console.log('⏱️ Processing text response at:', new Date().toISOString())
-        console.log('   Response status:', textResponse.status, textResponse.statusText)
-        console.log('   Response ok:', textResponse.ok)
+        const textData = await textResponse.json()
         
         if (!textResponse.ok) {
-          console.error('❌ Horoscope API error:', {
-            status: textResponse.status,
-            statusText: textResponse.statusText,
-            error: textData.error,
-            code: textData.code,
-            details: textData.details,
-            fullResponse: textData
-          })
           if (textResponse.status === 401) {
             setHoroscopeError('Please log in to view your horoscope')
           } else if (textResponse.status === 404 && textData.error?.includes('profile')) {
-            // Profile setup needed - show modal instead of redirecting
             if (user && !showProfileModal) {
               setShowProfileModal(true)
             }
           } else {
-            // Show detailed error message to user
-            const errorMsg = textData.error || textData.details || 'Failed to load horoscope'
-            console.error('   Setting error message:', errorMsg)
-            setHoroscopeError(errorMsg)
+            setHoroscopeError(textData.error || textData.details || 'Failed to load horoscope')
           }
         } else {
-          console.log('Horoscope data received:', textData)
-          console.log('   Has horoscope_text:', !!textData.horoscope_text)
-          console.log('   horoscope_text length:', textData.horoscope_text?.length || 0)
-          console.log('   star_sign:', textData.star_sign)
-          
-          // Only set today's horoscope - historical horoscopes remain in database
           if (isMounted) {
             setHoroscope({
               star_sign: textData.star_sign,
@@ -1510,222 +1406,98 @@ export default function TeamDashboard() {
               horoscope_dos: textData.horoscope_dos || [],
               horoscope_donts: textData.horoscope_donts || [],
             })
-            // Generate silly character name based on star sign
             if (textData.star_sign) {
-              // Use character_name from API if available, otherwise generate (for backwards compatibility)
               setCharacterName(textData.character_name || generateSillyCharacterName(textData.star_sign))
             }
-            
-            // Clear loading state for horoscope text IMMEDIATELY
-            console.log('✅ Setting horoscope data and clearing loading state')
             setHoroscopeLoading(false)
             setHoroscopeError(null)
-            hasFetchedRef.current = true // Mark as fetched
-            
-            // Horoscope endpoint no longer returns image_url - images come from avatar endpoint
-            // Image will be processed from avatarFetchPromise below
+            hasFetchedRef.current = true
           }
         }
         
-        // Now await avatar response (text is already displayed)
-        console.log('⏱️ Waiting for avatar endpoint response...')
-        const avatarResult = await avatarFetchPromise
-        imageResponse = avatarResult.response
-        imageData = avatarResult.data
-        isImageResponseOk = avatarResult.isOk
-        console.log('⏱️ Avatar endpoint response received at:', new Date().toISOString())
-        console.log('⏱️ Avatar data type:', typeof imageData)
-        console.log('⏱️ Avatar data:', JSON.stringify(imageData).substring(0, 500))
-        if (imageData && typeof imageData === 'object' && 'character_name' in imageData) {
-          console.log('⏱️ Character name in response:', imageData.character_name)
-          console.log('⏱️ Character name type:', typeof imageData.character_name)
-          console.log('⏱️ Character name stringified:', JSON.stringify(imageData.character_name))
-        }
-        
-        // Process image response (already parsed above if fetched)
-        // imageData is already set above if imageResponse exists
-        
-        if (imageResponse && !isImageResponseOk) {
-          console.error('Horoscope image API error:', imageResponse.status, imageData)
-          if (imageResponse.status === 401) {
-            setHoroscopeImageError('Please log in to view your horoscope image')
-          } else if (imageResponse.status === 402) {
-            // Payment required / billing limit
-            setHoroscopeImageError('OpenAI billing limit reached. Please check your OpenAI account billing settings.')
-          } else if (imageResponse.status === 404 && imageData.error?.includes('profile')) {
-            // Profile setup needed - will be handled by text response redirect
-            setHoroscopeImageError('Please complete your profile to view your horoscope image')
-          } else {
-            setHoroscopeImageError(imageData.error || 'Failed to load horoscope image')
-          }
-        } else if (imageData && imageData.image_url) {
-          console.log('Horoscope image received from avatar endpoint:', imageData)
-          console.log('   Image URL:', imageData.image_url)
-          console.log('   Image URL length:', imageData.image_url?.length || 0)
-          console.log('   Character name type:', typeof imageData.character_name)
-          console.log('   Character name value:', imageData.character_name)
-          console.log('   Character name stringified:', JSON.stringify(imageData.character_name))
-          console.log('Reasoning received:', imageData.prompt_slots_reasoning)
-          // Only set today's image - historical images remain in database
-          // Only set image if avatar is enabled
-          if (isMounted && horoscopeAvatarEnabled) {
-            console.log('   Setting image from avatar endpoint')
-            setHoroscopeImage(imageData.image_url)
-            setHoroscopeImagePrompt(imageData.image_prompt || null)
-            setHoroscopeImageSlots(imageData.prompt_slots || null)
-            setHoroscopeImageSlotsLabels(imageData.prompt_slots_labels || null)
-            setHoroscopeImageSlotsReasoning(imageData.prompt_slots_reasoning || null)
-            // Set character name - should be a clean string from API
-            const caption = imageData.character_name
-            console.log('   📝 Processing character_name from API')
-            console.log('      Value:', caption)
-            console.log('      Type:', typeof caption)
-            console.log('      Is String:', typeof caption === 'string')
-            console.log('      Length:', typeof caption === 'string' ? caption.length : 0)
-            console.log('      Truthy:', !!caption)
-            if (typeof caption === 'string' && caption.length > 0) {
-              console.log('   ✅ Setting character name:', caption)
-              setHoroscopeImageCaption(caption)
+        // Fetch avatar in parallel
+        if (horoscopeAvatarEnabled && textResponse.ok) {
+          const avatarResponse = await fetch('/api/avatar')
+          const avatarData = await avatarResponse.json()
+          
+          if (!avatarResponse.ok) {
+            if (avatarResponse.status === 401) {
+              setHoroscopeImageError('Please log in to view your horoscope image')
             } else {
-              console.log('   ⚠️ Character name is not a valid string, setting to null')
-              console.log('      Caption value was:', caption)
-              setHoroscopeImageCaption(null)
+              setHoroscopeImageError(avatarData.error || 'Failed to load horoscope image')
             }
-            setHoroscopeImageLoading(false)
-            setHoroscopeImageError(null)
-            console.log('Reasoning state set to:', imageData.prompt_slots_reasoning)
-            hasFetchedRef.current = true // Mark as fetched
-          } else if (!horoscopeAvatarEnabled) {
-            // Avatar is disabled, clear image state
-            setHoroscopeImage(null)
-            setHoroscopeImageLoading(false)
-            setHoroscopeImageError(null)
-          }
-        } else if (imageData && imageData.generating) {
-          // Image is being generated in background - poll again after a delay
-          console.log('⏳ Image is generating in background, will poll again...')
-          console.log('   Message:', imageData.message)
-          // Keep loading state active and poll again after 5 seconds
-          setTimeout(async () => {
+          } else if (avatarData.image_url) {
             if (isMounted && horoscopeAvatarEnabled) {
-              try {
-                const pollResponse = await fetch('/api/avatar')
-                if (pollResponse.ok) {
-                  const pollData = await pollResponse.json()
-                  if (pollData.image_url) {
-                    console.log('✅ Image ready after polling:', pollData.image_url)
-                    setHoroscopeImage(pollData.image_url)
-                    setHoroscopeImagePrompt(pollData.image_prompt || null)
-                    setHoroscopeImageSlots(pollData.prompt_slots || null)
-                    setHoroscopeImageSlotsLabels(pollData.prompt_slots_labels || null)
-                    setHoroscopeImageSlotsReasoning(pollData.prompt_slots_reasoning || null)
-                    // Set character name from poll response
-                    const pollCaption = pollData.character_name
-                    if (typeof pollCaption === 'string' && pollCaption.length > 0) {
-                      setHoroscopeImageCaption(pollCaption)
-                    } else {
-                      setHoroscopeImageCaption(null)
-                    }
-                    setHoroscopeImageLoading(false)
-                    setHoroscopeImageError(null)
-                    hasFetchedRef.current = true
-                  } else if (pollData.generating) {
-                    // Still generating, poll again after another 5 seconds
-                    // IMPORTANT: Only poll the avatar endpoint, don't re-fetch horoscope text
-                    console.log('⏳ Still generating, will poll avatar endpoint again...')
-                    setTimeout(async () => {
-                      if (isMounted && horoscopeAvatarEnabled) {
-                        try {
-                          const nextPollResponse = await fetch('/api/avatar')
-                          if (nextPollResponse.ok) {
-                            const nextPollData = await nextPollResponse.json()
-                            if (nextPollData.image_url) {
-                              console.log('✅ Image ready after additional polling:', nextPollData.image_url)
-                              setHoroscopeImage(nextPollData.image_url)
-                              setHoroscopeImagePrompt(nextPollData.image_prompt || null)
-                              setHoroscopeImageSlots(nextPollData.prompt_slots || null)
-                              setHoroscopeImageSlotsLabels(nextPollData.prompt_slots_labels || null)
-                              setHoroscopeImageSlotsReasoning(nextPollData.prompt_slots_reasoning || null)
-                              const nextPollCaption = nextPollData.character_name
-                              if (typeof nextPollCaption === 'string' && nextPollCaption.length > 0) {
-                                setHoroscopeImageCaption(nextPollCaption)
-                              } else {
-                                setHoroscopeImageCaption(null)
-                              }
-                              setHoroscopeImageLoading(false)
-                              setHoroscopeImageError(null)
-                              hasFetchedRef.current = true
-                            } else if (nextPollData.generating) {
-                              // Still generating, continue polling (max 10 attempts = 50 seconds)
-                              console.log('⏳ Still generating, will continue polling...')
-                              // Recursively poll again (but only avatar endpoint, not full fetch)
-                              setTimeout(async () => {
-                                if (isMounted && horoscopeAvatarEnabled) {
-                                  const finalPollResponse = await fetch('/api/avatar')
-                                  if (finalPollResponse.ok) {
-                                    const finalPollData = await finalPollResponse.json()
-                                    if (finalPollData.image_url) {
-                                      setHoroscopeImage(finalPollData.image_url)
-                                      setHoroscopeImagePrompt(finalPollData.image_prompt || null)
-                                      setHoroscopeImageSlots(finalPollData.prompt_slots || null)
-                                      setHoroscopeImageSlotsLabels(finalPollData.prompt_slots_labels || null)
-                                      setHoroscopeImageSlotsReasoning(finalPollData.prompt_slots_reasoning || null)
-                                      const finalPollCaption = finalPollData.character_name
-                                      if (typeof finalPollCaption === 'string' && finalPollCaption.length > 0) {
-                                        setHoroscopeImageCaption(finalPollCaption)
-                                      } else {
-                                        setHoroscopeImageCaption(null)
-                                      }
-                                      setHoroscopeImageLoading(false)
-                                      setHoroscopeImageError(null)
-                                      hasFetchedRef.current = true
-                                    } else {
-                                      setHoroscopeImageLoading(false)
-                                      setHoroscopeImageError('Image generation is taking longer than expected. Please refresh the page.')
-                                    }
-                                  }
-                                }
-                              }, 5000)
-                            } else {
-                              setHoroscopeImageLoading(false)
-                              setHoroscopeImageError('Image generation is taking longer than expected. Please try again later.')
-                            }
-                          }
-                        } catch (nextPollError) {
-                          console.error('Error in additional polling:', nextPollError)
-                          setHoroscopeImageLoading(false)
-                          setHoroscopeImageError('Failed to check image status. Please try again later.')
-                        }
-                      }
-                    }, 5000)
-                  } else {
-                    // Generation failed or completed without image
-                    setHoroscopeImageLoading(false)
-                    setHoroscopeImageError('Image generation is taking longer than expected. Please try again later.')
-                  }
-                }
-              } catch (pollError) {
-                console.error('Error polling for image:', pollError)
-                setHoroscopeImageLoading(false)
-                setHoroscopeImageError('Failed to check image status. Please try again later.')
+              setHoroscopeImage(avatarData.image_url)
+              setHoroscopeImagePrompt(avatarData.image_prompt || null)
+              setHoroscopeImageSlots(avatarData.prompt_slots || null)
+              setHoroscopeImageSlotsLabels(avatarData.prompt_slots_labels || null)
+              setHoroscopeImageSlotsReasoning(avatarData.prompt_slots_reasoning || null)
+              const caption = avatarData.character_name
+              if (typeof caption === 'string' && caption.length > 0) {
+                setHoroscopeImageCaption(caption)
+              } else {
+                setHoroscopeImageCaption(null)
               }
+              setHoroscopeImageLoading(false)
+              setHoroscopeImageError(null)
+              hasFetchedRef.current = true
             }
-          }, 5000)
-        } else {
-          console.warn('⚠️ No image URL found in avatar response')
-          console.warn('   Image data:', imageData)
-          // Still clear loading even if no image
+          } else if (avatarData.generating) {
+            // Poll for image when ready
+            const pollForImage = async (attempt = 0) => {
+              if (attempt >= 10 || !isMounted) {
+                setHoroscopeImageLoading(false)
+                setHoroscopeImageError('Image generation is taking longer than expected. Please refresh the page.')
+                return
+              }
+              
+              setTimeout(async () => {
+                if (!isMounted || !horoscopeAvatarEnabled) return
+                
+                try {
+                  const pollResponse = await fetch('/api/avatar')
+                  if (pollResponse.ok) {
+                    const pollData = await pollResponse.json()
+                    if (pollData.image_url) {
+                      setHoroscopeImage(pollData.image_url)
+                      setHoroscopeImagePrompt(pollData.image_prompt || null)
+                      setHoroscopeImageSlots(pollData.prompt_slots || null)
+                      setHoroscopeImageSlotsLabels(pollData.prompt_slots_labels || null)
+                      setHoroscopeImageSlotsReasoning(pollData.prompt_slots_reasoning || null)
+                      const pollCaption = pollData.character_name
+                      if (typeof pollCaption === 'string' && pollCaption.length > 0) {
+                        setHoroscopeImageCaption(pollCaption)
+                      } else {
+                        setHoroscopeImageCaption(null)
+                      }
+                      setHoroscopeImageLoading(false)
+                      setHoroscopeImageError(null)
+                      hasFetchedRef.current = true
+                    } else if (pollData.generating) {
+                      pollForImage(attempt + 1)
+                    } else {
+                      setHoroscopeImageLoading(false)
+                      setHoroscopeImageError('Image generation is taking longer than expected. Please try again later.')
+                    }
+                  }
+                } catch (pollError) {
+                  console.error('Error polling for image:', pollError)
+                  setHoroscopeImageLoading(false)
+                  setHoroscopeImageError('Failed to check image status. Please try again later.')
+                }
+              }, 5000)
+            }
+            
+            pollForImage()
+          } else {
+            setHoroscopeImageLoading(false)
+          }
+        } else if (!horoscopeAvatarEnabled) {
+          setHoroscopeImage(null)
           setHoroscopeImageLoading(false)
+          setHoroscopeImageError(null)
         }
-        
-        // Final check - ensure loading states are cleared
-        console.log('📊 Final state check:', {
-          horoscopeLoading,
-          horoscopeImageLoading,
-          hasHoroscope: !!horoscope,
-          hasHoroscopeText: !!horoscope?.horoscope_text,
-          hasHoroscopeImage: !!horoscopeImage
-        })
       } catch (error: any) {
         console.error('Error fetching horoscope data:', error)
         setHoroscopeError('Failed to load horoscope: ' + (error.message || 'Unknown error'))
@@ -1734,30 +1506,18 @@ export default function TeamDashboard() {
         setHoroscopeLoading(false)
         setHoroscopeImageLoading(false)
       } finally {
-        isFetchingRef.current = false // Reset fetching flag
-        if (isMounted) {
-          // Double-check loading states are cleared
-          console.log('🔚 Finally block - ensuring loading states are cleared')
-          setHoroscopeLoading(false)
-          setHoroscopeImageLoading(false)
-        }
+        isFetchingRef.current = false
       }
     }
     
-    // Only fetch if not already fetching and we don't have data
-    // Only fetch if not already fetching and we don't have data
-    // Use refs to check state without triggering re-renders
-    if (!isFetchingRef.current && !hasFetchedRef.current) {
+    if (!isFetchingRef.current) {
       fetchHoroscopeData()
-    } else {
-      console.log('⏸️ Skipping fetch - already in progress or already fetched')
     }
     
     return () => {
-      isMounted = false // Cleanup on unmount
-      // Don't reset isFetchingRef here - let it complete naturally
+      isMounted = false
     }
-  }, [user?.id]) // Only depend on user.id - don't include horoscope/horoscopeImage to prevent re-fetches
+  }, [user?.id])
 
   // Time-based gradient for hero section (chaos mode - vibrant colors)
   const getTimeBasedGradient = (): { bg: string; text: string; accent: string } => {
