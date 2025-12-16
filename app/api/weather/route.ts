@@ -23,13 +23,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const lat = searchParams.get('lat')
     const lon = searchParams.get('lon')
-
-    if (!lat || !lon) {
-      return NextResponse.json(
-        { error: 'Latitude and longitude are required' },
-        { status: 400 }
-      )
-    }
+    const location = searchParams.get('location') // Accept location string directly
 
     // Get WeatherAPI.com API key from environment variables
     const apiKey = process.env.WEATHERAPI_KEY || process.env.NEXT_PUBLIC_WEATHERAPI_KEY
@@ -41,12 +35,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('Fetching weather from WeatherAPI.com...')
-    console.log('WeatherAPI key status:', apiKey ? `${apiKey.substring(0, 4)}...` : 'NOT SET')
+    // Determine query parameter - prefer location string, fallback to lat/lon
+    let queryParam: string
+    if (location) {
+      queryParam = location
+      console.log('Fetching weather for location:', location)
+    } else if (lat && lon) {
+      queryParam = `${lat},${lon}`
+      console.log('Fetching weather for coordinates:', lat, lon)
+    } else {
+      return NextResponse.json(
+        { error: 'Either location string or latitude/longitude are required' },
+        { status: 400 }
+      )
+    }
 
     // WeatherAPI.com current weather endpoint
-    // q parameter can be lat,lon or city name
-    const weatherUrl = `${WEATHERAPI_BASE}/current.json?key=${apiKey}&q=${lat},${lon}&aqi=no`
+    // q parameter can be lat,lon, city name, or location string
+    const weatherUrl = `${WEATHERAPI_BASE}/current.json?key=${apiKey}&q=${encodeURIComponent(queryParam)}&aqi=no`
     console.log('Fetching weather from WeatherAPI.com...')
     const weatherResponse = await fetch(weatherUrl)
 

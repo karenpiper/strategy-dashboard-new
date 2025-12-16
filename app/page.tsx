@@ -686,39 +686,29 @@ export default function TeamDashboard() {
         
         if (!profile?.location) {
           setTemperature(null)
-        setWeatherCondition(null)
+          setWeatherCondition(null)
           return
         }
         
-        // Try to get coordinates from location string
-        // First, try to geocode the location
-        const geocodeResponse = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(profile.location)}&limit=1`,
-          {
-            headers: {
-              'User-Agent': 'Strategy Dashboard App'
-            }
+        // Fetch weather directly using location string (WeatherAPI supports this)
+        // This is much faster than geocoding first
+        const weatherResponse = await fetch(`/api/weather?location=${encodeURIComponent(profile.location)}`)
+        if (weatherResponse.ok) {
+          const weatherData = await weatherResponse.json()
+          console.log('[Weather] API response:', weatherData)
+          if (weatherData.temperature) {
+            const tempStr = `${weatherData.temperature}°F`
+            console.log('[Weather] Setting temperature:', tempStr)
+            setTemperature(tempStr)
           }
-        )
-        
-        if (geocodeResponse.ok) {
-          const geocodeData = await geocodeResponse.json()
-          if (geocodeData && geocodeData.length > 0) {
-            const lat = geocodeData[0].lat
-            const lon = geocodeData[0].lon
-            
-            // Fetch weather using coordinates
-            const weatherResponse = await fetch(`/api/weather?lat=${lat}&lon=${lon}`)
-            if (weatherResponse.ok) {
-              const weatherData = await weatherResponse.json()
-              if (weatherData.temperature) {
-                setTemperature(`${weatherData.temperature}°F`)
-              }
-              if (weatherData.condition) {
-                setWeatherCondition(weatherData.condition.toLowerCase())
-              }
-            }
+          if (weatherData.condition) {
+            const conditionStr = weatherData.condition.toLowerCase()
+            console.log('[Weather] Setting condition:', conditionStr)
+            setWeatherCondition(conditionStr)
           }
+        } else {
+          const errorText = await weatherResponse.text()
+          console.log('[Weather] API error:', weatherResponse.status, errorText)
         }
       } catch (err) {
         console.error('Error fetching weather:', err)
@@ -1325,9 +1315,12 @@ export default function TeamDashboard() {
               setHoroscopeImageSlotsLabels(avatarData.prompt_slots_labels || null)
               setHoroscopeImageSlotsReasoning(avatarData.prompt_slots_reasoning || null)
               const caption = avatarData.character_name
+              console.log('[Avatar] Character name from API:', caption, 'Type:', typeof caption)
               if (typeof caption === 'string' && caption.length > 0) {
+                console.log('[Avatar] Setting caption:', caption)
                 setHoroscopeImageCaption(caption)
               } else {
+                console.log('[Avatar] No valid caption, clearing')
                 setHoroscopeImageCaption(null)
               }
               setHoroscopeImageLoading(false)
@@ -1344,7 +1337,7 @@ export default function TeamDashboard() {
               setTimeout(async () => {
                 if (!isMounted || !horoscopeAvatarEnabled) return
                 
-                try {
+                  try {
                   const pollResponse = await fetch('/api/avatar')
                   if (pollResponse.ok) {
                     const pollData = await pollResponse.json()
@@ -2083,15 +2076,17 @@ export default function TeamDashboard() {
                         : `It's ${todayDate || 'Loading...'}`
                       }
                     </p>
-                    {(temperature || weatherCondition) && (
+                    {temperature && (
                       <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
-                        {mode === 'code' 
-                          ? `${temperature || ''}${temperature && weatherCondition ? ' and ' : ''}${weatherCondition ? weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1) : ''}`
-                          : `${temperature || ''}${temperature && weatherCondition ? ' and ' : ''}${weatherCondition ? weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1) : ''}`
-                        }
+                        {temperature}
                       </p>
                     )}
-                    {horoscopeImage && horoscopeImageCaption && (
+                    {weatherCondition && (
+                      <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
+                        {weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1)}
+                      </p>
+                    )}
+                    {horoscopeImageCaption && (
                       <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
                         {horoscopeImageCaption}
                       </p>

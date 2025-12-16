@@ -83,10 +83,35 @@ async function checkAirtableForImage(userId: string, date: string, timezone: str
         }
         
         if (finalImageUrl) {
-          const caption = record.fields?.['Caption'] || record.fields?.['Character Name'] || null
+          // Try multiple possible field names (case variations)
+          let caption = record.fields?.['Caption'] 
+            || record.fields?.['caption'] 
+            || record.fields?.['Character Name'] 
+            || record.fields?.['character name']
+            || record.fields?.['CharacterName']
+            || record.fields?.['characterName']
+            || null
+          
+          // If not found, search for any field containing "caption" or "character" (case insensitive)
+          if (!caption && record.fields) {
+            const fieldKeys = Object.keys(record.fields)
+            const captionField = fieldKeys.find(key => 
+              key.toLowerCase().includes('caption') || 
+              key.toLowerCase().includes('character')
+            )
+            if (captionField) {
+              caption = record.fields[captionField]
+            }
+          }
+          
+          console.log(`[Avatar API] Found image for user ${userId}, date ${date}`)
+          console.log(`[Avatar API] Available fields:`, Object.keys(record.fields || {}))
+          console.log(`[Avatar API] Caption value:`, caption)
+          console.log(`[Avatar API] Caption type:`, typeof caption)
+          
           return {
             imageUrl: finalImageUrl,
-            caption: caption && typeof caption === 'string' ? caption : ''
+            caption: caption && typeof caption === 'string' ? caption : (caption ? String(caption) : '')
           }
         }
       }
