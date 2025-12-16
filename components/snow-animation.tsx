@@ -12,7 +12,11 @@ interface Snowflake {
   opacity: number
 }
 
-export function SnowAnimation() {
+interface SnowAnimationProps {
+  enabled?: boolean
+}
+
+export function SnowAnimation({ enabled = true }: SnowAnimationProps) {
   const [snowflakes, setSnowflakes] = useState<Snowflake[]>([])
 
   useEffect(() => {
@@ -37,6 +41,10 @@ export function SnowAnimation() {
 
     generateSnowflakes()
   }, [])
+
+  if (!enabled) {
+    return null
+  }
 
   return (
     <div className="snow-container" aria-hidden="true">

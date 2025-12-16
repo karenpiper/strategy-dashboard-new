@@ -4,9 +4,10 @@ import { Analytics } from '@vercel/analytics/next'
 import { ModeProvider } from '@/contexts/mode-context'
 import { AuthProvider } from '@/contexts/auth-context'
 import { PermissionsProvider } from '@/contexts/permissions-context'
+import { SnowProvider } from '@/contexts/snow-context'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AnalyticsProvider } from '@/components/analytics-provider'
-import { SnowAnimation } from '@/components/snow-animation'
+import { SnowAnimationWrapper } from '@/components/snow-animation-wrapper'
 import './globals.css'
 
 const raleway = Raleway({ 
@@ -82,14 +83,16 @@ export default function RootLayout({
           <AuthProvider>
             <PermissionsProvider>
               <ModeProvider>
-                <AnalyticsProvider>
-                  {children}
-                </AnalyticsProvider>
+                <SnowProvider>
+                  <AnalyticsProvider>
+                    {children}
+                  </AnalyticsProvider>
+                  <SnowAnimationWrapper />
+                </SnowProvider>
               </ModeProvider>
             </PermissionsProvider>
           </AuthProvider>
         </ThemeProvider>
-        <SnowAnimation />
         <Analytics />
       </body>
     </html>
