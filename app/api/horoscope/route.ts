@@ -78,6 +78,8 @@ export async function GET(request: NextRequest) {
     const userTimezone = (profile.timezone ?? 'America/New_York') as string
     const todayDate = getTodayDateInTimezone(userTimezone)
     
+    console.log(`[Horoscope API] User: ${userId}, Timezone: ${userTimezone}, Today's date: ${todayDate}`)
+    
     // Check database for cached horoscope
     const { data: cachedHoroscope, error: cacheError } = await supabaseAdmin
       .from('horoscopes')
@@ -94,8 +96,11 @@ export async function GET(request: NextRequest) {
       )
     }
     
+    console.log(`[Horoscope API] Cached horoscope found: ${!!cachedHoroscope}, Date in cache: ${cachedHoroscope?.date}, Matches today: ${cachedHoroscope?.date === todayDate}`)
+    
     // Return cached horoscope if found and has text
     if (cachedHoroscope && cachedHoroscope.horoscope_text && cachedHoroscope.date === todayDate) {
+        console.log(`[Horoscope API] Returning cached horoscope for date: ${cachedHoroscope.date}`)
         return NextResponse.json({
           star_sign: cachedHoroscope.star_sign,
           horoscope_text: cachedHoroscope.horoscope_text,
@@ -105,6 +110,8 @@ export async function GET(request: NextRequest) {
           cached: true,
         })
     }
+    
+    console.log(`[Horoscope API] No cached horoscope found for today (${todayDate}), generating new horoscope...`)
     
     // Parse birthday
     let birthdayMonth: number | null = null
@@ -317,6 +324,8 @@ export async function GET(request: NextRequest) {
       image_prompt: imagePrompt,
     }
     
+    console.log(`[Horoscope API] Saving new horoscope with date: ${todayDate}`)
+    
     const { error: upsertError } = await supabaseAdmin
       .from('horoscopes')
       .upsert(upsertData, {
@@ -334,6 +343,8 @@ export async function GET(request: NextRequest) {
           { status: 500 }
         )
       }
+    
+    console.log(`[Horoscope API] Successfully saved and returning new horoscope for date: ${todayDate}`)
     
     // Return generated horoscope
     return NextResponse.json({

@@ -1118,12 +1118,10 @@ export default function TeamDashboard() {
           return
         }
 
-        // Calculate time range based on expanded state
+        // Calculate time range - always fetch a week's worth so both collapsed and expanded views have data
         const now = new Date()
         const timeMin = now.toISOString()
-        const timeMax = eventsExpanded
-          ? new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days for week view
-          : new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString() // 1 day for today view
+        const timeMax = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() // Always fetch 7 days
 
         // Encode calendar IDs for the API (they're already decoded in the array)
         const calendarIdsParam = calendarIds.map(id => encodeURIComponent(id)).join(',')
@@ -2400,9 +2398,11 @@ export default function TeamDashboard() {
                     <div className="space-y-6">
                       {/* Horoscope Text Container */}
                       <div className={`${mode === 'chaos' ? 'bg-black/40 backdrop-blur-sm' : mode === 'chill' ? 'bg-[#F5E6D3]/50' : 'bg-black/40'} ${getRoundedClass('rounded-2xl')} p-6 border-2`} style={{ borderColor: `${style.accent}40` }}>
-                        <p className="text-xs font-medium mb-3" style={{ color: style.accent }}>
+                        <p className={`text-xs font-medium mb-3 ${mode === 'chaos' ? 'text-white/60' : mode === 'chill' ? 'text-[#4A1818]/70' : 'text-white/60'}`}>
                           {horoscope.date ? (() => {
-                            const date = new Date(horoscope.date)
+                            // Parse YYYY-MM-DD date string as local date to avoid timezone issues
+                            const [year, month, day] = horoscope.date.split('-').map(Number)
+                            const date = new Date(year, month - 1, day)
                             const formattedDate = date.toLocaleDateString('en-US', { 
                               month: 'long', 
                               day: 'numeric', 
@@ -3707,8 +3707,15 @@ export default function TeamDashboard() {
                         return aStart.getTime() - bStart.getTime()
                       })
                       
-                      if (todayEvents.length === 0 && restOfWeekEvents.length === 0) {
+                      // Only show "No events" if we've finished loading and there are truly no events
+                      // (excluding OOO events which are shown separately above)
+                      if (!calendarLoading && todayEvents.length === 0 && restOfWeekEvents.length === 0) {
                         return <p className="text-sm text-black/80 text-center py-4">No events this week</p>
+                      }
+                      
+                      // Show nothing while loading (or show a loading state if needed)
+                      if (calendarLoading && todayEvents.length === 0 && restOfWeekEvents.length === 0) {
+                        return null // Don't show "No events" while loading
                       }
                       
                       return (
