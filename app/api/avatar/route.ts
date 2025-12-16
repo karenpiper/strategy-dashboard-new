@@ -161,7 +161,7 @@ async function createAirtableRecord(prompt: string, userId: string, userEmail: s
         'User ID': userId,
         'User Email': userEmail || '',
         'Created At': date, // YYYY-MM-DD format
-        'Prompt': prompt,
+        'Image Prompt': prompt,
       }
     })
   })
