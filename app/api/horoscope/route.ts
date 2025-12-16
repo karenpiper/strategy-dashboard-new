@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Calculate today's date in user's timezone (defaults to America/New_York)
-    const userTimezone: string = (profile.timezone ?? 'America/New_York') as string
+    const userTimezone = profile.timezone ? String(profile.timezone) : 'America/New_York'
     const todayDate = getTodayDateInTimezone(userTimezone)
     
     // Check database for cached horoscope
