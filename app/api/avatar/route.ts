@@ -158,36 +158,51 @@ export async function GET(request: NextRequest) {
       .eq('date', todayDate)
       .maybeSingle()
     
-    // CRITICAL: Also check if the horoscope was actually generated today in the user's timezone
-    // This handles the case where old records have UTC dates that match today's EST date
+    console.log('🔍 ========== AVATAR ENDPOINT: DATABASE QUERY RESULT ==========')
+    console.log('   Query date:', todayDate)
+    console.log('   User ID:', userId)
+    console.log('   Found record:', !!cachedHoroscope)
+    console.log('   Has image_url:', !!cachedHoroscope?.image_url)
+    console.log('   Image URL length:', cachedHoroscope?.image_url?.length || 0)
+    console.log('   Record date:', cachedHoroscope?.date)
+    console.log('   Generated at:', cachedHoroscope?.generated_at)
+    
+    // CRITICAL: Check if the horoscope date matches today's date
+    // Use simple date string comparison - if date field matches todayDate, it's from today
     let isFromToday = false
-    if (cachedHoroscope?.generated_at) {
-      const generatedAt = new Date(cachedHoroscope.generated_at)
-      const generatedAtInUserTz = getTodayDateInTimezone(userTimezone, generatedAt)
-      isFromToday = generatedAtInUserTz === todayDate
+    if (cachedHoroscope) {
+      // Normalize both dates to strings in YYYY-MM-DD format for comparison
+      const cachedDateStr = String(cachedHoroscope.date).split('T')[0] // Extract YYYY-MM-DD
+      const todayDateStr = String(todayDate).split('T')[0] // Ensure todayDate is YYYY-MM-DD
       
-      const hoursAgo = (now.getTime() - generatedAt.getTime()) / (1000 * 60 * 60)
+      // Check if date field matches today's date
+      isFromToday = cachedDateStr === todayDateStr
       
-      console.log('🔍 DEBUG: Avatar generated_at validation:', {
-        generatedAt: cachedHoroscope.generated_at,
-        generatedAtISO: generatedAt.toISOString(),
-        generatedAtInUserTz,
+      console.log('   Date comparison:', {
+        cachedDate: cachedHoroscope.date,
+        cachedDateStr,
         todayDate,
-        isFromToday,
-        hoursAgo: hoursAgo.toFixed(2),
-        generatedAtLocal: generatedAt.toLocaleString('en-US', { timeZone: userTimezone }),
-        nowLocal: now.toLocaleString('en-US', { timeZone: userTimezone })
+        todayDateStr,
+        datesMatch: isFromToday
       })
       
-      // If it was generated more than 24 hours ago, definitely regenerate
-      if (hoursAgo > 24) {
-        console.log('⚠️ Avatar was generated more than 24 hours ago - will regenerate')
-        isFromToday = false
+      // Also check generated_at if available (additional validation)
+      if (cachedHoroscope.generated_at) {
+        const generatedAt = new Date(cachedHoroscope.generated_at)
+        const hoursAgo = (now.getTime() - generatedAt.getTime()) / (1000 * 60 * 60)
+        
+        console.log('   Generated_at validation:', {
+          generatedAt: cachedHoroscope.generated_at,
+          hoursAgo: hoursAgo.toFixed(2),
+          isRecent: hoursAgo < 24
+        })
+        
+        // If it was generated more than 24 hours ago, don't consider it from today
+        if (hoursAgo > 24) {
+          console.log('   ⚠️ Avatar was generated more than 24 hours ago - not from today')
+          isFromToday = false
+        }
       }
-    } else if (cachedHoroscope) {
-      // If there's no generated_at timestamp, assume it's old and regenerate
-      console.log('⚠️ Cached avatar found but no generated_at timestamp - will regenerate')
-      isFromToday = false
     }
     
     console.log('🔍 DEBUG: Avatar query result:', {
