@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const lat = searchParams.get('lat')
     const lon = searchParams.get('lon')
-    const location = searchParams.get('location') // Accept location string directly
+    const locationQuery = searchParams.get('location') // Accept location string directly
 
     // Get WeatherAPI.com API key from environment variables
     const apiKey = process.env.WEATHERAPI_KEY || process.env.NEXT_PUBLIC_WEATHERAPI_KEY
@@ -37,9 +37,9 @@ export async function GET(request: NextRequest) {
 
     // Determine query parameter - prefer location string, fallback to lat/lon
     let queryParam: string
-    if (location) {
-      queryParam = location
-      console.log('Fetching weather for location:', location)
+    if (locationQuery) {
+      queryParam = locationQuery
+      console.log('Fetching weather for location:', locationQuery)
     } else if (lat && lon) {
       queryParam = `${lat},${lon}`
       console.log('Fetching weather for coordinates:', lat, lon)
