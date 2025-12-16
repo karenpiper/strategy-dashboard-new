@@ -275,25 +275,27 @@ export async function GET(request: NextRequest) {
       // If character_name is missing, try to get it from Airtable
       // Handle case where character_name might be an object (should be string)
       let characterName: string | null = null
-      if (cachedHoroscope.character_name) {
-        if (typeof cachedHoroscope.character_name === 'string') {
-          characterName = cachedHoroscope.character_name.trim() || null
-        } else if (typeof cachedHoroscope.character_name === 'object') {
-          // If it's an object, try to extract a string value or convert to string
-          const obj = cachedHoroscope.character_name as any
-          if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
-            // Check if it has a value property or is an empty object
-            if (obj.value && typeof obj.value === 'string') {
-              characterName = obj.value.trim() || null
-            } else if (Object.keys(obj).length === 0) {
-              characterName = null
-            } else {
-              // Try to stringify and see if it makes sense
-              const str = JSON.stringify(obj)
-              if (str && str !== '{}' && str !== 'null') {
-                characterName = null // Don't use JSON stringified object
-              }
-            }
+      const rawCharacterName = cachedHoroscope.character_name
+      
+      console.log(`[Avatar API] Raw character_name from DB:`, rawCharacterName, 'Type:', typeof rawCharacterName, 'Is null:', rawCharacterName === null, 'Is undefined:', rawCharacterName === undefined)
+      
+      if (rawCharacterName !== null && rawCharacterName !== undefined) {
+        if (typeof rawCharacterName === 'string') {
+          const trimmed = rawCharacterName.trim()
+          characterName = trimmed.length > 0 ? trimmed : null
+          console.log(`[Avatar API] Character name is string:`, characterName)
+        } else if (typeof rawCharacterName === 'object') {
+          // If it's an object, it's invalid - set to null and fetch from Airtable
+          console.log(`[Avatar API] Character name is object (invalid), will fetch from Airtable`)
+          characterName = null
+        } else {
+          // Try to convert to string if it's a number or other type
+          try {
+            const str = String(rawCharacterName)
+            characterName = str.trim() || null
+            console.log(`[Avatar API] Converted character name to string:`, characterName)
+          } catch {
+            characterName = null
           }
         }
       }
@@ -356,7 +358,12 @@ export async function GET(request: NextRequest) {
           }
         }
       
-      console.log(`[Avatar API] Returning cached response with character_name:`, characterName)
+      // Ensure character_name is always a string or null, never an object
+      const safeCharacterName = characterName && typeof characterName === 'string' && characterName.trim() && characterName !== '[object Object]'
+        ? characterName.trim()
+        : null
+      
+      console.log(`[Avatar API] Returning cached response with character_name:`, safeCharacterName, 'Type:', typeof safeCharacterName)
       
       return NextResponse.json({
         image_url: cachedHoroscope.image_url,
@@ -364,7 +371,7 @@ export async function GET(request: NextRequest) {
         prompt_slots: slots,
         prompt_slots_labels: Object.keys(slotLabels).length > 0 ? slotLabels : null,
         prompt_slots_reasoning: slots?.reasoning || null,
-        character_name: characterName,
+        character_name: safeCharacterName,
         cached: true,
       })
     }
@@ -415,11 +422,16 @@ export async function GET(request: NextRequest) {
         
         // Return image/caption
         const slots = cachedHoroscope?.prompt_slots_json || {}
-        const characterName = airtableResult.caption && airtableResult.caption.trim() 
+        const characterName = airtableResult.caption && typeof airtableResult.caption === 'string' && airtableResult.caption.trim() 
           ? airtableResult.caption.trim() 
           : null
         
-        console.log(`[Avatar API] Returning character_name from Airtable:`, characterName)
+        // Ensure character_name is always a string or null, never an object
+        const safeCharacterName = characterName && typeof characterName === 'string' && characterName !== '[object Object]'
+          ? characterName
+          : null
+        
+        console.log(`[Avatar API] Returning character_name from Airtable:`, safeCharacterName, 'Type:', typeof safeCharacterName)
         
         return NextResponse.json({
           image_url: supabaseImageUrl,
@@ -427,7 +439,7 @@ export async function GET(request: NextRequest) {
           prompt_slots: slots,
           prompt_slots_labels: null,
           prompt_slots_reasoning: slots?.reasoning || null,
-          character_name: characterName,
+          character_name: safeCharacterName,
           cached: true,
         })
       } catch (error: any) {

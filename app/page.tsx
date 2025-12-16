@@ -1328,11 +1328,18 @@ export default function TeamDashboard() {
               const caption = avatarData.character_name
               console.log('[Avatar] Character name from API:', caption, 'Type:', typeof caption, 'Is object:', typeof caption === 'object')
               
-              // Handle case where character_name might be an object
+              // Handle case where character_name might be an object or stringified object
               let captionValue: string | null = null
-              if (caption) {
+              if (caption !== null && caption !== undefined) {
                 if (typeof caption === 'string') {
-                  captionValue = caption.trim() || null
+                  // Check if it's the string "[object Object]" which means it was stringified
+                  const trimmed = caption.trim()
+                  if (trimmed === '[object Object]' || trimmed === '{}' || trimmed === 'null') {
+                    console.log('[Avatar] Detected stringified object, ignoring')
+                    captionValue = null
+                  } else {
+                    captionValue = trimmed || null
+                  }
                 } else if (typeof caption === 'object' && caption !== null) {
                   // If it's an object, try to extract a string value
                   const obj = caption as any
@@ -1380,11 +1387,18 @@ export default function TeamDashboard() {
                       const pollCaption = pollData.character_name
                       console.log('[Avatar Poll] Character name:', pollCaption, 'Type:', typeof pollCaption, 'Is object:', typeof pollCaption === 'object')
                       
-                      // Handle case where character_name might be an object
+                      // Handle case where character_name might be an object or stringified object
                       let pollCaptionValue: string | null = null
-                      if (pollCaption) {
+                      if (pollCaption !== null && pollCaption !== undefined) {
                         if (typeof pollCaption === 'string') {
-                          pollCaptionValue = pollCaption.trim() || null
+                          // Check if it's the string "[object Object]" which means it was stringified
+                          const trimmed = pollCaption.trim()
+                          if (trimmed === '[object Object]' || trimmed === '{}' || trimmed === 'null') {
+                            console.log('[Avatar Poll] Detected stringified object, ignoring')
+                            pollCaptionValue = null
+                          } else {
+                            pollCaptionValue = trimmed || null
+                          }
                         } else if (typeof pollCaption === 'object' && pollCaption !== null) {
                           // If it's an object, try to extract a string value
                           const obj = pollCaption as any
