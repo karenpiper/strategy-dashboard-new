@@ -236,6 +236,8 @@ export default function TeamDashboard() {
   const [userFirstName, setUserFirstName] = useState<string>('')
   const [temperature, setTemperature] = useState<string | null>(null)
   const [weatherCondition, setWeatherCondition] = useState<string | null>(null)
+  const [humidity, setHumidity] = useState<number | null>(null)
+  const [windSpeed, setWindSpeed] = useState<number | null>(null)
   const [characterName, setCharacterName] = useState<string | null>(null)
   const [userTimeZone, setUserTimeZone] = useState<string | null>(null)
   const [timeZones, setTimeZones] = useState<Array<{ label: string; city: string; time: string; offset: number }>>([])
@@ -694,18 +696,24 @@ export default function TeamDashboard() {
         // This is much faster than geocoding first
         const weatherResponse = await fetch(`/api/weather?location=${encodeURIComponent(profile.location)}`)
         if (weatherResponse.ok) {
-          const weatherData = await weatherResponse.json()
-          console.log('[Weather] API response:', weatherData)
-          if (weatherData.temperature) {
-            const tempStr = `${weatherData.temperature}°F`
-            console.log('[Weather] Setting temperature:', tempStr)
-            setTemperature(tempStr)
-          }
-          if (weatherData.condition) {
-            const conditionStr = weatherData.condition.toLowerCase()
-            console.log('[Weather] Setting condition:', conditionStr)
-            setWeatherCondition(conditionStr)
-          }
+            const weatherData = await weatherResponse.json()
+            console.log('[Weather] API response:', weatherData)
+            if (weatherData.temperature) {
+              const tempStr = `${weatherData.temperature}°F`
+              console.log('[Weather] Setting temperature:', tempStr)
+              setTemperature(tempStr)
+            }
+            if (weatherData.condition) {
+              const conditionStr = weatherData.condition.toLowerCase()
+              console.log('[Weather] Setting condition:', conditionStr)
+              setWeatherCondition(conditionStr)
+            }
+            if (weatherData.humidity !== undefined) {
+              setHumidity(weatherData.humidity)
+            }
+            if (weatherData.windSpeed !== undefined) {
+              setWindSpeed(weatherData.windSpeed)
+            }
         } else {
           const errorText = await weatherResponse.text()
           console.log('[Weather] API error:', weatherResponse.status, errorText)
@@ -714,6 +722,8 @@ export default function TeamDashboard() {
         console.error('Error fetching weather:', err)
         setTemperature(null)
         setWeatherCondition(null)
+        setHumidity(null)
+        setWindSpeed(null)
       }
     }
     
@@ -2083,9 +2093,14 @@ export default function TeamDashboard() {
                         : `It's ${todayDate || 'Loading...'}`
                       }
                     </p>
-                    {(temperature || weatherCondition) && (
+                    {(temperature || weatherCondition || humidity !== null || windSpeed !== null) && (
                       <p className={`text-[clamp(0.875rem,2vw+0.5rem,1.25rem)] font-semibold max-w-2xl leading-[1.2] tracking-tight mt-1 ${mode === 'code' ? 'font-mono text-[#FFFFFF]' : style.text}`}>
-                        {temperature || ''}{temperature && weatherCondition ? ' and ' : ''}{weatherCondition ? weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1) : ''}
+                        {[
+                          temperature,
+                          weatherCondition ? weatherCondition.charAt(0).toUpperCase() + weatherCondition.slice(1) : null,
+                          humidity !== null ? `💧 ${humidity}%` : null,
+                          windSpeed !== null ? `💨 ${windSpeed} mph` : null
+                        ].filter(Boolean).join(' • ')}
                       </p>
                     )}
                     {horoscopeImageCaption && (

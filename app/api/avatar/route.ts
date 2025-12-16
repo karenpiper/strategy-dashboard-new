@@ -267,10 +267,31 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // If image exists in database for today, return immediately
+    // If image exists in database for today, check if character_name is missing and try to get it from Airtable
     if (cachedHoroscope && cachedHoroscope.image_url && cachedHoroscope.date === todayDate) {
       console.log(`[Avatar API] Found cached horoscope in database`)
       console.log(`[Avatar API] Cached character_name:`, cachedHoroscope.character_name, 'Type:', typeof cachedHoroscope.character_name)
+      
+      // If character_name is missing, try to get it from Airtable
+      let characterName = cachedHoroscope.character_name && typeof cachedHoroscope.character_name === 'string' && cachedHoroscope.character_name.trim()
+        ? cachedHoroscope.character_name.trim()
+        : null
+      
+      if (!characterName) {
+        console.log(`[Avatar API] Character name missing from cache, checking Airtable...`)
+        const airtableResult = await checkAirtableForImage(userId, todayDate, userTimezone)
+        if (airtableResult && 'imageUrl' in airtableResult && airtableResult.caption && airtableResult.caption.trim()) {
+          characterName = airtableResult.caption.trim()
+          console.log(`[Avatar API] Found character_name in Airtable:`, characterName)
+          // Update database with character_name
+          await supabaseAdmin
+            .from('horoscopes')
+            .update({ character_name: characterName })
+            .eq('user_id', userId)
+            .eq('date', todayDate)
+          console.log(`[Avatar API] Updated database with character_name`)
+        }
+      }
       
       const slots = cachedHoroscope.prompt_slots_json || {}
       
@@ -314,11 +335,7 @@ export async function GET(request: NextRequest) {
           }
         }
       
-      const cachedCharacterName = cachedHoroscope.character_name && typeof cachedHoroscope.character_name === 'string' && cachedHoroscope.character_name.trim()
-        ? cachedHoroscope.character_name.trim()
-        : null
-      
-      console.log(`[Avatar API] Returning cached response with character_name:`, cachedCharacterName)
+      console.log(`[Avatar API] Returning cached response with character_name:`, characterName)
       
       return NextResponse.json({
         image_url: cachedHoroscope.image_url,
@@ -326,7 +343,7 @@ export async function GET(request: NextRequest) {
         prompt_slots: slots,
         prompt_slots_labels: Object.keys(slotLabels).length > 0 ? slotLabels : null,
         prompt_slots_reasoning: slots?.reasoning || null,
-        character_name: cachedCharacterName,
+        character_name: characterName,
         cached: true,
       })
     }
@@ -360,11 +377,17 @@ export async function GET(request: NextRequest) {
         }
         
         // Save to database
+        const characterNameToSave = airtableResult.caption && airtableResult.caption.trim()
+          ? airtableResult.caption.trim()
+          : null
+        
+        console.log(`[Avatar API] Saving character_name to database:`, characterNameToSave)
+        
         await supabaseAdmin
       .from('horoscopes')
           .update({
             image_url: supabaseImageUrl,
-            character_name: airtableResult.caption || null
+            character_name: characterNameToSave
           })
       .eq('user_id', userId)
           .eq('date', todayDate)
