@@ -12,3 +12,4 @@ COMMENT ON COLUMN public.profiles.is_guest IS 'If true, user is a guest (not a t
 
 
 
+

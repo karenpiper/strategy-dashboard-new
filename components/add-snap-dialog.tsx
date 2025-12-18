@@ -17,12 +17,29 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2 } from 'lucide-react'
 
+interface Snap {
+  id: string
+  snap_content: string
+  mentioned: string | null
+  submitted_by: string | null
+  date: string
+  recipients?: Array<{
+    user_id: string
+    recipient_profile: {
+      id: string
+      email: string | null
+      full_name: string | null
+    } | null
+  }>
+}
+
 interface AddSnapDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
   adminMode?: boolean // If true, allows selecting "from" user
   defaultFromUserId?: string // Pre-select a "from" user in admin mode
+  editSnap?: Snap | null // If provided, edit this snap instead of creating new
 }
 
 interface Profile {
@@ -31,7 +48,7 @@ interface Profile {
   email: string | null
 }
 
-export function AddSnapDialog({ open, onOpenChange, onSuccess, adminMode = false, defaultFromUserId }: AddSnapDialogProps) {
+export function AddSnapDialog({ open, onOpenChange, onSuccess, adminMode = false, defaultFromUserId, editSnap }: AddSnapDialogProps) {
   const { user } = useAuth()
   const { mode } = useMode()
   const supabase = createClient()
@@ -190,6 +207,46 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess, adminMode = false
       }
     }
   }, [adminMode, defaultFromUserId, allProfiles, fromUser])
+
+  // Populate form when editing
+  useEffect(() => {
+    if (editSnap && open) {
+      setSnapContent(editSnap.snap_content || '')
+      setMentioned(editSnap.mentioned || '')
+      
+      // Set recipients from editSnap
+      if (editSnap.recipients && editSnap.recipients.length > 0) {
+        const recipientProfiles = editSnap.recipients
+          .map(r => r.recipient_profile)
+          .filter((p): p is NonNullable<typeof p> => p !== null)
+          .map(p => ({ id: p.id, full_name: p.full_name, email: p.email }))
+        setSelectedRecipients(recipientProfiles)
+      }
+      
+      // Set from user if not anonymous
+      if (editSnap.submitted_by && allProfiles.length > 0) {
+        const submitter = allProfiles.find(p => p.id === editSnap.submitted_by)
+        if (submitter) {
+          setFromUser(submitter)
+          setSubmitAnonymously(false)
+        } else {
+          setFromUser(null)
+          setSubmitAnonymously(true)
+        }
+      } else {
+        setFromUser(null)
+        setSubmitAnonymously(true)
+      }
+    } else if (!editSnap && open) {
+      // Reset form when creating new snap
+      setSnapContent('')
+      setMentioned('')
+      setSelectedRecipients([])
+      setSubmitAnonymously(false)
+      setFromUser(null)
+      setFromUserSearch('')
+    }
+  }, [editSnap, open, allProfiles])
   
   // Debounced search for recipients autocomplete
   useEffect(() => {
@@ -298,11 +355,6 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess, adminMode = false
       return
     }
     
-    if (adminMode && !fromUser) {
-      setError('Please select who is giving this snap')
-      return
-    }
-    
     setSubmitting(true)
     
     try {
@@ -313,11 +365,17 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess, adminMode = false
         ? selectedRecipients.map(r => r.full_name || r.email).join(', ')
         : mentioned.trim() || null
 
-      // In admin mode, use the selected "from" user, otherwise use the logged-in user
-      const submittedByUserId = adminMode && fromUser ? fromUser.id : (submitAnonymously ? null : user?.id)
+      // In admin mode, use the selected "from" user if provided, otherwise allow anonymous
+      // In regular mode, use submitAnonymously flag
+      const submittedByUserId = adminMode 
+        ? (fromUser ? fromUser.id : null) 
+        : (submitAnonymously ? null : user?.id)
 
-      const response = await fetch('/api/snaps', {
-        method: 'POST',
+      const url = editSnap ? `/api/snaps/${editSnap.id}` : '/api/snaps'
+      const method = editSnap ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -325,9 +383,10 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess, adminMode = false
           snap_content: snapContent,
           mentioned: mentionedName,
           mentioned_user_ids: mentionedUserIds.length > 0 ? mentionedUserIds : undefined,
-          submit_anonymously: adminMode ? false : submitAnonymously, // Don't allow anonymous in admin mode
-          submitted_by: submittedByUserId, // Admin can set this
+          submit_anonymously: adminMode ? !fromUser : submitAnonymously, // Anonymous if no fromUser in admin mode
+          submitted_by: submittedByUserId, // Admin can set this or leave null for anonymous
           admin_mode: adminMode, // Flag to indicate admin is creating this
+          date: editSnap?.date, // Preserve date when editing
         }),
       })
       
@@ -366,11 +425,13 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess, adminMode = false
         }}
       >
         <DialogHeader>
-          <DialogTitle>{adminMode ? 'Add Snap (Admin)' : 'Add a Snap'}</DialogTitle>
+          <DialogTitle>{editSnap ? 'Edit Snap' : (adminMode ? 'Add Snap (Admin)' : 'Add a Snap')}</DialogTitle>
           <DialogDescription>
-            {adminMode 
-              ? 'Create a snap on behalf of another user'
-              : 'Recognize someone for their great work or contribution'
+            {editSnap 
+              ? 'Update the snap details'
+              : adminMode 
+                ? 'Create a snap on behalf of another user'
+                : 'Recognize someone for their great work or contribution'
             }
           </DialogDescription>
         </DialogHeader>
@@ -419,9 +480,8 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess, adminMode = false
                     onBlur={() => {
                       setTimeout(() => setShowFromUserSuggestions(false), 200)
                     }}
-                    placeholder="Start typing a name..."
+                    placeholder="Start typing a name... (optional for anonymous)"
                     className="w-full"
-                    required
                   />
                   {showFromUserSuggestions && fromUserSuggestions.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 border border-border rounded-md shadow-lg max-h-60 overflow-auto"
@@ -446,7 +506,7 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess, adminMode = false
                 </>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                Select the person who is giving this snap
+                Select the person who is giving this snap (leave empty for anonymous)
               </p>
             </div>
           )}
@@ -568,10 +628,10 @@ export function AddSnapDialog({ open, onOpenChange, onSuccess, adminMode = false
               {submitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Submitting...
+                  {editSnap ? 'Updating...' : 'Submitting...'}
                 </>
               ) : (
-                'Submit Snap'
+                editSnap ? 'Update Snap' : 'Submit Snap'
               )}
             </Button>
           </div>

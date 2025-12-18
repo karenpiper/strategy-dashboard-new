@@ -150,22 +150,25 @@ export async function POST(request: NextRequest) {
 
     // Determine who submitted the snap
     let finalSubmittedBy: string | null = null
-    if (admin_mode && submitted_by) {
-      // Admin is creating snap on behalf of another user
-      // Verify the submitted_by user exists
-      const { data: submittedByUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', submitted_by)
-        .single()
+    if (admin_mode) {
+      // Admin mode: use submitted_by if provided, otherwise null (anonymous)
+      if (submitted_by) {
+        // Verify the submitted_by user exists
+        const { data: submittedByUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', submitted_by)
+          .single()
 
-      if (!submittedByUser) {
-        return NextResponse.json(
-          { error: 'Invalid user selected for "from" field' },
-          { status: 400 }
-        )
+        if (!submittedByUser) {
+          return NextResponse.json(
+            { error: 'Invalid user selected for "from" field' },
+            { status: 400 }
+          )
+        }
+        finalSubmittedBy = submitted_by
       }
-      finalSubmittedBy = submitted_by
+      // If submitted_by is null/undefined in admin mode, finalSubmittedBy remains null (anonymous)
     } else if (!submit_anonymously) {
       // Regular user creating their own snap
       finalSubmittedBy = user.id

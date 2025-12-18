@@ -274,15 +274,33 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // If image exists in database for today, check if character_name is missing and try to get it from Airtable
-    if (cachedHoroscope && cachedHoroscope.image_url && cachedHoroscope.date === todayDate) {
-      console.log(`[Avatar API] Found cached horoscope in database`)
-      console.log(`[Avatar API] Cached character_name:`, cachedHoroscope.character_name, 'Type:', typeof cachedHoroscope.character_name)
+    // If no horoscope for today, try to get the most recent one as fallback
+    let horoscopeToUse = cachedHoroscope
+    if (!horoscopeToUse) {
+      console.log(`[Avatar API] No horoscope found for today (${todayDate}), checking for most recent...`)
+      const { data: recentHoroscope } = await supabaseAdmin
+        .from('horoscopes')
+        .select('image_url, character_name, image_prompt, prompt_slots_json, date')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      
+      if (recentHoroscope) {
+        console.log(`[Avatar API] Using most recent horoscope from date: ${recentHoroscope.date}`)
+        horoscopeToUse = recentHoroscope
+      }
+    }
+    
+    // If image exists in database (today or fallback), check if character_name is missing and try to get it from Airtable
+    if (horoscopeToUse && horoscopeToUse.image_url) {
+      console.log(`[Avatar API] Found cached horoscope in database (date: ${horoscopeToUse.date})`)
+      console.log(`[Avatar API] Cached character_name:`, horoscopeToUse.character_name, 'Type:', typeof horoscopeToUse.character_name)
       
       // If character_name is missing, try to get it from Airtable
       // Handle case where character_name might be an object (should be string)
       let characterName: string | null = null
-      const rawCharacterName = cachedHoroscope.character_name
+      const rawCharacterName = horoscopeToUse.character_name
       
       console.log(`[Avatar API] Raw character_name from DB:`, rawCharacterName, 'Type:', typeof rawCharacterName, 'Is null:', rawCharacterName === null, 'Is undefined:', rawCharacterName === undefined)
       
@@ -308,32 +326,40 @@ export async function GET(request: NextRequest) {
       }
       
       if (!characterName) {
-        console.log(`[Avatar API] Character name missing from cache, checking Airtable...`)
-        const airtableResult = await checkAirtableForImage(userId, todayDate, userTimezone)
-        console.log(`[Avatar API] Airtable result:`, airtableResult)
-        console.log(`[Avatar API] Airtable result type:`, airtableResult ? (airtableResult.hasOwnProperty('imageUrl') ? 'has imageUrl' : 'generating or null') : 'null')
-        
-        if (airtableResult && 'imageUrl' in airtableResult) {
-          console.log(`[Avatar API] Airtable caption value:`, airtableResult.caption, 'Type:', typeof airtableResult.caption)
-          if (airtableResult.caption && typeof airtableResult.caption === 'string' && airtableResult.caption.trim()) {
-            characterName = airtableResult.caption.trim()
-            console.log(`[Avatar API] Found character_name in Airtable:`, characterName)
-            // Update database with character_name
-            await supabaseAdmin
-              .from('horoscopes')
-              .update({ character_name: characterName })
-              .eq('user_id', userId)
-              .eq('date', todayDate)
-            console.log(`[Avatar API] Updated database with character_name`)
+        // Use the date from the horoscope we're actually using, not necessarily today
+        const dateToCheck = horoscopeToUse?.date || todayDate
+        console.log(`[Avatar API] Character name missing from cache, checking Airtable for date: ${dateToCheck}...`)
+        try {
+          const airtableResult = await checkAirtableForImage(userId, dateToCheck, userTimezone)
+          console.log(`[Avatar API] Airtable result:`, airtableResult)
+          console.log(`[Avatar API] Airtable result type:`, airtableResult ? (airtableResult.hasOwnProperty('imageUrl') ? 'has imageUrl' : 'generating or null') : 'null')
+          
+          if (airtableResult && 'imageUrl' in airtableResult) {
+            console.log(`[Avatar API] Airtable caption value:`, airtableResult.caption, 'Type:', typeof airtableResult.caption)
+            if (airtableResult.caption && typeof airtableResult.caption === 'string' && airtableResult.caption.trim()) {
+              characterName = airtableResult.caption.trim()
+              console.log(`[Avatar API] Found character_name in Airtable:`, characterName)
+              // Update database with character_name (don't await - do it in background)
+              Promise.resolve(supabaseAdmin
+                .from('horoscopes')
+                .update({ character_name: characterName })
+                .eq('user_id', userId)
+                .eq('date', dateToCheck))
+                .then(() => console.log(`[Avatar API] Updated database with character_name`))
+                .catch((err: any) => console.error(`[Avatar API] Error updating character_name:`, err))
+            } else {
+              console.log(`[Avatar API] Airtable caption is empty or invalid:`, airtableResult.caption)
+            }
           } else {
-            console.log(`[Avatar API] Airtable caption is empty or invalid:`, airtableResult.caption)
+            console.log(`[Avatar API] No Airtable result or image not found`)
           }
-        } else {
-          console.log(`[Avatar API] No Airtable result or image not found`)
+        } catch (airtableError: any) {
+          console.error(`[Avatar API] Error checking Airtable for character_name:`, airtableError)
+          // Don't fail the request if Airtable check fails
         }
       }
       
-      const slots = cachedHoroscope.prompt_slots_json || {}
+      const slots = horoscopeToUse.prompt_slots_json || {}
       
       // Resolve slot IDs to labels for display
       const slotLabels: any = {}
@@ -383,13 +409,14 @@ export async function GET(request: NextRequest) {
       console.log(`[Avatar API] Returning cached response with character_name:`, safeCharacterName, 'Type:', typeof safeCharacterName)
       
       return NextResponse.json({
-        image_url: cachedHoroscope.image_url,
-        image_prompt: cachedHoroscope.image_prompt || null,
+        image_url: horoscopeToUse.image_url,
+        image_prompt: horoscopeToUse.image_prompt || null,
         prompt_slots: slots,
         prompt_slots_labels: Object.keys(slotLabels).length > 0 ? slotLabels : null,
         prompt_slots_reasoning: slots?.reasoning || null,
         character_name: safeCharacterName,
         cached: true,
+        date: horoscopeToUse.date,
       })
     }
     
@@ -398,17 +425,17 @@ export async function GET(request: NextRequest) {
     
     if (airtableResult && 'generating' in airtableResult) {
       // Record exists in Airtable but image not ready yet
-      const slots = cachedHoroscope?.prompt_slots_json || {}
-      return NextResponse.json({
-        image_url: null,
-        image_prompt: cachedHoroscope?.image_prompt || null,
-        prompt_slots: slots,
-        prompt_slots_labels: null,
-        prompt_slots_reasoning: slots?.reasoning || null,
-        character_name: null,
-        generating: true,
-        message: 'Image is being generated. Please check again in a few moments.',
-      })
+      const slots = horoscopeToUse?.prompt_slots_json || {}
+        return NextResponse.json({
+          image_url: null,
+          image_prompt: horoscopeToUse?.image_prompt || null,
+          prompt_slots: slots,
+          prompt_slots_labels: null,
+          prompt_slots_reasoning: slots?.reasoning || null,
+          character_name: null,
+          generating: true,
+          message: 'Image is being generated. Please check again in a few moments.',
+        })
     }
     
     if (airtableResult && 'imageUrl' in airtableResult) {
@@ -438,7 +465,7 @@ export async function GET(request: NextRequest) {
           .eq('date', todayDate)
         
         // Return image/caption
-        const slots = cachedHoroscope?.prompt_slots_json || {}
+        const slots = horoscopeToUse?.prompt_slots_json || {}
         const characterName = airtableResult.caption && typeof airtableResult.caption === 'string' && airtableResult.caption.trim() 
           ? airtableResult.caption.trim() 
           : null
@@ -452,7 +479,7 @@ export async function GET(request: NextRequest) {
         
         return NextResponse.json({
           image_url: supabaseImageUrl,
-          image_prompt: cachedHoroscope?.image_prompt || null,
+          image_prompt: horoscopeToUse?.image_prompt || null,
           prompt_slots: slots,
           prompt_slots_labels: null,
           prompt_slots_reasoning: slots?.reasoning || null,
@@ -466,7 +493,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Step 3: Create new Airtable record if nothing found
-    if (!cachedHoroscope || !cachedHoroscope.image_prompt) {
+    if (!horoscopeToUse || !horoscopeToUse.image_prompt) {
       return NextResponse.json(
         { 
           error: 'Horoscope not found. Please generate horoscope first by calling /api/horoscope endpoint.',
@@ -478,7 +505,7 @@ export async function GET(request: NextRequest) {
     
     try {
       await createAirtableRecord(
-            cachedHoroscope.image_prompt,
+            horoscopeToUse.image_prompt,
             userId,
         userEmail || '',
         todayDate,
@@ -486,10 +513,10 @@ export async function GET(request: NextRequest) {
       )
       
       // Return generating status
-      const slots = cachedHoroscope.prompt_slots_json || {}
+      const slots = horoscopeToUse.prompt_slots_json || {}
       return NextResponse.json({
         image_url: null,
-        image_prompt: cachedHoroscope.image_prompt,
+        image_prompt: horoscopeToUse.image_prompt,
         prompt_slots: slots,
         prompt_slots_labels: null,
         prompt_slots_reasoning: slots?.reasoning || null,

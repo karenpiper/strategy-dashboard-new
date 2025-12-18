@@ -82,3 +82,4 @@ CREATE TRIGGER announcements_updated_at_trigger
   EXECUTE FUNCTION update_announcements_updated_at();
 
 
+

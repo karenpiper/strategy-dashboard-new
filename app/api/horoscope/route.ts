@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     
     console.log(`[Horoscope API] Cached horoscope found: ${!!cachedHoroscope}, Date in cache: ${cachedHoroscope?.date}, Matches today: ${cachedHoroscope?.date === todayDate}`)
     
-    // Return cached horoscope if found and has text
+    // Return cached horoscope if found and has text (exact date match)
     if (cachedHoroscope && cachedHoroscope.horoscope_text && cachedHoroscope.date === todayDate) {
         console.log(`[Horoscope API] Returning cached horoscope for date: ${cachedHoroscope.date}`)
         return NextResponse.json({
@@ -109,6 +109,26 @@ export async function GET(request: NextRequest) {
           date: cachedHoroscope.date,
           cached: true,
         })
+    }
+    
+    // If no exact match but we have a cached horoscope with text, check if it's recent (within last 2 days)
+    // This handles timezone changes or date calculation differences
+    if (cachedHoroscope && cachedHoroscope.horoscope_text) {
+      const cachedDate = new Date(cachedHoroscope.date + 'T00:00:00')
+      const todayDateObj = new Date(todayDate + 'T00:00:00')
+      const daysDiff = Math.abs((todayDateObj.getTime() - cachedDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      if (daysDiff <= 2) {
+        console.log(`[Horoscope API] Returning cached horoscope (date close enough: ${cachedHoroscope.date}, diff: ${daysDiff.toFixed(1)} days)`)
+        return NextResponse.json({
+          star_sign: cachedHoroscope.star_sign,
+          horoscope_text: cachedHoroscope.horoscope_text,
+          horoscope_dos: cachedHoroscope.horoscope_dos || [],
+          horoscope_donts: cachedHoroscope.horoscope_donts || [],
+          date: cachedHoroscope.date,
+          cached: true,
+        })
+      }
     }
     
     console.log(`[Horoscope API] No cached horoscope found for today (${todayDate}), generating new horoscope...`)
@@ -221,6 +241,33 @@ export async function GET(request: NextRequest) {
     } catch (error: any) {
       console.error('Error generating horoscope:', error)
       
+      // Try to return the most recent cached horoscope as fallback
+      try {
+        const { data: fallbackHoroscope } = await supabaseAdmin
+          .from('horoscopes')
+          .select('star_sign, horoscope_text, horoscope_dos, horoscope_donts, date')
+          .eq('user_id', userId)
+          .order('date', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        
+        if (fallbackHoroscope && fallbackHoroscope.horoscope_text) {
+          console.log(`[Horoscope API] Returning fallback horoscope from date: ${fallbackHoroscope.date}`)
+          return NextResponse.json({
+            star_sign: fallbackHoroscope.star_sign,
+            horoscope_text: fallbackHoroscope.horoscope_text,
+            horoscope_dos: fallbackHoroscope.horoscope_dos || [],
+            horoscope_donts: fallbackHoroscope.horoscope_donts || [],
+            date: fallbackHoroscope.date,
+            cached: true,
+            fallback: true,
+            warning: 'Unable to generate new horoscope. Showing most recent available.'
+          })
+        }
+      } catch (fallbackError) {
+        console.error('Error fetching fallback horoscope:', fallbackError)
+      }
+      
       if (error.message?.includes('Cannot find module') || error.code === 'MODULE_NOT_FOUND') {
         return NextResponse.json(
           { 
@@ -231,13 +278,16 @@ export async function GET(request: NextRequest) {
         )
       }
       
-      if (error.message?.includes('timeout')) {
+      if (error.message?.includes('timeout') || error.message?.includes('404')) {
         return NextResponse.json(
           { 
-            error: 'Horoscope generation timed out. Please try again.',
-            code: 'timeout',
+            error: 'Horoscope generation service is temporarily unavailable. Please try again later.',
+            code: 'service_unavailable',
+            details: error.message?.includes('404') 
+              ? 'Elvex assistant configuration issue. Please check API key permissions and assistant version.'
+              : 'Request timed out. The service may be experiencing high load.'
           },
-          { status: 504 }
+          { status: 503 }
         )
       }
       

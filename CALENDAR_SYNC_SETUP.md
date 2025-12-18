@@ -174,3 +174,4 @@ GET /api/calendar?calendarIds=CALENDAR_ID_1
 - Events are soft-deleted when removed from Google Calendar
 - Manual calendar events are merged with synced events
 
+

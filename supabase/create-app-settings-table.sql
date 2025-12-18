@@ -62,3 +62,4 @@ CREATE TRIGGER app_settings_updated_at_trigger
 
 
 
+

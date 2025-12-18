@@ -9,3 +9,4 @@ UPDATE public.announcements
 SET working_days_only = false
 WHERE mode = 'countdown' AND working_days_only IS NULL;
 
+

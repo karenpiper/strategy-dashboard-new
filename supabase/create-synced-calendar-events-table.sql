@@ -49,3 +49,4 @@ CREATE POLICY "Service role can manage synced calendar events"
   ON public.synced_calendar_events
   USING (auth.role() = 'service_role');
 
+
