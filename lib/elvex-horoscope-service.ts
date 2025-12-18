@@ -103,12 +103,14 @@ ${cafeAstrologyText}
 
 Return a JSON object with this exact structure:
 {
-  "horoscope": "An irreverent, expanded version of the horoscope in Co-Star's style. Make it approximately 150 words. Keep it witty, casual, and entertaining while expanding on the themes from the original. Break it into multiple paragraphs for readability.",
+  "horoscope": "An irreverent, expanded version of the horoscope in Co-Star's style. Make it approximately 150 words. Keep it witty, casual, and entertaining while expanding on the themes from the original. Break it into multiple paragraphs for readability. DO NOT include any disclaimers, meta-commentary, or explanations about the style. Just write the horoscope directly in Co-Star's irreverent style.",
   "dos": ["Do thing 1", "Do thing 2", "Do thing 3"],
   "donts": ["Don't thing 1", "Don't thing 2", "Don't thing 3"]
 }
 
-Make the do's and don'ts silly, specific, and related to the horoscope content. They should be funny and slightly absurd but still relevant.`
+Make the do's and don'ts silly, specific, and related to the horoscope content. They should be funny and slightly absurd but still relevant.
+
+IMPORTANT: Write the horoscope text directly. Do not include any introductory phrases, disclaimers, or meta-commentary like "I can't write exactly like Co-Star" or "here's a cheeky cosmic memo". Just write the horoscope text itself.`
 
   try {
     // Use Elvex Assistant API (same as deck talk)
@@ -129,7 +131,7 @@ Make the do's and don'ts silly, specific, and related to the horoscope content. 
       })
       
       // Build the full prompt with system instructions
-      const fullPrompt = `You are a witty horoscope transformer. You take traditional horoscopes and make them irreverent and fun in the style of Co-Star. You always return valid JSON.
+      const fullPrompt = `You are a witty horoscope transformer. You take traditional horoscopes and make them irreverent and fun in the style of Co-Star. You always return valid JSON. Write the horoscope text directly without any disclaimers, introductions, or meta-commentary.
 
 ${prompt}`
 
@@ -226,9 +228,29 @@ ${prompt}`
             throw new Error(`Invalid response format from Elvex. Expected horoscope (string), dos (array), donts (array). Got: ${JSON.stringify(Object.keys(parsed))}`)
           }
 
+          // Clean up horoscope text - remove common disclaimers that might slip through
+          let cleanedHoroscope = parsed.horoscope.trim()
+          
+          // Remove common disclaimer patterns
+          const disclaimerPatterns = [
+            /^I can't write exactly like Co-Star, but here's[^:]*:\s*/i,
+            /^I can't write exactly like Co-Star, but[^:]*:\s*/i,
+            /^Here's a cheeky cosmic memo[^:]*:\s*/i,
+            /^Here's[^:]*:\s*/i,
+            /^I'll give you[^:]*:\s*/i,
+            /^Let me[^:]*:\s*/i,
+          ]
+          
+          for (const pattern of disclaimerPatterns) {
+            cleanedHoroscope = cleanedHoroscope.replace(pattern, '')
+          }
+          
+          // Clean up any leading/trailing whitespace
+          cleanedHoroscope = cleanedHoroscope.trim()
+
           console.log('✅ Successfully transformed horoscope with Elvex')
           return {
-            horoscope: parsed.horoscope,
+            horoscope: cleanedHoroscope,
             dos: parsed.dos,
             donts: parsed.donts,
           }
