@@ -145,49 +145,6 @@ export default function SnapsPage() {
           const errorData = await response.json()
           setError(errorData.error || 'Failed to load snaps')
         }
-        
-        // Fetch stats for this month
-        const now = new Date()
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        const startOfMonthStr = startOfMonth.toISOString().split('T')[0]
-        
-        const { data: monthSnaps, error: statsError } = await supabase
-          .from('snaps')
-          .select('submitted_by, submitted_by_profile:profiles!submitted_by(id, full_name, email)')
-          .gte('date', startOfMonthStr)
-        
-        if (!statsError && monthSnaps) {
-          // Count total snaps
-          const totalSnaps = monthSnaps.length
-          
-          // Find snap leader (person who gave the most snaps)
-          const snapCounts: Record<string, { count: number; profile: any }> = {}
-          monthSnaps.forEach((snap: any) => {
-            if (snap.submitted_by) {
-              if (!snapCounts[snap.submitted_by]) {
-                snapCounts[snap.submitted_by] = {
-                  count: 0,
-                  profile: snap.submitted_by_profile
-                }
-              }
-              snapCounts[snap.submitted_by].count++
-            }
-          })
-          
-          let leader: { id: string; full_name: string | null; email: string | null; count: number } | null = null
-          Object.entries(snapCounts).forEach(([userId, data]) => {
-            if (!leader || data.count > leader.count) {
-              leader = {
-                id: userId,
-                full_name: data.profile?.full_name || null,
-                email: data.profile?.email || null,
-                count: data.count
-              }
-            }
-          })
-          
-          setStats({ totalSnaps, snapLeader: leader })
-        }
       } catch (err: any) {
         console.error('Error fetching snaps:', err)
         setError(err.message || 'Failed to load snaps')
@@ -200,7 +157,28 @@ export default function SnapsPage() {
     if (user && !initialLoadComplete) {
       fetchAllSnaps()
     }
-  }, [user, initialLoadComplete, supabase])
+  }, [user, initialLoadComplete])
+
+  // Helper function to get filter date based on time filter
+  const getFilterDate = (filter: TimeFilter): Date | null => {
+    if (filter === 'all-time') return null
+    
+    const now = new Date()
+    const filterDate = new Date()
+    
+    if (filter === 'today') {
+      filterDate.setHours(0, 0, 0, 0)
+    } else if (filter === 'this-week') {
+      const dayOfWeek = now.getDay()
+      filterDate.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+      filterDate.setHours(0, 0, 0, 0)
+    } else if (filter === 'this-month') {
+      filterDate.setDate(1)
+      filterDate.setHours(0, 0, 0, 0)
+    }
+    
+    return filterDate
+  }
 
   // Filter snaps client-side based on activeFilter and timeFilter
   useEffect(() => {
@@ -216,21 +194,8 @@ export default function SnapsPage() {
     }
     
     // Apply time filter
-    if (timeFilter !== 'all-time') {
-      const now = new Date()
-      const filterDate = new Date()
-      
-      if (timeFilter === 'today') {
-        filterDate.setHours(0, 0, 0, 0)
-      } else if (timeFilter === 'this-week') {
-        const dayOfWeek = now.getDay()
-        filterDate.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-        filterDate.setHours(0, 0, 0, 0)
-      } else if (timeFilter === 'this-month') {
-        filterDate.setDate(1)
-        filterDate.setHours(0, 0, 0, 0)
-      }
-      
+    const filterDate = getFilterDate(timeFilter)
+    if (filterDate) {
       filtered = filtered.filter((snap: Snap) => {
         const snapDate = new Date(snap.date)
         return snapDate >= filterDate
@@ -238,6 +203,60 @@ export default function SnapsPage() {
     }
     
     setFilteredSnaps(filtered)
+  }, [allSnaps, activeFilter, timeFilter, user, initialLoadComplete])
+
+  // Calculate stats based on current filters
+  useEffect(() => {
+    if (!user || !initialLoadComplete || allSnaps.length === 0) return
+    
+    let snapsForStats = [...allSnaps]
+    
+    // Apply active filter
+    if (activeFilter === 'about-me') {
+      snapsForStats = snapsForStats.filter(snap => snap.mentioned_user_id === user.id)
+    } else if (activeFilter === 'i-gave') {
+      snapsForStats = snapsForStats.filter(snap => snap.submitted_by === user.id)
+    }
+    
+    // Apply time filter
+    const filterDate = getFilterDate(timeFilter)
+    if (filterDate) {
+      snapsForStats = snapsForStats.filter((snap: Snap) => {
+        const snapDate = new Date(snap.date)
+        return snapDate >= filterDate
+      })
+    }
+    
+    // Count total snaps
+    const totalSnaps = snapsForStats.length
+    
+    // Find snap leader (person who gave the most snaps)
+    const snapCounts: Record<string, { count: number; profile: any }> = {}
+    snapsForStats.forEach((snap: Snap) => {
+      if (snap.submitted_by) {
+        if (!snapCounts[snap.submitted_by]) {
+          snapCounts[snap.submitted_by] = {
+            count: 0,
+            profile: snap.submitted_by_profile
+          }
+        }
+        snapCounts[snap.submitted_by].count++
+      }
+    })
+    
+    let leader: { id: string; full_name: string | null; email: string | null; count: number } | null = null
+    Object.entries(snapCounts).forEach(([userId, data]) => {
+      if (!leader || data.count > leader.count) {
+        leader = {
+          id: userId,
+          full_name: data.profile?.full_name || null,
+          email: data.profile?.email || null,
+          count: data.count
+        }
+      }
+    })
+    
+    setStats({ totalSnaps, snapLeader: leader })
   }, [allSnaps, activeFilter, timeFilter, user, initialLoadComplete])
 
   const handleSnapAdded = async () => {
@@ -465,13 +484,17 @@ export default function SnapsPage() {
             </div>
           </div>
 
-          {/* This Month Summary */}
+          {/* Stats Summary - Updates based on time filter */}
           <div className={`mt-auto ${getRoundedClass('rounded-xl')} p-4`} style={{ 
             backgroundColor: mode === 'chaos' ? '#FF8C42' : mode === 'chill' ? '#FF6B35' : '#FF6B6B' // Orange from GREEN SYSTEM
           }}>
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-4 h-4 text-white" />
-              <h3 className="text-xs uppercase tracking-wider font-black text-white">THIS MONTH</h3>
+              <h3 className="text-xs uppercase tracking-wider font-black text-white">
+                {timeFilter === 'all-time' ? 'ALL TIME' :
+                 timeFilter === 'this-month' ? 'THIS MONTH' :
+                 timeFilter === 'this-week' ? 'THIS WEEK' : 'TODAY'}
+              </h3>
             </div>
             <div className="mb-4">
               <p className="text-4xl font-black text-white mb-1">{stats.totalSnaps}</p>
